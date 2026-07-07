@@ -8,11 +8,23 @@ import * as api from '../src/index.js';
  * core/tests/apiSurface.test.ts for rationale.
  */
 const EXPECTED_EXPORTS = [
+  'approveCommand',
   'diffCommand',
   'exportCommand',
   'formatDiff',
+  'formatEntry',
+  'formatHistory',
   'formatValidation',
   'loadDiagram',
+  'loadRegistry',
+  'promoteCommand',
+  'registryActiveCommand',
+  'registryAddCommand',
+  'registryBindRunCommand',
+  'registryDiffCommand',
+  'registryHistoryCommand',
+  'registryPublishCommand',
+  'saveRegistry',
   'validateCommand',
 ].sort();
 

@@ -164,3 +164,100 @@ describe('bin.ts — argument parsing and exit codes', () => {
     expect(stderr).toContain('Usage:');
   });
 });
+
+describe('bin.ts — registry & governance subcommands', () => {
+  async function draft(dir: string, versionId: string, semver: string, status = 'draft') {
+    const diagram = createDiagram({ name: 'Gov flow', id: 'gov' });
+    diagram.version = {
+      id: versionId,
+      semanticVersion: semver,
+      status: status as 'draft',
+      approvedBy: [],
+      changeSummary: `Release ${semver} — initial modelling of the flow`,
+      createdBy: 'alice',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      snapshotHash: '',
+    };
+    diagram.nodes = { n0: createNode({ type: 'task', id: 'n0' }) };
+    const path = join(dir, `${versionId}.json`);
+    await writeFile(path, new JsonSerializer().serialize(diagram));
+    return path;
+  }
+
+  it('registry add + history round-trips through a file', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bpmnr-bin-reg-'));
+    const reg = join(dir, 'registry.json');
+    const d1 = await draft(dir, 'v1', '1.0.0');
+
+    const add = await runCli(['registry', 'add', d1, '--to', reg, '--notes', 'first cut']);
+    expect(add.code).toBe(0);
+    expect(add.stdout).toContain('Registered v1');
+    expect(existsSync(reg)).toBe(true);
+
+    const history = await runCli(['registry', 'history', reg]);
+    expect(history.code).toBe(0);
+    expect(history.stdout).toContain('1.0.0');
+  });
+
+  it('registry publish + active answer the channel timeline', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bpmnr-bin-pub-'));
+    const reg = join(dir, 'registry.json');
+    await runCli(['registry', 'add', await draft(dir, 'v1', '1.0.0'), '--to', reg]);
+
+    const pub = await runCli([
+      'registry', 'publish', reg,
+      '--version', 'v1', '--channel', 'pilot', '--status', 'active',
+      '--at', '2026-06-01T00:00:00.000Z',
+    ]);
+    expect(pub.code).toBe(0);
+    expect(pub.stdout).toContain('Published v1 to pilot');
+
+    const active = await runCli(['registry', 'active', reg, '--at', '2026-07-01T00:00:00.000Z', '--channel', 'pilot']);
+    expect(active.code).toBe(0);
+    expect(active.stdout).toContain('v1');
+
+    const none = await runCli(['registry', 'active', reg, '--at', '2020-01-01T00:00:00.000Z', '--channel', 'pilot']);
+    expect(none.code).toBe(1);
+    expect(none.stdout).toContain('No version in effect');
+  });
+
+  it('registry with no/invalid subcommand exits 2', async () => {
+    expect((await runCli(['registry'])).code).toBe(2);
+    expect((await runCli(['registry', 'bogus', 'x'])).code).toBe(2);
+  });
+
+  it('promote advances the lifecycle and exits 0', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bpmnr-bin-promote-'));
+    const d = await draft(dir, 'v0', '0.1.0');
+    const res = await runCli([
+      'promote', d, '--to', 'test',
+      '--actor-id', 'u1', '--actor-role', 'owner', '--reason', 'Ready for sandbox testing.',
+    ]);
+    expect(res.code).toBe(0);
+    expect(res.stdout).toContain('Promoted to test');
+  });
+
+  it('promote to active without approvals fails the governance gate with exit 1', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bpmnr-bin-gate-'));
+    const d = await draft(dir, 'vc', '1.0.0', 'candidate');
+    const res = await runCli([
+      'promote', d, '--to', 'active',
+      '--actor-id', 'ops', '--actor-role', 'operations', '--reason', 'trying to skip the gate here',
+    ]);
+    expect(res.code).toBe(1);
+    expect(res.stderr).toContain('Governance gate');
+  });
+
+  it('approve then promote to active passes the gate (exit 0)', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bpmnr-bin-approve-'));
+    const d = await draft(dir, 'vc', '1.0.0', 'candidate');
+    expect((await runCli(['approve', d, '--actor-id', 'o', '--actor-role', 'owner', '--reason', 'ok'])).code).toBe(0);
+    expect((await runCli(['approve', d, '--actor-id', 'c', '--actor-role', 'compliance', '--reason', 'ok'])).code).toBe(0);
+    const res = await runCli([
+      'promote', d, '--to', 'active',
+      '--actor-id', 'ops', '--actor-role', 'operations', '--reason', 'Approved by owner and compliance.',
+    ]);
+    expect(res.code).toBe(0);
+    expect(res.stdout).toContain('Promoted to active');
+  });
+});
