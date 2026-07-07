@@ -40,12 +40,46 @@ Unknown elements are ignored with warnings on import (never a hard failure).
 | `subProcess` | ✓ | ✓ | flat (no nested flow elements yet) |
 | `dataObjectReference`, `textAnnotation` | ✓ | ✓ | |
 | `sequenceFlow` | ✓ | ✓ | `sourceRef`/`targetRef`/`name` |
-| `bpmndi:BPMNDiagram/Plane/Shape` + `dc:Bounds` | ✓ | ✓ | node coordinates |
+| `collaboration`/`participant` (pools) | ✓ | ✓ | see [Pools & lanes](#pools--lanes) |
+| `laneSet`/`lane`/`flowNodeRef` | ✓ | ✓ | see [Pools & lanes](#pools--lanes) |
+| `bpmndi:BPMNDiagram/Plane/Shape` + `dc:Bounds` | ✓ | ✓ | node coordinates (`isHorizontal` on pools/lanes) |
 | `bpmndi:BPMNEdge` + `di:waypoint` | ✓ | ✓ | edge routing (computed orthogonally when absent) |
 | `extensionElements` | ✓ | ✓ | see below |
-| anything else (`laneSet`, `boundaryEvent`, `callActivity`, events with definitions, …) | warning, skipped | – | roadmap |
+| anything else (`boundaryEvent`, `callActivity`, `messageFlow`, events with definitions, …) | warning, skipped | – | roadmap |
 
 Documents without DI import with an automatic grid layout (and a warning).
+
+## Pools & lanes
+
+Pools and lanes are modelled as ordinary nodes with the reserved types `pool` and `lane`
+(rendered as swimlane containers *behind* the flow). They map to standard BPMN:
+
+- **Pools** → a `<bpmn:collaboration>` holding one `<bpmn:participant>` per pool, each with
+  `processRef` pointing at the single process. When any pool is present the DI plane's
+  `bpmnElement` targets the collaboration.
+- **Lanes** → a `<bpmn:laneSet>` inside the process; each `<bpmn:lane>` lists its members as
+  `<bpmn:flowNodeRef>` children. Membership is stored on the lane node under
+  `properties.flowNodeRefs` (a string array of node ids).
+- Pool/lane DI shapes carry `isHorizontal="true"`.
+
+```xml
+<bpmn:collaboration id="Collaboration_1">
+  <bpmn:participant id="Pool_1" name="Editorial" processRef="Process_1"/>
+</bpmn:collaboration>
+<bpmn:process id="Process_1">
+  <bpmn:laneSet id="LaneSet_1">
+    <bpmn:lane id="Lane_1" name="Authors">
+      <bpmn:flowNodeRef>Task_write</bpmn:flowNodeRef>
+    </bpmn:lane>
+  </bpmn:laneSet>
+  …flow elements…
+</bpmn:process>
+```
+
+**Profile boundaries** (tracked in [`pendencias.md`](../pendencias.md)): this is a single-process
+MVP. Lane membership is data only — it is *not* enforced geometrically (moving a node between
+lanes does not update `flowNodeRefs` automatically), and true multi-pool collaborations with
+message flows between separate processes are not modelled.
 
 ## Vendor extensions (`bpmnr` namespace)
 

@@ -54,6 +54,30 @@ describe('BpmnDesigner rendering', () => {
   });
 });
 
+describe('swimlanes (pools & lanes)', () => {
+  function swimlaneDiagram(): BpmnDiagram {
+    const diagram = createDiagram({ name: 'Swimlane' });
+    diagram.nodes = {
+      pool1: createNode({ type: 'pool', id: 'pool1', label: 'Editorial', x: 0, y: 0, width: 500, height: 240 }),
+      lane1: createNode({ type: 'lane', id: 'lane1', label: 'Authors', x: 30, y: 0, width: 470, height: 240 }),
+      task1: createNode({ type: 'task', id: 'task1', label: 'Write', x: 120, y: 60 }),
+    };
+    return diagram;
+  }
+
+  it('renders pools and lanes behind flow nodes (containers first in the node layer)', () => {
+    const { container } = render(<BpmnDesigner diagram={swimlaneDiagram()} />);
+    const layer = container.querySelector('[data-layer="nodes"]')!;
+    const ids = [...layer.querySelectorAll(':scope > [data-node-id]')].map((el) =>
+      el.getAttribute('data-node-id'),
+    );
+    // Pool paints first, then lane, then the flow node on top.
+    expect(ids).toEqual(['pool1', 'lane1', 'task1']);
+    expect(screen.getByText('Editorial')).toBeInTheDocument();
+    expect(screen.getByText('Authors')).toBeInTheDocument();
+  });
+});
+
 describe('selection and editing', () => {
   it('selects a node on pointer down and shows ports', () => {
     const { container } = render(<BpmnDesigner diagram={buildDiagram()} />);

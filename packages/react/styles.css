@@ -8,6 +8,8 @@
   --bpmnr-fill-activity: #f8f7f4;
   --bpmnr-fill-event: #eef4f0;
   --bpmnr-fill-gateway: #fdf4e3;
+  --bpmnr-fill-pool: #f2f0ec;
+  --bpmnr-fill-lane: transparent;
   --bpmnr-text: #262220;
   --bpmnr-text-muted: #6f675a;
   --bpmnr-canvas-bg: #faf9f6;
@@ -26,6 +28,8 @@
     --bpmnr-fill-activity: #2d2a25;
     --bpmnr-fill-event: #263029;
     --bpmnr-fill-gateway: #332d20;
+    --bpmnr-fill-pool: #2a2822;
+    --bpmnr-fill-lane: transparent;
     --bpmnr-text: #ece8e1;
     --bpmnr-text-muted: #a49c8f;
     --bpmnr-canvas-bg: #1d1b18;

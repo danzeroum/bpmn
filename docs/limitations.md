@@ -3,9 +3,14 @@
 Documented deliberately so expectations are managed — none of these fail silently.
 
 ## BPMN coverage
-- The XML converter implements the [MVP profile](format-spec.md), not the full OMG spec. Pools,
-  lanes, boundary events, message/timer event definitions, call activities and nested sub-process
-  content are ignored with import warnings. **Roadmap**: lanes/pools first.
+- The XML converter implements the [MVP profile](format-spec.md), not the full OMG spec.
+- **Pools & lanes** are supported as a single-process swimlane MVP (see
+  [format-spec](format-spec.md#pools--lanes)): pools ↔ `collaboration`/`participant`, lanes ↔
+  `laneSet`/`lane`/`flowNodeRef`. Lane membership is data only — it is not enforced geometrically,
+  and multi-pool collaborations with message flows between separate processes are not modelled yet
+  (tracked in [`pendencias.md`](../pendencias.md)).
+- Boundary events, message/timer event definitions, call activities and nested sub-process content
+  are ignored with import warnings.
 - The XML parser validates structure, not the official XSD.
 
 ## Rendering & performance

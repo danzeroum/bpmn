@@ -128,6 +128,27 @@ export interface UserContext {
 /** Built-in edge types. Custom types may be registered by plugins. */
 export const BUILT_IN_EDGE_TYPES = ['sequenceFlow', 'messageFlow', 'association'] as const;
 
+/**
+ * Node types that act as visual swimlane containers. They are rendered behind
+ * the flow (lower z-order) and map to BPMN `participant` (pool) / `lane`
+ * elements rather than to process flow nodes on export.
+ */
+export const CONTAINER_NODE_TYPES = ['pool', 'lane'] as const;
+
+/** True when `type` is a swimlane container (pool or lane). */
+export function isContainerType(type: string): boolean {
+  return (CONTAINER_NODE_TYPES as readonly string[]).includes(type);
+}
+
+/**
+ * Lane membership is stored on the lane node under `properties.flowNodeRefs`
+ * (an array of flow-node ids). Returns it defensively as a string array.
+ */
+export function laneFlowNodeRefs(node: BpmnNode): string[] {
+  const refs = node.properties.flowNodeRefs;
+  return Array.isArray(refs) ? refs.filter((r): r is string => typeof r === 'string') : [];
+}
+
 /** Returns nodes that are part of the current flow (not closed). */
 export function activeNodes(diagram: BpmnDiagram): BpmnNode[] {
   return Object.values(diagram.nodes).filter((n) => !n.removedInVersion);

@@ -11,12 +11,16 @@ import {
 } from '../src/index.js';
 
 describe('NodeTypeRegistry', () => {
-  it('registers the 12 built-in BPMN types', () => {
+  it('registers the 14 built-in BPMN types', () => {
     const registry = createDefaultRegistry();
-    expect(registry.list()).toHaveLength(12);
+    expect(registry.list()).toHaveLength(14);
     expect(registry.has('startEvent')).toBe(true);
     expect(registry.has('exclusiveGateway')).toBe(true);
+    expect(registry.has('pool')).toBe(true);
+    expect(registry.has('lane')).toBe(true);
     expect(registry.get('task').defaultSize).toEqual({ width: 120, height: 60 });
+    expect(registry.get('pool').xml.tag).toBe('participant');
+    expect(registry.get('lane').xml.tag).toBe('lane');
   });
 
   it('rejects duplicate registrations and unknown lookups', () => {

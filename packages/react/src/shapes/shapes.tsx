@@ -252,6 +252,62 @@ export function TextAnnotationShape({ node, selected }: ShapeProps) {
   );
 }
 
+/**
+ * Pool — a swimlane container with a rotated title band on the left. The body
+ * has no fill so flow nodes placed on top stay visible and empty interior
+ * clicks fall through to the canvas; select/drag via its border or band.
+ */
+export function PoolShape({ node, selected }: ShapeProps) {
+  return <SwimlaneContainer node={node} selected={selected} band={30} fontSize={13} />;
+}
+
+/** Lane — a subdivision of a pool. Thinner title band, muted styling. */
+export function LaneShape({ node, selected }: ShapeProps) {
+  return <SwimlaneContainer node={node} selected={selected} band={24} fontSize={12} muted />;
+}
+
+function SwimlaneContainer({
+  node,
+  selected,
+  band,
+  fontSize,
+  muted = false,
+}: ShapeProps & { band: number; fontSize: number; muted?: boolean }) {
+  const stroke = strokeFor(selected);
+  return (
+    <g>
+      <rect
+        width={node.width}
+        height={node.height}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={strokeWidthFor(selected)}
+      />
+      <line x1={band} y1={0} x2={band} y2={node.height} stroke={stroke} strokeWidth={1} />
+      <rect
+        width={band}
+        height={node.height}
+        fill={muted ? 'var(--bpmnr-fill-lane, transparent)' : 'var(--bpmnr-fill-pool, #f2f0ec)'}
+        opacity={muted ? 0.5 : 1}
+        pointerEvents="none"
+      />
+      <text
+        x={band / 2}
+        y={node.height / 2}
+        transform={`rotate(-90, ${band / 2}, ${node.height / 2})`}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize={fontSize}
+        fill={muted ? theme.textMuted : theme.text}
+        fontFamily="inherit"
+        pointerEvents="none"
+      >
+        {node.label}
+      </text>
+    </g>
+  );
+}
+
 export function DefaultShape({ node, selected }: ShapeProps) {
   return (
     <g>
