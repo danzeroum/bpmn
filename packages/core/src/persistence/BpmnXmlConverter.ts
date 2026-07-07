@@ -83,6 +83,13 @@ export class BpmnXmlConverter {
     const lanes = nodes.filter((n) => n.type === 'lane');
     const flowNodes = nodes.filter((n) => !isContainerType(n.type));
 
+    // Message flows live in the collaboration — only expressible when one
+    // exists (i.e. the diagram has pools). Without pools they fall back to
+    // sequenceFlow + bpmnr:meta, which round-trips the type losslessly.
+    const edges = Object.values(diagram.edges);
+    const messageFlows = pools.length > 0 ? edges.filter((e) => e.type === 'messageFlow') : [];
+    const processEdges = pools.length > 0 ? edges.filter((e) => e.type !== 'messageFlow') : edges;
+
     xml.open('bpmn:definitions', {
       'xmlns:bpmn': BPMN_NS,
       'xmlns:bpmndi': BPMNDI_NS,
@@ -105,6 +112,9 @@ export class BpmnXmlConverter {
           processRef: processId,
         });
       }
+      for (const flow of messageFlows) {
+        this.writeEdge(xml, flow, 'messageFlow');
+      }
       xml.close();
     }
 
@@ -115,7 +125,8 @@ export class BpmnXmlConverter {
     if (lanes.length > 0) {
       xml.open('bpmn:laneSet', { id: `LaneSet_${processId}` });
       for (const lane of lanes) {
-        const refs = laneFlowNodeRefs(lane);
+        // Stale references (deleted nodes) would make the export invalid BPMN.
+        const refs = laneFlowNodeRefs(lane).filter((id) => diagram.nodes[id]);
         if (refs.length === 0) {
           xml.element('bpmn:lane', { id: lane.id, name: lane.label });
         } else {
@@ -130,8 +141,8 @@ export class BpmnXmlConverter {
     for (const node of flowNodes) {
       this.writeNode(xml, node);
     }
-    for (const edge of Object.values(diagram.edges)) {
-      this.writeEdge(xml, edge);
+    for (const edge of processEdges) {
+      this.writeEdge(xml, edge, edge.type === 'association' ? 'association' : 'sequenceFlow');
     }
     xml.close(); // process
 
@@ -191,7 +202,11 @@ export class BpmnXmlConverter {
     xml.close();
   }
 
-  private writeEdge(xml: XmlBuilder, edge: BpmnEdge): void {
+  private writeEdge(
+    xml: XmlBuilder,
+    edge: BpmnEdge,
+    tag: 'sequenceFlow' | 'messageFlow' | 'association' = 'sequenceFlow',
+  ): void {
     const p = this.ext.prefix;
     const attrs = {
       id: edge.id,
@@ -200,7 +215,7 @@ export class BpmnXmlConverter {
       name: edge.label,
     };
     const needsMeta =
-      edge.type !== 'sequenceFlow' ||
+      edge.type !== tag ||
       edge.purpose !== undefined ||
       edge.removedInVersion !== undefined ||
       edge.supersedesEdgeId !== undefined ||
@@ -208,13 +223,13 @@ export class BpmnXmlConverter {
       edge.createdInVersion !== '0';
 
     if (!needsMeta) {
-      xml.element('bpmn:sequenceFlow', attrs);
+      xml.element(`bpmn:${tag}`, attrs);
       return;
     }
-    xml.open('bpmn:sequenceFlow', attrs);
+    xml.open(`bpmn:${tag}`, attrs);
     xml.open('bpmn:extensionElements');
     xml.element(`${p}:meta`, {
-      type: edge.type !== 'sequenceFlow' ? edge.type : undefined,
+      type: edge.type !== tag ? edge.type : undefined,
       purpose: edge.purpose,
       createdInVersion: edge.createdInVersion !== '0' ? edge.createdInVersion : undefined,
       removedInVersion: edge.removedInVersion,
@@ -296,12 +311,16 @@ export class BpmnXmlConverter {
       metadata: extension.properties,
     };
 
-    // Pools live in a <collaboration> as <participant> elements at the root.
+    // Pools and message flows live in a <collaboration> at the root.
     const collaboration = firstChildByLocalName(root, 'collaboration');
     if (collaboration) {
       for (const participant of childrenByLocalName(collaboration, 'participant')) {
         const pool = this.readContainer(participant, 'pool');
         if (pool) diagram.nodes[pool.id] = pool;
+      }
+      for (const flowEl of childrenByLocalName(collaboration, 'messageFlow')) {
+        const edge = this.readEdge(flowEl, warnings, 'messageFlow');
+        if (edge) diagram.edges[edge.id] = edge;
       }
     }
 
@@ -315,8 +334,8 @@ export class BpmnXmlConverter {
         }
         continue;
       }
-      if (tag === 'sequenceFlow') {
-        const edge = this.readEdge(child, warnings);
+      if (tag === 'sequenceFlow' || tag === 'association') {
+        const edge = this.readEdge(child, warnings, tag);
         if (edge) diagram.edges[edge.id] = edge;
         continue;
       }
@@ -439,17 +458,23 @@ export class BpmnXmlConverter {
     };
   }
 
-  private readEdge(el: XmlElement, warnings: string[]): BpmnEdge | undefined {
+  private readEdge(
+    el: XmlElement,
+    warnings: string[],
+    defaultType: 'sequenceFlow' | 'messageFlow' | 'association' = 'sequenceFlow',
+  ): BpmnEdge | undefined {
     const sourceId = el.attributes.sourceRef;
     const targetId = el.attributes.targetRef;
     if (!sourceId || !targetId) {
-      warnings.push(`Ignored sequenceFlow ${el.attributes.id ?? '?'} without source/target refs`);
+      warnings.push(
+        `Ignored ${localName(el.tag)} ${el.attributes.id ?? '?'} without source/target refs`,
+      );
       return undefined;
     }
     const { properties, meta } = this.readExtensionElements(el);
     return {
       id: el.attributes.id ?? generateId(),
-      type: meta.type ?? 'sequenceFlow',
+      type: meta.type ?? defaultType,
       sourceId,
       targetId,
       ...(el.attributes.name ? { label: el.attributes.name } : {}),

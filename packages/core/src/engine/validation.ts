@@ -1,4 +1,10 @@
-import { activeEdges, activeNodes, type BpmnDiagram } from '../model/types.js';
+import {
+  activeEdges,
+  activeNodes,
+  isContainerType,
+  laneFlowNodeRefs,
+  type BpmnDiagram,
+} from '../model/types.js';
 import type { NodeTypeRegistry } from '../model/registry.js';
 
 export type IssueSeverity = 'error' | 'warning';
@@ -62,12 +68,14 @@ export const missingStartEventRule: ValidationRule = (diagram) => {
 
 const NON_FLOW_TYPES = new Set(['textAnnotation', 'dataObject']);
 
-/** Flow nodes (other than start events) should be reachable. */
+/** Flow nodes (other than start events) should be reachable. Containers
+ * (pools/lanes) are visual grouping, not flow — never flagged. */
 export const unreachableNodeRule: ValidationRule = (diagram) => {
   const issues: ValidationIssue[] = [];
   const edges = activeEdges(diagram);
   for (const node of activeNodes(diagram)) {
-    if (node.type === 'startEvent' || NON_FLOW_TYPES.has(node.type)) continue;
+    if (node.type === 'startEvent' || NON_FLOW_TYPES.has(node.type) || isContainerType(node.type))
+      continue;
     const hasIncoming = edges.some((e) => e.targetId === node.id);
     if (!hasIncoming) {
       issues.push({
@@ -106,6 +114,25 @@ export const eventFlowDirectionRule: ValidationRule = (diagram) => {
   return issues;
 };
 
+/** Lane memberships must point at nodes that still exist in the flow. */
+export const staleLaneRefRule: ValidationRule = (diagram) => {
+  const issues: ValidationIssue[] = [];
+  for (const lane of activeNodes(diagram).filter((n) => n.type === 'lane')) {
+    for (const ref of laneFlowNodeRefs(lane)) {
+      const target = diagram.nodes[ref];
+      if (!target || target.removedInVersion) {
+        issues.push({
+          code: 'STALE_LANE_REF',
+          severity: 'warning',
+          message: `Lane "${lane.label}" references a node that is not in the flow (${ref})`,
+          nodeId: lane.id,
+        });
+      }
+    }
+  }
+  return issues;
+};
+
 /** Every node type must exist in the given registry. */
 export function unknownTypeRule(registry: NodeTypeRegistry): ValidationRule {
   return (diagram) =>
@@ -125,6 +152,7 @@ export const BUILT_IN_VALIDATION_RULES: ValidationRule[] = [
   missingStartEventRule,
   unreachableNodeRule,
   eventFlowDirectionRule,
+  staleLaneRefRule,
 ];
 
 /**

@@ -3,11 +3,12 @@
 Documented deliberately so expectations are managed — none of these fail silently.
 
 ## BPMN coverage
-- The XML converter implements the [MVP profile](format-spec.md), not the full OMG spec.
-- **Pools & lanes** are supported as a single-process swimlane MVP (see
+- The XML converter implements the [documented profile](format-spec.md), not the full OMG spec.
+- **Pools & lanes** are supported as single-process swimlanes (see
   [format-spec](format-spec.md#pools--lanes)): pools ↔ `collaboration`/`participant`, lanes ↔
-  `laneSet`/`lane`/`flowNodeRef`. Lane membership is data only — it is not enforced geometrically,
-  and multi-pool collaborations with message flows between separate processes are not modelled yet
+  `laneSet`/`lane`/`flowNodeRef`, `messageFlow` in the collaboration and `association` for
+  artifacts. Lane membership is interactive (drop a node into a lane to join it, undoable).
+  Multi-pool collaborations with one process per pool are not modelled
   (tracked in [`pendencias.md`](../pendencias.md)).
 - Boundary events, message/timer event definitions, call activities and nested sub-process content
   are ignored with import warnings.
@@ -33,6 +34,8 @@ Documented deliberately so expectations are managed — none of these fail silen
 - Touch gestures: basic pointer events work on touch devices, but pinch-zoom and long-press menus
   are not implemented.
 - Labels can be edited inline on the canvas (double-click a node) or in the properties panel.
+- Dragging a pool/lane moves only the container, not the nodes inside it; lanes do not auto-reflow
+  siblings when resized. Both are candidates for a post-1.0 "swimlane layout" pass.
 
 ## Governance
 - The library records `UserContext` data as given; authentication/authorization is the host
