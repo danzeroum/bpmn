@@ -140,6 +140,33 @@ describe('BpmnXmlConverter round-trip', () => {
     expect(imported.nodes.p1.type).toBe('demo:persona');
     expect(imported.nodes.p1.width).toBe(140); // registry default size, then DI overrides
   });
+
+  it('round-trips typed events via native EventDefinition children', () => {
+    const converter = new BpmnXmlConverter();
+    const diagram = createDiagram({ name: 'Events', id: 'ev' });
+    diagram.nodes = {
+      s: createNode({ type: 'startEvent', id: 's', x: 40, y: 40, properties: { eventDefinition: 'message' } }),
+      c: createNode({ type: 'intermediateCatchEvent', id: 'c', x: 160, y: 40, properties: { eventDefinition: 'timer' } }),
+      t: createNode({ type: 'intermediateThrowEvent', id: 't', x: 280, y: 40, properties: { eventDefinition: 'signal' } }),
+    };
+    diagram.edges = {
+      e1: createEdge({ id: 'e1', sourceId: 's', targetId: 'c' }),
+      e2: createEdge({ id: 'e2', sourceId: 'c', targetId: 't' }),
+    };
+
+    const xml = converter.toXml(diagram);
+    // Standard child elements, not bpmnr:property duplicates.
+    expect(xml).toContain('<bpmn:messageEventDefinition');
+    expect(xml).toContain('<bpmn:timerEventDefinition');
+    expect(xml).toContain('<bpmn:intermediateThrowEvent id="t"');
+    expect(xml).not.toContain('name="eventDefinition"');
+
+    const { diagram: imported, warnings } = converter.fromXml(xml);
+    expect(warnings).toEqual([]);
+    const before = JSON.stringify(normalizeForDiff(diagram));
+    const after = JSON.stringify(normalizeForDiff(imported));
+    expect(after).toBe(before);
+  });
 });
 
 describe('BpmnXmlConverter — pools & lanes', () => {
@@ -326,6 +353,42 @@ describe('BpmnXmlConverter.fromXml — external documents', () => {
     expect(diagram.nodes.t1.type).toBe('userTask');
     expect(diagram.edges.f1.sourceId).toBe('s1');
     expect(warnings).toEqual([]);
+  });
+
+  it('imports typed events (message start, timer intermediate) without warnings', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  id="defs" targetNamespace="http://example.com">
+  <bpmn2:process id="proc_1" name="Typed events">
+    <bpmn2:startEvent id="s1" name="Order received">
+      <bpmn2:messageEventDefinition id="s1_def"/>
+    </bpmn2:startEvent>
+    <bpmn2:intermediateCatchEvent id="w1" name="Wait 1d">
+      <bpmn2:timerEventDefinition id="w1_def"/>
+    </bpmn2:intermediateCatchEvent>
+    <bpmn2:endEvent id="e1" name="Stop">
+      <bpmn2:terminateEventDefinition id="e1_def"/>
+    </bpmn2:endEvent>
+    <bpmn2:sequenceFlow id="f1" sourceRef="s1" targetRef="w1"/>
+    <bpmn2:sequenceFlow id="f2" sourceRef="w1" targetRef="e1"/>
+  </bpmn2:process>
+  <bpmndi:BPMNDiagram xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="d1">
+    <bpmndi:BPMNPlane id="p1" bpmnElement="proc_1">
+      <bpmndi:BPMNShape id="s1_di" bpmnElement="s1"><dc:Bounds x="40" y="40" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="w1_di" bpmnElement="w1"><dc:Bounds x="160" y="40" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="e1_di" bpmnElement="e1"><dc:Bounds x="280" y="40" width="36" height="36"/></bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn2:definitions>`;
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(diagram.nodes.s1.type).toBe('startEvent');
+    expect(diagram.nodes.s1.properties.eventDefinition).toBe('message');
+    expect(diagram.nodes.w1.type).toBe('intermediateCatchEvent');
+    expect(diagram.nodes.w1.properties.eventDefinition).toBe('timer');
+    expect(diagram.nodes.e1.type).toBe('endEvent');
+    expect(diagram.nodes.e1.properties.eventDefinition).toBe('terminate');
   });
 
   it('warns about unsupported elements instead of failing', () => {

@@ -1,5 +1,18 @@
-import type { BpmnDiagram, BpmnEdge, BpmnNode, Point, VersionStatus } from '../model/types.js';
-import { activeNodes, isContainerType, laneFlowNodeRefs } from '../model/types.js';
+import type {
+  BpmnDiagram,
+  BpmnEdge,
+  BpmnNode,
+  EventDefinitionKind,
+  Point,
+  VersionStatus,
+} from '../model/types.js';
+import {
+  activeNodes,
+  eventDefinitionOf,
+  EVENT_DEFINITION_KINDS,
+  isContainerType,
+  laneFlowNodeRefs,
+} from '../model/types.js';
 import { BpmnParseError } from '../model/errors.js';
 import { createDefaultRegistry, type NodeTypeRegistry } from '../model/registry.js';
 import { createVersion, generateId } from '../model/factory.js';
@@ -178,27 +191,38 @@ export class BpmnXmlConverter {
     const def = this.registry.has(node.type) ? this.registry.get(node.type) : undefined;
     const tag = def?.xml.tag ?? 'task';
     const p = this.ext.prefix;
+    // Event kind travels as the standard <bpmn:{kind}EventDefinition/> child, not
+    // as a bpmnr:property, so it interoperates and is not double-encoded.
+    const eventDef = eventDefinitionOf(node);
+    const propEntries = Object.entries(node.properties).filter(
+      ([key]) => !(eventDef && key === 'eventDefinition'),
+    );
     const needsMeta =
       node.type !== tag ||
       node.removedInVersion !== undefined ||
-      Object.keys(node.properties).length > 0 ||
+      propEntries.length > 0 ||
       node.createdInVersion !== '0';
 
-    if (!needsMeta) {
+    if (!needsMeta && eventDef === undefined) {
       xml.element(`bpmn:${tag}`, { id: node.id, name: node.label });
       return;
     }
     xml.open(`bpmn:${tag}`, { id: node.id, name: node.label });
-    xml.open('bpmn:extensionElements');
-    xml.element(`${p}:meta`, {
-      type: node.type !== tag ? node.type : undefined,
-      createdInVersion: node.createdInVersion !== '0' ? node.createdInVersion : undefined,
-      removedInVersion: node.removedInVersion,
-    });
-    for (const [key, value] of Object.entries(node.properties)) {
-      xml.element(`${p}:property`, { name: key, value: JSON.stringify(value) });
+    if (needsMeta) {
+      xml.open('bpmn:extensionElements');
+      xml.element(`${p}:meta`, {
+        type: node.type !== tag ? node.type : undefined,
+        createdInVersion: node.createdInVersion !== '0' ? node.createdInVersion : undefined,
+        removedInVersion: node.removedInVersion,
+      });
+      for (const [key, value] of propEntries) {
+        xml.element(`${p}:property`, { name: key, value: JSON.stringify(value) });
+      }
+      xml.close();
     }
-    xml.close();
+    if (eventDef !== undefined) {
+      xml.element(`bpmn:${eventDef}EventDefinition`, { id: `${node.id}_def` });
+    }
     xml.close();
   }
 
@@ -417,6 +441,9 @@ export class BpmnXmlConverter {
       warnings.push(`Ignored unsupported element <${el.tag}>`);
       return undefined;
     }
+    // Standard <bpmn:{kind}EventDefinition/> child → properties.eventDefinition.
+    const eventDef = readEventDefinition(el);
+    if (eventDef) properties.eventDefinition = eventDef;
     const def = this.registry.get(type);
     return {
       id: el.attributes.id ?? generateId(),
@@ -541,4 +568,20 @@ export class BpmnXmlConverter {
 /** BPMN ids must be valid NCNames; fall back to a prefixed form when not. */
 function xmlSafeId(id: string, prefix: string): string {
   return /^[A-Za-z_][\w.-]*$/.test(id) ? id : `${prefix}_${id.replace(/[^\w.-]/g, '_')}`;
+}
+
+/**
+ * Reads a standard `<bpmn:{kind}EventDefinition/>` child (e.g.
+ * `messageEventDefinition`, `timerEventDefinition`) and returns the kind, or
+ * `undefined` when the element has no (recognized) event definition.
+ */
+function readEventDefinition(el: XmlElement): EventDefinitionKind | undefined {
+  for (const child of el.children) {
+    const match = /^(.+)EventDefinition$/.exec(localName(child.tag));
+    const kind = match?.[1];
+    if (kind && (EVENT_DEFINITION_KINDS as readonly string[]).includes(kind)) {
+      return kind as EventDefinitionKind;
+    }
+  }
+  return undefined;
 }

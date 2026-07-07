@@ -36,7 +36,9 @@ releases.
 | Element | Import | Export | Notes |
 |---|---|---|---|
 | `definitions`, `process` | ✓ | ✓ | one process per document |
-| `startEvent`, `endEvent` | ✓ | ✓ | |
+| `startEvent`, `endEvent` | ✓ | ✓ | typed via `eventDefinition` (see below) |
+| `intermediateCatchEvent`, `intermediateThrowEvent` | ✓ | ✓ | typed via `eventDefinition` |
+| `messageEventDefinition`, `timerEventDefinition`, … | ✓ | ✓ | event definition child (see below) |
 | `task`, `userTask`, `serviceTask`, `scriptTask` | ✓ | ✓ | |
 | `exclusiveGateway`, `parallelGateway`, `inclusiveGateway` | ✓ | ✓ | |
 | `subProcess` | ✓ | ✓ | flat (no nested flow elements yet) |
@@ -49,9 +51,25 @@ releases.
 | `bpmndi:BPMNDiagram/Plane/Shape` + `dc:Bounds` | ✓ | ✓ | node coordinates (`isHorizontal` on pools/lanes) |
 | `bpmndi:BPMNEdge` + `di:waypoint` | ✓ | ✓ | edge routing (computed orthogonally when absent) |
 | `extensionElements` | ✓ | ✓ | see below |
-| anything else (`boundaryEvent`, `callActivity`, events with definitions, …) | warning, skipped | – | roadmap |
+| anything else (`boundaryEvent`, `callActivity`, `eventBasedGateway`, …) | warning, skipped | – | roadmap |
 
 Documents without DI import with an automatic grid layout (and a warning).
+
+## Typed events
+
+Event nodes (`startEvent`, `endEvent`, `intermediateCatchEvent`,
+`intermediateThrowEvent`) carry their kind under `properties.eventDefinition`, one of
+`message`, `timer`, `error`, `signal`, `escalation`, `conditional`, `link`, `terminate`.
+On export it becomes the standard child element (e.g. `<bpmn:messageEventDefinition/>`) —
+**not** a `bpmnr:property` — so typed events interoperate with Camunda / bpmn.io and
+round-trip losslessly. On import, a recognized `<bpmn:*EventDefinition/>` child sets
+`properties.eventDefinition`; an absent one means a plain (none) event.
+
+```xml
+<bpmn:startEvent id="Start_1" name="Order received">
+  <bpmn:messageEventDefinition id="Start_1_def"/>
+</bpmn:startEvent>
+```
 
 ## Pools & lanes
 

@@ -129,6 +129,47 @@ export interface UserContext {
 export const BUILT_IN_EDGE_TYPES = ['sequenceFlow', 'messageFlow', 'association'] as const;
 
 /**
+ * BPMN event-definition kinds. An event node (`startEvent`, `endEvent`,
+ * `intermediateCatchEvent`, `intermediateThrowEvent`) carries its kind under
+ * `properties.eventDefinition`; on export it becomes the standard child element
+ * `<bpmn:{kind}EventDefinition/>`, so typed events round-trip with Camunda and
+ * bpmn.io. `undefined`/absent means a plain (none) event.
+ */
+export const EVENT_DEFINITION_KINDS = [
+  'message',
+  'timer',
+  'error',
+  'signal',
+  'escalation',
+  'conditional',
+  'link',
+  'terminate',
+] as const;
+
+export type EventDefinitionKind = (typeof EVENT_DEFINITION_KINDS)[number];
+
+/** Event node types (built-in). Plugins may register more via `category: 'event'`. */
+export const EVENT_NODE_TYPES = [
+  'startEvent',
+  'endEvent',
+  'intermediateCatchEvent',
+  'intermediateThrowEvent',
+] as const;
+
+/** True when `type` is one of the built-in event node types. */
+export function isEventType(type: string): boolean {
+  return (EVENT_NODE_TYPES as readonly string[]).includes(type);
+}
+
+/** Returns the event-definition kind stored on a node, if it is a valid kind. */
+export function eventDefinitionOf(node: BpmnNode): EventDefinitionKind | undefined {
+  const kind = node.properties.eventDefinition;
+  return typeof kind === 'string' && (EVENT_DEFINITION_KINDS as readonly string[]).includes(kind)
+    ? (kind as EventDefinitionKind)
+    : undefined;
+}
+
+/**
  * Node types that act as visual swimlane containers. They are rendered behind
  * the flow (lower z-order) and map to BPMN `participant` (pool) / `lane`
  * elements rather than to process flow nodes on export.
