@@ -6,8 +6,8 @@ Thank you for your interest in contributing!
 
 This project is a **from-scratch implementation**. To keep it legally clean:
 
-- Do **not** copy or adapt source code from `bpmn-js`, `diagram-js`, `moddle`, React Flow, or any
-  other library — regardless of its license (MIT included).
+- Do **not** copy or adapt source code from any other diagramming library or its dependencies —
+  regardless of its license (MIT included).
 - Architectural patterns (layered architecture, event bus, command stack, plugin registry) are
   ideas and may be used freely; specific code expression may not.
 - Do not replicate exact public API signatures of other diagramming libraries.
@@ -34,7 +34,15 @@ pnpm lint
 ```
 
 - Unit tests live next to the code in `tests/` folders per package (Vitest).
-- Core coverage target: ≥85%. React coverage target: ≥75%.
+- Every package has a **public API contract test** (`tests/apiSurface.test.ts`) that freezes its
+  runtime exports. A failing diff there means an export was added, renamed, or removed — update the
+  fixture for additions; renames/removals are breaking changes and need a version bump first (see
+  [docs/versioning.md](docs/versioning.md)).
+- Coverage has an enforced **floor per package** in `vitest.config.mts` (`coverage.thresholds`) —
+  `pnpm test:coverage` fails the build if it drops below core 95%, domain-example 90%, cli 85%,
+  react 65% (statements/lines; branch/function floors are lower). Raise these opportunistically as
+  gaps close; never lower them to make a red build pass. New shapes, commands, or node types need a
+  rendering/round-trip test in the same PR, not "coverage happens to still pass."
 - Commit messages: imperative, descriptive, one logical change per commit.
 
 ## Code style

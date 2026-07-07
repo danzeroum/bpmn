@@ -1,0 +1,97 @@
+import { describe, expect, it } from 'vitest';
+import * as api from '../src/index.js';
+
+/**
+ * Contract test: freezes the runtime public API surface of
+ * @bpmn-react/react. See core/tests/apiSurface.test.ts for rationale.
+ */
+const EXPECTED_EXPORTS = [
+  'ARROW_MARKER_ID',
+  'ARROW_MARKER_MUTED_ID',
+  'ARROW_MARKER_SELECTED_ID',
+  'BUILT_IN_PALETTE',
+  'BUILT_IN_SHAPES',
+  'BpmnCanvas',
+  'BpmnDesigner',
+  'BpmnEditor',
+  'BpmnViewer',
+  'CanvasProvider',
+  'ConnectedEdge',
+  'ConnectedNode',
+  'ConnectionPreview',
+  'DataObjectShape',
+  'DefaultShape',
+  'Defs',
+  'DiagramProvider',
+  'DiffView',
+  'EdgeRenderer',
+  'EditorConfigProvider',
+  'EndEventShape',
+  'ExclusiveGatewayShape',
+  'GridLayer',
+  'InclusiveGatewayShape',
+  'MAX_VIEWPORT_WIDTH',
+  'MIN_VIEWPORT_WIDTH',
+  'MiniMap',
+  'NodeRenderer',
+  'Palette',
+  'ParallelGatewayShape',
+  'PropertiesPanel',
+  'ScriptTaskShape',
+  'SelectionBoxOverlay',
+  'ServiceTaskShape',
+  'ShapeLabel',
+  'StartEventShape',
+  'StatusBadge',
+  'SubProcessShape',
+  'TaskShape',
+  'TextAnnotationShape',
+  'Toolbar',
+  'UserTaskShape',
+  'applyWheelZoom',
+  'createCanvasStore',
+  'createStore',
+  'downloadFile',
+  'exportPng',
+  'exportSvg',
+  'fitViewport',
+  'panViewport',
+  'resolveEditorConfig',
+  'screenToWorld',
+  'svgToString',
+  'theme',
+  'useCanvasState',
+  'useCanvasStore',
+  'useDiagram',
+  'useEditorConfig',
+  'useInteractions',
+  'useKeyboardShortcuts',
+  'useStore',
+  'wrapLabel',
+  'zoomViewportAt',
+].sort();
+
+describe('@bpmn-react/react public API surface', () => {
+  it('exports exactly the expected runtime members', () => {
+    expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
+  });
+
+  it('every one of the 12 built-in shapes is registered in BUILT_IN_SHAPES', () => {
+    expect(Object.keys(api.BUILT_IN_SHAPES).sort()).toEqual(
+      [
+        'dataObject',
+        'endEvent',
+        'exclusiveGateway',
+        'inclusiveGateway',
+        'parallelGateway',
+        'scriptTask',
+        'serviceTask',
+        'startEvent',
+        'subProcess',
+        'task',
+        'textAnnotation',
+        'userTask',
+      ].sort(),
+    );
+  });
+});

@@ -1,12 +1,14 @@
+import { useEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import {
+  addNodeCommand,
   createDiagram,
   createEdge,
   createNode,
   type BpmnDiagram,
 } from '@bpmn-react/core';
-import { BpmnDesigner, BpmnViewer } from '../src/index.js';
+import { BpmnDesigner, BpmnViewer, useDiagram } from '../src/index.js';
 
 function buildDiagram(): BpmnDiagram {
   const diagram = createDiagram({ name: 'Test flow' });
@@ -99,6 +101,52 @@ describe('BpmnViewer', () => {
     const node = queryNode(container, 'task1')!;
     fireEvent.pointerDown(node, { button: 0 });
     expect(container.querySelector('[data-ports]')).not.toBeInTheDocument();
+  });
+
+  it('ignores Delete and arrow-key shortcuts entirely', () => {
+    const { container } = render(<BpmnViewer diagram={buildDiagram()} />);
+    const before = container.querySelectorAll('[data-node-id]').length;
+    fireEvent.keyDown(window, { key: 'Delete' });
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(container.querySelectorAll('[data-node-id]')).toHaveLength(before);
+  });
+
+  it('does not undo pre-existing history via Ctrl+Z (regression: undo/redo bypassed the readOnly gate)', () => {
+    // <BpmnViewer> is exactly <BpmnDesigner readOnly> (see BpmnDesigner.tsx)
+    // but doesn't forward children, so BpmnDesigner is used directly here to
+    // reach useDiagram() and seed undo history — exactly what a host app
+    // would have if it fed a diagram with prior edits into a read-only view.
+    // UI gestures can't produce that history themselves (they're already
+    // blocked), which is precisely why the keyboard shortcut path needs its
+    // own explicit proof.
+    let addedNodeId = '';
+    function Seed() {
+      const { execute } = useDiagram();
+      useEffect(() => {
+        const node = createNode({ type: 'task', label: 'Seeded' });
+        addedNodeId = node.id;
+        execute(addNodeCommand(node));
+      }, [execute]);
+      return null;
+    }
+    const { container } = render(
+      <BpmnDesigner diagram={buildDiagram()} readOnly>
+        <Seed />
+      </BpmnDesigner>,
+    );
+    expect(queryNode(container, addedNodeId)).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+
+    // Before the fix, this undid the seeded command even in read-only mode.
+    expect(queryNode(container, addedNodeId)).toBeInTheDocument();
+  });
+
+  it('still allows Space to arm panning (a viewport op, not a mutation)', () => {
+    render(<BpmnViewer diagram={buildDiagram()} />);
+    // No assertion beyond "doesn't throw" — panning has no observable DOM
+    // side effect by itself, this just proves readOnly doesn't block it.
+    expect(() => fireEvent.keyDown(window, { key: ' ' })).not.toThrow();
   });
 });
 

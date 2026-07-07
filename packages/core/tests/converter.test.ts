@@ -206,6 +206,68 @@ describe('BpmnXmlConverter.fromXml — external documents', () => {
     expect(warnings.some((w) => w.includes('references a node'))).toBe(true);
   });
 
+  it('warns about (and drops) a sequenceFlow missing sourceRef or targetRef outright', () => {
+    const xml = `<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+      <process id="p">
+        <startEvent id="a"/>
+        <task id="b"/>
+        <sequenceFlow id="no-source" targetRef="b"/>
+        <sequenceFlow id="no-target" sourceRef="a"/>
+        <sequenceFlow id="neither"/>
+        <sequenceFlow id="fine" sourceRef="a" targetRef="b"/>
+      </process>
+    </definitions>`;
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
+
+    expect(diagram.edges['no-source']).toBeUndefined();
+    expect(diagram.edges['no-target']).toBeUndefined();
+    expect(diagram.edges.neither).toBeUndefined();
+    expect(diagram.edges.fine).toBeDefined();
+
+    expect(warnings.filter((w) => w.includes('without source/target refs'))).toHaveLength(3);
+    expect(warnings.some((w) => w.includes('no-source'))).toBe(true);
+    expect(warnings.some((w) => w.includes('no-target'))).toBe(true);
+    expect(warnings.some((w) => w.includes('neither'))).toBe(true);
+  });
+
+  it('warns about (and ignores) non-numeric or missing dc:Bounds attributes', () => {
+    const xml = `<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+      xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+      xmlns:dc="http://www.omg.org/spec/DD/20100524/DC">
+      <process id="p">
+        <startEvent id="a" name="Broken bounds"/>
+        <task id="b" name="Missing bounds"/>
+        <task id="c" name="Good bounds"/>
+      </process>
+      <bpmndi:BPMNDiagram id="d1">
+        <bpmndi:BPMNPlane id="pl1" bpmnElement="p">
+          <bpmndi:BPMNShape id="a_di" bpmnElement="a">
+            <dc:Bounds x="not-a-number" y="10" width="36" height="36"/>
+          </bpmndi:BPMNShape>
+          <bpmndi:BPMNShape id="b_di" bpmnElement="b"/>
+          <bpmndi:BPMNShape id="c_di" bpmnElement="c">
+            <dc:Bounds x="200" y="80" width="120" height="60"/>
+          </bpmndi:BPMNShape>
+        </bpmndi:BPMNPlane>
+      </bpmndi:BPMNDiagram>
+    </definitions>`;
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
+
+    // Invalid bounds: the node keeps its registry-default geometry rather
+    // than adopting NaN coordinates.
+    expect(Number.isNaN(diagram.nodes.a.x)).toBe(false);
+    expect(warnings.some((w) => w.includes('Invalid bounds for shape a'))).toBe(true);
+
+    // A shape with no <dc:Bounds> at all is simply left unpositioned by
+    // applyDi (no crash, no warning specific to it — the grid-layout
+    // fallback only triggers when *no* shape in the document has DI at all).
+    expect(diagram.nodes.b).toBeDefined();
+
+    // A well-formed shape elsewhere in the same document is unaffected.
+    expect(diagram.nodes.c.x).toBe(200);
+    expect(diagram.nodes.c.y).toBe(80);
+  });
+
   it('throws readable errors for invalid documents', () => {
     const converter = new BpmnXmlConverter();
     expect(() => converter.fromXml('not xml at all')).toThrow(BpmnParseError);

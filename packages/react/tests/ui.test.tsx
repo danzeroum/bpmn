@@ -140,4 +140,64 @@ describe('resize handles', () => {
     expect(container.querySelector('[data-resize-handles]')).toBeInTheDocument();
     expect(container.querySelectorAll('[data-resize-corner]')).toHaveLength(4);
   });
+
+  function bodyRect(container: HTMLElement, nodeId: string): Element {
+    // The shape's own body <rect> always renders first, before the
+    // selection outline and the resize-handle rects.
+    return container.querySelector(`[data-node-id="${nodeId}"] rect`)!;
+  }
+
+  function selectAndGrabCorner(container: HTMLElement, nodeId: string, corner: string) {
+    fireEvent.pointerDown(container.querySelector(`[data-node-id="${nodeId}"]`)!, { button: 0 });
+    fireEvent.pointerUp(container.querySelector('svg.bpmnr-canvas')!, { button: 0 });
+    return container.querySelector(`[data-node-id="${nodeId}"] [data-resize-corner="${corner}"]`)!;
+  }
+
+  it('dragging the south-east handle grows the node, and undo restores the exact size', () => {
+    const { container } = render(<BpmnEditor diagram={buildDiagram()} />);
+    expect(bodyRect(container, 'task1').getAttribute('width')).toBe('120');
+    expect(bodyRect(container, 'task1').getAttribute('height')).toBe('60');
+
+    const corner = selectAndGrabCorner(container, 'task1', 'se');
+    fireEvent.pointerDown(corner, { button: 0, clientX: 300, clientY: 100 });
+    fireEvent.pointerMove(corner, { clientX: 340, clientY: 120 }); // +40 x, +20 y — multiples of the 20px grid
+    fireEvent.pointerUp(corner, { button: 0, clientX: 340, clientY: 120 });
+
+    expect(bodyRect(container, 'task1').getAttribute('width')).toBe('160');
+    expect(bodyRect(container, 'task1').getAttribute('height')).toBe('80');
+
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+    expect(bodyRect(container, 'task1').getAttribute('width')).toBe('120');
+    expect(bodyRect(container, 'task1').getAttribute('height')).toBe('60');
+  });
+
+  it('dragging the north-west handle grows the node without moving its far edge', () => {
+    const { container } = render(<BpmnEditor diagram={buildDiagram()} />);
+    const corner = selectAndGrabCorner(container, 'task1', 'nw');
+    fireEvent.pointerDown(corner, { button: 0, clientX: 160, clientY: 30 });
+    fireEvent.pointerMove(corner, { clientX: 120, clientY: 10 }); // -40 x, -20 y
+    fireEvent.pointerUp(corner, { button: 0, clientX: 120, clientY: 10 });
+
+    const g = container.querySelector('[data-node-id="task1"]')!;
+    expect(g.getAttribute('transform')).toBe('translate(120, 10)');
+    expect(bodyRect(container, 'task1').getAttribute('width')).toBe('160');
+    expect(bodyRect(container, 'task1').getAttribute('height')).toBe('80');
+  });
+
+  it('clamps to a 20px minimum instead of shrinking to zero or going negative', () => {
+    const { container } = render(<BpmnEditor diagram={buildDiagram()} />);
+    const corner = selectAndGrabCorner(container, 'task1', 'se');
+    fireEvent.pointerDown(corner, { button: 0, clientX: 300, clientY: 100 });
+    fireEvent.pointerMove(corner, { clientX: -2000, clientY: -2000 }); // absurd inward drag
+    fireEvent.pointerUp(corner, { button: 0, clientX: -2000, clientY: -2000 });
+
+    expect(bodyRect(container, 'task1').getAttribute('width')).toBe('20');
+    expect(bodyRect(container, 'task1').getAttribute('height')).toBe('20');
+  });
+
+  it('does nothing in read-only mode (no handles, no resize)', () => {
+    const { container } = render(<BpmnDesigner diagram={buildDiagram()} readOnly />);
+    fireEvent.pointerDown(container.querySelector('[data-node-id="task1"]')!, { button: 0 });
+    expect(container.querySelector('[data-resize-handles]')).not.toBeInTheDocument();
+  });
 });
