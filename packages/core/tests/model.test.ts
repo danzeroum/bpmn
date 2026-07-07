@@ -11,13 +11,15 @@ import {
 } from '../src/index.js';
 
 describe('NodeTypeRegistry', () => {
-  it('registers the 17 built-in BPMN types', () => {
+  it('registers the 19 built-in BPMN types', () => {
     const registry = createDefaultRegistry();
-    expect(registry.list()).toHaveLength(17);
+    expect(registry.list()).toHaveLength(19);
     expect(registry.has('startEvent')).toBe(true);
     expect(registry.has('intermediateCatchEvent')).toBe(true);
     expect(registry.has('intermediateThrowEvent')).toBe(true);
     expect(registry.has('boundaryEvent')).toBe(true);
+    expect(registry.has('eventBasedGateway')).toBe(true);
+    expect(registry.has('group')).toBe(true);
     expect(registry.has('exclusiveGateway')).toBe(true);
     expect(registry.has('pool')).toBe(true);
     expect(registry.has('lane')).toBe(true);

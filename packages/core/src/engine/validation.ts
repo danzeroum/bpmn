@@ -67,7 +67,7 @@ export const missingStartEventRule: ValidationRule = (diagram) => {
   ];
 };
 
-const NON_FLOW_TYPES = new Set(['textAnnotation', 'dataObject']);
+const NON_FLOW_TYPES = new Set(['textAnnotation', 'dataObject', 'group']);
 
 /** Flow nodes (other than start events) should be reachable. Containers
  * (pools/lanes) are visual grouping, not flow — never flagged. Boundary events
