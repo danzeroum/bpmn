@@ -30,12 +30,12 @@ export function App() {
     try {
       const { diagram: imported, warnings } = converter.fromXml(text);
       if (warnings.length > 0) {
-        // eslint-disable-next-line no-alert
+         
         alert(`Imported with warnings:\n${warnings.join('\n')}`);
       }
       replaceFromOutside(imported);
     } catch (error) {
-      // eslint-disable-next-line no-alert
+       
       alert(`Import failed: ${(error as Error).message}`);
     }
   };
