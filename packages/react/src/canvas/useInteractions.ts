@@ -6,6 +6,7 @@ import {
   createEdge,
   getAnchorPoint,
   moveNodeCommand,
+  resizeNodeCommand,
   rectCenter,
   rectsIntersect,
   snapToGrid,
@@ -14,6 +15,7 @@ import {
 } from '@bpmn-react/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
+import type { ResizeCorner } from '../state/canvasStore.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { panViewport, screenToWorld } from './viewport.js';
 
@@ -119,6 +121,22 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
     [store, world],
   );
 
+  /** Resize-handle pointerdown → begin a resize gesture. */
+  const onResizePointerDown = useCallback(
+    (event: ReactPointerEvent, nodeId: string, corner: ResizeCorner) => {
+      if (store.getState().readOnly || !isPrimaryButton(event)) return;
+      event.stopPropagation();
+      const node = diagramRef.current.nodes[nodeId];
+      if (!node) return;
+      const rect = { x: node.x, y: node.y, width: node.width, height: node.height };
+      store.setState({
+        resizeState: { nodeId, corner, initial: rect, origin: world(event), current: rect },
+      });
+      (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
+    },
+    [store, world],
+  );
+
   /** Empty-canvas pointerdown → pan (middle button / space) or lasso (left). */
   const onCanvasPointerDown = useCallback(
     (event: ReactPointerEvent) => {
@@ -174,6 +192,31 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
             dy = snapToGrid(dy, state.gridSize);
           }
           store.setState({ dragState: { ...state.dragState, dx, dy, active } });
+          return;
+        }
+
+        if (state.resizeState) {
+          const point = world({ clientX, clientY });
+          const { initial, corner, origin } = state.resizeState;
+          let dx = point.x - origin.x;
+          let dy = point.y - origin.y;
+          if (state.snapEnabled) {
+            dx = snapToGrid(dx, state.gridSize);
+            dy = snapToGrid(dy, state.gridSize);
+          }
+          const MIN = 20;
+          let { x, y, width, height } = initial;
+          if (corner.includes('e')) width = Math.max(MIN, initial.width + dx);
+          if (corner.includes('s')) height = Math.max(MIN, initial.height + dy);
+          if (corner.includes('w')) {
+            width = Math.max(MIN, initial.width - dx);
+            x = initial.x + initial.width - width;
+          }
+          if (corner.includes('n')) {
+            height = Math.max(MIN, initial.height - dy);
+            y = initial.y + initial.height - height;
+          }
+          store.setState({ resizeState: { ...state.resizeState, current: { x, y, width, height } } });
           return;
         }
 
@@ -265,6 +308,20 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
         return;
       }
 
+      if (state.resizeState) {
+        const { nodeId, initial, current } = state.resizeState;
+        store.setState({ resizeState: null });
+        if (
+          current.x !== initial.x ||
+          current.y !== initial.y ||
+          current.width !== initial.width ||
+          current.height !== initial.height
+        ) {
+          execute(resizeNodeCommand(nodeId, initial, current));
+        }
+        return;
+      }
+
       if (state.connectState) {
         const { sourceId } = state.connectState;
         const point = world(event);
@@ -320,7 +377,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
 
   const cancelGestures = useCallback(() => {
     panSession.current = null;
-    store.setState({ dragState: null, connectState: null, selectionBox: null, isPanning: false });
+    store.setState({ dragState: null, connectState: null, selectionBox: null, resizeState: null, isPanning: false });
   }, [store]);
 
   /** Space key toggles pan mode for left-button drags. */
@@ -333,6 +390,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
     () => ({
       onNodePointerDown,
       onPortPointerDown,
+      onResizePointerDown,
       onCanvasPointerDown,
       onPointerMove,
       onPointerUp,
@@ -346,6 +404,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
     [
       onNodePointerDown,
       onPortPointerDown,
+      onResizePointerDown,
       onCanvasPointerDown,
       onPointerMove,
       onPointerUp,

@@ -15,6 +15,8 @@ export interface NodeRendererProps {
   dx: number;
   dy: number;
   connectHover: 'valid' | 'invalid' | null;
+  /** Live rect override while a resize gesture is in progress. */
+  resizeRect: { x: number; y: number; width: number; height: number } | null;
 }
 
 function NodeRendererInner({
@@ -25,14 +27,18 @@ function NodeRendererInner({
   dx,
   dy,
   connectHover,
+  resizeRect,
 }: NodeRendererProps) {
   const config = useEditorConfig();
   const Shape = config.shapes[node.type] ?? DefaultShape;
   const closed = node.removedInVersion !== undefined;
+  const rendered = resizeRect
+    ? { ...node, x: resizeRect.x, y: resizeRect.y, width: resizeRect.width, height: resizeRect.height }
+    : node;
 
   return (
     <g
-      transform={`translate(${node.x + dx}, ${node.y + dy})`}
+      transform={`translate(${rendered.x + dx}, ${rendered.y + dy})`}
       data-node-id={node.id}
       data-node-type={node.type}
       role="button"
@@ -41,14 +47,14 @@ function NodeRendererInner({
       style={{ cursor: editable ? 'grab' : 'default' }}
       onPointerDown={editable ? (e) => interactions.onNodePointerDown(e, node.id) : undefined}
     >
-      <Shape node={node} selected={selected} />
+      <Shape node={rendered} selected={selected} />
 
       {connectHover && (
         <rect
           x={-4}
           y={-4}
-          width={node.width + 8}
-          height={node.height + 8}
+          width={rendered.width + 8}
+          height={rendered.height + 8}
           rx={8}
           fill="none"
           stroke={connectHover === 'valid' ? theme.strokeSelected : 'var(--bpmnr-danger, #b3372f)'}
@@ -62,8 +68,8 @@ function NodeRendererInner({
         <rect
           x={-4}
           y={-4}
-          width={node.width + 8}
-          height={node.height + 8}
+          width={rendered.width + 8}
+          height={rendered.height + 8}
           rx={8}
           fill="none"
           stroke={theme.strokeSelected}
@@ -74,7 +80,10 @@ function NodeRendererInner({
       )}
 
       {editable && selected && (
-        <ConnectionPorts node={node} interactions={interactions} />
+        <>
+          <ConnectionPorts node={rendered} interactions={interactions} />
+          <ResizeHandles node={rendered} nodeId={node.id} interactions={interactions} />
+        </>
       )}
     </g>
   );
@@ -114,6 +123,44 @@ function ConnectionPorts({
   );
 }
 
+function ResizeHandles({
+  node,
+  nodeId,
+  interactions,
+}: {
+  node: { width: number; height: number };
+  nodeId: string;
+  interactions: Interactions;
+}) {
+  const size = 7;
+  const corners = [
+    { corner: 'nw' as const, x: 0, y: 0, cursor: 'nwse-resize' },
+    { corner: 'ne' as const, x: node.width, y: 0, cursor: 'nesw-resize' },
+    { corner: 'sw' as const, x: 0, y: node.height, cursor: 'nesw-resize' },
+    { corner: 'se' as const, x: node.width, y: node.height, cursor: 'nwse-resize' },
+  ];
+  return (
+    <g data-resize-handles>
+      {corners.map(({ corner, x, y, cursor }) => (
+        <rect
+          key={corner}
+          x={x - size / 2}
+          y={y - size / 2}
+          width={size}
+          height={size}
+          fill="var(--bpmnr-port, #ffffff)"
+          stroke={theme.strokeSelected}
+          strokeWidth={1.2}
+          style={{ cursor }}
+          data-resize-corner={corner}
+          aria-label={`Resize ${corner}`}
+          onPointerDown={(e) => interactions.onResizePointerDown(e, nodeId, corner)}
+        />
+      ))}
+    </g>
+  );
+}
+
 export const NodeRenderer = memo(NodeRendererInner);
 
 /** Connects a node id to its slice of canvas state, keeping renders granular. */
@@ -138,6 +185,9 @@ export function ConnectedNode({
         : ('valid' as const)
       : null,
   );
+  const resizeRect = useCanvasState((s) =>
+    s.resizeState?.nodeId === node.id ? s.resizeState.current : null,
+  );
 
   return (
     <NodeRenderer
@@ -148,6 +198,7 @@ export function ConnectedNode({
       dx={drag?.dx ?? 0}
       dy={drag?.dy ?? 0}
       connectHover={connectHover}
+      resizeRect={resizeRect}
     />
   );
 }

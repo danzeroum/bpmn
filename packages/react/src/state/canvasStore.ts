@@ -34,6 +34,18 @@ export interface SelectionBoxState {
   current: Point;
 }
 
+export type ResizeCorner = 'nw' | 'ne' | 'sw' | 'se';
+
+export interface ResizeState {
+  nodeId: string;
+  corner: ResizeCorner;
+  /** Node rect when the gesture started. */
+  initial: { x: number; y: number; width: number; height: number };
+  origin: Point;
+  /** Live rect applied visually while resizing. */
+  current: { x: number; y: number; width: number; height: number };
+}
+
 export interface CanvasState {
   viewport: Viewport;
   selectedIds: string[];
@@ -41,6 +53,7 @@ export interface CanvasState {
   dragState: DragState | null;
   connectState: ConnectState | null;
   selectionBox: SelectionBoxState | null;
+  resizeState: ResizeState | null;
   isPanning: boolean;
   gridSize: number;
   snapEnabled: boolean;
@@ -60,6 +73,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     dragState: null,
     connectState: null,
     selectionBox: null,
+    resizeState: null,
     isPanning: false,
     gridSize: 20,
     snapEnabled: true,
