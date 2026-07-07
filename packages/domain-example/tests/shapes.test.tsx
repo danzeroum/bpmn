@@ -29,8 +29,10 @@ const EXPECTATIONS: Expectation[] = [
     type: 'btv:squad',
     label: 'Content',
     check: (root) => {
-      expect(root.querySelectorAll('rect')).toHaveLength(1);
+      // Card body is a chamfered <path> (value chamfer), not a plain rect.
+      expect(root.querySelectorAll('rect')).toHaveLength(0);
       expect(root.querySelectorAll('circle')).toHaveLength(2); // two team-member heads
+      expect(root.textContent).toContain('SQUAD'); // type tag (small-caps)
     },
   },
   {
@@ -49,8 +51,12 @@ const EXPECTATIONS: Expectation[] = [
     properties: { approved: false },
     check: (root) => {
       expect(root.querySelectorAll('polygon')).toHaveLength(1);
-      expect(root.textContent).toContain('✋');
-      expect(root.textContent).not.toContain('✓');
+      // Glyph is drawn (pause bars), not an emoji; the state is conveyed by the
+      // accessible <title> so recognition survives the emoji-to-glyph swap.
+      expect(root.querySelector('title')?.textContent).toBe('aguardando aprovação');
+      // Two pause bars + the central ring, no approval check.
+      expect(root.querySelectorAll('circle')).toHaveLength(1);
+      expect(root.querySelectorAll('path')).toHaveLength(1);
     },
   },
   {
@@ -59,16 +65,19 @@ const EXPECTATIONS: Expectation[] = [
     properties: { approved: true },
     check: (root) => {
       expect(root.querySelectorAll('polygon')).toHaveLength(1);
-      expect(root.textContent).toContain('✓');
-      expect(root.textContent).not.toContain('✋');
+      expect(root.querySelector('title')?.textContent).toBe('aprovado');
+      expect(root.querySelectorAll('circle')).toHaveLength(1);
+      expect(root.querySelectorAll('path')).toHaveLength(1); // check mark
     },
   },
   {
     type: 'btv:prompt',
     label: 'Draft',
     check: (root) => {
-      expect(root.querySelectorAll('rect')).toHaveLength(1);
-      expect(root.querySelectorAll('line')).toHaveLength(2);
+      // Note body is a <path> with a paper fold (the fold is the type chamfer).
+      expect(root.querySelectorAll('rect')).toHaveLength(0);
+      expect(root.querySelectorAll('line')).toHaveLength(2); // two text hairlines
+      expect(root.textContent).toContain('PROMPT'); // type tag
     },
   },
   {
@@ -85,7 +94,8 @@ const EXPECTATIONS: Expectation[] = [
     label: 'Post',
     check: (root) => {
       expect(root.querySelectorAll('rect')).toHaveLength(0);
-      expect(root.querySelectorAll('path')).toHaveLength(1); // flag/banner outline
+      // Pennant outline + inner offset fillet (value "packaged").
+      expect(root.querySelectorAll('path')).toHaveLength(2);
     },
   },
 ];

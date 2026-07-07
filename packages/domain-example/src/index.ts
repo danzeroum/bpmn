@@ -8,6 +8,7 @@ import {
 } from '@bpmn-react/core';
 import type { BpmnPlugin } from '@bpmn-react/react';
 import {
+  BTV_PALETTE_ICONS,
   ConnectorShape,
   DeliverableShape,
   GateShape,
@@ -112,12 +113,12 @@ export const domainExamplePlugin: BpmnPlugin = {
     'btv:deliverable': DeliverableShape,
   },
   paletteItems: [
-    { id: 'btv-squad', label: 'Squad', nodeType: 'btv:squad', icon: '⬚' },
-    { id: 'btv-persona', label: 'Persona', nodeType: 'btv:persona', icon: '👤', defaultProperties: { role: '' } },
-    { id: 'btv-gate', label: 'Approval Gate', nodeType: 'btv:gate', icon: '✋', defaultProperties: { approved: false } },
-    { id: 'btv-prompt', label: 'Prompt', nodeType: 'btv:prompt', icon: '📝' },
-    { id: 'btv-connector', label: 'Connector', nodeType: 'btv:connector', icon: '🔌' },
-    { id: 'btv-deliverable', label: 'Deliverable', nodeType: 'btv:deliverable', icon: '🏁' },
+    { id: 'btv-squad', label: 'Squad', nodeType: 'btv:squad', icon: BTV_PALETTE_ICONS['btv:squad'] },
+    { id: 'btv-persona', label: 'Persona', nodeType: 'btv:persona', icon: BTV_PALETTE_ICONS['btv:persona'], defaultProperties: { role: '' } },
+    { id: 'btv-gate', label: 'Approval Gate', nodeType: 'btv:gate', icon: BTV_PALETTE_ICONS['btv:gate'], defaultProperties: { approved: false } },
+    { id: 'btv-prompt', label: 'Prompt', nodeType: 'btv:prompt', icon: BTV_PALETTE_ICONS['btv:prompt'] },
+    { id: 'btv-connector', label: 'Connector', nodeType: 'btv:connector', icon: BTV_PALETTE_ICONS['btv:connector'] },
+    { id: 'btv-deliverable', label: 'Deliverable', nodeType: 'btv:deliverable', icon: BTV_PALETTE_ICONS['btv:deliverable'] },
   ],
   validationRules: [gateSinglePredecessorRule, squadNeedsPersonaRule, handoffNeedsPurposeRule],
   registerRules: (engine) => {
