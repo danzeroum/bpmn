@@ -38,6 +38,7 @@ releases.
 | `definitions`, `process` | ✓ | ✓ | one process per document |
 | `startEvent`, `endEvent` | ✓ | ✓ | typed via `eventDefinition` (see below) |
 | `intermediateCatchEvent`, `intermediateThrowEvent` | ✓ | ✓ | typed via `eventDefinition` |
+| `boundaryEvent` | ✓ | ✓ | `attachedToRef` + `cancelActivity` (see below) |
 | `messageEventDefinition`, `timerEventDefinition`, … | ✓ | ✓ | event definition child (see below) |
 | `task`, `userTask`, `serviceTask`, `scriptTask` | ✓ | ✓ | |
 | `exclusiveGateway`, `parallelGateway`, `inclusiveGateway` | ✓ | ✓ | |
@@ -51,7 +52,7 @@ releases.
 | `bpmndi:BPMNDiagram/Plane/Shape` + `dc:Bounds` | ✓ | ✓ | node coordinates (`isHorizontal` on pools/lanes) |
 | `bpmndi:BPMNEdge` + `di:waypoint` | ✓ | ✓ | edge routing (computed orthogonally when absent) |
 | `extensionElements` | ✓ | ✓ | see below |
-| anything else (`boundaryEvent`, `callActivity`, `eventBasedGateway`, …) | warning, skipped | – | roadmap |
+| anything else (`callActivity`, `eventBasedGateway`, `group`, …) | warning, skipped | – | roadmap |
 
 Documents without DI import with an automatic grid layout (and a warning).
 
@@ -69,6 +70,21 @@ round-trip losslessly. On import, a recognized `<bpmn:*EventDefinition/>` child 
 <bpmn:startEvent id="Start_1" name="Order received">
   <bpmn:messageEventDefinition id="Start_1_def"/>
 </bpmn:startEvent>
+```
+
+### Boundary events
+
+A `boundaryEvent` attaches to a host activity via the native `attachedToRef` attribute
+and stores it under `properties.attachedToRef`; `cancelActivity="false"` (stored as
+`properties.cancelActivity = false`) marks a non-interrupting boundary (dashed border).
+Its `eventDefinition` works exactly as for other events. In the editor a boundary event
+rides along when its host is moved. Attaching by drag-and-drop onto an activity and
+sliding along the host border on resize are tracked in `pendencias.md`.
+
+```xml
+<bpmn:boundaryEvent id="Boundary_1" name="Timeout" attachedToRef="Task_1" cancelActivity="false">
+  <bpmn:timerEventDefinition id="Boundary_1_def"/>
+</bpmn:boundaryEvent>
 ```
 
 ## Pools & lanes

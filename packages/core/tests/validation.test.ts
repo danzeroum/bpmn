@@ -64,6 +64,35 @@ describe('ValidationEngine', () => {
     expect(result.issues.some((i) => i.nodeId === 'note')).toBe(false);
   });
 
+  it('never flags an attached boundary event as unreachable', () => {
+    const diagram = build();
+    diagram.nodes.timeout = createNode({
+      type: 'boundaryEvent',
+      id: 'timeout',
+      label: 'Timeout',
+      properties: { attachedToRef: 'task' },
+    });
+    const result = new ValidationEngine().validate(diagram);
+    expect(result.issues.some((i) => i.nodeId === 'timeout' && i.code === 'UNREACHABLE_NODE')).toBe(
+      false,
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it('errors on a boundary event without a valid host', () => {
+    const diagram = build();
+    diagram.nodes.orphan = createNode({
+      type: 'boundaryEvent',
+      id: 'orphan',
+      label: 'Orphan',
+      properties: { attachedToRef: 'ghost' },
+    });
+    const result = new ValidationEngine().validate(diagram);
+    const issue = result.issues.find((i) => i.code === 'BOUNDARY_EVENT_WITHOUT_HOST');
+    expect(issue?.severity).toBe('error');
+    expect(result.valid).toBe(false);
+  });
+
   it('never flags pools/lanes as unreachable (containers are not flow nodes)', () => {
     const diagram = build();
     diagram.nodes.pool1 = createNode({ type: 'pool', id: 'pool1', label: 'P' });

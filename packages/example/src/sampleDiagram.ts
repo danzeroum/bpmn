@@ -26,6 +26,13 @@ export function buildSampleDiagram(): BpmnDiagram {
   const gate = make('btv:gate', 'gate', 'Editorial gate', 570, 250, { approved: false });
   const publish = make('btv:connector', 'publish', 'CMS publish', 740, 150);
   const deliverable = make('btv:deliverable', 'post', 'Published post', 930, 155);
+  // A non-interrupting timer boundary event on the publish step (publish times
+  // out without cancelling); rides along when the host is dragged.
+  const timeout = make('boundaryEvent', 'publishTimeout', 'Timeout', 812, 192, {
+    attachedToRef: 'publish',
+    eventDefinition: 'timer',
+    cancelActivity: false,
+  });
 
   diagram.nodes = {
     squad,
@@ -35,6 +42,7 @@ export function buildSampleDiagram(): BpmnDiagram {
     gate,
     publish,
     post: deliverable,
+    publishTimeout: timeout,
   };
 
   const edge = (

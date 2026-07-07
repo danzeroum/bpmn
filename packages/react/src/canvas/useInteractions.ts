@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, type PointerEvent as ReactPointerEvent } 
 import {
   activeNodes,
   addEdgeCommand,
+  attachedBoundaryEventIds,
   compositeCommand,
   createEdge,
   getAnchorPoint,
@@ -89,10 +90,15 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
         selectedIds = state.selectedIds.includes(nodeId) ? state.selectedIds : [nodeId];
       }
       const origin = world(event);
+      // A boundary event travels with its host: fold attached boundary events
+      // into the drag set so they move (and commit) together.
+      const base = selectedIds.includes(nodeId) ? selectedIds : [nodeId];
+      const attached = attachedBoundaryEventIds(diagramRef.current, base);
+      const nodeIds = attached.length ? [...new Set([...base, ...attached])] : base;
       store.setState({
         selectedIds,
         dragState: {
-          nodeIds: selectedIds.includes(nodeId) ? selectedIds : [nodeId],
+          nodeIds,
           origin,
           dx: 0,
           dy: 0,

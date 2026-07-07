@@ -1,6 +1,7 @@
 import {
   activeEdges,
   activeNodes,
+  boundaryAttachedTo,
   isContainerType,
   laneFlowNodeRefs,
   type BpmnDiagram,
@@ -69,12 +70,18 @@ export const missingStartEventRule: ValidationRule = (diagram) => {
 const NON_FLOW_TYPES = new Set(['textAnnotation', 'dataObject']);
 
 /** Flow nodes (other than start events) should be reachable. Containers
- * (pools/lanes) are visual grouping, not flow — never flagged. */
+ * (pools/lanes) are visual grouping, not flow — never flagged. Boundary events
+ * receive control from their host attachment, not an incoming sequence flow. */
 export const unreachableNodeRule: ValidationRule = (diagram) => {
   const issues: ValidationIssue[] = [];
   const edges = activeEdges(diagram);
   for (const node of activeNodes(diagram)) {
-    if (node.type === 'startEvent' || NON_FLOW_TYPES.has(node.type) || isContainerType(node.type))
+    if (
+      node.type === 'startEvent' ||
+      node.type === 'boundaryEvent' ||
+      NON_FLOW_TYPES.has(node.type) ||
+      isContainerType(node.type)
+    )
       continue;
     const hasIncoming = edges.some((e) => e.targetId === node.id);
     if (!hasIncoming) {
@@ -133,6 +140,24 @@ export const staleLaneRefRule: ValidationRule = (diagram) => {
   return issues;
 };
 
+/** Boundary events must attach to a host activity that exists in the flow. */
+export const boundaryEventHostRule: ValidationRule = (diagram) => {
+  const issues: ValidationIssue[] = [];
+  for (const node of activeNodes(diagram).filter((n) => n.type === 'boundaryEvent')) {
+    const host = boundaryAttachedTo(node);
+    const target = host ? diagram.nodes[host] : undefined;
+    if (!host || !target || target.removedInVersion) {
+      issues.push({
+        code: 'BOUNDARY_EVENT_WITHOUT_HOST',
+        severity: 'error',
+        message: `Boundary event "${node.label}" is not attached to a host activity`,
+        nodeId: node.id,
+      });
+    }
+  }
+  return issues;
+};
+
 /** Every node type must exist in the given registry. */
 export function unknownTypeRule(registry: NodeTypeRegistry): ValidationRule {
   return (diagram) =>
@@ -153,6 +178,7 @@ export const BUILT_IN_VALIDATION_RULES: ValidationRule[] = [
   unreachableNodeRule,
   eventFlowDirectionRule,
   staleLaneRefRule,
+  boundaryEventHostRule,
 ];
 
 /**

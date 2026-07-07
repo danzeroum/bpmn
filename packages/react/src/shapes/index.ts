@@ -1,5 +1,6 @@
 import type { ShapeComponent } from '../plugins/types.js';
 import {
+  BoundaryEventShape,
   DataObjectShape,
   DefaultShape,
   EndEventShape,
@@ -27,6 +28,7 @@ export const BUILT_IN_SHAPES: Record<string, ShapeComponent> = {
   endEvent: EndEventShape,
   intermediateCatchEvent: IntermediateCatchEventShape,
   intermediateThrowEvent: IntermediateThrowEventShape,
+  boundaryEvent: BoundaryEventShape,
   task: TaskShape,
   userTask: UserTaskShape,
   serviceTask: ServiceTaskShape,
