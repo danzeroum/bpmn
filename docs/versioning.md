@@ -65,3 +65,10 @@ const { valid, brokenAt } = await ledger.verify(); // recomputes the whole hash 
 Every entry hashes the previous entry's hash — retroactive tampering breaks the chain at the exact
 entry. `export()`/`AuditLedger.import()` round-trip the ledger through external storage and refuse
 to import a chain that does not verify.
+
+## Querying versions over time
+
+The lifecycle governs *transitions*; to ask temporal and rollout questions — "which version was in
+effect on day X?", "what's live on the pilot channel?", "which version produced this delivery?" —
+use [`@bpmn-react/registry`](registry.md), the queryable governance layer built on top of the
+lifecycle.
