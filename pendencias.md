@@ -72,6 +72,20 @@ de propósito:
   diferencial que ferramentas de modelagem puras não têm. Sinergia: os critérios de aprovação do
   Gate btv são candidatos naturais a decision table quando a F9 (DMN) chegar.
 
+## 6. Boundary events — interação de anexação (pós-F6 PR-B)
+
+O modelo, o round-trip XML (`attachedToRef` + `cancelActivity` + `eventDefinition`), o render
+(anel duplo sólido/tracejado) e o **ride-along** (arrastar o host move os boundary events
+anexados) já estão entregues. Ficaram para uma PR de interação dedicada:
+
+- **Anexar por drag-and-drop:** soltar um evento sobre a borda de uma activity define
+  `attachedToRef` e o posiciona na borda. Hoje o vínculo é criado por import ou via `properties`.
+- **Deslizar na borda e reflow no resize:** ancoragem por parâmetro `t ∈ [0,1]` por lado (§6.5 do
+  handoff) para o evento acompanhar o redimensionamento do host mantendo a posição relativa. Hoje o
+  boundary guarda coordenadas absolutas e só acompanha o *move* do host.
+- **Roteamento das saídas do boundary:** usar port-offset no roteador ortogonal (barato) antes do
+  A\* com desvio de obstáculos (já registrado no item 2).
+
 ## Resolvidas (para histórico)
 
 - ~~Lane membership manual/data-only~~ → interativa na Fase 5a.

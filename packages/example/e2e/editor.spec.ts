@@ -38,6 +38,22 @@ test('creates a node from the palette and undoes/redoes it', async ({ page }) =>
   await expect(page.locator('[data-node-id]')).toHaveCount(before + 1);
 });
 
+test('renders a boundary event that rides along when its host moves', async ({ page }) => {
+  const boundary = page.locator('[data-node-id="publishTimeout"]');
+  await expect(boundary).toBeVisible();
+  const before = await boundary.getAttribute('transform');
+
+  const host = page.locator('[data-node-id="publish"]');
+  const box = (await host.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 100, box.y + box.height / 2 + 40, { steps: 8 });
+  await page.mouse.up();
+
+  // The attached boundary event moved together with its host.
+  await expect.poll(async () => boundary.getAttribute('transform')).not.toBe(before);
+});
+
 test('adds a typed timer event from the palette', async ({ page }) => {
   await page.getByRole('button', { name: 'Add Timer Event' }).click();
   const timer = page.locator('[data-node-type="intermediateCatchEvent"]');

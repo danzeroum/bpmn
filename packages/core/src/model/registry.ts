@@ -75,6 +75,7 @@ export const BUILT_IN_NODE_TYPES: NodeTypeDefinition[] = [
   { type: 'endEvent', label: 'End Event', category: 'event', defaultSize: { width: 36, height: 36 }, xml: { tag: 'endEvent' } },
   { type: 'intermediateCatchEvent', label: 'Intermediate Catch', category: 'event', defaultSize: { width: 36, height: 36 }, xml: { tag: 'intermediateCatchEvent' } },
   { type: 'intermediateThrowEvent', label: 'Intermediate Throw', category: 'event', defaultSize: { width: 36, height: 36 }, xml: { tag: 'intermediateThrowEvent' } },
+  { type: 'boundaryEvent', label: 'Boundary Event', category: 'event', defaultSize: { width: 36, height: 36 }, xml: { tag: 'boundaryEvent' } },
   { type: 'task', label: 'Task', category: 'activity', defaultSize: { width: 120, height: 60 }, xml: { tag: 'task' } },
   { type: 'userTask', label: 'User Task', category: 'activity', defaultSize: { width: 120, height: 60 }, xml: { tag: 'userTask' } },
   { type: 'serviceTask', label: 'Service Task', category: 'activity', defaultSize: { width: 120, height: 60 }, xml: { tag: 'serviceTask' } },

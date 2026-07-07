@@ -154,11 +154,42 @@ export const EVENT_NODE_TYPES = [
   'endEvent',
   'intermediateCatchEvent',
   'intermediateThrowEvent',
+  'boundaryEvent',
 ] as const;
 
 /** True when `type` is one of the built-in event node types. */
 export function isEventType(type: string): boolean {
   return (EVENT_NODE_TYPES as readonly string[]).includes(type);
+}
+
+/**
+ * A boundary event is attached to a host activity via
+ * `properties.attachedToRef` and survives the host's move (see the editor's
+ * drag handling). Returns the host node id, if any.
+ */
+export function boundaryAttachedTo(node: BpmnNode): string | undefined {
+  return node.type === 'boundaryEvent' && typeof node.properties.attachedToRef === 'string'
+    ? node.properties.attachedToRef
+    : undefined;
+}
+
+/**
+ * A boundary event is interrupting (`cancelActivity`) by default; a
+ * `cancelActivity: false` property makes it non-interrupting (dashed border).
+ */
+export function isNonInterrupting(node: BpmnNode): boolean {
+  return node.type === 'boundaryEvent' && node.properties.cancelActivity === false;
+}
+
+/** Ids of boundary events attached to any of the given host node ids. */
+export function attachedBoundaryEventIds(diagram: BpmnDiagram, hostIds: Iterable<string>): string[] {
+  const hosts = new Set(hostIds);
+  return activeNodes(diagram)
+    .filter((n) => {
+      const ref = boundaryAttachedTo(n);
+      return ref !== undefined && hosts.has(ref);
+    })
+    .map((n) => n.id);
 }
 
 /** Returns the event-definition kind stored on a node, if it is a valid kind. */

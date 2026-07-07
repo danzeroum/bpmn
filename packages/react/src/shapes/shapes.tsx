@@ -1,5 +1,5 @@
 import type { EventDefinitionKind } from '@bpmn-react/core';
-import { eventDefinitionOf } from '@bpmn-react/core';
+import { eventDefinitionOf, isNonInterrupting } from '@bpmn-react/core';
 import type { ShapeProps } from '../plugins/types.js';
 import { ActivityBox, ShapeLabel, strokeFor, strokeWidthFor, theme } from './common.js';
 
@@ -135,6 +135,27 @@ export function IntermediateCatchEventShape(props: ShapeProps) {
 
 export function IntermediateThrowEventShape(props: ShapeProps) {
   return <IntermediateEventShape {...props} throwing />;
+}
+
+/**
+ * Boundary event: a double-ring catch event that sits on its host's border.
+ * Interrupting draws solid rings; non-interrupting (`cancelActivity: false`)
+ * draws dashed rings.
+ */
+export function BoundaryEventShape({ node, selected }: ShapeProps) {
+  const r = Math.min(node.width, node.height) / 2;
+  const cx = node.width / 2;
+  const cy = node.height / 2;
+  const kind = eventDefinitionOf(node);
+  const dash = isNonInterrupting(node) ? '3,2' : undefined;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={r} fill={theme.fillEvent} stroke={strokeFor(selected)} strokeWidth={strokeWidthFor(selected)} strokeDasharray={dash} />
+      <circle cx={cx} cy={cy} r={Math.max(2, r - 3)} fill="none" stroke={strokeFor(selected)} strokeWidth={strokeWidthFor(selected)} strokeDasharray={dash} />
+      {kind && eventGlyph(kind, cx, cy, r, false)}
+      <ShapeLabel label={node.label} width={node.width} y={node.height + 16} fontSize={11} color={theme.textMuted} maxLines={2} />
+    </g>
+  );
 }
 
 export function TaskShape(props: ShapeProps) {

@@ -167,6 +167,44 @@ describe('BpmnXmlConverter round-trip', () => {
     const after = JSON.stringify(normalizeForDiff(imported));
     expect(after).toBe(before);
   });
+
+  it('round-trips boundary events (attachedToRef + cancelActivity + kind)', () => {
+    const converter = new BpmnXmlConverter();
+    const diagram = createDiagram({ name: 'Boundary', id: 'bnd' });
+    diagram.nodes = {
+      task: createNode({ type: 'task', id: 'task', label: 'Do work', x: 40, y: 40 }),
+      timeout: createNode({
+        type: 'boundaryEvent',
+        id: 'timeout',
+        x: 90,
+        y: 68,
+        properties: { attachedToRef: 'task', eventDefinition: 'timer' },
+      }),
+      msg: createNode({
+        type: 'boundaryEvent',
+        id: 'msg',
+        x: 130,
+        y: 68,
+        properties: { attachedToRef: 'task', eventDefinition: 'message', cancelActivity: false },
+      }),
+    };
+
+    const xml = converter.toXml(diagram);
+    expect(xml).toContain('<bpmn:boundaryEvent id="timeout"');
+    expect(xml).toContain('attachedToRef="task"');
+    expect(xml).toContain('cancelActivity="false"'); // non-interrupting
+    expect(xml).toContain('<bpmn:timerEventDefinition');
+    expect(xml).not.toContain('name="attachedToRef"'); // not double-encoded as a property
+
+    const { diagram: imported, warnings } = converter.fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(imported.nodes.timeout.properties.attachedToRef).toBe('task');
+    expect(imported.nodes.timeout.properties.cancelActivity).toBeUndefined(); // interrupting default
+    expect(imported.nodes.msg.properties.cancelActivity).toBe(false);
+    const before = JSON.stringify(normalizeForDiff(diagram));
+    const after = JSON.stringify(normalizeForDiff(imported));
+    expect(after).toBe(before);
+  });
 });
 
 describe('BpmnXmlConverter — pools & lanes', () => {
@@ -389,6 +427,33 @@ describe('BpmnXmlConverter.fromXml — external documents', () => {
     expect(diagram.nodes.w1.properties.eventDefinition).toBe('timer');
     expect(diagram.nodes.e1.type).toBe('endEvent');
     expect(diagram.nodes.e1.properties.eventDefinition).toBe('terminate');
+  });
+
+  it('imports a Camunda boundary event without warnings', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  id="defs" targetNamespace="http://example.com">
+  <bpmn2:process id="proc_1" name="Boundary import">
+    <bpmn2:task id="t1" name="Work"/>
+    <bpmn2:boundaryEvent id="b1" name="Timeout" attachedToRef="t1" cancelActivity="false">
+      <bpmn2:timerEventDefinition id="b1_def"/>
+    </bpmn2:boundaryEvent>
+  </bpmn2:process>
+  <bpmndi:BPMNDiagram id="d1">
+    <bpmndi:BPMNPlane id="p1" bpmnElement="proc_1">
+      <bpmndi:BPMNShape id="t1_di" bpmnElement="t1"><dc:Bounds x="40" y="40" width="120" height="60"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="b1_di" bpmnElement="b1"><dc:Bounds x="142" y="82" width="36" height="36"/></bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn2:definitions>`;
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(diagram.nodes.b1.type).toBe('boundaryEvent');
+    expect(diagram.nodes.b1.properties.attachedToRef).toBe('t1');
+    expect(diagram.nodes.b1.properties.cancelActivity).toBe(false);
+    expect(diagram.nodes.b1.properties.eventDefinition).toBe('timer');
   });
 
   it('warns about unsupported elements instead of failing', () => {

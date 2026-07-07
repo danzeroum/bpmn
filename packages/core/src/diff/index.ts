@@ -133,6 +133,11 @@ export interface NormalizedDiagramContent {
  * metadata stripped. Used to verify XML round-trips.
  */
 export function normalizeForDiff(diagram: BpmnDiagram): NormalizedDiagramContent {
+  // Canonicalize property key order so a round-trip that preserves values but
+  // reorders keys (e.g. import building `properties` in a different order than
+  // creation) compares equal.
+  const canonProps = (props: Record<string, unknown>): Record<string, unknown> =>
+    JSON.parse(canonicalJson(props)) as Record<string, unknown>;
   const nodes = Object.values(diagram.nodes)
     .map((n) => ({
       id: n.id,
@@ -142,7 +147,7 @@ export function normalizeForDiff(diagram: BpmnDiagram): NormalizedDiagramContent
       y: roundCoord(n.y),
       width: roundCoord(n.width),
       height: roundCoord(n.height),
-      properties: n.properties,
+      properties: canonProps(n.properties),
       ...(n.removedInVersion ? { removedInVersion: n.removedInVersion } : {}),
     }))
     .sort((a, b) => (a.id < b.id ? -1 : 1));
@@ -154,7 +159,7 @@ export function normalizeForDiff(diagram: BpmnDiagram): NormalizedDiagramContent
       targetId: e.targetId,
       ...(e.label !== undefined && e.label !== '' ? { label: e.label } : {}),
       ...(e.purpose !== undefined && e.purpose !== '' ? { purpose: e.purpose } : {}),
-      properties: e.properties,
+      properties: canonProps(e.properties),
       ...(e.removedInVersion ? { removedInVersion: e.removedInVersion } : {}),
       ...(e.supersedesEdgeId ? { supersedesEdgeId: e.supersedesEdgeId } : {}),
     }))

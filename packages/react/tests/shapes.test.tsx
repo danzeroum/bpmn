@@ -4,7 +4,7 @@ import { createDiagram, createNode } from '@bpmn-react/core';
 import { BpmnViewer } from '../src/index.js';
 
 /**
- * Renders every one of the 16 built-in BPMN shapes at least once and checks
+ * Renders every one of the 17 built-in BPMN shapes at least once and checks
  * a couple of type-specific visual properties, so a rendering refactor that
  * silently breaks an untouched shape is caught.
  */
@@ -34,6 +34,11 @@ const EXPECTATIONS: Expectation[] = [
     type: 'intermediateThrowEvent',
     label: 'Signal',
     check: (root) => expect(root.querySelectorAll('circle')).toHaveLength(2), // double ring
+  },
+  {
+    type: 'boundaryEvent',
+    label: 'Timeout',
+    check: (root) => expect(root.querySelectorAll('circle')).toHaveLength(2), // double ring on border
   },
   {
     type: 'task',
@@ -162,9 +167,10 @@ describe('built-in shapes render correctly', () => {
     expect(msg.querySelectorAll('rect').length).toBeGreaterThan(0);
   });
 
-  it('covers exactly the 16 registered built-in types (fails loudly if one is added without a fixture)', () => {
+  it('covers exactly the 17 registered built-in types (fails loudly if one is added without a fixture)', () => {
     expect(EXPECTATIONS.map((e) => e.type).sort()).toEqual(
       [
+        'boundaryEvent',
         'dataObject',
         'endEvent',
         'exclusiveGateway',

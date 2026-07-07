@@ -194,9 +194,25 @@ export class BpmnXmlConverter {
     // Event kind travels as the standard <bpmn:{kind}EventDefinition/> child, not
     // as a bpmnr:property, so it interoperates and is not double-encoded.
     const eventDef = eventDefinitionOf(node);
-    const propEntries = Object.entries(node.properties).filter(
-      ([key]) => !(eventDef && key === 'eventDefinition'),
-    );
+    // Boundary events carry their host + interrupting flag as native BPMN
+    // attributes (attachedToRef / cancelActivity), not as bpmnr:property.
+    const isBoundary = node.type === 'boundaryEvent';
+    const attachedToRef =
+      isBoundary && typeof node.properties.attachedToRef === 'string'
+        ? node.properties.attachedToRef
+        : undefined;
+    const nonInterrupting = isBoundary && node.properties.cancelActivity === false;
+    const reserved = new Set<string>();
+    if (eventDef) reserved.add('eventDefinition');
+    if (attachedToRef !== undefined) reserved.add('attachedToRef');
+    if (nonInterrupting) reserved.add('cancelActivity');
+    const propEntries = Object.entries(node.properties).filter(([key]) => !reserved.has(key));
+    const attrs = {
+      id: node.id,
+      name: node.label,
+      attachedToRef,
+      cancelActivity: nonInterrupting ? 'false' : undefined,
+    };
     const needsMeta =
       node.type !== tag ||
       node.removedInVersion !== undefined ||
@@ -204,10 +220,10 @@ export class BpmnXmlConverter {
       node.createdInVersion !== '0';
 
     if (!needsMeta && eventDef === undefined) {
-      xml.element(`bpmn:${tag}`, { id: node.id, name: node.label });
+      xml.element(`bpmn:${tag}`, attrs);
       return;
     }
-    xml.open(`bpmn:${tag}`, { id: node.id, name: node.label });
+    xml.open(`bpmn:${tag}`, attrs);
     if (needsMeta) {
       xml.open('bpmn:extensionElements');
       xml.element(`${p}:meta`, {
@@ -444,6 +460,11 @@ export class BpmnXmlConverter {
     // Standard <bpmn:{kind}EventDefinition/> child → properties.eventDefinition.
     const eventDef = readEventDefinition(el);
     if (eventDef) properties.eventDefinition = eventDef;
+    // Boundary event host + interrupting flag from native attributes.
+    if (type === 'boundaryEvent') {
+      if (el.attributes.attachedToRef) properties.attachedToRef = el.attributes.attachedToRef;
+      if (el.attributes.cancelActivity === 'false') properties.cancelActivity = false;
+    }
     const def = this.registry.get(type);
     return {
       id: el.attributes.id ?? generateId(),
