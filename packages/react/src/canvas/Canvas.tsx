@@ -44,7 +44,7 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
     return () => svg.removeEventListener('wheel', onWheel);
   }, [store]);
 
-  const nodes = showClosed ? Object.values(diagram.nodes) : activeNodes(diagram);
+  const nodes = orderByZ(showClosed ? Object.values(diagram.nodes) : activeNodes(diagram));
   const edges = showClosed ? Object.values(diagram.edges) : activeEdges(diagram);
 
   return (
@@ -93,4 +93,14 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
 function swallowReactWheel(event: WheelEvent) {
   // Real handling happens in the non-passive native listener above.
   event.stopPropagation();
+}
+
+/**
+ * Draws swimlane containers (pools, then lanes) behind flow nodes so the flow
+ * always paints — and stays clickable — on top. Order within each group is
+ * preserved (JS sort is stable).
+ */
+function orderByZ<T extends { type: string }>(nodes: T[]): T[] {
+  const rank = (type: string) => (type === 'pool' ? 0 : type === 'lane' ? 1 : 2);
+  return [...nodes].sort((a, b) => rank(a.type) - rank(b.type));
 }

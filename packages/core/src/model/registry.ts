@@ -1,7 +1,14 @@
 import type { Size } from './types.js';
 import { BpmnValidationError } from './errors.js';
 
-export type NodeCategory = 'event' | 'activity' | 'gateway' | 'data' | 'artifact' | 'custom';
+export type NodeCategory =
+  | 'event'
+  | 'activity'
+  | 'gateway'
+  | 'data'
+  | 'artifact'
+  | 'container'
+  | 'custom';
 
 export interface NodeTypeDefinition {
   /** Type key stored on nodes, e.g. 'userTask' or a custom 'myDomain:thing'. */
@@ -76,6 +83,8 @@ export const BUILT_IN_NODE_TYPES: NodeTypeDefinition[] = [
   { type: 'subProcess', label: 'Sub-Process', category: 'activity', defaultSize: { width: 200, height: 120 }, xml: { tag: 'subProcess' } },
   { type: 'dataObject', label: 'Data Object', category: 'data', defaultSize: { width: 36, height: 50 }, xml: { tag: 'dataObjectReference' } },
   { type: 'textAnnotation', label: 'Text Annotation', category: 'artifact', defaultSize: { width: 120, height: 40 }, xml: { tag: 'textAnnotation' } },
+  { type: 'pool', label: 'Pool', category: 'container', defaultSize: { width: 600, height: 250 }, xml: { tag: 'participant' } },
+  { type: 'lane', label: 'Lane', category: 'container', defaultSize: { width: 570, height: 120 }, xml: { tag: 'lane' } },
 ];
 
 /** Creates a registry pre-populated with the standard BPMN node types. */

@@ -142,6 +142,94 @@ describe('BpmnXmlConverter round-trip', () => {
   });
 });
 
+describe('BpmnXmlConverter — pools & lanes', () => {
+  function swimlaneDiagram(): BpmnDiagram {
+    const diagram = createDiagram({ name: 'Swimlane flow', id: 'swim' });
+    diagram.version.changeSummary = 'Swimlane modelling of the review flow.';
+    const pool = createNode({ type: 'pool', id: 'pool1', label: 'Editorial', x: 60, y: 40, width: 640, height: 260 });
+    const laneA = createNode({
+      type: 'lane',
+      id: 'laneA',
+      label: 'Authors',
+      x: 90, y: 40, width: 610, height: 130,
+      properties: { flowNodeRefs: ['start', 'write'] },
+    });
+    const laneB = createNode({
+      type: 'lane',
+      id: 'laneB',
+      label: 'Editors',
+      x: 90, y: 170, width: 610, height: 130,
+      properties: { flowNodeRefs: ['review'] },
+    });
+    const start = createNode({ type: 'startEvent', id: 'start', x: 120, y: 80 });
+    const write = createNode({ type: 'task', id: 'write', label: 'Write', x: 220, y: 70 });
+    const review = createNode({ type: 'userTask', id: 'review', label: 'Review', x: 220, y: 210 });
+    diagram.nodes = { pool1: pool, laneA, laneB, start, write, review };
+    diagram.edges = {
+      e1: createEdge({ id: 'e1', sourceId: 'start', targetId: 'write' }),
+      e2: createEdge({ id: 'e2', sourceId: 'write', targetId: 'review' }),
+    };
+    return diagram;
+  }
+
+  it('exports a collaboration/participant for pools and a laneSet for lanes', () => {
+    const xml = new BpmnXmlConverter().toXml(swimlaneDiagram());
+    expect(xml).toContain('<bpmn:collaboration id="Collaboration_swim">');
+    expect(xml).toContain('<bpmn:participant id="pool1" name="Editorial" processRef="swim" />');
+    expect(xml).toContain('<bpmn:laneSet id="LaneSet_swim">');
+    expect(xml).toContain('<bpmn:lane id="laneA" name="Authors">');
+    expect(xml).toContain('<bpmn:flowNodeRef>start</bpmn:flowNodeRef>');
+    expect(xml).toContain('<bpmn:flowNodeRef>write</bpmn:flowNodeRef>');
+    // The plane targets the collaboration when pools exist, and pools/lanes
+    // carry the swimlane orientation flag.
+    expect(xml).toContain('bpmnElement="Collaboration_swim"');
+    expect(xml).toContain('<bpmndi:BPMNShape id="pool1_di" bpmnElement="pool1" isHorizontal="true">');
+    // Participants live only in the collaboration, never inside <process>.
+    expect(xml).not.toMatch(/<bpmn:process[^>]*>[\s\S]*<bpmn:participant/);
+  });
+
+  it('round-trips pools, lanes and lane membership losslessly', () => {
+    const original = swimlaneDiagram();
+    const converter = new BpmnXmlConverter();
+    const { diagram: imported, warnings } = converter.fromXml(converter.toXml(original));
+
+    expect(warnings).toEqual([]);
+    expect(imported.nodes.pool1.type).toBe('pool');
+    expect(imported.nodes.pool1.label).toBe('Editorial');
+    expect(imported.nodes.laneA.type).toBe('lane');
+    expect(imported.nodes.laneA.properties.flowNodeRefs).toEqual(['start', 'write']);
+    expect(imported.nodes.laneB.properties.flowNodeRefs).toEqual(['review']);
+    // Bounds come back through DI.
+    expect(imported.nodes.pool1.x).toBe(60);
+    expect(imported.nodes.laneA.height).toBe(130);
+
+    const before = JSON.stringify(normalizeForDiff(original));
+    const after = JSON.stringify(normalizeForDiff(imported));
+    expect(after).toBe(before);
+  });
+
+  it('imports lanes from an external document without pools', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL">
+  <bpmn:process id="p" name="Lanes only">
+    <bpmn:laneSet id="ls">
+      <bpmn:lane id="l1" name="Team A">
+        <bpmn:flowNodeRef>t1</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:task id="t1" name="Work"/>
+  </bpmn:process>
+</bpmn:definitions>`;
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
+    expect(diagram.nodes.l1.type).toBe('lane');
+    expect(diagram.nodes.l1.label).toBe('Team A');
+    expect(diagram.nodes.l1.properties.flowNodeRefs).toEqual(['t1']);
+    expect(diagram.nodes.t1.type).toBe('task');
+    // laneSet is not misread as an unknown flow element.
+    expect(warnings.some((w) => w.includes('laneSet'))).toBe(false);
+  });
+});
+
 describe('BpmnXmlConverter.fromXml — external documents', () => {
   it('imports a minimal Camunda-style document without extensions', () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>

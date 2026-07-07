@@ -4,10 +4,9 @@ import { createDiagram, createNode } from '@bpmn-react/core';
 import { BpmnViewer } from '../src/index.js';
 
 /**
- * Renders every one of the 12 built-in BPMN shapes at least once and checks
+ * Renders every one of the 14 built-in BPMN shapes at least once and checks
  * a couple of type-specific visual properties, so a rendering refactor that
- * silently breaks an untouched shape (previously: 8 of 12 were never
- * rendered by any test) is caught.
+ * silently breaks an untouched shape is caught.
  */
 interface Expectation {
   type: string;
@@ -101,6 +100,22 @@ const EXPECTATIONS: Expectation[] = [
       expect(root.querySelectorAll('rect')).toHaveLength(0);
     },
   },
+  {
+    type: 'pool',
+    label: 'Editorial',
+    check: (root) => {
+      expect(root.querySelectorAll('rect')).toHaveLength(2); // body + title band
+      expect(root.querySelectorAll('line')).toHaveLength(1); // band divider
+    },
+  },
+  {
+    type: 'lane',
+    label: 'Authors',
+    check: (root) => {
+      expect(root.querySelectorAll('rect')).toHaveLength(2); // body + title band
+      expect(root.querySelectorAll('line')).toHaveLength(1);
+    },
+  },
 ];
 
 describe('built-in shapes render correctly', () => {
@@ -116,14 +131,16 @@ describe('built-in shapes render correctly', () => {
     check(root);
   });
 
-  it('covers exactly the 12 registered built-in types (fails loudly if one is added without a fixture)', () => {
+  it('covers exactly the 14 registered built-in types (fails loudly if one is added without a fixture)', () => {
     expect(EXPECTATIONS.map((e) => e.type).sort()).toEqual(
       [
         'dataObject',
         'endEvent',
         'exclusiveGateway',
         'inclusiveGateway',
+        'lane',
         'parallelGateway',
+        'pool',
         'scriptTask',
         'serviceTask',
         'startEvent',

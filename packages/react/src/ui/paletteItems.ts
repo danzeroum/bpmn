@@ -10,4 +10,6 @@ export const BUILT_IN_PALETTE: PaletteItem[] = [
   { id: 'parallelGateway', label: 'Parallel Gateway', nodeType: 'parallelGateway', icon: '✚' },
   { id: 'subProcess', label: 'Sub-Process', nodeType: 'subProcess', icon: '⧉' },
   { id: 'endEvent', label: 'End Event', nodeType: 'endEvent', icon: '◉' },
+  { id: 'pool', label: 'Pool', nodeType: 'pool', icon: '▤' },
+  { id: 'lane', label: 'Lane', nodeType: 'lane', icon: '▬' },
 ];

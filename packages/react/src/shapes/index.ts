@@ -5,7 +5,9 @@ import {
   EndEventShape,
   ExclusiveGatewayShape,
   InclusiveGatewayShape,
+  LaneShape,
   ParallelGatewayShape,
+  PoolShape,
   ScriptTaskShape,
   ServiceTaskShape,
   StartEventShape,
@@ -31,6 +33,8 @@ export const BUILT_IN_SHAPES: Record<string, ShapeComponent> = {
   subProcess: SubProcessShape,
   dataObject: DataObjectShape,
   textAnnotation: TextAnnotationShape,
+  pool: PoolShape,
+  lane: LaneShape,
 };
 
 export { DefaultShape };

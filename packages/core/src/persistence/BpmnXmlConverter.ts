@@ -1,5 +1,5 @@
 import type { BpmnDiagram, BpmnEdge, BpmnNode, Point, VersionStatus } from '../model/types.js';
-import { activeNodes } from '../model/types.js';
+import { activeNodes, isContainerType, laneFlowNodeRefs } from '../model/types.js';
 import { BpmnParseError } from '../model/errors.js';
 import { createDefaultRegistry, type NodeTypeRegistry } from '../model/registry.js';
 import { createVersion, generateId } from '../model/factory.js';
@@ -76,6 +76,12 @@ export class BpmnXmlConverter {
   toXml(diagram: BpmnDiagram): string {
     const xml = new XmlBuilder();
     const processId = xmlSafeId(diagram.id, 'Process');
+    const collaborationId = `Collaboration_${processId}`;
+
+    const nodes = Object.values(diagram.nodes);
+    const pools = nodes.filter((n) => n.type === 'pool');
+    const lanes = nodes.filter((n) => n.type === 'lane');
+    const flowNodes = nodes.filter((n) => !isContainerType(n.type));
 
     xml.open('bpmn:definitions', {
       'xmlns:bpmn': BPMN_NS,
@@ -89,10 +95,39 @@ export class BpmnXmlConverter {
       exporterVersion: '0.1.0',
     });
 
+    // Pools become participants inside a collaboration referencing the process.
+    if (pools.length > 0) {
+      xml.open('bpmn:collaboration', { id: collaborationId });
+      for (const pool of pools) {
+        xml.element('bpmn:participant', {
+          id: pool.id,
+          name: pool.label,
+          processRef: processId,
+        });
+      }
+      xml.close();
+    }
+
     xml.open('bpmn:process', { id: processId, name: diagram.name, isExecutable: 'false' });
     this.writeDiagramExtension(xml, diagram);
 
-    for (const node of Object.values(diagram.nodes)) {
+    // Lanes become a laneSet whose lanes list the flow nodes they contain.
+    if (lanes.length > 0) {
+      xml.open('bpmn:laneSet', { id: `LaneSet_${processId}` });
+      for (const lane of lanes) {
+        const refs = laneFlowNodeRefs(lane);
+        if (refs.length === 0) {
+          xml.element('bpmn:lane', { id: lane.id, name: lane.label });
+        } else {
+          xml.open('bpmn:lane', { id: lane.id, name: lane.label });
+          for (const ref of refs) xml.element('bpmn:flowNodeRef', {}, ref);
+          xml.close();
+        }
+      }
+      xml.close();
+    }
+
+    for (const node of flowNodes) {
       this.writeNode(xml, node);
     }
     for (const edge of Object.values(diagram.edges)) {
@@ -100,7 +135,7 @@ export class BpmnXmlConverter {
     }
     xml.close(); // process
 
-    this.writeDi(xml, diagram, processId);
+    this.writeDi(xml, diagram, pools.length > 0 ? collaborationId : processId);
     xml.close(); // definitions
     return xml.toString();
   }
@@ -197,7 +232,12 @@ export class BpmnXmlConverter {
     xml.open('bpmndi:BPMNPlane', { id: 'BPMNPlane_1', bpmnElement: processId });
 
     for (const node of Object.values(diagram.nodes)) {
-      xml.open('bpmndi:BPMNShape', { id: `${node.id}_di`, bpmnElement: node.id });
+      xml.open('bpmndi:BPMNShape', {
+        id: `${node.id}_di`,
+        bpmnElement: node.id,
+        // Pools/lanes are rendered as horizontal swimlanes.
+        isHorizontal: isContainerType(node.type) ? 'true' : undefined,
+      });
       xml.element('dc:Bounds', {
         x: node.x,
         y: node.y,
@@ -256,9 +296,25 @@ export class BpmnXmlConverter {
       metadata: extension.properties,
     };
 
+    // Pools live in a <collaboration> as <participant> elements at the root.
+    const collaboration = firstChildByLocalName(root, 'collaboration');
+    if (collaboration) {
+      for (const participant of childrenByLocalName(collaboration, 'participant')) {
+        const pool = this.readContainer(participant, 'pool');
+        if (pool) diagram.nodes[pool.id] = pool;
+      }
+    }
+
     for (const child of processEl.children) {
       const tag = localName(child.tag);
       if (tag === 'extensionElements') continue;
+      if (tag === 'laneSet') {
+        for (const laneEl of childrenByLocalName(child, 'lane')) {
+          const lane = this.readContainer(laneEl, 'lane');
+          if (lane) diagram.nodes[lane.id] = lane;
+        }
+        continue;
+      }
       if (tag === 'sequenceFlow') {
         const edge = this.readEdge(child, warnings);
         if (edge) diagram.edges[edge.id] = edge;
@@ -354,6 +410,31 @@ export class BpmnXmlConverter {
       properties,
       createdInVersion: meta.createdInVersion ?? '0',
       ...(meta.removedInVersion ? { removedInVersion: meta.removedInVersion } : {}),
+      audit: { createdAt: new Date().toISOString(), createdBy: 'import', history: [] },
+    };
+  }
+
+  /** Reads a pool (participant) or lane element into a container node. */
+  private readContainer(el: XmlElement, type: 'pool' | 'lane'): BpmnNode | undefined {
+    const def = this.registry.has(type) ? this.registry.get(type) : undefined;
+    if (!def) return undefined;
+    const properties: Record<string, unknown> = {};
+    if (type === 'lane') {
+      const refs = childrenByLocalName(el, 'flowNodeRef')
+        .map((c) => c.text.trim())
+        .filter(Boolean);
+      if (refs.length > 0) properties.flowNodeRefs = refs;
+    }
+    return {
+      id: el.attributes.id ?? generateId(),
+      type,
+      label: el.attributes.name ?? def.label,
+      x: 0,
+      y: 0,
+      width: def.defaultSize.width,
+      height: def.defaultSize.height,
+      properties,
+      createdInVersion: '0',
       audit: { createdAt: new Date().toISOString(), createdBy: 'import', history: [] },
     };
   }
