@@ -21,8 +21,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check:no-runtime-deps
       - run: pnpm lint
-      - run: pnpm typecheck
       - run: pnpm build
+      - run: pnpm typecheck
       - run: pnpm test:coverage
 
   e2e:
