@@ -506,3 +506,60 @@
   border-radius: 4px;
   padding: 1px 6px;
 }
+
+/* ---------------------------------------------- BuildToValue notation tokens
+
+   Design system of the `btv:` domain notation (numerologia 9 · roda de 9
+   matizes, 40° cada). Every btv shape/edge reads these via var(--btv-*, #hex)
+   with an inline fallback, so this block is purely additive — zero breaking
+   change if it is ever absent (the fallbacks keep the SVG correct in export). */
+
+:root {
+  /* marca */
+  --btv-gold: #9a7b1e;            /* ouro 9 — completude/valor */
+  --btv-gold-soft: #f6edd4;
+  --btv-green: #1a6a54;           /* verde — equilíbrio/aprovação (== --bpmnr-selected) */
+
+  /* domínio */
+  --btv-squad-fill: #e8ecf7;      --btv-squad-stroke: #5566a6;   /* índigo 265° */
+  --btv-persona-fill: #fbf1dc;    --btv-persona-stroke: #b08a47; /* âmbar 85° */
+  --btv-persona-avatar: #f0dfb8;
+  --btv-gate-pending: #f6edd4;    --btv-gate-pending-stroke: #9a7b1e;
+  --btv-gate-approved: #dff0e6;   --btv-gate-approved-stroke: #1a6a54;
+  --btv-prompt-fill: #f5e9f0;     --btv-prompt-stroke: #9a5580;  /* ameixa 345° */
+  --btv-connector-fill: #e3eef6;  --btv-connector-stroke: #2f6e94; /* azul 225° */
+  --btv-deliverable-fill: #e3efe4; --btv-deliverable-stroke: #3b7d4f; /* verde 145° */
+
+  /* edges */
+  --btv-edge-handoff: #44403a;
+  --btv-edge-approval: #1a6a54;
+  --btv-edge-feedback: #9a5580;
+  --btv-edge-escalation: #b3372f;
+
+  /* estados */
+  --btv-error: #b3372f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --btv-gold: #cba84b;
+    --btv-gold-soft: #33301f;
+    --btv-green: #57b895;
+
+    --btv-squad-fill: #262a36;      --btv-squad-stroke: #8d9cd6;
+    --btv-persona-fill: #332d20;    --btv-persona-stroke: #cba45c;
+    --btv-persona-avatar: #4a4028;
+    --btv-gate-pending: #33301f;    --btv-gate-pending-stroke: #cba84b;
+    --btv-gate-approved: #22312a;   --btv-gate-approved-stroke: #57b895;
+    --btv-prompt-fill: #322632;     --btv-prompt-stroke: #c583ac;
+    --btv-connector-fill: #23303a;  --btv-connector-stroke: #6fa9ce;
+    --btv-deliverable-fill: #24312a; --btv-deliverable-stroke: #6fb287;
+
+    --btv-edge-handoff: #c9c4ba;
+    --btv-edge-approval: #57b895;
+    --btv-edge-feedback: #c583ac;
+    --btv-edge-escalation: #d96a5f;
+
+    --btv-error: #d96a5f;
+  }
+}
