@@ -1,0 +1,342 @@
+import type { BpmnDiagram, BpmnEdge, BpmnNode, Point, Size, UserContext } from '../model/types.js';
+import { generateId, nowIso } from '../model/factory.js';
+import type { Command } from './types.js';
+
+const SYSTEM_USER: UserContext = { id: 'system', role: 'system' };
+
+function withNode(diagram: BpmnDiagram, node: BpmnNode): BpmnDiagram {
+  return { ...diagram, nodes: { ...diagram.nodes, [node.id]: node } };
+}
+
+function withEdge(diagram: BpmnDiagram, edge: BpmnEdge): BpmnDiagram {
+  return { ...diagram, edges: { ...diagram.edges, [edge.id]: edge } };
+}
+
+function withoutNode(diagram: BpmnDiagram, nodeId: string): BpmnDiagram {
+  const { [nodeId]: _removed, ...nodes } = diagram.nodes;
+  return { ...diagram, nodes };
+}
+
+function withoutEdge(diagram: BpmnDiagram, edgeId: string): BpmnDiagram {
+  const { [edgeId]: _removed, ...edges } = diagram.edges;
+  return { ...diagram, edges };
+}
+
+function appendHistory<T extends BpmnNode | BpmnEdge>(
+  element: T,
+  type: string,
+  versionId: string,
+  actor: UserContext,
+  details?: Record<string, unknown>,
+): T {
+  return {
+    ...element,
+    audit: {
+      ...element.audit,
+      history: [
+        ...element.audit.history,
+        { type, timestamp: nowIso(), userId: actor.id, versionId, ...(details ? { details } : {}) },
+      ],
+    },
+  };
+}
+
+export function addNodeCommand(node: BpmnNode): Command {
+  return {
+    id: generateId(),
+    description: `Add ${node.type} "${node.label}"`,
+    execute: (diagram) => withNode(diagram, node),
+    undo: (diagram) => withoutNode(diagram, node.id),
+    toAuditEvent: () => ({
+      type: 'NODE_ADDED',
+      details: { nodeId: node.id, nodeType: node.type, label: node.label },
+    }),
+  };
+}
+
+export function moveNodeCommand(nodeId: string, from: Point, to: Point): Command {
+  const apply = (diagram: BpmnDiagram, position: Point): BpmnDiagram => {
+    const node = diagram.nodes[nodeId];
+    if (!node) return diagram;
+    return withNode(diagram, { ...node, x: position.x, y: position.y });
+  };
+  return {
+    id: generateId(),
+    description: `Move node`,
+    execute: (diagram) => apply(diagram, to),
+    undo: (diagram) => apply(diagram, from),
+    toAuditEvent: () => ({ type: 'NODE_MOVED', details: { nodeId, from, to } }),
+  };
+}
+
+export function resizeNodeCommand(
+  nodeId: string,
+  from: Point & Size,
+  to: Point & Size,
+): Command {
+  const apply = (diagram: BpmnDiagram, rect: Point & Size): BpmnDiagram => {
+    const node = diagram.nodes[nodeId];
+    if (!node) return diagram;
+    return withNode(diagram, { ...node, ...rect });
+  };
+  return {
+    id: generateId(),
+    description: `Resize node`,
+    execute: (diagram) => apply(diagram, to),
+    undo: (diagram) => apply(diagram, from),
+    toAuditEvent: () => ({ type: 'NODE_RESIZED', details: { nodeId, from, to } }),
+  };
+}
+
+export interface NodePatch {
+  label?: string;
+  properties?: Record<string, unknown>;
+}
+
+export function updateNodeCommand(nodeId: string, patch: NodePatch): Command {
+  let previous: NodePatch | undefined;
+  return {
+    id: generateId(),
+    description: `Update node`,
+    execute: (diagram) => {
+      const node = diagram.nodes[nodeId];
+      if (!node) return diagram;
+      previous = { label: node.label, properties: node.properties };
+      return withNode(diagram, {
+        ...node,
+        ...(patch.label !== undefined ? { label: patch.label } : {}),
+        ...(patch.properties !== undefined
+          ? { properties: { ...node.properties, ...patch.properties } }
+          : {}),
+      });
+    },
+    undo: (diagram) => {
+      const node = diagram.nodes[nodeId];
+      if (!node || !previous) return diagram;
+      return withNode(diagram, {
+        ...node,
+        label: previous.label ?? node.label,
+        properties: previous.properties ?? node.properties,
+      });
+    },
+    toAuditEvent: () => ({ type: 'NODE_UPDATED', details: { nodeId, patch } }),
+  };
+}
+
+export interface EdgePatch {
+  label?: string;
+  purpose?: string;
+  properties?: Record<string, unknown>;
+}
+
+export function updateEdgeCommand(edgeId: string, patch: EdgePatch): Command {
+  let previous: EdgePatch | undefined;
+  return {
+    id: generateId(),
+    description: `Update edge`,
+    execute: (diagram) => {
+      const edge = diagram.edges[edgeId];
+      if (!edge) return diagram;
+      previous = { label: edge.label, purpose: edge.purpose, properties: edge.properties };
+      return withEdge(diagram, {
+        ...edge,
+        ...(patch.label !== undefined ? { label: patch.label } : {}),
+        ...(patch.purpose !== undefined ? { purpose: patch.purpose } : {}),
+        ...(patch.properties !== undefined
+          ? { properties: { ...edge.properties, ...patch.properties } }
+          : {}),
+      });
+    },
+    undo: (diagram) => {
+      const edge = diagram.edges[edgeId];
+      if (!edge || !previous) return diagram;
+      const restored: BpmnEdge = { ...edge, properties: previous.properties ?? edge.properties };
+      if (previous.label === undefined) delete restored.label;
+      else restored.label = previous.label;
+      if (previous.purpose === undefined) delete restored.purpose;
+      else restored.purpose = previous.purpose;
+      return withEdge(diagram, restored);
+    },
+    toAuditEvent: () => ({ type: 'EDGE_UPDATED', details: { edgeId, patch } }),
+  };
+}
+
+export function addEdgeCommand(edge: BpmnEdge): Command {
+  return {
+    id: generateId(),
+    description: `Connect ${edge.sourceId} → ${edge.targetId}`,
+    execute: (diagram) => withEdge(diagram, edge),
+    undo: (diagram) => withoutEdge(diagram, edge.id),
+    toAuditEvent: () => ({
+      type: 'EDGE_CREATED',
+      details: { edgeId: edge.id, sourceId: edge.sourceId, targetId: edge.targetId },
+    }),
+  };
+}
+
+/**
+ * Removes a node. In a `draft` version the node (and its connected edges) is
+ * hard-deleted; in any other status it is *closed* (`removedInVersion`),
+ * preserving temporal immutability.
+ */
+export function removeNodeCommand(nodeId: string, actor: UserContext = SYSTEM_USER): Command {
+  let deletedNode: BpmnNode | undefined;
+  let deletedEdges: BpmnEdge[] = [];
+  let closed = false;
+  return {
+    id: generateId(),
+    description: `Remove node`,
+    execute: (diagram) => {
+      const node = diagram.nodes[nodeId];
+      if (!node) return diagram;
+      const versionId = diagram.version.id;
+      if (diagram.version.status === 'draft') {
+        closed = false;
+        deletedNode = node;
+        deletedEdges = Object.values(diagram.edges).filter(
+          (e) => e.sourceId === nodeId || e.targetId === nodeId,
+        );
+        let next = withoutNode(diagram, nodeId);
+        for (const edge of deletedEdges) next = withoutEdge(next, edge.id);
+        return next;
+      }
+      closed = true;
+      let next = withNode(
+        diagram,
+        appendHistory({ ...node, removedInVersion: versionId }, 'REMOVED', versionId, actor),
+      );
+      for (const edge of Object.values(diagram.edges)) {
+        if ((edge.sourceId === nodeId || edge.targetId === nodeId) && !edge.removedInVersion) {
+          next = withEdge(
+            next,
+            appendHistory({ ...edge, removedInVersion: versionId }, 'REMOVED', versionId, actor),
+          );
+        }
+      }
+      return next;
+    },
+    undo: (diagram) => {
+      if (closed) {
+        const node = diagram.nodes[nodeId];
+        if (!node) return diagram;
+        const { removedInVersion: _r, ...reopened } = node;
+        let next = withNode(diagram, reopened as BpmnNode);
+        for (const edge of Object.values(diagram.edges)) {
+          if (
+            (edge.sourceId === nodeId || edge.targetId === nodeId) &&
+            edge.removedInVersion === diagram.version.id
+          ) {
+            const { removedInVersion: _e, ...reopenedEdge } = edge;
+            next = withEdge(next, reopenedEdge as BpmnEdge);
+          }
+        }
+        return next;
+      }
+      if (!deletedNode) return diagram;
+      let next = withNode(diagram, deletedNode);
+      for (const edge of deletedEdges) next = withEdge(next, edge);
+      return next;
+    },
+    toAuditEvent: () => ({ type: 'NODE_REMOVED', details: { nodeId } }),
+  };
+}
+
+/** Removes an edge — hard delete in `draft`, closed otherwise. */
+export function removeEdgeCommand(edgeId: string, actor: UserContext = SYSTEM_USER): Command {
+  let deleted: BpmnEdge | undefined;
+  let closed = false;
+  return {
+    id: generateId(),
+    description: `Remove edge`,
+    execute: (diagram) => {
+      const edge = diagram.edges[edgeId];
+      if (!edge) return diagram;
+      if (diagram.version.status === 'draft') {
+        closed = false;
+        deleted = edge;
+        return withoutEdge(diagram, edgeId);
+      }
+      closed = true;
+      const versionId = diagram.version.id;
+      return withEdge(
+        diagram,
+        appendHistory({ ...edge, removedInVersion: versionId }, 'REMOVED', versionId, actor),
+      );
+    },
+    undo: (diagram) => {
+      if (closed) {
+        const edge = diagram.edges[edgeId];
+        if (!edge) return diagram;
+        const { removedInVersion: _r, ...reopened } = edge;
+        return withEdge(diagram, reopened as BpmnEdge);
+      }
+      if (!deleted) return diagram;
+      return withEdge(diagram, deleted);
+    },
+    toAuditEvent: () => ({ type: 'EDGE_REMOVED', details: { edgeId } }),
+  };
+}
+
+/**
+ * Closes `oldEdgeId` and adds `replacement` (which must reference the old edge
+ * via `supersedesEdgeId`) as a single reversible step.
+ */
+export function supersedeEdgeCommand(
+  oldEdgeId: string,
+  replacement: BpmnEdge,
+  actor: UserContext = SYSTEM_USER,
+): Command {
+  return {
+    id: generateId(),
+    description: `Supersede edge`,
+    execute: (diagram) => {
+      const oldEdge = diagram.edges[oldEdgeId];
+      if (!oldEdge) return diagram;
+      const versionId = diagram.version.id;
+      const next = withEdge(
+        diagram,
+        appendHistory(
+          { ...oldEdge, removedInVersion: versionId },
+          'SUPERSEDED',
+          versionId,
+          actor,
+          { supersededBy: replacement.id },
+        ),
+      );
+      return withEdge(next, { ...replacement, supersedesEdgeId: oldEdgeId });
+    },
+    undo: (diagram) => {
+      const oldEdge = diagram.edges[oldEdgeId];
+      let next = withoutEdge(diagram, replacement.id);
+      if (oldEdge) {
+        const { removedInVersion: _r, ...reopened } = oldEdge;
+        next = withEdge(next, reopened as BpmnEdge);
+      }
+      return next;
+    },
+    toAuditEvent: () => ({
+      type: 'EDGE_SUPERSEDED',
+      details: { oldEdgeId, newEdgeId: replacement.id },
+    }),
+  };
+}
+
+/**
+ * Groups several commands into a single undo/redo step (e.g. a gesture that
+ * adds an edge and updates node properties atomically).
+ */
+export function compositeCommand(description: string, commands: Command[]): Command {
+  return {
+    id: generateId(),
+    description,
+    execute: (diagram) => commands.reduce((d, cmd) => cmd.execute(d), diagram),
+    undo: (diagram) => [...commands].reverse().reduce((d, cmd) => cmd.undo(d), diagram),
+    toAuditEvent: () => ({
+      type: 'COMPOSITE',
+      details: {
+        description,
+        events: commands.map((c) => c.toAuditEvent?.()).filter(Boolean),
+      },
+    }),
+  };
+}
