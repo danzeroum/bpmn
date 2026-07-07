@@ -1,8 +1,58 @@
+import type { EventDefinitionKind } from '@bpmn-react/core';
+import { eventDefinitionOf } from '@bpmn-react/core';
 import type { ShapeProps } from '../plugins/types.js';
 import { ActivityBox, ShapeLabel, strokeFor, strokeWidthFor, theme } from './common.js';
 
+/**
+ * Typed-event glyph drawn inside an event circle. `filled` renders the throw
+ * variant (solid glyph); catch/start/end use the outline variant. Glyphs are
+ * neutral (muted ink) and scale to the circle radius `r`.
+ */
+function eventGlyph(kind: EventDefinitionKind, cx: number, cy: number, r: number, filled: boolean) {
+  const color = theme.textMuted;
+  const s = r * 0.5;
+  const fill = filled ? color : 'none';
+  const base = { stroke: color, strokeWidth: 1.3, fill: 'none' as const };
+  switch (kind) {
+    case 'message':
+      return (
+        <g strokeLinejoin="round">
+          <rect x={cx - s} y={cy - s * 0.66} width={2 * s} height={s * 1.32} rx={1} stroke={color} strokeWidth={1.2} fill={fill} />
+          <path d={`M ${cx - s} ${cy - s * 0.66} L ${cx} ${cy + s * 0.05} L ${cx + s} ${cy - s * 0.66}`} fill="none" stroke={filled ? theme.fillEvent : color} strokeWidth={1.2} />
+        </g>
+      );
+    case 'timer':
+      return (
+        <g {...base}>
+          <circle cx={cx} cy={cy} r={s} fill={fill} />
+          <path d={`M ${cx} ${cy - s * 0.6} V ${cy} L ${cx + s * 0.5} ${cy + s * 0.3}`} stroke={filled ? theme.fillEvent : color} strokeLinecap="round" />
+        </g>
+      );
+    case 'error':
+      return <path d={`M ${cx - s} ${cy + s} L ${cx - s * 0.15} ${cy - s * 0.2} L ${cx + s * 0.15} ${cy + s * 0.25} L ${cx + s} ${cy - s}`} fill={filled ? color : 'none'} stroke={color} strokeWidth={1.3} strokeLinejoin="round" strokeLinecap="round" />;
+    case 'signal':
+      return <path d={`M ${cx} ${cy - s} L ${cx + s} ${cy + s * 0.7} L ${cx - s} ${cy + s * 0.7} Z`} fill={fill} stroke={color} strokeWidth={1.3} strokeLinejoin="round" />;
+    case 'escalation':
+      return <path d={`M ${cx - s * 0.8} ${cy + s * 0.7} L ${cx} ${cy - s} L ${cx + s * 0.8} ${cy + s * 0.7}`} fill={filled ? color : 'none'} stroke={color} strokeWidth={1.3} strokeLinejoin="round" strokeLinecap="round" />;
+    case 'conditional':
+      return (
+        <g {...base}>
+          <rect x={cx - s * 0.85} y={cy - s * 0.85} width={s * 1.7} height={s * 1.7} rx={1} fill={fill} />
+          <path d={`M ${cx - s * 0.5} ${cy - s * 0.4} H ${cx + s * 0.5} M ${cx - s * 0.5} ${cy} H ${cx + s * 0.5} M ${cx - s * 0.5} ${cy + s * 0.4} H ${cx + s * 0.5}`} stroke={filled ? theme.fillEvent : color} />
+        </g>
+      );
+    case 'link':
+      return <path d={`M ${cx - s} ${cy - s * 0.4} H ${cx + s * 0.2} V ${cy - s * 0.8} L ${cx + s} ${cy} L ${cx + s * 0.2} ${cy + s * 0.8} V ${cy + s * 0.4} H ${cx - s} Z`} fill={fill} stroke={color} strokeWidth={1.2} strokeLinejoin="round" />;
+    case 'terminate':
+      return <circle cx={cx} cy={cy} r={s} fill={color} stroke={color} />;
+    default:
+      return null;
+  }
+}
+
 export function StartEventShape({ node, selected }: ShapeProps) {
   const r = Math.min(node.width, node.height) / 2;
+  const kind = eventDefinitionOf(node);
   return (
     <g>
       <circle
@@ -13,6 +63,7 @@ export function StartEventShape({ node, selected }: ShapeProps) {
         stroke={strokeFor(selected)}
         strokeWidth={strokeWidthFor(selected)}
       />
+      {kind && eventGlyph(kind, node.width / 2, node.height / 2, r, false)}
       <ShapeLabel
         label={node.label}
         width={node.width}
@@ -27,6 +78,7 @@ export function StartEventShape({ node, selected }: ShapeProps) {
 
 export function EndEventShape({ node, selected }: ShapeProps) {
   const r = Math.min(node.width, node.height) / 2;
+  const kind = eventDefinitionOf(node);
   return (
     <g>
       <circle
@@ -45,6 +97,7 @@ export function EndEventShape({ node, selected }: ShapeProps) {
         stroke={strokeFor(selected)}
         strokeWidth={1}
       />
+      {kind && eventGlyph(kind, node.width / 2, node.height / 2, r, false)}
       <ShapeLabel
         label={node.label}
         width={node.width}
@@ -55,6 +108,33 @@ export function EndEventShape({ node, selected }: ShapeProps) {
       />
     </g>
   );
+}
+
+/**
+ * Intermediate event: the BPMN double ring. Catch renders an outline glyph,
+ * throw a filled one (`throwing`).
+ */
+function IntermediateEventShape({ node, selected, throwing }: ShapeProps & { throwing: boolean }) {
+  const r = Math.min(node.width, node.height) / 2;
+  const cx = node.width / 2;
+  const cy = node.height / 2;
+  const kind = eventDefinitionOf(node);
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={r} fill={theme.fillEvent} stroke={strokeFor(selected)} strokeWidth={strokeWidthFor(selected)} />
+      <circle cx={cx} cy={cy} r={Math.max(2, r - 3)} fill="none" stroke={strokeFor(selected)} strokeWidth={strokeWidthFor(selected)} />
+      {kind && eventGlyph(kind, cx, cy, r, throwing)}
+      <ShapeLabel label={node.label} width={node.width} y={node.height + 16} fontSize={11} color={theme.textMuted} maxLines={2} />
+    </g>
+  );
+}
+
+export function IntermediateCatchEventShape(props: ShapeProps) {
+  return <IntermediateEventShape {...props} throwing={false} />;
+}
+
+export function IntermediateThrowEventShape(props: ShapeProps) {
+  return <IntermediateEventShape {...props} throwing />;
 }
 
 export function TaskShape(props: ShapeProps) {

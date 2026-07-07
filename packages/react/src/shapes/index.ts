@@ -5,6 +5,8 @@ import {
   EndEventShape,
   ExclusiveGatewayShape,
   InclusiveGatewayShape,
+  IntermediateCatchEventShape,
+  IntermediateThrowEventShape,
   LaneShape,
   ParallelGatewayShape,
   PoolShape,
@@ -23,6 +25,8 @@ export { ShapeLabel, theme, wrapLabel } from './common.js';
 export const BUILT_IN_SHAPES: Record<string, ShapeComponent> = {
   startEvent: StartEventShape,
   endEvent: EndEventShape,
+  intermediateCatchEvent: IntermediateCatchEventShape,
+  intermediateThrowEvent: IntermediateThrowEventShape,
   task: TaskShape,
   userTask: UserTaskShape,
   serviceTask: ServiceTaskShape,

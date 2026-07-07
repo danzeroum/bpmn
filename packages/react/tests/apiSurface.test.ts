@@ -33,6 +33,8 @@ const EXPECTED_EXPORTS = [
   'ExclusiveGatewayShape',
   'GridLayer',
   'InclusiveGatewayShape',
+  'IntermediateCatchEventShape',
+  'IntermediateThrowEventShape',
   'LaneShape',
   'MAX_VIEWPORT_WIDTH',
   'MIN_VIEWPORT_WIDTH',
@@ -83,13 +85,15 @@ describe('@bpmn-react/react public API surface', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });
 
-  it('every one of the 14 built-in shapes is registered in BUILT_IN_SHAPES', () => {
+  it('every one of the 16 built-in shapes is registered in BUILT_IN_SHAPES', () => {
     expect(Object.keys(api.BUILT_IN_SHAPES).sort()).toEqual(
       [
         'dataObject',
         'endEvent',
         'exclusiveGateway',
         'inclusiveGateway',
+        'intermediateCatchEvent',
+        'intermediateThrowEvent',
         'lane',
         'parallelGateway',
         'pool',

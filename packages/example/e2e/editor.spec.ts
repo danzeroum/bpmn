@@ -38,6 +38,13 @@ test('creates a node from the palette and undoes/redoes it', async ({ page }) =>
   await expect(page.locator('[data-node-id]')).toHaveCount(before + 1);
 });
 
+test('adds a typed timer event from the palette', async ({ page }) => {
+  await page.getByRole('button', { name: 'Add Timer Event' }).click();
+  const timer = page.locator('[data-node-type="intermediateCatchEvent"]');
+  await expect(timer).toHaveCount(1);
+  await expect(timer).toBeVisible();
+});
+
 test('drags a node to a new position', async ({ page }) => {
   const node = page.locator('[data-node-id="writer"]');
   const before = await node.getAttribute('transform');

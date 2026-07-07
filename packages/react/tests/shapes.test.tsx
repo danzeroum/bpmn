@@ -4,7 +4,7 @@ import { createDiagram, createNode } from '@bpmn-react/core';
 import { BpmnViewer } from '../src/index.js';
 
 /**
- * Renders every one of the 14 built-in BPMN shapes at least once and checks
+ * Renders every one of the 16 built-in BPMN shapes at least once and checks
  * a couple of type-specific visual properties, so a rendering refactor that
  * silently breaks an untouched shape is caught.
  */
@@ -24,6 +24,16 @@ const EXPECTATIONS: Expectation[] = [
     type: 'endEvent',
     label: 'Done',
     check: (root) => expect(root.querySelectorAll('circle')).toHaveLength(2), // double border
+  },
+  {
+    type: 'intermediateCatchEvent',
+    label: 'Wait',
+    check: (root) => expect(root.querySelectorAll('circle')).toHaveLength(2), // double ring
+  },
+  {
+    type: 'intermediateThrowEvent',
+    label: 'Signal',
+    check: (root) => expect(root.querySelectorAll('circle')).toHaveLength(2), // double ring
   },
   {
     type: 'task',
@@ -131,13 +141,36 @@ describe('built-in shapes render correctly', () => {
     check(root);
   });
 
-  it('covers exactly the 14 registered built-in types (fails loudly if one is added without a fixture)', () => {
+  it('draws a typed-event glyph when properties.eventDefinition is set', () => {
+    const diagram = createDiagram({ name: 'Typed' });
+    diagram.nodes = {
+      plain: createNode({ type: 'startEvent', id: 'plain', label: 'Plain', x: 20, y: 20 }),
+      msg: createNode({
+        type: 'startEvent',
+        id: 'msg',
+        label: 'Message',
+        x: 120,
+        y: 20,
+        properties: { eventDefinition: 'message' },
+      }),
+    };
+    const { container } = render(<BpmnViewer diagram={diagram} />);
+    const plain = container.querySelector('[data-node-id="plain"]')!;
+    const msg = container.querySelector('[data-node-id="msg"]')!;
+    // The message glyph (envelope) adds a <rect> the plain event does not have.
+    expect(plain.querySelectorAll('rect')).toHaveLength(0);
+    expect(msg.querySelectorAll('rect').length).toBeGreaterThan(0);
+  });
+
+  it('covers exactly the 16 registered built-in types (fails loudly if one is added without a fixture)', () => {
     expect(EXPECTATIONS.map((e) => e.type).sort()).toEqual(
       [
         'dataObject',
         'endEvent',
         'exclusiveGateway',
         'inclusiveGateway',
+        'intermediateCatchEvent',
+        'intermediateThrowEvent',
         'lane',
         'parallelGateway',
         'pool',
