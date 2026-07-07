@@ -40,6 +40,21 @@ test('drags a node to a new position', async ({ page }) => {
     .not.toBe(before);
 });
 
+test('edits a node label inline via double-click', async ({ page }) => {
+  const node = page.locator('[data-node-id="writer"]');
+  await node.dblclick();
+  const input = page.locator('[data-node-label-editor="writer"]');
+  await expect(input).toBeVisible();
+  await input.fill('Senior Writer');
+  await input.press('Enter');
+  await expect(input).toBeHidden();
+  await expect(node).toContainText('Senior Writer');
+
+  // Undo restores the original label.
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(node).not.toContainText('Senior Writer');
+});
+
 test('connects two nodes via a port', async ({ page }) => {
   const edgesBefore = await page.locator('[data-edge-id]').count();
   // Select the prompt node to reveal its ports

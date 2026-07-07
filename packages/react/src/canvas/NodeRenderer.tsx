@@ -5,6 +5,7 @@ import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { DefaultShape } from '../shapes/index.js';
 import { theme } from '../shapes/common.js';
 import type { Interactions } from './useInteractions.js';
+import { NodeLabelEditor } from './NodeLabelEditor.js';
 
 export interface NodeRendererProps {
   node: BpmnNode;
@@ -17,6 +18,8 @@ export interface NodeRendererProps {
   connectHover: 'valid' | 'invalid' | null;
   /** Live rect override while a resize gesture is in progress. */
   resizeRect: { x: number; y: number; width: number; height: number } | null;
+  /** True when this node's label is being edited inline. */
+  editing: boolean;
 }
 
 function NodeRendererInner({
@@ -28,6 +31,7 @@ function NodeRendererInner({
   dy,
   connectHover,
   resizeRect,
+  editing,
 }: NodeRendererProps) {
   const config = useEditorConfig();
   const Shape = config.shapes[node.type] ?? DefaultShape;
@@ -46,8 +50,10 @@ function NodeRendererInner({
       opacity={closed ? 0.45 : 1}
       style={{ cursor: editable ? 'grab' : 'default' }}
       onPointerDown={editable ? (e) => interactions.onNodePointerDown(e, node.id) : undefined}
+      onDoubleClick={editable ? (e) => interactions.onNodeDoubleClick(e, node.id) : undefined}
     >
       <Shape node={rendered} selected={selected} />
+      {editing && <NodeLabelEditor node={rendered} />}
 
       {connectHover && (
         <rect
@@ -188,6 +194,7 @@ export function ConnectedNode({
   const resizeRect = useCanvasState((s) =>
     s.resizeState?.nodeId === node.id ? s.resizeState.current : null,
   );
+  const editing = useCanvasState((s) => s.editingNodeId === node.id);
 
   return (
     <NodeRenderer
@@ -199,6 +206,7 @@ export function ConnectedNode({
       dy={drag?.dy ?? 0}
       connectHover={connectHover}
       resizeRect={resizeRect}
+      editing={editing}
     />
   );
 }

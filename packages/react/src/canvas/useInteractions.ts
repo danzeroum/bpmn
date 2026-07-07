@@ -121,6 +121,16 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
     [store, world],
   );
 
+  /** Node double-click → begin inline label editing (edit mode only). */
+  const onNodeDoubleClick = useCallback(
+    (event: { stopPropagation: () => void }, nodeId: string) => {
+      if (store.getState().readOnly) return;
+      event.stopPropagation();
+      store.setState({ editingNodeId: nodeId, selectedIds: [nodeId] });
+    },
+    [store],
+  );
+
   /** Resize-handle pointerdown → begin a resize gesture. */
   const onResizePointerDown = useCallback(
     (event: ReactPointerEvent, nodeId: string, corner: ResizeCorner) => {
@@ -155,7 +165,12 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
         return;
       }
       if (isPrimaryButton(event)) {
-        if (!event.shiftKey) store.setState({ selectedIds: [] });
+        const patch: Partial<import('../state/canvasStore.js').CanvasState> = {};
+        if (!event.shiftKey) patch.selectedIds = [];
+        // Clicking the canvas dismisses an in-progress inline label edit
+        // (the input's onBlur commits the value first).
+        if (store.getState().editingNodeId) patch.editingNodeId = null;
+        if (Object.keys(patch).length > 0) store.setState(patch);
         if (store.getState().readOnly) return;
         const start = world(event);
         store.setState({ selectionBox: { start, current: start } });
@@ -390,6 +405,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
     () => ({
       onNodePointerDown,
       onPortPointerDown,
+      onNodeDoubleClick,
       onResizePointerDown,
       onCanvasPointerDown,
       onPointerMove,
@@ -404,6 +420,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
     [
       onNodePointerDown,
       onPortPointerDown,
+      onNodeDoubleClick,
       onResizePointerDown,
       onCanvasPointerDown,
       onPointerMove,

@@ -54,6 +54,8 @@ export interface CanvasState {
   connectState: ConnectState | null;
   selectionBox: SelectionBoxState | null;
   resizeState: ResizeState | null;
+  /** Id of the node whose label is being edited inline, if any. */
+  editingNodeId: string | null;
   isPanning: boolean;
   gridSize: number;
   snapEnabled: boolean;
@@ -74,6 +76,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     connectState: null,
     selectionBox: null,
     resizeState: null,
+    editingNodeId: null,
     isPanning: false,
     gridSize: 20,
     snapEnabled: true,
