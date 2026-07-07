@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { activityMarkerOf } from '@bpmn-react/core';
 import type { ShapeProps } from '../plugins/types.js';
 
 /** Theme tokens — override via CSS variables (see styles.css). */
@@ -80,6 +81,32 @@ export function wrapLabel(label: string, charsPerLine: number, maxLines: number)
   return lines;
 }
 
+/** Loop / multi-instance marker centered on the activity's bottom edge. */
+function ActivityMarker({ node }: Pick<ShapeProps, 'node'>) {
+  const marker = activityMarkerOf(node);
+  if (!marker) return null;
+  const cx = node.width / 2;
+  const cy = node.height - 9;
+  const stroke = theme.textMuted;
+  if (marker === 'loop') {
+    return (
+      <path
+        d={`M ${cx + 5} ${cy - 3} A 5 5 0 1 1 ${cx - 4} ${cy + 2} M ${cx + 5} ${cy - 5} V ${cy - 2} H ${cx + 2}`}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={1.2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    );
+  }
+  const bars =
+    marker === 'sequentialMultiInstance'
+      ? `M ${cx - 5} ${cy - 4} H ${cx + 5} M ${cx - 5} ${cy} H ${cx + 5} M ${cx - 5} ${cy + 4} H ${cx + 5}`
+      : `M ${cx - 4} ${cy - 5} V ${cy + 5} M ${cx} ${cy - 5} V ${cy + 5} M ${cx + 4} ${cy - 5} V ${cy + 5}`;
+  return <path d={bars} stroke={stroke} strokeWidth={1.2} strokeLinecap="round" />;
+}
+
 /** Rounded-rectangle body shared by all activity shapes. */
 export function ActivityBox({
   node,
@@ -99,6 +126,7 @@ export function ActivityBox({
       />
       {children}
       <ShapeLabel label={node.label} width={node.width} y={node.height / 2 + 4} />
+      <ActivityMarker node={node} />
     </g>
   );
 }

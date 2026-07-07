@@ -148,6 +148,27 @@ export const EVENT_DEFINITION_KINDS = [
 
 export type EventDefinitionKind = (typeof EVENT_DEFINITION_KINDS)[number];
 
+/**
+ * Activity loop markers (BPMN loopCharacteristics), stored on an activity node
+ * under `properties.marker`. On export they become the standard child element
+ * (`standardLoopCharacteristics` / `multiInstanceLoopCharacteristics`).
+ */
+export const ACTIVITY_MARKERS = [
+  'loop',
+  'parallelMultiInstance',
+  'sequentialMultiInstance',
+] as const;
+
+export type ActivityMarker = (typeof ACTIVITY_MARKERS)[number];
+
+/** Returns the activity marker stored on a node, if it is a valid marker. */
+export function activityMarkerOf(node: BpmnNode): ActivityMarker | undefined {
+  const marker = node.properties.marker;
+  return typeof marker === 'string' && (ACTIVITY_MARKERS as readonly string[]).includes(marker)
+    ? (marker as ActivityMarker)
+    : undefined;
+}
+
 /** Event node types (built-in). Plugins may register more via `category: 'event'`. */
 export const EVENT_NODE_TYPES = [
   'startEvent',

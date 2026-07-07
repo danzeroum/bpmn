@@ -41,6 +41,7 @@ const EXPECTED_EXPORTS = [
   'LaneShape',
   'MAX_VIEWPORT_WIDTH',
   'MIN_VIEWPORT_WIDTH',
+  'ManualTaskShape',
   'MiniMap',
   'NodeLabelEditor',
   'NodeRenderer',
@@ -48,8 +49,10 @@ const EXPECTED_EXPORTS = [
   'ParallelGatewayShape',
   'PoolShape',
   'PropertiesPanel',
+  'ReceiveTaskShape',
   'ScriptTaskShape',
   'SelectionBoxOverlay',
+  'SendTaskShape',
   'ServiceTaskShape',
   'ShapeLabel',
   'StartEventShape',
@@ -88,7 +91,7 @@ describe('@bpmn-react/react public API surface', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });
 
-  it('every one of the 19 built-in shapes is registered in BUILT_IN_SHAPES', () => {
+  it('every one of the 22 built-in shapes is registered in BUILT_IN_SHAPES', () => {
     expect(Object.keys(api.BUILT_IN_SHAPES).sort()).toEqual(
       [
         'boundaryEvent',
@@ -101,9 +104,12 @@ describe('@bpmn-react/react public API surface', () => {
         'intermediateCatchEvent',
         'intermediateThrowEvent',
         'lane',
+        'manualTask',
         'parallelGateway',
         'pool',
+        'receiveTask',
         'scriptTask',
+        'sendTask',
         'serviceTask',
         'startEvent',
         'subProcess',

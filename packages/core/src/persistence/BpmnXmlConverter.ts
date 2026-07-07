@@ -8,6 +8,7 @@ import type {
 } from '../model/types.js';
 import {
   activeNodes,
+  activityMarkerOf,
   eventDefinitionOf,
   EVENT_DEFINITION_KINDS,
   isContainerType,
@@ -194,6 +195,7 @@ export class BpmnXmlConverter {
     // Event kind travels as the standard <bpmn:{kind}EventDefinition/> child, not
     // as a bpmnr:property, so it interoperates and is not double-encoded.
     const eventDef = eventDefinitionOf(node);
+    const marker = activityMarkerOf(node);
     // Boundary events carry their host + interrupting flag as native BPMN
     // attributes (attachedToRef / cancelActivity), not as bpmnr:property.
     const isBoundary = node.type === 'boundaryEvent';
@@ -204,6 +206,7 @@ export class BpmnXmlConverter {
     const nonInterrupting = isBoundary && node.properties.cancelActivity === false;
     const reserved = new Set<string>();
     if (eventDef) reserved.add('eventDefinition');
+    if (marker) reserved.add('marker');
     if (attachedToRef !== undefined) reserved.add('attachedToRef');
     if (nonInterrupting) reserved.add('cancelActivity');
     const propEntries = Object.entries(node.properties).filter(([key]) => !reserved.has(key));
@@ -213,13 +216,14 @@ export class BpmnXmlConverter {
       attachedToRef,
       cancelActivity: nonInterrupting ? 'false' : undefined,
     };
+    const hasChildren = eventDef !== undefined || marker !== undefined;
     const needsMeta =
       node.type !== tag ||
       node.removedInVersion !== undefined ||
       propEntries.length > 0 ||
       node.createdInVersion !== '0';
 
-    if (!needsMeta && eventDef === undefined) {
+    if (!needsMeta && !hasChildren) {
       xml.element(`bpmn:${tag}`, attrs);
       return;
     }
@@ -238,6 +242,13 @@ export class BpmnXmlConverter {
     }
     if (eventDef !== undefined) {
       xml.element(`bpmn:${eventDef}EventDefinition`, { id: `${node.id}_def` });
+    }
+    if (marker === 'loop') {
+      xml.element('bpmn:standardLoopCharacteristics', {});
+    } else if (marker !== undefined) {
+      xml.element('bpmn:multiInstanceLoopCharacteristics', {
+        isSequential: marker === 'sequentialMultiInstance' ? 'true' : 'false',
+      });
     }
     xml.close();
   }
@@ -465,6 +476,9 @@ export class BpmnXmlConverter {
       if (el.attributes.attachedToRef) properties.attachedToRef = el.attributes.attachedToRef;
       if (el.attributes.cancelActivity === 'false') properties.cancelActivity = false;
     }
+    // Standard loopCharacteristics child → properties.marker.
+    const marker = readActivityMarker(el);
+    if (marker) properties.marker = marker;
     const def = this.registry.get(type);
     return {
       id: el.attributes.id ?? generateId(),
@@ -602,6 +616,20 @@ function readEventDefinition(el: XmlElement): EventDefinitionKind | undefined {
     const kind = match?.[1];
     if (kind && (EVENT_DEFINITION_KINDS as readonly string[]).includes(kind)) {
       return kind as EventDefinitionKind;
+    }
+  }
+  return undefined;
+}
+
+/** Reads a standard loopCharacteristics child into an activity marker. */
+function readActivityMarker(el: XmlElement): string | undefined {
+  for (const child of el.children) {
+    const tag = localName(child.tag);
+    if (tag === 'standardLoopCharacteristics') return 'loop';
+    if (tag === 'multiInstanceLoopCharacteristics') {
+      return child.attributes.isSequential === 'true'
+        ? 'sequentialMultiInstance'
+        : 'parallelMultiInstance';
     }
   }
   return undefined;

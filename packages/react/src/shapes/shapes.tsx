@@ -198,6 +198,41 @@ export function ScriptTaskShape(props: ShapeProps) {
   );
 }
 
+/** Send task: filled envelope. */
+export function SendTaskShape(props: ShapeProps) {
+  return (
+    <ActivityBox {...props}>
+      <g transform="translate(8, 6)" stroke={theme.textMuted} strokeWidth={1.2} strokeLinejoin="round">
+        <rect x={0} y={1} width={16} height={11} rx={1} fill={theme.textMuted} />
+        <path d="M 0.5 1.5 L 8 7.5 L 15.5 1.5" fill="none" stroke={theme.fillActivity} />
+      </g>
+    </ActivityBox>
+  );
+}
+
+/** Receive task: outline envelope. */
+export function ReceiveTaskShape(props: ShapeProps) {
+  return (
+    <ActivityBox {...props}>
+      <g transform="translate(8, 6)" fill="none" stroke={theme.textMuted} strokeWidth={1.3} strokeLinejoin="round">
+        <rect x={0} y={1} width={16} height={11} rx={1} />
+        <path d="M 0.5 1.5 L 8 7.5 L 15.5 1.5" />
+      </g>
+    </ActivityBox>
+  );
+}
+
+/** Manual task: hand glyph. */
+export function ManualTaskShape(props: ShapeProps) {
+  return (
+    <ActivityBox {...props}>
+      <g transform="translate(8, 5)" fill="none" stroke={theme.textMuted} strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M 2 8 V 4.5 a 1 1 0 0 1 2 0 V 4 a 1 1 0 0 1 2 0 v 0.5 a 1 1 0 0 1 2 0 V 5 a 1 1 0 0 1 2 0 v 4 a 3.5 3.5 0 0 1 -3.5 3.5 H 5 a 3 3 0 0 1 -3 -3 z" />
+      </g>
+    </ActivityBox>
+  );
+}
+
 function GatewayDiamond({ node, selected }: ShapeProps) {
   const { width, height } = node;
   return (

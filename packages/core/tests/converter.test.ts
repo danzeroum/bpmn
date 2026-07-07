@@ -206,6 +206,33 @@ describe('BpmnXmlConverter round-trip', () => {
     expect(after).toBe(before);
   });
 
+  it('round-trips send/receive/manual tasks and activity markers', () => {
+    const converter = new BpmnXmlConverter();
+    const diagram = createDiagram({ name: 'Tasks', id: 'tk' });
+    diagram.nodes = {
+      send: createNode({ type: 'sendTask', id: 'send', label: 'Notify', x: 20, y: 20 }),
+      recv: createNode({ type: 'receiveTask', id: 'recv', label: 'Await', x: 160, y: 20 }),
+      man: createNode({ type: 'manualTask', id: 'man', label: 'Sign', x: 300, y: 20 }),
+      loop: createNode({ type: 'task', id: 'loop', label: 'Retry', x: 20, y: 120, properties: { marker: 'loop' } }),
+      mi: createNode({ type: 'userTask', id: 'mi', label: 'Reviewers', x: 160, y: 120, properties: { marker: 'parallelMultiInstance' } }),
+    };
+    const xml = converter.toXml(diagram);
+    expect(xml).toContain('<bpmn:sendTask id="send"');
+    expect(xml).toContain('<bpmn:receiveTask id="recv"');
+    expect(xml).toContain('<bpmn:manualTask id="man"');
+    expect(xml).toContain('<bpmn:standardLoopCharacteristics');
+    expect(xml).toContain('<bpmn:multiInstanceLoopCharacteristics isSequential="false"');
+    expect(xml).not.toContain('name="marker"'); // native child, not a bpmnr:property
+
+    const { diagram: imported, warnings } = converter.fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(imported.nodes.loop.properties.marker).toBe('loop');
+    expect(imported.nodes.mi.properties.marker).toBe('parallelMultiInstance');
+    expect(JSON.stringify(normalizeForDiff(imported))).toBe(
+      JSON.stringify(normalizeForDiff(diagram)),
+    );
+  });
+
   it('round-trips an event-based gateway and a group artifact', () => {
     const converter = new BpmnXmlConverter();
     const diagram = createDiagram({ name: 'GwGroup', id: 'gg' });
@@ -444,6 +471,31 @@ describe('BpmnXmlConverter.fromXml — external documents', () => {
     expect(diagram.nodes.w1.properties.eventDefinition).toBe('timer');
     expect(diagram.nodes.e1.type).toBe('endEvent');
     expect(diagram.nodes.e1.properties.eventDefinition).toBe('terminate');
+  });
+
+  it('imports a Camunda multi-instance task without warnings', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  id="defs" targetNamespace="http://example.com">
+  <bpmn2:process id="proc_1" name="MI">
+    <bpmn2:userTask id="t1" name="Approve">
+      <bpmn2:multiInstanceLoopCharacteristics isSequential="true"/>
+    </bpmn2:userTask>
+    <bpmn2:sendTask id="t2" name="Notify"/>
+  </bpmn2:process>
+  <bpmndi:BPMNDiagram id="d1">
+    <bpmndi:BPMNPlane id="p1" bpmnElement="proc_1">
+      <bpmndi:BPMNShape id="t1_di" bpmnElement="t1"><dc:Bounds x="40" y="40" width="120" height="60"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t2_di" bpmnElement="t2"><dc:Bounds x="200" y="40" width="120" height="60"/></bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn2:definitions>`;
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(diagram.nodes.t1.properties.marker).toBe('sequentialMultiInstance');
+    expect(diagram.nodes.t2.type).toBe('sendTask');
   });
 
   it('imports an event-based gateway and a group artifact without warnings', () => {
