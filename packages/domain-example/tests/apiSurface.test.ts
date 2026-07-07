@@ -9,6 +9,7 @@ import * as api from '../src/index.js';
 const EXPECTED_EXPORTS = [
   'BTV_PALETTE_ICONS',
   'ConnectorShape',
+  'DOMAIN_EDGE_STYLES',
   'DOMAIN_EDGE_TYPES',
   'DOMAIN_NODE_TYPES',
   'DeliverableShape',

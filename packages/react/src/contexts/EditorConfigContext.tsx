@@ -10,7 +10,13 @@ import {
   type NodeTypeRegistry,
   type RuleEngine,
 } from '@bpmn-react/core';
-import type { BpmnPlugin, EdgeRouterFn, PaletteItem, ShapeComponent } from '../plugins/types.js';
+import type {
+  BpmnPlugin,
+  EdgeRouterFn,
+  EdgeStyle,
+  PaletteItem,
+  ShapeComponent,
+} from '../plugins/types.js';
 import { BUILT_IN_SHAPES } from '../shapes/index.js';
 import { BUILT_IN_PALETTE } from '../ui/paletteItems.js';
 
@@ -18,6 +24,8 @@ export interface EditorConfig {
   registry: NodeTypeRegistry;
   shapes: Record<string, ShapeComponent>;
   paletteItems: PaletteItem[];
+  /** Domain edge styles keyed by `edge.type`, merged across plugins. */
+  edgeStyles: Record<string, EdgeStyle>;
   ruleEngine: RuleEngine;
   validationEngine: ValidationEngine;
   lifecycleEngine: LifecycleEngine;
@@ -38,6 +46,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
   const registry = createDefaultRegistry();
   const shapes: Record<string, ShapeComponent> = { ...BUILT_IN_SHAPES };
   const paletteItems: PaletteItem[] = [...BUILT_IN_PALETTE];
+  const edgeStyles: Record<string, EdgeStyle> = {};
   const ruleEngine = createDefaultRuleEngine();
   const validationRules = [...BUILT_IN_VALIDATION_RULES];
   const preferredTypes: string[] = [];
@@ -50,6 +59,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
       preferredTypes.push(def.type);
     }
     Object.assign(shapes, plugin.shapes ?? {});
+    Object.assign(edgeStyles, plugin.edgeStyles ?? {});
     paletteItems.push(...(plugin.paletteItems ?? []));
     validationRules.push(...(plugin.validationRules ?? []));
     plugin.registerRules?.(ruleEngine);
@@ -68,6 +78,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
     registry,
     shapes,
     paletteItems,
+    edgeStyles,
     ruleEngine,
     validationEngine: new ValidationEngine(validationRules),
     lifecycleEngine,

@@ -18,6 +18,12 @@ test('renders the sample diagram with domain shapes', async ({ page }) => {
     'aguardando aprovação',
   );
   await expect(page.locator('[data-edge-id="e3"]')).toBeVisible();
+  // Domain edge styling reaches the DOM: the feedback edge (gate → reviewer)
+  // uses the open arrowhead marker.
+  await expect(page.locator('[data-edge-id="e5"] path[marker-end]').first()).toHaveAttribute(
+    'marker-end',
+    'url(#bpmnr-edge-open)',
+  );
   await expect(page.getByRole('status', { name: /Version/ })).toContainText('Draft');
 });
 

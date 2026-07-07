@@ -4,6 +4,15 @@ export const ARROW_MARKER_ID = 'bpmnr-arrow';
 export const ARROW_MARKER_MUTED_ID = 'bpmnr-arrow-muted';
 export const ARROW_MARKER_SELECTED_ID = 'bpmnr-arrow-selected';
 
+/**
+ * Domain edge markers. These inherit the edge's own stroke via
+ * `context-stroke`, so a single marker serves every domain color (handoff,
+ * approval, feedback, escalation) instead of one marker per color.
+ */
+export const EDGE_MARKER_FILLED_ID = 'bpmnr-edge-filled';
+export const EDGE_MARKER_OPEN_ID = 'bpmnr-edge-open';
+export const EDGE_MARKER_CHEVRON_ID = 'bpmnr-edge-chevron';
+
 /** Shared SVG defs: arrowheads and the dot-grid pattern. */
 export function Defs({ gridSize }: { gridSize: number }) {
   return (
@@ -40,6 +49,42 @@ export function Defs({ gridSize }: { gridSize: number }) {
         orient="auto-start-reverse"
       >
         <path d="M 0 0 L 10 5 L 0 10 z" fill={theme.strokeSelected} />
+      </marker>
+      {/* Filled arrowhead that adopts the edge's own color (handoff/approval). */}
+      <marker
+        id={EDGE_MARKER_FILLED_ID}
+        viewBox="0 0 10 10"
+        refX="9"
+        refY="5"
+        markerWidth="7"
+        markerHeight="7"
+        orient="auto-start-reverse"
+      >
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke" />
+      </marker>
+      {/* Open (two-line) arrowhead for feedback edges. */}
+      <marker
+        id={EDGE_MARKER_OPEN_ID}
+        viewBox="0 0 10 10"
+        refX="9"
+        refY="5"
+        markerWidth="9"
+        markerHeight="9"
+        orient="auto-start-reverse"
+      >
+        <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="context-stroke" strokeWidth="1.4" />
+      </marker>
+      {/* Double chevron for escalation edges. */}
+      <marker
+        id={EDGE_MARKER_CHEVRON_ID}
+        viewBox="0 0 12 10"
+        refX="10"
+        refY="5"
+        markerWidth="10"
+        markerHeight="9"
+        orient="auto-start-reverse"
+      >
+        <path d="M 1 1 L 5 5 L 1 9 M 6 1 L 10 5 L 6 9" fill="none" stroke="context-stroke" strokeWidth="1.4" />
       </marker>
       <pattern
         id="bpmnr-grid"
