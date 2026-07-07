@@ -4,7 +4,7 @@ import { createDiagram, createNode } from '@bpmn-react/core';
 import { BpmnViewer } from '../src/index.js';
 
 /**
- * Renders every one of the 19 built-in BPMN shapes at least once and checks
+ * Renders every one of the 22 built-in BPMN shapes at least once and checks
  * a couple of type-specific visual properties, so a rendering refactor that
  * silently breaks an untouched shape is caught.
  */
@@ -70,6 +70,29 @@ const EXPECTATIONS: Expectation[] = [
     check: (root) => {
       expect(root.querySelectorAll('rect')).toHaveLength(1);
       expect(root.querySelectorAll('path').length).toBeGreaterThan(0); // scroll glyph
+    },
+  },
+  {
+    type: 'sendTask',
+    label: 'Notify',
+    check: (root) => {
+      expect(root.querySelectorAll('rect')).toHaveLength(2); // body + envelope
+      expect(root.querySelectorAll('path').length).toBeGreaterThan(0); // envelope flap
+    },
+  },
+  {
+    type: 'receiveTask',
+    label: 'Await',
+    check: (root) => {
+      expect(root.querySelectorAll('rect')).toHaveLength(2); // body + envelope
+    },
+  },
+  {
+    type: 'manualTask',
+    label: 'Sign',
+    check: (root) => {
+      expect(root.querySelectorAll('rect')).toHaveLength(1);
+      expect(root.querySelectorAll('path').length).toBeGreaterThan(0); // hand glyph
     },
   },
   {
@@ -184,7 +207,7 @@ describe('built-in shapes render correctly', () => {
     expect(msg.querySelectorAll('rect').length).toBeGreaterThan(0);
   });
 
-  it('covers exactly the 19 registered built-in types (fails loudly if one is added without a fixture)', () => {
+  it('covers exactly the 22 registered built-in types (fails loudly if one is added without a fixture)', () => {
     expect(EXPECTATIONS.map((e) => e.type).sort()).toEqual(
       [
         'boundaryEvent',
@@ -197,9 +220,12 @@ describe('built-in shapes render correctly', () => {
         'intermediateCatchEvent',
         'intermediateThrowEvent',
         'lane',
+        'manualTask',
         'parallelGateway',
         'pool',
+        'receiveTask',
         'scriptTask',
+        'sendTask',
         'serviceTask',
         'startEvent',
         'subProcess',
@@ -208,5 +234,22 @@ describe('built-in shapes render correctly', () => {
         'userTask',
       ].sort(),
     );
+  });
+
+  it('renders loop and multi-instance activity markers', () => {
+    const diagram = createDiagram({ name: 'Markers' });
+    diagram.nodes = {
+      plain: createNode({ type: 'task', id: 'plain', label: 'Plain', x: 20, y: 20 }),
+      loop: createNode({ type: 'task', id: 'loop', label: 'Retry', x: 160, y: 20, properties: { marker: 'loop' } }),
+      mi: createNode({ type: 'userTask', id: 'mi', label: 'Many', x: 300, y: 20, properties: { marker: 'parallelMultiInstance' } }),
+    };
+    const { container } = render(<BpmnViewer diagram={diagram} />);
+    const plain = container.querySelector('[data-node-id="plain"]')!;
+    const loop = container.querySelector('[data-node-id="loop"]')!;
+    const mi = container.querySelector('[data-node-id="mi"]')!;
+    // The marker adds a <path> the plain task does not have (task has no glyph).
+    expect(plain.querySelectorAll('path')).toHaveLength(0);
+    expect(loop.querySelectorAll('path').length).toBeGreaterThan(0);
+    expect(mi.querySelectorAll('path').length).toBeGreaterThan(0);
   });
 });

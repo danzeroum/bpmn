@@ -11,9 +11,12 @@ import {
 } from '../src/index.js';
 
 describe('NodeTypeRegistry', () => {
-  it('registers the 19 built-in BPMN types', () => {
+  it('registers the 22 built-in BPMN types', () => {
     const registry = createDefaultRegistry();
-    expect(registry.list()).toHaveLength(19);
+    expect(registry.list()).toHaveLength(22);
+    expect(registry.has('sendTask')).toBe(true);
+    expect(registry.has('receiveTask')).toBe(true);
+    expect(registry.has('manualTask')).toBe(true);
     expect(registry.has('startEvent')).toBe(true);
     expect(registry.has('intermediateCatchEvent')).toBe(true);
     expect(registry.has('intermediateThrowEvent')).toBe(true);

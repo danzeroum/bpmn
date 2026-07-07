@@ -40,7 +40,7 @@ releases.
 | `intermediateCatchEvent`, `intermediateThrowEvent` | ✓ | ✓ | typed via `eventDefinition` |
 | `boundaryEvent` | ✓ | ✓ | `attachedToRef` + `cancelActivity` (see below) |
 | `messageEventDefinition`, `timerEventDefinition`, … | ✓ | ✓ | event definition child (see below) |
-| `task`, `userTask`, `serviceTask`, `scriptTask` | ✓ | ✓ | |
+| `task`, `userTask`, `serviceTask`, `scriptTask`, `sendTask`, `receiveTask`, `manualTask` | ✓ | ✓ | loop / multi-instance markers (see below) |
 | `exclusiveGateway`, `parallelGateway`, `inclusiveGateway`, `eventBasedGateway` | ✓ | ✓ | |
 | `group` | ✓ | ✓ | non-semantic artifact (dashed frame) |
 | `subProcess` | ✓ | ✓ | flat (no nested flow elements yet) |
@@ -71,6 +71,19 @@ round-trip losslessly. On import, a recognized `<bpmn:*EventDefinition/>` child 
 <bpmn:startEvent id="Start_1" name="Order received">
   <bpmn:messageEventDefinition id="Start_1_def"/>
 </bpmn:startEvent>
+```
+
+### Activity markers
+
+An activity (any `*Task` or `subProcess`) may carry a loop marker under `properties.marker`:
+`loop`, `parallelMultiInstance`, or `sequentialMultiInstance`. On export it becomes the
+standard `standardLoopCharacteristics` / `multiInstanceLoopCharacteristics` (`isSequential`)
+child, so it interoperates and round-trips.
+
+```xml
+<bpmn:userTask id="Task_1" name="Approve">
+  <bpmn:multiInstanceLoopCharacteristics isSequential="true"/>
+</bpmn:userTask>
 ```
 
 ### Boundary events
