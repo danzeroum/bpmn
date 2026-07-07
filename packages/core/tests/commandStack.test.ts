@@ -10,6 +10,7 @@ import {
   moveNodeCommand,
   removeEdgeCommand,
   removeNodeCommand,
+  resizeNodeCommand,
   supersedeEdgeCommand,
   updateEdgeCommand,
   updateNodeCommand,
@@ -124,6 +125,48 @@ describe('commands', () => {
     stack.undo();
     expect(stack.current.nodes[node.id].label).toBe('A');
     expect(stack.current.nodes[node.id].properties).toEqual({});
+  });
+
+  it('resizeNodeCommand changes the rect and restores the exact original on undo', () => {
+    const { stack, node } = setup();
+    stack.execute(addNodeCommand(node));
+    const from = { x: node.x, y: node.y, width: node.width, height: node.height };
+    const to = { x: node.x, y: node.y, width: node.width + 40, height: node.height + 20 };
+
+    stack.execute(resizeNodeCommand(node.id, from, to));
+    expect(stack.current.nodes[node.id]).toMatchObject(to);
+
+    stack.undo();
+    expect(stack.current.nodes[node.id]).toMatchObject(from);
+  });
+
+  it('resizeNodeCommand also relocates the node (north-west corner drag)', () => {
+    const { stack, node } = setup();
+    stack.execute(addNodeCommand(node));
+    // Dragging the NW corner grows the box while moving its origin.
+    const from = { x: 0, y: 0, width: 120, height: 60 };
+    const to = { x: -30, y: -10, width: 150, height: 70 };
+
+    stack.execute(resizeNodeCommand(node.id, from, to));
+    expect(stack.current.nodes[node.id]).toMatchObject(to);
+    stack.undo();
+    expect(stack.current.nodes[node.id]).toMatchObject(from);
+  });
+
+  it('resizeNodeCommand is a no-op for an unknown node id', () => {
+    const { stack } = setup();
+    const before = stack.current;
+    stack.execute(
+      resizeNodeCommand('ghost', { x: 0, y: 0, width: 10, height: 10 }, { x: 0, y: 0, width: 20, height: 20 }),
+    );
+    expect(stack.current).toBe(before);
+  });
+
+  it('resizeNodeCommand reports a NODE_RESIZED audit event with from/to', () => {
+    const from = { x: 0, y: 0, width: 120, height: 60 };
+    const to = { x: 0, y: 0, width: 160, height: 80 };
+    const event = resizeNodeCommand('n1', from, to).toAuditEvent?.();
+    expect(event).toEqual({ type: 'NODE_RESIZED', details: { nodeId: 'n1', from, to } });
   });
 
   it('updateEdgeCommand patches purpose and restores on undo', () => {

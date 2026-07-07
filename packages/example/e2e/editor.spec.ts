@@ -154,6 +154,35 @@ test('exports BPMN XML with DI', async ({ page }) => {
   expect(xml).toContain('type="btv:squad"');
 });
 
+test('exports SVG', async ({ page }) => {
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export SVG' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/\.svg$/);
+  const stream = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(chunk as Buffer);
+  const svg = Buffer.concat(chunks).toString('utf8');
+  expect(svg).toContain('<svg');
+  expect(svg).toContain('xmlns="http://www.w3.org/2000/svg"');
+  // Transient interaction chrome must not leak into the exported file.
+  expect(svg).not.toContain('data-resize-handles');
+});
+
+test('exports PNG', async ({ page }) => {
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export PNG' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/\.png$/);
+  const stream = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) chunks.push(chunk as Buffer);
+  const bytes = Buffer.concat(chunks);
+  expect(bytes.length).toBeGreaterThan(0);
+  // PNG magic number: 89 50 4E 47 0D 0A 1A 0A
+  expect(bytes.subarray(0, 8).toString('hex')).toBe('89504e470d0a1a0a');
+});
+
 test('rejects invalid XML imports with a readable error', async ({ page }) => {
   page.on('dialog', async (dialog) => {
     expect(dialog.message()).toContain('Import failed');

@@ -29,9 +29,17 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
       const meta = event.ctrlKey || event.metaKey;
 
       if (event.key === ' ' && !event.repeat) {
+        // Panning is a viewport operation, not a diagram mutation — allowed
+        // even in read-only mode.
         interactions.setPanKey(true);
         return;
       }
+
+      const state = store.getState();
+      // Every shortcut below can mutate the diagram (undo/redo replay
+      // commands on the stack too), so a read-only viewer must be fully
+      // inert to all of them, not just Delete/arrows.
+      if (state.readOnly) return;
 
       if (meta && event.key.toLowerCase() === 'z') {
         event.preventDefault();
@@ -44,9 +52,6 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
         redo();
         return;
       }
-
-      const state = store.getState();
-      if (state.readOnly) return;
 
       if (event.key === 'Escape') {
         interactions.cancelGestures();

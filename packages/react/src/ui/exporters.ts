@@ -12,7 +12,7 @@
 export function svgToString(svg: SVGSVGElement): string {
   const clone = svg.cloneNode(true) as SVGSVGElement;
   clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  const viewBox = svg.viewBox.baseVal;
+  const viewBox = svg.viewBox?.baseVal;
   if (viewBox && viewBox.width > 0) {
     clone.setAttribute('width', String(viewBox.width));
     clone.setAttribute('height', String(viewBox.height));

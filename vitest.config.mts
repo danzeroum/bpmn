@@ -5,8 +5,30 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['packages/*/src/**'],
-      exclude: ['packages/example/**'],
+      exclude: [
+        'packages/example/**',
+        // Pure type-only files (interfaces/type aliases erase to an empty
+        // module at compile time) — "0% coverage" on zero statements is a
+        // reporting artifact, not a gap. Confirmed dead-code-free by
+        // ts-prune; see docs/limitations.md.
+        'packages/core/src/commands/types.ts',
+        'packages/react/src/plugins/types.ts',
+        // Exercised end-to-end as a real child process in
+        // packages/cli/tests/bin.test.ts — v8 coverage instrumentation
+        // only observes code run in-process, so a spawned script always
+        // reports 0% here regardless of how well it's tested.
+        'packages/cli/src/bin.ts',
+      ],
       reporter: ['text', 'lcov'],
+      // A release-safety floor (see docs/versioning.md): CI fails if
+      // coverage drops below these numbers. Raise them opportunistically
+      // as gaps close — never lower them to make a red build pass.
+      thresholds: {
+        'packages/core/src/**': { statements: 95, branches: 80, functions: 90, lines: 95 },
+        'packages/domain-example/src/**': { statements: 90, branches: 75, functions: 90, lines: 90 },
+        'packages/cli/src/**': { statements: 85, branches: 65, functions: 95, lines: 85 },
+        'packages/react/src/**': { statements: 65, branches: 60, functions: 65, lines: 65 },
+      },
     },
   },
 });
