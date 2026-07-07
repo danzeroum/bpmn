@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #faf9f6; }
+  a { color: #9a7b1e; } a:hover { color: #7a611e; }
+</style>
+</helmet>
+<div style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; height: 100vh; display: flex; flex-direction: column; background: #faf9f6; overflow: hidden;">
+
+  <!-- ============ HEADER ============ -->
+  <header data-screen-label="Header" style="height: 58px; flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2ddd3; display: flex; align-items: center; gap: 14px; padding: 0 20px; z-index: 6;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 26px; height: 26px; border-radius: 7px; background: #9a7b1e; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">B</div>
+      <div style="font-weight: 600; font-size: 14px;">BuildToValue <span style="color: #6f675a; font-weight: 400;">Biblioteca</span></div>
+    </div>
+    <div style="width: 1px; height: 22px; background: #e2ddd3;"></div>
+    <nav style="display: flex; gap: 4px; font-size: 12.5px;">
+      <span style="padding: 6px 12px; border-radius: 8px; background: #f6edd4; color: #7a611e; font-weight: 600;">Galeria</span>
+      <span style="padding: 6px 12px; border-radius: 8px; color: #6f675a; cursor: pointer;" style-hover="background: #f2efe8;">Meus rascunhos</span>
+      <span style="padding: 6px 12px; border-radius: 8px; color: #6f675a; cursor: pointer;" style-hover="background: #f2efe8;">Auditoria</span>
+    </nav>
+    <div style="flex: 1;"></div>
+    <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #e2ddd3; border-radius: 8px; padding: 6px 12px; width: 220px; color: #6f675a; font-size: 12px; background: #faf9f6;">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#6f675a" stroke-width="1.5"><circle cx="6" cy="6" r="4.5"></circle><path d="M 9.5 9.5 L 13 13"></path></svg>
+      Buscar templates…
+    </div>
+    <button style="border: none; background: #9a7b1e; color: #ffffff; border-radius: 8px; height: 32px; padding: 0 16px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;" style-hover="background: #7a611e;">+ Novo template</button>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0;">
+    <main data-screen-label="Galeria" style="flex: 1; min-width: 0; overflow-y: auto; padding: 20px 24px;">
+
+      <!-- Filtros por status de vigência -->
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px;">
+        <sc-for list="{{ chips }}" as="chip" hint-placeholder-count="6">
+          <button onClick="{{ chip.pick }}" style="border: 1px solid {{ chip.border }}; background: {{ chip.bg }}; color: {{ chip.fg }}; border-radius: 999px; padding: 6px 14px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            {{ chip.label }}
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; opacity: 0.75;">{{ chip.count }}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <!-- Grid de cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(272px, 1fr)); gap: 16px;">
+        <sc-for list="{{ items }}" as="item" hint-placeholder-count="6">
+          <div onClick="{{ item.pick }}" style="border: 1px solid {{ item.cardBorder }}; border-radius: 14px; background: #ffffff; overflow: hidden; cursor: pointer; box-shadow: {{ item.cardShadow }}; transition: box-shadow 120ms ease-out, border-color 120ms ease-out;" style-hover="box-shadow: 0 4px 14px rgba(68, 64, 58, 0.12);">
+            <!-- thumb -->
+            <div style="height: 108px; background-color: #faf9f6; background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 14px 14px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #efece6; position: relative;">
+              <sc-if value="{{ item.isFluxo }}" hint-placeholder-val="{{ true }}">
+                <svg width="150" height="60" viewBox="0 0 150 60">
+                  <circle cx="14" cy="30" r="9" fill="#eef4f0" stroke="#44403a" stroke-width="1.3"></circle>
+                  <path d="M 23 30 H 40" stroke="#44403a" stroke-width="1.3"></path>
+                  <rect x="42" y="16" width="42" height="28" rx="5" fill="#f8f7f4" stroke="#44403a" stroke-width="1.3"></rect>
+                  <path d="M 84 30 H 100" stroke="#44403a" stroke-width="1.3"></path>
+                  <polygon points="112,18 124,30 112,42 100,30" fill="#f6edd4" stroke="#9a7b1e" stroke-width="1.3"></polygon>
+                  <path d="M 124 30 H 138" stroke="#44403a" stroke-width="1.3"></path>
+                  <polygon points="144,30 137,26.5 137,33.5" fill="#44403a"></polygon>
+                </svg>
+              </sc-if>
+              <sc-if value="{{ item.isPersona }}" hint-placeholder-val="{{ false }}">
+                <svg width="128" height="52" viewBox="0 0 128 52">
+                  <rect x="2" y="2" width="124" height="48" rx="24" fill="#fbf1dc" stroke="#b08a47" stroke-width="1.4"></rect>
+                  <circle cx="26" cy="26" r="16" fill="#f0dfb8" stroke="#b08a47" stroke-width="1"></circle>
+                  <g transform="translate(21, 19)" fill="none" stroke="#8a6a2e" stroke-width="1.3">
+                    <circle cx="5" cy="3.6" r="2.6"></circle>
+                    <path d="M 0.5 12 C 0.5 7.5 9.5 7.5 9.5 12"></path>
+                  </g>
+                  <rect x="50" y="18" width="52" height="6" rx="3" fill="#e6d3ac"></rect>
+                  <rect x="50" y="29" width="34" height="5" rx="2.5" fill="#efe2c4"></rect>
+                </svg>
+              </sc-if>
+              <sc-if value="{{ item.isPrompt }}" hint-placeholder-val="{{ false }}">
+                <svg width="104" height="58" viewBox="0 0 104 58">
+                  <path d="M 5 2 H 84 L 100 18 V 52 Q 100 56 96 56 H 5 Q 1 56 1 52 V 6 Q 1 2 5 2 Z" fill="#f5e9f0" stroke="#9a5580" stroke-width="1.4"></path>
+                  <path d="M 84 2 V 18 H 100" fill="none" stroke="#9a5580" stroke-width="1"></path>
+                  <g stroke="#9a5580" stroke-width="1" opacity="0.5">
+                    <line x1="10" y1="16" x2="62" y2="16"></line>
+                    <line x1="10" y1="25" x2="76" y2="25"></line>
+                    <line x1="10" y1="34" x2="68" y2="34"></line>
+                  </g>
+                </svg>
+              </sc-if>
+              <sc-if value="{{ item.isConn }}" hint-placeholder-val="{{ false }}">
+                <svg width="110" height="56" viewBox="0 0 110 56">
+                  <rect x="2" y="2" width="106" height="52" rx="9" fill="#e3eef6" stroke="#2f6e94" stroke-width="1.4" stroke-dasharray="6,3"></rect>
+                  <g transform="translate(44, 14)" fill="none" stroke="#2f6e94" stroke-width="1.6">
+                    <path d="M 4 0 v 7 M 14 0 v 7"></path>
+                    <path d="M 1 7 h 16 v 4 a 8 8 0 0 1 -16 0 z"></path>
+                    <path d="M 9 21 v 6"></path>
+                  </g>
+                </svg>
+              </sc-if>
+              <sc-if value="{{ item.isGate }}" hint-placeholder-val="{{ false }}">
+                <svg width="86" height="62" viewBox="0 0 86 62">
+                  <polygon points="22,3 64,3 84,31 64,59 22,59 2,31" fill="#f6edd4" stroke="#9a7b1e" stroke-width="1.5"></polygon>
+                  <circle cx="43" cy="31" r="12" fill="none" stroke="#9a7b1e" stroke-width="1.7"></circle>
+                  <path d="M 39.5 26.5 V 35.5 M 46.5 26.5 V 35.5" stroke="#9a7b1e" stroke-width="2.2" stroke-linecap="round"></path>
+                </svg>
+              </sc-if>
+              <span style="position: absolute; top: 8px; left: 8px; background: #ffffff; border: 1px solid #e2ddd3; border-radius: 999px; padding: 2px 9px; font-size: 9.5px; font-weight: 600; color: #6f675a; letter-spacing: 0.5px;">{{ item.type }}</span>
+            </div>
+            <!-- corpo -->
+            <div style="padding: 12px 14px 13px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px;">
+                <div style="font-size: 13.5px; font-weight: 600; line-height: 1.3;">{{ item.name }}</div>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #44403a; flex-shrink: 0;">{{ item.version }}</span>
+              </div>
+              <!-- selo de vigência -->
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span style="background: {{ item.sealBg }}; color: {{ item.sealFg }}; border: 1px {{ item.sealBorderStyle }} {{ item.sealBorderColor }}; font-size: 9.5px; font-weight: 700; letter-spacing: 0.8px; border-radius: 999px; padding: 2px 9px;">{{ item.sealLabel }}</span>
+                <span style="border: 1px solid #e2ddd3; border-radius: 999px; padding: 2px 8px; font-size: 9.5px; color: #6f675a;">{{ item.channel }}</span>
+                <sc-if value="{{ item.hasRuns }}" hint-placeholder-val="{{ false }}">
+                  <span style="background: #dff0e6; color: #1a6a54; border-radius: 4px; padding: 2px 7px; font-size: 9.5px; font-weight: 600;">{{ item.runs }} execuções presas</span>
+                </sc-if>
+              </div>
+              <div style="font-size: 11px; color: #6f675a; line-height: 1.5;">{{ item.meta }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </main>
+
+    <!-- ============ DRAWER DE DETALHE ============ -->
+    <aside data-screen-label="Detalhe do template" style="width: 316px; flex-shrink: 0; background: #ffffff; border-left: 1px solid #e2ddd3; overflow-y: auto; padding: 16px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 8px;">DETALHE · {{ selType }}</div>
+      <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">{{ selName }}</div>
+      <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 12px;">
+        <span style="background: {{ selSealBg }}; color: {{ selSealFg }}; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; border-radius: 999px; padding: 3px 10px;">{{ selSealLabel }}</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px;">{{ selVersion }}</span>
+        <span style="border: 1px solid #e2ddd3; border-radius: 999px; padding: 2px 9px; font-size: 10px; color: #6f675a;">{{ selChannel }}</span>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 12px; margin-bottom: 10px; font-size: 11.5px; line-height: 1.7; color: #44403a;">
+        <strong>Vigência:</strong> {{ selSince }}<br>
+        <strong>Aprovação:</strong> {{ selApprovers }}<br>
+        <strong>change_summary:</strong> {{ selSummary }}
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 12px; margin-bottom: 14px; background: #faf9f6;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 5px;">PROVENIÊNCIA · PPMN</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #44403a; line-height: 1.7;">ledger {{ selHash }} ✓ íntegro<br>autor: {{ selAuthor }}</div>
+      </div>
+
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 10px;">LINHA DO TEMPO DE VERSÕES</div>
+      <div style="display: flex; flex-direction: column;">
+        <sc-for list="{{ selVersions }}" as="v" hint-placeholder-count="3">
+          <div style="display: flex; gap: 10px; padding-bottom: 13px;">
+            <div style="width: 9px; height: 9px; border-radius: 50%; background: {{ v.dot }}; margin-top: 4px; flex-shrink: 0; box-shadow: 0 0 0 3px #fff;"></div>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600;">{{ v.v }}</span>
+                <span style="background: {{ v.bg }}; color: {{ v.fg }}; font-size: 9px; font-weight: 700; border-radius: 999px; padding: 1px 8px;">{{ v.label }}</span>
+              </div>
+              <div style="font-size: 10.5px; color: #6f675a; margin-top: 2px; line-height: 1.5;">{{ v.note }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+        <a href="Prototipo Designer BTV.dc.html" style="text-align: center; border: none; background: #9a7b1e; color: #ffffff; border-radius: 8px; padding: 9px 0; font-size: 12.5px; font-weight: 600; text-decoration: none;">Abrir no Designer</a>
+        <button style="border: 1px solid #e2ddd3; background: transparent; border-radius: 8px; padding: 9px 0; font-family: inherit; font-size: 12.5px; font-weight: 600; color: #262220; cursor: pointer;" style-hover="background: #f2efe8;">Diff vs versão ativa</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ============ STATUS BAR ============ -->
+  <footer style="height: 30px; flex-shrink: 0; background: #ffffff; border-top: 1px solid #e2ddd3; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a;">
+    <span>registry @bpmn-react · vigência temporal (activeAt) · canais: interno / piloto / geral</span>
+    <span>{{ totalCount }} artefatos · ledger íntegro ✓</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { filter: 'todos', selected: 'onb' };
+
+  static SEALS = {
+    rascunho: { label: 'RASCUNHO', bg: '#faf9f6', fg: '#44403a', border: '#a49c8f', borderStyle: 'dashed', dot: '#a49c8f' },
+    teste: { label: 'TESTE INTERNO', bg: '#e3ecf7', fg: '#33567e', border: '#e3ecf7', borderStyle: 'solid', dot: '#33567e' },
+    candidata: { label: 'CANDIDATA', bg: '#f6edd4', fg: '#7a611e', border: '#f6edd4', borderStyle: 'solid', dot: '#9a7b1e' },
+    ativa: { label: 'ATIVA', bg: '#dff0e6', fg: '#1a6a54', border: '#dff0e6', borderStyle: 'solid', dot: '#1a6a54' },
+    descontinuada: { label: 'DESCONTINUADA', bg: '#f7e6e0', fg: '#b3372f', border: '#f7e6e0', borderStyle: 'solid', dot: '#b3372f' },
+    arquivada: { label: 'ARQUIVADA', bg: '#efece6', fg: '#6f675a', border: '#efece6', borderStyle: 'solid', dot: '#c9c4ba' },
+  };
+
+  static ITEMS = [
+    {
+      id: 'onb', type: 'FLUXO', kind: 'fluxo', name: 'Onboarding de Cliente', version: 'v2.1.0',
+      status: 'candidata', channel: 'piloto', runs: 0,
+      meta: 'aguarda 2 aprovações · atualizado hoje',
+      since: 'ainda não vigente (candidata)', approvers: 'aguarda operação + compliance',
+      summary: 'Plano por IA com timeout 48h e gate DMN.', hash: '#f3a9…c2', author: 'ana.ruiz · 05/07/2026',
+      versions: [
+        { v: 'v2.1.0', s: 'candidata', note: '+ prompt IA · + boundary timer · gate DMN' },
+        { v: 'v2.0.0', s: 'ativa', note: 'vigente desde 12/05/2026 · 3 execuções presas' },
+        { v: 'v1.2.0', s: 'arquivada', note: 'edge e-07 encerrada · sucedida por e-12' },
+      ],
+    },
+    {
+      id: 'ren', type: 'FLUXO', kind: 'fluxo', name: 'Renovação de Contrato', version: 'v1.4.2',
+      status: 'ativa', channel: 'geral', runs: 12,
+      meta: 'vigente desde 02/06/2026 · aprovada por operação, negócio',
+      since: '02/06/2026 → em vigor', approvers: 'operação, negócio (2/2)',
+      summary: 'Corrige timeout do connector de faturamento.', hash: '#b81d…7e', author: 'carlos.melo · 02/06/2026',
+      versions: [
+        { v: 'v1.4.2', s: 'ativa', note: 'patch · vigente desde 02/06/2026' },
+        { v: 'v1.4.1', s: 'descontinuada', note: 'vigente 20/04 → 02/06/2026' },
+      ],
+    },
+    {
+      id: 'sup', type: 'FLUXO', kind: 'fluxo', name: 'Suporte N2 com IA', version: 'v0.3.0',
+      status: 'rascunho', channel: 'interno', runs: 0,
+      meta: 'em edição · sem efeito em produção',
+      since: 'nunca vigente (rascunho)', approvers: '—',
+      summary: 'Triagem por agente IA antes do humano.', hash: '#0c4f…a1', author: 'dev.squad · 06/07/2026',
+      versions: [
+        { v: 'v0.3.0', s: 'rascunho', note: 'em edição' },
+        { v: 'v0.2.0', s: 'arquivada', note: 'abordagem descartada' },
+      ],
+    },
+    {
+      id: 'ana', type: 'PERSONA', kind: 'persona', name: 'Ana Ruiz — UX Lead', version: 'v1.2.0',
+      status: 'ativa', channel: 'geral', runs: 5,
+      meta: 'vinculada a 2 fluxos ativos',
+      since: '15/03/2026 → em vigor', approvers: 'operação, RH (2/2)',
+      summary: 'Adiciona alçada de aprovação de briefing.', hash: '#77e2…9b', author: 'ana.ruiz · 15/03/2026',
+      versions: [
+        { v: 'v1.2.0', s: 'ativa', note: 'vigente desde 15/03/2026' },
+        { v: 'v1.1.0', s: 'descontinuada', note: 'vigente 01/01 → 15/03/2026' },
+      ],
+    },
+    {
+      id: 'sdr', type: 'PERSONA', kind: 'persona', name: 'Agente SDR (IA)', version: 'v2.0.0',
+      status: 'teste', channel: 'interno', runs: 0,
+      meta: 'sandbox · tenant piloto interno',
+      since: 'em teste (sandbox)', approvers: 'promoção test → candidate: dono funcional',
+      summary: 'major: novo modelo de qualificação de leads.', hash: '#3da8…44', author: 'ia.lab · 04/07/2026',
+      versions: [
+        { v: 'v2.0.0', s: 'teste', note: 'sandbox desde 04/07/2026' },
+        { v: 'v1.3.2', s: 'ativa', note: 'vigente desde 10/05/2026 · canal geral' },
+      ],
+    },
+    {
+      id: 'pln', type: 'PROMPT', kind: 'prompt', name: 'Gerar plano de conta', version: 'v1.3.0',
+      status: 'ativa', channel: 'piloto', runs: 3,
+      meta: 'usado por Onboarding de Cliente v2.x',
+      since: '28/06/2026 → em vigor', approvers: 'operação, compliance (2/2)',
+      summary: 'Ajusta tom e adiciona checklist de dados.', hash: '#c15b…e0', author: 'ana.ruiz · 28/06/2026',
+      versions: [
+        { v: 'v1.3.0', s: 'ativa', note: 'vigente desde 28/06/2026' },
+        { v: 'v1.2.0', s: 'descontinuada', note: 'vigente 05/06 → 28/06/2026' },
+      ],
+    },
+    {
+      id: 'res', type: 'PROMPT', kind: 'prompt', name: 'Resumo de reunião', version: 'v1.0.0',
+      status: 'descontinuada', channel: 'geral', runs: 1,
+      meta: 'sucedido por "Resumo executivo v2"',
+      since: '10/02/2026 → 20/06/2026', approvers: 'operação, negócio (2/2)',
+      summary: 'Substituído por versão com action items.', hash: '#9f02…1d', author: 'carlos.melo · 10/02/2026',
+      versions: [
+        { v: 'v1.0.0', s: 'descontinuada', note: 'vigente 10/02 → 20/06/2026 · 1 execução presa' },
+      ],
+    },
+    {
+      id: 'crm', type: 'CONNECTOR', kind: 'conn', name: 'CRM Sync', version: 'v2.0.1',
+      status: 'ativa', channel: 'geral', runs: 8,
+      meta: 'REST · POST /accounts/plan · retry 3×',
+      since: '18/06/2026 → em vigor', approvers: 'engenharia, operação (2/2)',
+      summary: 'patch: timeout 30s e idempotência.', hash: '#4ab7…f6', author: 'eng.plataforma · 18/06/2026',
+      versions: [
+        { v: 'v2.0.1', s: 'ativa', note: 'vigente desde 18/06/2026' },
+        { v: 'v2.0.0', s: 'descontinuada', note: 'vigente 01/06 → 18/06/2026' },
+        { v: 'v1.x', s: 'arquivada', note: 'API SOAP legada' },
+      ],
+    },
+    {
+      id: 'gate', type: 'POLÍTICA', kind: 'gate', name: 'Gate: Aprovação Dupla', version: 'v1.1.0',
+      status: 'candidata', channel: 'piloto', runs: 0,
+      meta: 'regra de promoção multi-papel',
+      since: 'ainda não vigente (candidata)', approvers: 'aguarda compliance',
+      summary: 'Exige 2 papéis distintos para ativar fluxos.', hash: '#e6c3…08', author: 'compliance · 03/07/2026',
+      versions: [
+        { v: 'v1.1.0', s: 'candidata', note: 'adiciona papel de negócio como aprovador válido' },
+        { v: 'v1.0.0', s: 'ativa', note: 'vigente desde 01/04/2026' },
+      ],
+    },
+    {
+      id: 'cob', type: 'FLUXO', kind: 'fluxo', name: 'Cobrança (legado)', version: 'v3.0.0',
+      status: 'arquivada', channel: 'geral', runs: 0,
+      meta: 'sem uso novo permitido · histórico preservado',
+      since: '2025 → 30/04/2026', approvers: 'histórico no ledger',
+      summary: 'Processo substituído pela esteira financeira.', hash: '#12aa…35', author: 'financeiro · 2025',
+      versions: [
+        { v: 'v3.0.0', s: 'arquivada', note: 'arquivada em 30/04/2026 · lineage completa no ledger' },
+      ],
+    },
+  ];
+
+  renderVals() {
+    const SEALS = Component.SEALS;
+    const ALL = Component.ITEMS;
+    const s = this.state;
+
+    const match = (item) => {
+      if (s.filter === 'todos') return true;
+      if (s.filter === 'encerradas') return item.status === 'descontinuada' || item.status === 'arquivada';
+      return item.status === s.filter;
+    };
+
+    const items = ALL.filter(match).map((item) => {
+      const seal = SEALS[item.status];
+      const sel = s.selected === item.id;
+      return {
+        ...item,
+        isFluxo: item.kind === 'fluxo',
+        isPersona: item.kind === 'persona',
+        isPrompt: item.kind === 'prompt',
+        isConn: item.kind === 'conn',
+        isGate: item.kind === 'gate',
+        sealLabel: seal.label,
+        sealBg: seal.bg,
+        sealFg: seal.fg,
+        sealBorderColor: seal.border,
+        sealBorderStyle: seal.borderStyle,
+        hasRuns: item.runs > 0,
+        cardBorder: sel ? '#9a7b1e' : '#e2ddd3',
+        cardShadow: sel ? '0 0 0 3px rgba(154, 123, 30, 0.18)' : 'none',
+        pick: () => this.setState({ selected: item.id }),
+      };
+    });
+
+    const count = (key) =>
+      key === 'todos'
+        ? ALL.length
+        : key === 'encerradas'
+          ? ALL.filter((i) => i.status === 'descontinuada' || i.status === 'arquivada').length
+          : ALL.filter((i) => i.status === key).length;
+
+    const chips = [
+      { key: 'todos', label: 'Todos' },
+      { key: 'ativa', label: 'Ativas' },
+      { key: 'candidata', label: 'Candidatas' },
+      { key: 'teste', label: 'Teste interno' },
+      { key: 'rascunho', label: 'Rascunhos' },
+      { key: 'encerradas', label: 'Encerradas' },
+    ].map((c) => ({
+      ...c,
+      count: count(c.key),
+      bg: s.filter === c.key ? '#9a7b1e' : 'transparent',
+      fg: s.filter === c.key ? '#ffffff' : '#44403a',
+      border: s.filter === c.key ? '#9a7b1e' : '#e2ddd3',
+      pick: () => this.setState({ filter: c.key }),
+    }));
+
+    const cur = ALL.find((i) => i.id === s.selected) ?? ALL[0];
+    const curSeal = SEALS[cur.status];
+    const selVersions = cur.versions.map((v) => {
+      const vs = SEALS[v.s];
+      return { v: v.v, label: vs.label, bg: vs.bg, fg: vs.fg, dot: vs.dot, note: v.note };
+    });
+
+    return {
+      chips,
+      items,
+      totalCount: ALL.length,
+      selType: cur.type,
+      selName: cur.name,
+      selVersion: cur.version,
+      selSealLabel: curSeal.label,
+      selSealBg: curSeal.bg,
+      selSealFg: curSeal.fg,
+      selChannel: cur.channel,
+      selSince: cur.since,
+      selApprovers: cur.approvers,
+      selSummary: cur.summary,
+      selHash: cur.hash,
+      selAuthor: cur.author,
+      selVersions,
+    };
+  }
+}
+</script>
+</body>
+</html>

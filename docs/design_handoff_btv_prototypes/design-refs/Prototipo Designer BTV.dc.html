@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #faf9f6; }
+  a { color: #9a7b1e; } a:hover { color: #7a611e; }
+</style>
+</helmet>
+<div style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; height: 100vh; display: flex; flex-direction: column; background: #faf9f6; overflow: hidden;">
+
+  <!-- ============ TOOLBAR ============ -->
+  <header data-screen-label="Toolbar" style="height: 58px; flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2ddd3; display: flex; align-items: center; gap: 14px; padding: 0 16px; z-index: 6;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 26px; height: 26px; border-radius: 7px; background: #9a7b1e; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">B</div>
+      <div style="font-weight: 600; font-size: 14px;">BuildToValue <span style="color: #6f675a; font-weight: 400;">Designer</span></div>
+    </div>
+    <div style="width: 1px; height: 22px; background: #e2ddd3;"></div>
+    <div style="font-size: 13.5px; font-weight: 500;">Onboarding de Cliente</div>
+
+    <!-- Selo de vigência (Handoff 2 · B1) -->
+    <sc-if value="{{ notActivated }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #e8d9ae; border-radius: 999px; padding: 4px 12px 4px 5px; background: #fdfaf1;">
+        <span style="background: #f6edd4; color: #7a611e; font-size: 10px; font-weight: 700; letter-spacing: 1px; border-radius: 999px; padding: 3px 10px;">● CANDIDATA</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">v2.1.0</span>
+        <span style="font-size: 11px; color: #6f675a;">canal: piloto · aguarda 2 aprovações</span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ activated }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #bcdcc9; border-radius: 999px; padding: 4px 12px 4px 5px; background: #f2f9f4;">
+        <span style="background: #dff0e6; color: #1a6a54; font-size: 10px; font-weight: 700; letter-spacing: 1px; border-radius: 999px; padding: 3px 10px;">● ATIVA</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">v2.1.0</span>
+        <span style="font-size: 11px; color: #6f675a;">vigente desde 07/07/2026 · aprovada por operação, compliance</span>
+      </div>
+    </sc-if>
+
+    <div style="flex: 1;"></div>
+    <button style="border: 1px solid #e2ddd3; background: transparent; border-radius: 8px; height: 32px; padding: 0 14px; font-family: inherit; font-size: 12.5px; color: #262220; cursor: pointer;" style-hover="background: #f2efe8;">Diff</button>
+    <button style="border: 1px solid #e2ddd3; background: transparent; border-radius: 8px; height: 32px; padding: 0 14px; font-family: inherit; font-size: 12.5px; color: #262220; cursor: pointer;" style-hover="background: #f2efe8;">Exportar BPMN 2.0.2</button>
+    <sc-if value="{{ notActivated }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ openPromo }}" style="border: none; background: #9a7b1e; color: #ffffff; border-radius: 8px; height: 32px; padding: 0 16px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;" style-hover="background: #7a611e;">Promover…</button>
+    </sc-if>
+    <sc-if value="{{ activated }}" hint-placeholder-val="{{ false }}">
+      <button style="border: 1px solid #bcdcc9; background: #f2f9f4; color: #1a6a54; border-radius: 8px; height: 32px; padding: 0 16px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: default;">✓ Em vigor</button>
+    </sc-if>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0;">
+
+    <!-- ============ PALETA ============ -->
+    <aside data-screen-label="Paleta" style="width: 172px; flex-shrink: 0; background: #ffffff; border-right: 1px solid #e2ddd3; padding: 12px 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #6f675a; padding: 4px 8px 6px;">CORE BPMN</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px;" style-hover="background: #f2efe8;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#44403a" stroke-width="1.5"><circle cx="10" cy="10" r="7"></circle></svg>Start Event</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px;" style-hover="background: #f2efe8;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#44403a" stroke-width="1.5"><rect x="3" y="5.5" width="14" height="9" rx="2"></rect></svg>Task</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px;" style-hover="background: #f2efe8;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#44403a" stroke-width="1.5"><polygon points="10,2.5 17.5,10 10,17.5 2.5,10"></polygon><path d="M 8 8 L 12 12 M 12 8 L 8 12" stroke-width="1.6"></path></svg>Gateway XOR</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px;" style-hover="background: #f2efe8;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#44403a" stroke-width="1.5"><rect x="2" y="4.5" width="16" height="11"></rect><path d="M 6 4.5 V 15.5" stroke-width="1.1"></path></svg>Pool</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px;" style-hover="background: #f2efe8;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#44403a" stroke-width="1.5"><rect x="2" y="4.5" width="16" height="11"></rect><path d="M 2 10 H 18" stroke-width="1.1"></path></svg>Lane</div>
+
+      <div style="display: flex; align-items: center; gap: 6px; padding: 12px 8px 6px;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #6f675a;">EVENTOS</span><span style="background: #f6edd4; color: #7a611e; font-size: 8.5px; font-weight: 700; border-radius: 999px; padding: 1px 7px;">F6</span></div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px;" style-hover="background: #f2efe8;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#44403a" stroke-width="1.3"><circle cx="10" cy="10" r="7"></circle><circle cx="10" cy="10" r="5"></circle><path d="M 10 7 V 10 L 12.2 11.5" stroke-width="1.2"></path></svg>Timer</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px;" style-hover="background: #f2efe8;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#44403a" stroke-width="1.3"><circle cx="10" cy="10" r="7"></circle><rect x="6.2" y="7.2" width="7.6" height="5.6" rx="0.8"></rect><path d="M 6.5 7.8 L 10 10.5 L 13.5 7.8" stroke-width="1.1"></path></svg>Mensagem</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px;" style-hover="background: #f2efe8;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#44403a" stroke-width="1.3" stroke-dasharray="2.5,2"><circle cx="10" cy="10" r="7"></circle><circle cx="10" cy="10" r="5"></circle></svg>Boundary NI</div>
+
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; padding: 12px 8px 6px;">BUILDTOVALUE</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px; background: #fdfaf1;" style-hover="background: #f6edd4;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#5566a6" stroke-width="1.4"><circle cx="7" cy="8" r="2.2"></circle><circle cx="13" cy="8" r="2.2"></circle><path d="M 4 14.5 C 4 11.5 10 11.5 10 14.5 M 10 14.5 C 10 11.5 16 11.5 16 14.5"></path></svg>Squad</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px; background: #fdfaf1;" style-hover="background: #f6edd4;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#b08a47" stroke-width="1.4"><rect x="2.5" y="6" width="15" height="8" rx="4"></rect><circle cx="6.5" cy="10" r="2.2"></circle></svg>Persona</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px; background: #fdfaf1;" style-hover="background: #f6edd4;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#9a7b1e" stroke-width="1.4"><polygon points="6.5,3.5 13.5,3.5 17.5,10 13.5,16.5 6.5,16.5 2.5,10"></polygon><path d="M 8.5 8 V 12 M 11.5 8 V 12" stroke-linecap="round"></path></svg>Approval Gate</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px; background: #fdfaf1;" style-hover="background: #f6edd4;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#9a5580" stroke-width="1.4"><path d="M 4 3 H 13 L 16.5 6.5 V 17 H 4 Z"></path><path d="M 13 3 V 6.5 H 16.5" stroke-width="1"></path></svg>Prompt</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px; background: #fdfaf1;" style-hover="background: #f6edd4;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#2f6e94" stroke-width="1.4"><path d="M 8 3.5 v 3 M 12 3.5 v 3"></path><path d="M 6.5 6.5 h 7 v 2.5 a 3.5 3.5 0 0 1 -7 0 z"></path><path d="M 10 13 v 3.5"></path></svg>Connector</div>
+      <div style="display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 7px; cursor: grab; font-size: 12px; background: #fdfaf1;" style-hover="background: #f6edd4;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#3b7d4f" stroke-width="1.4"><path d="M 4 3.5 H 16 V 12 L 10 16.5 L 4 12 Z"></path></svg>Deliverable</div>
+    </aside>
+
+    <!-- ============ CANVAS ============ -->
+    <main data-screen-label="Canvas" style="flex: 1; min-width: 0; position: relative; background-color: #faf9f6; background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; overflow: auto;">
+      <svg width="1100" height="540" viewBox="0 0 1100 540" style="display: block; margin: 8px auto;">
+        <defs>
+          <filter id="btv-sombra" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#44403a" flood-opacity="0.10"></feDropShadow>
+          </filter>
+        </defs>
+
+        <!-- Pool + lanes -->
+        <rect x="30" y="16" width="1040" height="488" fill="none" stroke="#44403a" stroke-width="1.5"></rect>
+        <rect x="30" y="16" width="34" height="488" fill="#f2f0ec"></rect>
+        <line x1="64" y1="16" x2="64" y2="504" stroke="#44403a" stroke-width="1"></line>
+        <line x1="64" y1="252" x2="1070" y2="252" stroke="#44403a" stroke-width="0.75"></line>
+        <line x1="90" y1="16" x2="90" y2="504" stroke="#44403a" stroke-width="0.5" opacity="0.45"></line>
+        <text x="47" y="260" transform="rotate(-90, 47, 260)" text-anchor="middle" font-size="12.5" fill="#262220" font-family="inherit">Squad Onboarding</text>
+        <text x="77" y="134" transform="rotate(-90, 77, 134)" text-anchor="middle" font-size="10" fill="#6f675a" font-family="inherit">Ana Ruiz · Humano</text>
+        <text x="77" y="378" transform="rotate(-90, 77, 378)" text-anchor="middle" font-size="10" fill="#6f675a" font-family="inherit">Agentes IA</text>
+
+        <!-- ===== EDGES (craft pack: cantos arredondados r8) ===== -->
+        <!-- start → task -->
+        <path d="M 168 130 H 202" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+        <polygon points="210,130 200,125.5 200,134.5" fill="#44403a"></polygon>
+        <!-- task → gate -->
+        <path d="M 360 130 H 422" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+        <polygon points="430,130 420,125.5 420,134.5" fill="#44403a"></polygon>
+        <!-- gate → prompt · HANDOFF com chip de purpose -->
+        <path d="M 502 130 H 524 Q 532 130 532 138 V 357 Q 532 365 540 365 H 552" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+        <polygon points="560,365 550,360.5 550,369.5" fill="#44403a"></polygon>
+        <g style="opacity: {{ chipOpacity }}; transition: opacity 120ms ease-out;">
+          <rect x="544" y="230" width="156" height="17" rx="8.5" fill="#f6edd4" stroke="#9a7b1e" stroke-width="1"></rect>
+          <text x="622" y="242" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#7a611e">purpose: briefing → plano</text>
+        </g>
+        <!-- prompt → connector -->
+        <path d="M 710 365 H 762" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+        <polygon points="770,365 760,360.5 760,369.5" fill="#44403a"></polygon>
+        <!-- connector → deliverable · APPROVAL -->
+        <path d="M 900 365 H 937" fill="none" stroke="#1a6a54" stroke-width="2"></path>
+        <polygon points="945,365 935,360.5 935,369.5" fill="#1a6a54"></polygon>
+        <circle cx="917" cy="365" r="8" fill="#dff0e6" stroke="#1a6a54" stroke-width="1.5"></circle>
+        <path d="M 913.5 365 L 916 367.5 L 921 362.5" fill="none" stroke="#1a6a54" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+        <!-- connector → task · FEEDBACK -->
+        <path d="M 835 333 V 224 Q 835 216 827 216 H 311 Q 303 216 303 208 V 175" fill="none" stroke="#9a5580" stroke-width="1.5" stroke-dasharray="5,4"></path>
+        <path d="M 303 167 L 297.5 177 M 303 167 L 308.5 177" fill="none" stroke="#9a5580" stroke-width="1.5" stroke-linecap="round"></path>
+        <g style="opacity: {{ chipOpacity }}; transition: opacity 120ms ease-out;">
+          <text x="565" y="209" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#9a5580" style="paint-order: stroke; stroke: #faf9f6; stroke-width: 3px;">feedback · revisão do plano</text>
+        </g>
+        <!-- boundary timer → notificar · ESCALATION -->
+        <path d="M 610 412 V 438 Q 610 446 618 446 H 668" fill="none" stroke="#b3372f" stroke-width="1.5"></path>
+        <path d="M 668 440 L 678 446 L 668 452 M 660 440 L 670 446 L 660 452" fill="none" stroke="#b3372f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+
+        <!-- ===== NÓS ===== -->
+        <!-- start -->
+        <circle cx="150" cy="130" r="18" fill="#eef4f0" stroke="#44403a" stroke-width="1.5"></circle>
+        <text x="150" y="163" text-anchor="middle" font-size="10" fill="#6f675a" font-family="inherit">Novo cliente</text>
+
+        <!-- task Coletar briefing -->
+        <g onClick="{{ pickTask }}" style="cursor: pointer;">
+          <sc-if value="{{ isTask }}" hint-placeholder-val="{{ false }}">
+            <rect x="207" y="92" width="156" height="76" rx="11" fill="none" stroke="#1a6a54" stroke-width="1.2" opacity="0.35"></rect>
+            <rect x="210" y="95" width="150" height="70" rx="8" fill="none" stroke="#1a6a54" stroke-width="2.5"></rect>
+            <circle cx="285" cy="95" r="4" fill="#ffffff" stroke="#1a6a54" stroke-width="1.5"></circle>
+            <circle cx="360" cy="130" r="4" fill="#ffffff" stroke="#1a6a54" stroke-width="1.5"></circle>
+            <circle cx="285" cy="165" r="4" fill="#ffffff" stroke="#1a6a54" stroke-width="1.5"></circle>
+            <circle cx="210" cy="130" r="4" fill="#ffffff" stroke="#1a6a54" stroke-width="1.5"></circle>
+          </sc-if>
+          <rect x="210" y="95" width="150" height="70" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5" filter="{{ shadowFilter }}"></rect>
+          <g transform="translate(220, 102)" fill="none" stroke="#6f675a" stroke-width="1.3">
+            <circle cx="6" cy="4" r="3"></circle>
+            <path d="M 0.5 12.5 C 0.5 8.5 11.5 8.5 11.5 12.5"></path>
+          </g>
+          <text x="285" y="135" text-anchor="middle" font-size="12" fill="#262220" font-family="inherit">Coletar briefing</text>
+          <text x="220" y="156" font-size="8" letter-spacing="1.2" fill="#6f675a" font-family="inherit" style="opacity: {{ chipOpacity }};">ANA RUIZ</text>
+        </g>
+
+        <!-- gate Aprovar briefing -->
+        <g onClick="{{ pickGate }}" style="cursor: pointer;">
+          <sc-if value="{{ isGate }}" hint-placeholder-val="{{ true }}">
+            <polygon points="448,98 484,98 506,130 484,162 448,162 426,130" fill="none" stroke="#1a6a54" stroke-width="1.2" opacity="0.35"></polygon>
+            <polygon points="448,102 484,102 502,130 484,158 448,158 430,130" fill="none" stroke="#1a6a54" stroke-width="2.5"></polygon>
+          </sc-if>
+          <polygon points="448,102 484,102 502,130 484,158 448,158 430,130" fill="#f6edd4" stroke="#9a7b1e" stroke-width="1.5"></polygon>
+          <circle cx="466" cy="130" r="11" fill="none" stroke="#9a7b1e" stroke-width="1.6"></circle>
+          <path d="M 463 126 V 134 M 469 126 V 134" stroke="#9a7b1e" stroke-width="2" stroke-linecap="round"></path>
+          <text x="466" y="177" text-anchor="middle" font-size="10.5" fill="#6f675a" font-family="inherit" style="paint-order: stroke; stroke: #faf9f6; stroke-width: 3px;">Aprovar briefing</text>
+        </g>
+
+        <!-- prompt Gerar plano + boundary timer -->
+        <g onClick="{{ pickPrompt }}" style="cursor: pointer;">
+          <sc-if value="{{ isPrompt }}" hint-placeholder-val="{{ false }}">
+            <rect x="557" y="327" width="156" height="76" rx="9" fill="none" stroke="#1a6a54" stroke-width="1.2" opacity="0.35"></rect>
+          </sc-if>
+          <path d="M 566 330 H 694 L 710 346 V 394 Q 710 400 704 400 H 566 Q 560 400 560 394 V 336 Q 560 330 566 330 Z" fill="#f5e9f0" stroke="#9a5580" stroke-width="1.5" filter="{{ shadowFilter }}"></path>
+          <path d="M 694 330 V 346 H 710" fill="none" stroke="#9a5580" stroke-width="1"></path>
+          <g stroke="#9a5580" stroke-width="1" opacity="0.5">
+            <line x1="572" y1="344" x2="648" y2="344"></line>
+            <line x1="572" y1="352" x2="668" y2="352"></line>
+          </g>
+          <text x="635" y="374" text-anchor="middle" font-size="11.5" fill="#262220" font-family="inherit">Gerar plano de conta</text>
+          <text x="572" y="392" font-size="8" letter-spacing="1.2" fill="#9a5580" font-family="inherit" style="opacity: {{ chipOpacity }};">PROMPT</text>
+          <!-- boundary timer (F6) -->
+          <circle cx="610" cy="400" r="12" fill="#eef4f0" stroke="#44403a" stroke-width="1.4"></circle>
+          <circle cx="610" cy="400" r="9" fill="none" stroke="#44403a" stroke-width="1"></circle>
+          <circle cx="610" cy="400" r="5.5" fill="none" stroke="#44403a" stroke-width="1.1"></circle>
+          <path d="M 610 400 V 396.5 M 610 400 L 612.8 401.8" fill="none" stroke="#44403a" stroke-width="1.1" stroke-linecap="round"></path>
+        </g>
+
+        <!-- task Notificar líder (escalation target) -->
+        <rect x="676" y="424" width="146" height="50" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5" filter="{{ shadowFilter }}"></rect>
+        <text x="749" y="453" text-anchor="middle" font-size="11" fill="#262220" font-family="inherit">Notificar líder</text>
+
+        <!-- connector CRM Sync -->
+        <g onClick="{{ pickConn }}" style="cursor: pointer;">
+          <sc-if value="{{ isConn }}" hint-placeholder-val="{{ false }}">
+            <rect x="767" y="330" width="136" height="70" rx="12" fill="none" stroke="#1a6a54" stroke-width="1.2" opacity="0.35"></rect>
+          </sc-if>
+          <rect x="770" y="333" width="130" height="64" rx="10" fill="#e3eef6" stroke="#2f6e94" stroke-width="1.5" stroke-dasharray="6,3"></rect>
+          <g transform="translate(782, 343)" fill="none" stroke="#2f6e94" stroke-width="1.4">
+            <path d="M 3 0 v 5 M 9 0 v 5"></path>
+            <path d="M 1 5 h 10 v 3 a 5 5 0 0 1 -10 0 z"></path>
+            <path d="M 6 13 v 4"></path>
+          </g>
+          <text x="842" y="369" text-anchor="middle" font-size="11.5" fill="#262220" font-family="inherit">CRM Sync</text>
+          <text x="782" y="389" font-size="8" letter-spacing="1.2" fill="#2f6e94" font-family="inherit" style="opacity: {{ chipOpacity }};">CONNECTOR</text>
+        </g>
+
+        <!-- deliverable Plano publicado -->
+        <g onClick="{{ pickDeliv }}" style="cursor: pointer;">
+          <sc-if value="{{ isDeliv }}" hint-placeholder-val="{{ false }}">
+            <path d="M 942 329 H 1063 V 383 L 1002.5 402 L 942 383 Z" fill="none" stroke="#1a6a54" stroke-width="1.2" opacity="0.35"></path>
+          </sc-if>
+          <path d="M 945 332 H 1060 V 379.5 L 1002.5 398 L 945 379.5 Z" fill="#e3efe4" stroke="#3b7d4f" stroke-width="1.5" filter="{{ shadowFilter }}"></path>
+          <path d="M 950 337 H 1055 V 377 L 1002.5 392 L 950 377 Z" fill="none" stroke="#3b7d4f" stroke-width="1" opacity="0.35"></path>
+          <text x="1002" y="360" text-anchor="middle" font-size="11" fill="#262220" font-family="inherit">Plano publicado</text>
+        </g>
+      </svg>
+
+      <!-- Toast -->
+      <sc-if value="{{ toastOn }}" hint-placeholder-val="{{ false }}">
+        <div style="position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); background: #262220; color: #ece8e1; border-radius: 10px; padding: 10px 18px; font-size: 12.5px; display: flex; align-items: center; gap: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.25);">
+          <span style="color: #57b895; font-weight: 700;">✓</span>
+          v2.1.0 ativa · v2.0.0 → descontinuada · ledger <span style="font-family: 'IBM Plex Mono', monospace; color: #cba84b;">#a3f9e1</span> gravado
+        </div>
+      </sc-if>
+    </main>
+
+    <!-- ============ INSPECTOR ============ -->
+    <aside data-screen-label="Inspector" style="width: 292px; flex-shrink: 0; background: #ffffff; border-left: 1px solid #e2ddd3; display: flex; flex-direction: column; min-height: 0;">
+      <div style="display: flex; border-bottom: 1px solid #e2ddd3; flex-shrink: 0;">
+        <button onClick="{{ tabProps }}" style="flex: 1; border: none; background: {{ propsTabBg }}; font-family: inherit; font-size: 12px; font-weight: 600; padding: 10px 0; cursor: pointer; color: #262220; border-bottom: 2px solid {{ propsTabLine }};">Propriedades</button>
+        <button onClick="{{ tabVers }}" style="flex: 1; border: none; background: {{ versTabBg }}; font-family: inherit; font-size: 12px; font-weight: 600; padding: 10px 0; cursor: pointer; color: #262220; border-bottom: 2px solid {{ versTabLine }};">Versões</button>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; padding: 14px;">
+        <sc-if value="{{ onProps }}" hint-placeholder-val="{{ true }}">
+
+          <sc-if value="{{ isGate }}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div>
+                <div style="font-size: 14px; font-weight: 600;">Aprovar briefing</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a;">btv:gate → inclusiveGateway · pendente</div>
+              </div>
+              <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 12px;">
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 6px;">DECISÃO · DMN 1.7</div>
+                <div style="font-size: 12.5px; font-weight: 500; margin-bottom: 4px;">Tabela "Critérios de aprovação"</div>
+                <div style="font-size: 11.5px; color: #6f675a; line-height: 1.5;">4 regras · hit policy FIRST · regras de negócio separadas do código</div>
+                <a href="#" style="font-size: 11.5px; font-weight: 600;">Abrir tabela de decisão →</a>
+              </div>
+              <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 12px;">
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 6px;">MOTIVAÇÃO · BMM 1.3</div>
+                <div style="font-size: 11.5px; color: #44403a; line-height: 1.5;"><strong>Goal:</strong> reduzir tempo de onboarding em 30% · <strong>Directive:</strong> nenhum plano sem aprovação humana</div>
+              </div>
+              <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 12px;">
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 6px;">REGRAS DO CORE</div>
+                <div style="font-size: 11.5px; color: #44403a; line-height: 1.6;">✓ máx. 1 predecessor (single-funnel)<br>✓ aprovado congela conexões — mudança só via supersede</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isTask }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div>
+                <div style="font-size: 14px; font-weight: 600;">Coletar briefing</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a;">userTask · lane: Ana Ruiz · Humano</div>
+              </div>
+              <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 12px;">
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 6px;">PERSONA VINCULADA</div>
+                <div style="font-size: 12.5px; font-weight: 500;">Ana Ruiz — UX Lead</div>
+                <div style="font-size: 11.5px; color: #6f675a;">persona v1.2.0 · ativa · versionada separadamente do fluxo</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isPrompt }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div>
+                <div style="font-size: 14px; font-weight: 600;">Gerar plano de conta</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a;">btv:prompt → scriptTask</div>
+              </div>
+              <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 12px;">
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 6px;">TEMPLATE DE PROMPT</div>
+                <div style="font-size: 11.5px; color: #44403a; line-height: 1.6;">prompt v1.3.0 · <span style="background: #dff0e6; color: #1a6a54; border-radius: 4px; padding: 0 6px; font-size: 10px; font-weight: 600;">ATIVA</span><br>execuções presas à versão com que nasceram (bindRun)</div>
+              </div>
+              <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 12px;">
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 6px;">BOUNDARY TIMER · F6</div>
+                <div style="font-size: 11.5px; color: #44403a; line-height: 1.6;">48h sem conclusão → escalation "Notificar líder"<br>ancoragem paramétrica (lado inferior · t 0.33)</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isConn }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div>
+                <div style="font-size: 14px; font-weight: 600;">CRM Sync</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a;">btv:connector → serviceTask</div>
+              </div>
+              <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 12px;">
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 6px;">CONTRATO EXTERNO</div>
+                <div style="font-size: 11.5px; color: #44403a; line-height: 1.6;">REST · POST /accounts/plan<br>acoplamento fraco · retry 3× · timeout 30s<br>connector v2.0.1 · ativa</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isDeliv }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+              <div>
+                <div style="font-size: 14px; font-weight: 600;">Plano publicado</div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a;">btv:deliverable → endEvent</div>
+              </div>
+              <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 12px;">
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 6px;">VALOR · VDML 1.1</div>
+                <div style="font-size: 11.5px; color: #44403a; line-height: 1.6;"><strong>valueProposition:</strong> "Cliente onboarded com plano de conta" · beneficiário: cliente final</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- Proveniência comum (PPMN) -->
+          <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 12px; margin-top: 12px; background: #faf9f6;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 6px;">PROVENIÊNCIA · PPMN</div>
+            <div style="font-size: 11px; color: #44403a; line-height: 1.7; font-family: 'IBM Plex Mono', monospace;">criado em v2.1.0 · draft<br>ledger #f3a9…c2 ✓ íntegro<br>autor: ana.ruiz · 05/07/2026</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ onVers }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 0;">
+            <div style="display: flex; gap: 10px; padding-bottom: 14px; position: relative;">
+              <div style="width: 9px; height: 9px; border-radius: 50%; background: #9a7b1e; margin-top: 4px; flex-shrink: 0; box-shadow: 0 0 0 3px #fff, 0 0 0 5px {{ v21ring }};"></div>
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; font-weight: 600;">v2.1.0</span>
+                  <span style="background: {{ v21bg }}; color: {{ v21fg }}; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; border-radius: 999px; padding: 1px 8px;">{{ v21label }}</span>
+                  <span style="border: 1px solid #e2ddd3; border-radius: 999px; padding: 1px 8px; font-size: 9px; color: #6f675a;">piloto</span>
+                </div>
+                <div style="font-size: 11px; color: #6f675a; margin-top: 3px; line-height: 1.5;">+ prompt "Gerar plano" · + boundary timer · gate com DMN</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; padding-bottom: 14px;">
+              <div style="width: 9px; height: 9px; border-radius: 50%; background: {{ v20dot }}; margin-top: 4px; flex-shrink: 0; box-shadow: 0 0 0 3px #fff;"></div>
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; font-weight: 600;">v2.0.0</span>
+                  <span style="background: {{ v20bg }}; color: {{ v20fg }}; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; border-radius: 999px; padding: 1px 8px;">{{ v20label }}</span>
+                  <span style="border: 1px solid #e2ddd3; border-radius: 999px; padding: 1px 8px; font-size: 9px; color: #6f675a;">geral</span>
+                </div>
+                <div style="font-size: 11px; color: #6f675a; margin-top: 3px; line-height: 1.5;">vigente 12/05/2026 → {{ v20until }}<br><span style="background: #dff0e6; color: #1a6a54; border-radius: 4px; padding: 0 5px; font-size: 9.5px;">3 execuções presas (bindRun)</span></div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <div style="width: 9px; height: 9px; border-radius: 50%; background: #c9c4ba; margin-top: 4px; flex-shrink: 0; box-shadow: 0 0 0 3px #fff;"></div>
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; font-weight: 600;">v1.2.0</span>
+                  <span style="background: #efece6; color: #6f675a; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; border-radius: 999px; padding: 1px 8px;">ARQUIVADA</span>
+                </div>
+                <div style="font-size: 11px; color: #6f675a; margin-top: 3px;">edge e-07 encerrada · sucedida por e-12 (supersede)</div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ============ STATUS BAR ============ -->
+  <footer style="height: 30px; flex-shrink: 0; background: #ffffff; border-top: 1px solid #e2ddd3; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a;">
+    <span>BPMN 2.0.2 · perfil Analytic (alvo F8) · DMN 1.7 · VDML 1.1 · PPMN proveniência</span>
+    <span>zoom 100% · 14 elementos · ledger íntegro ✓ · CI verde</span>
+  </footer>
+
+  <!-- ============ MODAL DE PROMOÇÃO (B2) ============ -->
+  <sc-if value="{{ promoOn }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Modal de promoção" style="position: fixed; inset: 0; background: rgba(38, 34, 32, 0.4); display: flex; align-items: center; justify-content: center; z-index: 20;">
+      <div style="width: 540px; max-height: 86vh; overflow-y: auto; background: #ffffff; border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.25); padding: 24px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 2px; color: #9a7b1e; margin-bottom: 4px;">PROMOÇÃO FORMAL · STATE MACHINE DO CORE</div>
+        <div style="font-size: 18px; font-weight: 700; margin-bottom: 6px;">Ativar v2.1.0</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6f675a; margin-bottom: 16px;">draft → test → candidate → <strong style="color: #1a6a54;">active</strong></div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="border: 1px solid #bcdcc9; background: #f2f9f4; border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start;">
+            <span style="color: #1a6a54; font-weight: 700;">✓</span>
+            <div style="font-size: 12px; line-height: 1.5;"><strong>change_summary</strong> preenchido<br><span style="color: #6f675a;">"Adiciona geração de plano por IA com timeout de 48h e decisão DMN no gate de briefing."</span></div>
+          </div>
+          <div style="border: 1px solid #bcdcc9; background: #f2f9f4; border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start;">
+            <span style="color: #1a6a54; font-weight: 700;">✓</span>
+            <div style="font-size: 12px; line-height: 1.7;"><strong>Diff visual</strong> vs v2.0.0 (ativa)<br>
+              <span style="display: inline-block; width: 16px; text-align: center; border-radius: 4px; font-weight: 700; background: #dff0e6; color: #1a6a54;">+</span> <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">prompt "Gerar plano de conta"</span><br>
+              <span style="display: inline-block; width: 16px; text-align: center; border-radius: 4px; font-weight: 700; background: #dff0e6; color: #1a6a54;">+</span> <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">boundary timer 48h + escalation</span><br>
+              <span style="display: inline-block; width: 16px; text-align: center; border-radius: 4px; font-weight: 700; background: #f7f0dc; color: #7a611e;">~</span> <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">gate "Aprovar briefing" → tabela DMN</span><br>
+              <span style="display: inline-block; width: 16px; text-align: center; border-radius: 4px; font-weight: 700; background: #e3ecf7; color: #33567e;">⤳</span> <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">edge e-07 encerrada · sucedida por e-12</span>
+            </div>
+          </div>
+          <div style="border: 1px solid {{ apBorder }}; border-radius: 10px; padding: 10px 12px;">
+            <div style="font-size: 12px; margin-bottom: 8px;"><strong>Aprovações</strong> — mínimo 2 papéis distintos <span style="font-family: 'IBM Plex Mono', monospace; color: #6f675a;">({{ apCount }}/2)</span></div>
+            <div style="display: flex; gap: 8px;">
+              <button onClick="{{ approveOp }}" style="flex: 1; border: 1px solid {{ apOpBorder }}; background: {{ apOpBg }}; color: {{ apOpFg }}; border-radius: 8px; padding: 8px 0; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;">{{ apOpText }}</button>
+              <button onClick="{{ approveComp }}" style="flex: 1; border: 1px solid {{ apCompBorder }}; background: {{ apCompBg }}; color: {{ apCompFg }}; border-radius: 8px; padding: 8px 0; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;">{{ apCompText }}</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: #fdf6e8; border: 1px solid #e8d9ae; font-size: 11.5px; color: #7a611e;">
+          Ao ativar: <strong>v2.0.0 passa a Descontinuada</strong> (effective_until = hoje) · execuções em andamento permanecem presas à v2.0.0 · promoção gravada no ledger hash-chained.
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px;">
+          <button onClick="{{ closePromo }}" style="border: 1px solid #e2ddd3; background: transparent; border-radius: 8px; height: 36px; padding: 0 16px; font-family: inherit; font-size: 12.5px; cursor: pointer; color: #262220;">Cancelar</button>
+          <button onClick="{{ activate }}" disabled="{{ cannotActivate }}" style="border: none; background: {{ activateBg }}; color: #ffffff; border-radius: 8px; height: 36px; padding: 0 18px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: {{ activateCursor }};">Ativar v2.1.0</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;zoomReduzido&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Craft pack&quot;}, &quot;sombras&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Craft pack&quot;}}">
+class Component extends DCLogic {
+  state = {
+    selected: 'gate',
+    tab: 'props',
+    promo: false,
+    apOp: false,
+    apComp: false,
+    activated: false,
+    toast: false,
+  };
+
+  renderVals() {
+    const s = this.state;
+    const pick = (id) => () => this.setState({ selected: id, tab: 'props' });
+    const can = s.apOp && s.apComp;
+    return {
+      // seleção
+      isTask: s.selected === 'task',
+      isGate: s.selected === 'gate',
+      isPrompt: s.selected === 'prompt',
+      isConn: s.selected === 'conn',
+      isDeliv: s.selected === 'deliv',
+      pickTask: pick('task'),
+      pickGate: pick('gate'),
+      pickPrompt: pick('prompt'),
+      pickConn: pick('conn'),
+      pickDeliv: pick('deliv'),
+      // tabs
+      onProps: s.tab === 'props',
+      onVers: s.tab === 'vers',
+      tabProps: () => this.setState({ tab: 'props' }),
+      tabVers: () => this.setState({ tab: 'vers' }),
+      propsTabBg: s.tab === 'props' ? '#faf9f6' : 'transparent',
+      versTabBg: s.tab === 'vers' ? '#faf9f6' : 'transparent',
+      propsTabLine: s.tab === 'props' ? '#9a7b1e' : 'transparent',
+      versTabLine: s.tab === 'vers' ? '#9a7b1e' : 'transparent',
+      // promoção
+      promoOn: s.promo,
+      openPromo: () => this.setState({ promo: true }),
+      closePromo: () => this.setState({ promo: false }),
+      approveOp: () => this.setState({ apOp: !s.apOp }),
+      approveComp: () => this.setState({ apComp: !s.apComp }),
+      apCount: (s.apOp ? 1 : 0) + (s.apComp ? 1 : 0),
+      apBorder: can ? '#bcdcc9' : '#e2ddd3',
+      apOpText: s.apOp ? '✓ Operação aprovou' : 'Aprovar como Operação',
+      apCompText: s.apComp ? '✓ Compliance aprovou' : 'Aprovar como Compliance',
+      apOpBg: s.apOp ? '#dff0e6' : 'transparent',
+      apCompBg: s.apComp ? '#dff0e6' : 'transparent',
+      apOpFg: s.apOp ? '#1a6a54' : '#262220',
+      apCompFg: s.apComp ? '#1a6a54' : '#262220',
+      apOpBorder: s.apOp ? '#1a6a54' : '#e2ddd3',
+      apCompBorder: s.apComp ? '#1a6a54' : '#e2ddd3',
+      canActivate: can,
+      cannotActivate: !can,
+      activateBg: can ? '#1a6a54' : '#c9c4ba',
+      activateCursor: can ? 'pointer' : 'not-allowed',
+      activate: () => {
+        if (!can) return;
+        this.setState({ activated: true, promo: false, toast: true });
+        clearTimeout(this._toastTimer);
+        this._toastTimer = setTimeout(() => this.setState({ toast: false }), 6000);
+      },
+      // vigência
+      activated: s.activated,
+      notActivated: !s.activated,
+      toastOn: s.toast,
+      v21label: s.activated ? 'ATIVA' : 'CANDIDATA',
+      v21bg: s.activated ? '#dff0e6' : '#f6edd4',
+      v21fg: s.activated ? '#1a6a54' : '#7a611e',
+      v21ring: s.activated ? '#1a6a54' : '#9a7b1e',
+      v20label: s.activated ? 'DESCONTINUADA' : 'ATIVA',
+      v20bg: s.activated ? '#f7e6e0' : '#dff0e6',
+      v20fg: s.activated ? '#b3372f' : '#1a6a54',
+      v20dot: s.activated ? '#b3372f' : '#1a6a54',
+      v20until: s.activated ? '07/07/2026' : 'em vigor',
+      // tweaks
+      chipOpacity: (this.props.zoomReduzido ?? false) ? 0 : 1,
+      shadowFilter: (this.props.sombras ?? true) ? 'url(#btv-sombra)' : 'none',
+    };
+  }
+}
+</script>
+</body>
+</html>
