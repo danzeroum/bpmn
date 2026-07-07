@@ -1,0 +1,36 @@
+{
+  "name": "@bpmn-react/domain-example",
+  "version": "0.1.0",
+  "description": "Example domain plugin for bpmn-react: squads, personas, gates, prompts, connectors and deliverables — a template for building your own domain vocabulary on top of the generic core.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "dependencies": {
+    "@bpmn-react/core": "workspace:*",
+    "@bpmn-react/react": "workspace:*"
+  }
+}

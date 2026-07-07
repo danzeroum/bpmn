@@ -1,0 +1,27 @@
+{
+  "name": "@bpmn-react/example",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Demo app for bpmn-react (Vite + React).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "e2e": "playwright test"
+  },
+  "dependencies": {
+    "@bpmn-react/core": "workspace:*",
+    "@bpmn-react/domain-example": "workspace:*",
+    "@bpmn-react/react": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.3"
+  }
+}

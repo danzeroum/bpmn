@@ -1,0 +1,15 @@
+bpmn-react
+Copyright 2026 bpmn-react contributors
+
+This product includes software developed as part of the bpmn-react project
+(https://github.com/danzeroum/bpmn).
+
+All source code in this repository is original work. The architecture is
+inspired by publicly documented design patterns (layered architecture,
+event bus, command stack, plugin registries) which are ideas, not
+copyrightable expression. No source code was copied or adapted from
+bpmn-js, diagram-js, or any other third-party library.
+
+BPMN (Business Process Model and Notation) is a public specification
+published by the Object Management Group (OMG):
+https://www.omg.org/spec/BPMN/2.0/
