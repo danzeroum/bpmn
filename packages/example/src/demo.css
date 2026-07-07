@@ -1,0 +1,150 @@
+.demo-app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  font-family: system-ui, sans-serif;
+  color: var(--bpmnr-text, #262220);
+  background: var(--bpmnr-canvas-bg, #faf9f6);
+}
+
+.demo-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--bpmnr-panel-border, #e2ddd3);
+  background: var(--bpmnr-panel-bg, #fff);
+}
+
+.demo-header h1 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.demo-spacer {
+  flex: 1;
+}
+
+.demo-muted {
+  color: var(--bpmnr-text-muted, #6f675a);
+  font-size: 12px;
+}
+
+.demo-error {
+  color: var(--bpmnr-danger, #b3372f);
+  font-size: 12px;
+}
+
+.demo-import input {
+  display: block;
+  font-size: 11px;
+  max-width: 190px;
+}
+
+.demo-import {
+  font-size: 12px;
+}
+
+.demo-header button {
+  border: 1px solid var(--bpmnr-panel-border, #e2ddd3);
+  background: transparent;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  color: inherit;
+}
+
+.demo-main {
+  flex: 1;
+  min-height: 0;
+}
+
+.demo-side {
+  position: absolute;
+  left: 10px;
+  bottom: 12px;
+  z-index: 3;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  max-width: calc(100% - 220px);
+}
+
+.demo-lifecycle,
+.demo-audit {
+  background: var(--bpmnr-panel-bg, #fff);
+  border: 1px solid var(--bpmnr-panel-border, #e2ddd3);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+  padding: 10px 12px;
+  font-size: 12px;
+  width: 250px;
+  max-height: 46vh;
+  overflow: auto;
+}
+
+.demo-lifecycle h3,
+.demo-audit h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.demo-lifecycle label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.demo-lifecycle select {
+  width: 100%;
+  margin-top: 2px;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--bpmnr-panel-border, #e2ddd3);
+  background: inherit;
+  color: inherit;
+}
+
+.demo-lifecycle button,
+.demo-audit button {
+  border: 1px solid var(--bpmnr-panel-border, #e2ddd3);
+  background: transparent;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: inherit;
+  margin: 2px 4px 2px 0;
+}
+
+.demo-lifecycle button:hover,
+.demo-audit button:hover {
+  background: var(--bpmnr-panel-border, #e2ddd3);
+}
+
+.demo-approvals ul,
+.demo-audit ol {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.demo-version-meta {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--bpmnr-text-muted, #6f675a);
+}
+
+.demo-version-meta dt {
+  font-weight: 600;
+}
+
+.demo-version-meta dd {
+  margin: 0 0 3px;
+}
+
+.demo-audit code {
+  font-size: 10px;
+}
