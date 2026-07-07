@@ -1,0 +1,13 @@
+import type { PaletteItem } from '../plugins/types.js';
+
+/** Default palette: the standard BPMN starter set. */
+export const BUILT_IN_PALETTE: PaletteItem[] = [
+  { id: 'startEvent', label: 'Start Event', nodeType: 'startEvent', icon: '◯' },
+  { id: 'task', label: 'Task', nodeType: 'task', icon: '▭' },
+  { id: 'userTask', label: 'User Task', nodeType: 'userTask', icon: '👤' },
+  { id: 'serviceTask', label: 'Service Task', nodeType: 'serviceTask', icon: '⚙' },
+  { id: 'exclusiveGateway', label: 'Exclusive Gateway', nodeType: 'exclusiveGateway', icon: '◇' },
+  { id: 'parallelGateway', label: 'Parallel Gateway', nodeType: 'parallelGateway', icon: '✚' },
+  { id: 'subProcess', label: 'Sub-Process', nodeType: 'subProcess', icon: '⧉' },
+  { id: 'endEvent', label: 'End Event', nodeType: 'endEvent', icon: '◉' },
+];
