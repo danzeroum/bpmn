@@ -14,3 +14,25 @@ export * from './geometry/index.js';
 export * from './commands/types.js';
 export * from './commands/CommandStack.js';
 export * from './commands/commands.js';
+
+// Engine
+export * from './engine/lifecycle.js';
+export * from './engine/rules.js';
+export * from './engine/validation.js';
+
+// Diff
+export * from './diff/index.js';
+
+// Audit
+export * from './audit/ledger.js';
+
+// XML
+export * from './xml/MiniXmlParser.js';
+export * from './xml/XmlBuilder.js';
+export * from './xml/adapter.js';
+
+// Persistence
+export * from './persistence/hash.js';
+export * from './persistence/serializer.js';
+export * from './persistence/snapshot.js';
+export * from './persistence/BpmnXmlConverter.js';
