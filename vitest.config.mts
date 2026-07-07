@@ -13,6 +13,7 @@ export default defineConfig({
         // ts-prune; see docs/limitations.md.
         'packages/core/src/commands/types.ts',
         'packages/react/src/plugins/types.ts',
+        'packages/registry/src/types.ts',
         // Exercised end-to-end as a real child process in
         // packages/cli/tests/bin.test.ts — v8 coverage instrumentation
         // only observes code run in-process, so a spawned script always
@@ -25,6 +26,7 @@ export default defineConfig({
       // as gaps close — never lower them to make a red build pass.
       thresholds: {
         'packages/core/src/**': { statements: 95, branches: 80, functions: 90, lines: 95 },
+        'packages/registry/src/**': { statements: 95, branches: 90, functions: 95, lines: 95 },
         'packages/domain-example/src/**': { statements: 90, branches: 75, functions: 90, lines: 90 },
         'packages/cli/src/**': { statements: 85, branches: 65, functions: 95, lines: 85 },
         'packages/react/src/**': { statements: 65, branches: 60, functions: 65, lines: 65 },

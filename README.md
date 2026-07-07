@@ -30,6 +30,7 @@ What makes it different from generic BPMN editors:
 |---|---|
 | [`@bpmn-react/core`](packages/core) | Domain engine: model, events, commands, lifecycle, rules, validation, diff, audit, geometry, XML. Pure TypeScript, runs headless (browser, Node, workers). |
 | [`@bpmn-react/react`](packages/react) | React layer: SVG canvas, shapes, gestures (drag/connect/zoom/pan), palette, inspector, minimap, diff view. Peer deps: `react`, `react-dom`. |
+| [`@bpmn-react/registry`](packages/registry) | Headless version governance: queryable registry with temporal validity (`activeAt`), publication channels/environments, diff/lineage, dual changelog and execution pinning (`bindRun`). |
 | [`@bpmn-react/domain-example`](packages/domain-example) | Example domain plugin (squads, personas, gates, prompts, connectors, deliverables) showing how to extend the core. |
 | [`@bpmn-react/cli`](packages/cli) | Headless CLI: `validate`, `export`, `diff`. |
 | [`@bpmn-react/example`](packages/example) | Demo app (Vite) with the full designer. |
@@ -76,6 +77,7 @@ pnpm --filter @bpmn-react/example dev   # run the demo app
 - [Architecture](docs/architecture.md)
 - [Plugins](docs/plugins.md)
 - [Versioning & governance](docs/versioning.md)
+- [Version registry (channels, validity, run pinning)](docs/registry.md)
 - [BPMN 2.0 XML format profile](docs/format-spec.md)
 - [Known limitations](docs/limitations.md)
 

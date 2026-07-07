@@ -18,10 +18,10 @@ This project is a **from-scratch implementation**. To keep it legally clean:
 
 ## Zero runtime dependencies policy
 
-Publishable packages (`core`, `react`, `domain-example`, `cli`) must have an **empty
-`dependencies`** field. `react`/`react-dom` are allowed only as `peerDependencies` of the React
-packages. Build and test tooling goes in `devDependencies`. CI enforces this via
-`pnpm check:no-runtime-deps`.
+Publishable packages (`core`, `react`, `registry`, `domain-example`, `cli`) must declare **no
+external runtime `dependencies`** — only workspace-internal `@bpmn-react/*` links are allowed.
+`react`/`react-dom` are allowed only as `peerDependencies` of the React packages. Build and test
+tooling goes in `devDependencies`. CI enforces this via `pnpm check:no-runtime-deps`.
 
 ## Workflow
 

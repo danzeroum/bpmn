@@ -17,6 +17,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'registry',
+      include: ['packages/registry/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'cli',
       include: ['packages/cli/tests/**/*.test.ts'],
       environment: 'node',
