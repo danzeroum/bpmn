@@ -43,6 +43,32 @@ Each accepted promotion creates a **new immutable version entity** chained via `
 with a fresh SHA-256 `snapshotHash` of the content. The library is agnostic about authentication —
 you supply `UserContext` records; it validates and records them.
 
+### Recipe: require a mandatory notice before a change goes active
+
+A common governance rule is "a major change must be announced before it takes effect." There's no
+special API for this — a `promotionRule` gates it, and the same hook is where you'd trigger the
+notification (email, webhook, Slack). Rules run before the transition is accepted, so a missing
+acknowledgement blocks the promotion:
+
+```ts
+const engine = new LifecycleEngine({
+  promotionRules: [
+    async ({ diagram, target }) => {
+      if (target !== 'active') return { allowed: true };
+      const isMajor = diagram.version.semanticVersion.endsWith('.0.0');
+      if (isMajor && !diagram.metadata.changeAnnouncedAt) {
+        return { allowed: false, reason: 'Major version requires a change announcement before activation' };
+      }
+      await notifyStakeholders(diagram); // side effect: send the notice
+      return { allowed: true };
+    },
+  ],
+});
+```
+
+Rules are plain functions and may be `async`, so they compose validation and side effects without
+the core needing to know what "notify" means for your organization.
+
 ## Temporal immutability of elements
 
 Outside `draft`, removing a node/edge sets `removedInVersion` (rendering it dashed/faded) instead
