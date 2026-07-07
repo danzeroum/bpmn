@@ -191,6 +191,10 @@ export function ConnectedNode({
         : ('valid' as const)
       : null,
   );
+  // Lanes light up as drop targets while a flow node is dragged over them.
+  const laneDropTarget = useCanvasState((s) =>
+    Boolean(s.dragState?.active && s.dragState.dropLaneId === node.id),
+  );
   const resizeRect = useCanvasState((s) =>
     s.resizeState?.nodeId === node.id ? s.resizeState.current : null,
   );
@@ -204,7 +208,7 @@ export function ConnectedNode({
       interactions={interactions}
       dx={drag?.dx ?? 0}
       dy={drag?.dy ?? 0}
-      connectHover={connectHover}
+      connectHover={connectHover ?? (laneDropTarget ? 'valid' : null)}
       resizeRect={resizeRect}
       editing={editing}
     />

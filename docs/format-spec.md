@@ -42,10 +42,12 @@ Unknown elements are ignored with warnings on import (never a hard failure).
 | `sequenceFlow` | ✓ | ✓ | `sourceRef`/`targetRef`/`name` |
 | `collaboration`/`participant` (pools) | ✓ | ✓ | see [Pools & lanes](#pools--lanes) |
 | `laneSet`/`lane`/`flowNodeRef` | ✓ | ✓ | see [Pools & lanes](#pools--lanes) |
+| `messageFlow` | ✓ | ✓ | in the collaboration; requires a pool (falls back to `sequenceFlow` + `bpmnr:meta` without one) |
+| `association` | ✓ | ✓ | artifact link (e.g. task → text annotation) |
 | `bpmndi:BPMNDiagram/Plane/Shape` + `dc:Bounds` | ✓ | ✓ | node coordinates (`isHorizontal` on pools/lanes) |
 | `bpmndi:BPMNEdge` + `di:waypoint` | ✓ | ✓ | edge routing (computed orthogonally when absent) |
 | `extensionElements` | ✓ | ✓ | see below |
-| anything else (`boundaryEvent`, `callActivity`, `messageFlow`, events with definitions, …) | warning, skipped | – | roadmap |
+| anything else (`boundaryEvent`, `callActivity`, events with definitions, …) | warning, skipped | – | roadmap |
 
 Documents without DI import with an automatic grid layout (and a warning).
 
@@ -76,10 +78,15 @@ Pools and lanes are modelled as ordinary nodes with the reserved types `pool` an
 </bpmn:process>
 ```
 
-**Profile boundaries** (tracked in [`pendencias.md`](../pendencias.md)): this is a single-process
-MVP. Lane membership is data only — it is *not* enforced geometrically (moving a node between
-lanes does not update `flowNodeRefs` automatically), and true multi-pool collaborations with
-message flows between separate processes are not modelled.
+Lane membership is **interactive** in the editor: dropping a flow node inside a lane joins it
+(the lane's `flowNodeRefs` is updated as part of the same undoable move command), dragging it out
+leaves it. Stale refs (deleted nodes) are dropped at export and reported by the
+`STALE_LANE_REF` validation rule.
+
+**Profile boundaries** (tracked in [`pendencias.md`](../pendencias.md)): this is a
+single-process profile — N pools export as N participants referencing the *same* process.
+True multi-pool collaborations (one process per pool) are not modelled; `messageFlow` edges
+connect nodes across pool boundaries visually but semantically stay within the one process.
 
 ## Vendor extensions (`bpmnr` namespace)
 

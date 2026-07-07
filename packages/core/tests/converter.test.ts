@@ -208,6 +208,76 @@ describe('BpmnXmlConverter — pools & lanes', () => {
     expect(after).toBe(before);
   });
 
+  it('exports messageFlow edges inside the collaboration and round-trips them', () => {
+    const diagram = swimlaneDiagram();
+    diagram.edges.m1 = createEdge({
+      id: 'm1',
+      type: 'messageFlow',
+      sourceId: 'write',
+      targetId: 'review',
+      label: 'notify',
+    });
+    const converter = new BpmnXmlConverter();
+    const xml = converter.toXml(diagram);
+
+    // Written as a real message flow in the collaboration, not inside <process>.
+    expect(xml).toContain('<bpmn:messageFlow id="m1" sourceRef="write" targetRef="review" name="notify" />');
+    expect(xml).not.toMatch(/<bpmn:process[^>]*>[\s\S]*<bpmn:messageFlow/);
+    // Its DI edge is still emitted like any other edge.
+    expect(xml).toContain('<bpmndi:BPMNEdge id="m1_di" bpmnElement="m1">');
+
+    const { diagram: imported, warnings } = converter.fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(imported.edges.m1.type).toBe('messageFlow');
+    expect(imported.edges.m1.sourceId).toBe('write');
+    expect(imported.edges.m1.label).toBe('notify');
+
+    const before = JSON.stringify(normalizeForDiff(diagram));
+    const after = JSON.stringify(normalizeForDiff(imported));
+    expect(after).toBe(before);
+  });
+
+  it('falls back to sequenceFlow + meta for messageFlow edges when there is no pool', () => {
+    const diagram = sampleDiagram(); // no pools
+    diagram.edges.m1 = createEdge({ id: 'm1', type: 'messageFlow', sourceId: 'start', targetId: 'gw' });
+    const converter = new BpmnXmlConverter();
+    const xml = converter.toXml(diagram);
+    expect(xml).not.toContain('<bpmn:messageFlow');
+    expect(xml).toContain('type="messageFlow"'); // preserved via bpmnr:meta
+
+    const { diagram: imported } = converter.fromXml(xml);
+    expect(imported.edges.m1.type).toBe('messageFlow');
+  });
+
+  it('exports association edges as bpmn:association and round-trips them', () => {
+    const diagram = sampleDiagram();
+    diagram.nodes.note = createNode({ type: 'textAnnotation', id: 'note', label: 'A note', x: 400, y: 200 });
+    diagram.edges.a1 = createEdge({ id: 'a1', type: 'association', sourceId: 'review', targetId: 'note' });
+    const converter = new BpmnXmlConverter();
+    const xml = converter.toXml(diagram);
+    expect(xml).toContain('<bpmn:association id="a1" sourceRef="review" targetRef="note" />');
+
+    const { diagram: imported, warnings } = converter.fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(imported.edges.a1.type).toBe('association');
+
+    const before = JSON.stringify(normalizeForDiff(diagram));
+    const after = JSON.stringify(normalizeForDiff(imported));
+    expect(after).toBe(before);
+  });
+
+  it('drops stale flowNodeRefs (deleted nodes) on export', () => {
+    const diagram = swimlaneDiagram();
+    diagram.nodes.laneA = {
+      ...diagram.nodes.laneA,
+      properties: { flowNodeRefs: ['start', 'ghost-deleted', 'write'] },
+    };
+    const xml = new BpmnXmlConverter().toXml(diagram);
+    expect(xml).not.toContain('ghost-deleted');
+    expect(xml).toContain('<bpmn:flowNodeRef>start</bpmn:flowNodeRef>');
+    expect(xml).toContain('<bpmn:flowNodeRef>write</bpmn:flowNodeRef>');
+  });
+
   it('imports lanes from an external document without pools', () => {
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL">

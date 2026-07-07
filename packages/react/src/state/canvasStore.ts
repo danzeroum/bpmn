@@ -17,6 +17,8 @@ export interface DragState {
   dy: number;
   /** True once the 4px threshold was crossed (drag vs click). */
   active: boolean;
+  /** Lane currently under the dragged node — the drop target for membership. */
+  dropLaneId?: string | null;
 }
 
 export interface ConnectState {

@@ -5,11 +5,17 @@ import {
   compositeCommand,
   createEdge,
   getAnchorPoint,
+  isContainerType,
+  laneFlowNodeRefs,
   moveNodeCommand,
   resizeNodeCommand,
   rectCenter,
   rectsIntersect,
   snapToGrid,
+  updateNodeCommand,
+  type BpmnDiagram,
+  type BpmnNode,
+  type Command,
   type ConnectPayload,
   type Point,
 } from '@bpmn-react/core';
@@ -206,7 +212,10 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
             dx = snapToGrid(dx, state.gridSize);
             dy = snapToGrid(dy, state.gridSize);
           }
-          store.setState({ dragState: { ...state.dragState, dx, dy, active } });
+          const dropLaneId = active
+            ? (dropTargetLane(diagramRef.current, state.dragState.nodeIds, dx, dy)?.id ?? null)
+            : null;
+          store.setState({ dragState: { ...state.dragState, dx, dy, active, dropLaneId } });
           return;
         }
 
@@ -307,16 +316,17 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
         const { nodeIds, dx, dy, active } = state.dragState;
         store.setState({ dragState: null });
         if (active && (dx !== 0 || dy !== 0)) {
-          const commands = nodeIds
+          const moved = nodeIds
             .map((id) => diagramRef.current.nodes[id])
-            .filter(Boolean)
-            .map((node) =>
-              moveNodeCommand(
-                node.id,
-                { x: node.x, y: node.y },
-                { x: node.x + dx, y: node.y + dy },
-              ),
-            );
+            .filter((node): node is BpmnNode => Boolean(node));
+          const commands: Command[] = moved.map((node) =>
+            moveNodeCommand(
+              node.id,
+              { x: node.x, y: node.y },
+              { x: node.x + dx, y: node.y + dy },
+            ),
+          );
+          commands.push(...laneMembershipCommands(diagramRef.current, moved, dx, dy));
           if (commands.length === 1) execute(commands[0]);
           else if (commands.length > 1) execute(compositeCommand('Move nodes', commands));
         }
@@ -446,4 +456,84 @@ export type Interactions = ReturnType<typeof useInteractions>;
 function isPrimaryButton(event: { button?: number }): boolean {
   // jsdom fires plain Events without a `button` field — treat as primary.
   return event.button === undefined || event.button === 0;
+}
+
+/** Active lanes that are legal drop targets — never the dragged nodes themselves. */
+function candidateLanes(diagram: BpmnDiagram, draggedIds: string[]): BpmnNode[] {
+  return Object.values(diagram.nodes).filter(
+    (node) =>
+      node.type === 'lane' && !node.removedInVersion && !draggedIds.includes(node.id),
+  );
+}
+
+/** Smallest lane containing the point wins, so nested/overlapping lanes resolve
+ * to the most specific one. */
+function laneAt(lanes: BpmnNode[], point: Point): BpmnNode | undefined {
+  let best: BpmnNode | undefined;
+  for (const lane of lanes) {
+    const inside =
+      point.x >= lane.x &&
+      point.x <= lane.x + lane.width &&
+      point.y >= lane.y &&
+      point.y <= lane.y + lane.height;
+    if (inside && (!best || lane.width * lane.height < best.width * best.height)) {
+      best = lane;
+    }
+  }
+  return best;
+}
+
+/** Lane under the first dragged flow node's center — the highlight target. */
+function dropTargetLane(
+  diagram: BpmnDiagram,
+  draggedIds: string[],
+  dx: number,
+  dy: number,
+): BpmnNode | undefined {
+  const primary = draggedIds
+    .map((id) => diagram.nodes[id])
+    .find((node) => node && !isContainerType(node.type));
+  if (!primary) return undefined;
+  return laneAt(candidateLanes(diagram, draggedIds), {
+    x: primary.x + dx + primary.width / 2,
+    y: primary.y + dy + primary.height / 2,
+  });
+}
+
+/**
+ * Lane-membership updates for a completed drag: each moved flow node joins the
+ * lane its new center lands in (leaving any other lane). Returned as commands
+ * so the whole gesture — move + membership — is one undoable unit.
+ */
+function laneMembershipCommands(
+  diagram: BpmnDiagram,
+  moved: BpmnNode[],
+  dx: number,
+  dy: number,
+): Command[] {
+  const flowNodes = moved.filter((node) => !isContainerType(node.type));
+  if (flowNodes.length === 0) return [];
+  const lanes = candidateLanes(diagram, moved.map((node) => node.id));
+  if (lanes.length === 0) return [];
+
+  const targetLaneOf = new Map<string, string | null>();
+  for (const node of flowNodes) {
+    const center = { x: node.x + dx + node.width / 2, y: node.y + dy + node.height / 2 };
+    targetLaneOf.set(node.id, laneAt(lanes, center)?.id ?? null);
+  }
+
+  const commands: Command[] = [];
+  for (const lane of lanes) {
+    const refs = laneFlowNodeRefs(lane);
+    // Keep refs the drag didn't touch; re-evaluate membership for moved nodes.
+    const next = refs.filter((id) => !targetLaneOf.has(id) || targetLaneOf.get(id) === lane.id);
+    for (const [nodeId, laneId] of targetLaneOf) {
+      if (laneId === lane.id && !next.includes(nodeId)) next.push(nodeId);
+    }
+    const changed = next.length !== refs.length || next.some((id, index) => refs[index] !== id);
+    if (changed) {
+      commands.push(updateNodeCommand(lane.id, { properties: { flowNodeRefs: next } }));
+    }
+  }
+  return commands;
 }

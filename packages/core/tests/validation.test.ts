@@ -64,6 +64,30 @@ describe('ValidationEngine', () => {
     expect(result.issues.some((i) => i.nodeId === 'note')).toBe(false);
   });
 
+  it('never flags pools/lanes as unreachable (containers are not flow nodes)', () => {
+    const diagram = build();
+    diagram.nodes.pool1 = createNode({ type: 'pool', id: 'pool1', label: 'P' });
+    diagram.nodes.lane1 = createNode({ type: 'lane', id: 'lane1', label: 'L' });
+    const result = new ValidationEngine().validate(diagram);
+    expect(result.issues.some((i) => i.nodeId === 'pool1' || i.nodeId === 'lane1')).toBe(false);
+    expect(result.valid).toBe(true);
+  });
+
+  it('warns about lane refs pointing at missing or closed nodes', () => {
+    const diagram = build();
+    diagram.nodes.lane1 = createNode({
+      type: 'lane',
+      id: 'lane1',
+      label: 'Authors',
+      properties: { flowNodeRefs: ['task', 'ghost'] },
+    });
+    const result = new ValidationEngine().validate(diagram);
+    const stale = result.issues.filter((i) => i.code === 'STALE_LANE_REF');
+    expect(stale).toHaveLength(1);
+    expect(stale[0].message).toContain('ghost');
+    expect(stale[0].severity).toBe('warning');
+  });
+
   it('rejects flows out of end events and into start events', () => {
     const diagram = build();
     diagram.edges.wrong1 = createEdge({ id: 'wrong1', sourceId: 'end', targetId: 'task' });
