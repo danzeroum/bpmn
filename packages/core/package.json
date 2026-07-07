@@ -1,6 +1,6 @@
 {
   "name": "@bpmn-react/core",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Zero-dependency BPMN domain engine: model, lifecycle governance, validation, structured diff, hash-chained audit ledger, geometry and BPMN 2.0 XML (with DI).",
   "license": "Apache-2.0",
   "type": "module",
@@ -33,5 +33,13 @@
     "versioning",
     "audit",
     "governance"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/core"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

@@ -1,8 +1,10 @@
 # BPMN 2.0 XML — supported profile
 
-The converter implements a deliberate **MVP profile** of the OMG BPMN 2.0 specification — the
-subset needed to interoperate with bpmn.io / Camunda Modeler — instead of the full ~500-page spec.
-Unknown elements are ignored with warnings on import (never a hard failure).
+The converter implements a deliberate, documented **profile** of the OMG BPMN 2.0 specification —
+the subset needed to interoperate with bpmn.io / Camunda Modeler — instead of the full ~500-page
+spec. Unknown elements are ignored with warnings on import (never a hard failure). The profile is
+stable under semver: documents exported by a 1.x release will always re-import in later 1.x
+releases.
 
 ## Structure
 
