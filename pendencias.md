@@ -86,6 +86,40 @@ anexados) já estão entregues. Ficaram para uma PR de interação dedicada:
 - **Roteamento das saídas do boundary:** usar port-offset no roteador ortogonal (barato) antes do
   A\* com desvio de obstáculos (já registrado no item 2).
 
+## 7. Status do roadmap OMG (onde parei)
+
+Progresso desta rodada autônoma (todas as PRs com CI verde → merge):
+
+- **Design system BuildToValue** — PRs 1–3 entregues (tokens, shapes+ícones, edge styles).
+- **F6 · Eventos (v1.1) — COMPLETO:**
+  - Typed event definitions (message/timer/error/signal/escalation/conditional/link/terminate) em
+    start/end/intermediate, com round-trip via `<bpmn:*EventDefinition>`.
+  - Intermediate catch/throw (anel duplo; throw = glifo preenchido).
+  - Boundary events interrupting + non-interrupting (`attachedToRef`/`cancelActivity`, ride-along no
+    drag do host).
+  - `eventBasedGateway` + artefato `group`.
+- **F7 · Atividades compostas (v1.2) — PARCIAL:**
+  - Entregue: `sendTask`/`receiveTask`/`manualTask` + marcadores de loop/multi-instância
+    (round-trip via `loopCharacteristics`).
+  - **Falta (canvas-pesado, próximas PRs):** `subProcess` aninhado (expand/collapse, drill-down no
+    canvas, DI hierárquico), `callActivity` (sinergia com `@bpmn-react/registry` `activeAt`),
+    `dataStore` + `dataAssociation`. Meta: classe OMG **Descriptive 100%**.
+
+### Ainda no roadmap (F8→F10, intocado)
+- **F8** validação XSD opcional (CLI/Node), corpus de interop ≥50 arquivos externos, `CONFORMANCE.md`
+  gerado, declarar classe **Analytic**.
+- **F9** DMN — novo pacote `@bpmn-react/dmn` (decision table + DRD mínimo).
+- **F10** VDML/BMM via `extensionElements`.
+
+### Polimento pendente da F6
+- Sub-menu de eventos na paleta (hoje lista plana com alguns typed via `defaultProperties`) — junto
+  do agrupamento Core/BuildToValue (item da seção 5).
+- Boundary: drag-to-attach e reflow por `t` no resize (seção 6).
+
+### Nota
+Foram enviados protótipos de design em `docs/design_handoff_btv_prototypes/` (screenshots) durante a
+sessão. Ainda **não** foram incorporados — avaliar se pedem ajustes visuais antes de seguir a F7.
+
 ## Resolvidas (para histórico)
 
 - ~~Lane membership manual/data-only~~ → interativa na Fase 5a.
