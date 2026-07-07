@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; }
+  a { color: #9a7b1e; text-decoration: none; }
+  a:hover { color: #7a611e; text-decoration: underline; }
+</style>
+</helmet>
+<x-import component-from-global-scope="doc-page" from="./doc-page.js" size="letter" margin="0.75in" hint-size="100%,1400px">
+<div style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; font-size: 13.5px; line-height: 1.6;">
+
+  <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 3px; color: #9a7b1e; margin-bottom: 10px;">BUILDTOVALUE · BPMN-REACT · JULHO 2026</div>
+  <h1 style="margin: 0 0 6px; font-size: 30px; font-weight: 700; letter-spacing: -0.5px;">Roadmap de conformidade OMG</h1>
+  <p style="margin: 0 0 24px; font-size: 14px; color: #6f675a;">Plano completo para aproximar o bpmn-react do máximo da categoria Business Modeling da OMG — BPMN 2.0.2 elemento a elemento, depois as especificações vizinhas (DMN, VDML, BMM, CMMN, SBVR).</p>
+
+  <!-- ================= 1. SUMÁRIO ================= -->
+  <h2 style="margin: 28px 0 10px; font-size: 18px; font-weight: 600; border-bottom: 2px solid #9a7b1e; padding-bottom: 6px;">1 · Sumário executivo</h2>
+  <p style="margin: 0 0 10px;">O bpmn-react v1.0 implementa um <strong>perfil MVP documentado</strong> do BPMN 2.0.2: fluxo básico, 3 gateways, pools/lanes, DI completo e round-trip com Camunda/bpmn.io — com 282 testes unitários + 14 e2e e ledger auditável. O caminho para "proximidade máxima" com a OMG não é implementar as ~500 páginas da spec, e sim:</p>
+  <ol style="margin: 0 0 10px; padding-left: 22px;">
+    <li style="margin-bottom: 4px;"><strong>Declarar e cumprir uma classe de conformidade oficial</strong> — alvo: <strong>Analytic</strong> (a classe das ferramentas de modelagem de negócio; Common Executable é para engines de execução, fora do propósito da ferramenta).</li>
+    <li style="margin-bottom: 4px;"><strong>Fechar os gaps em fases estratégicas</strong> (F5a → F10), cada uma no regime já praticado: PRs gated em CI verde.</li>
+    <li><strong>Publicar a matriz de conformidade</strong> (seção 4) como documento vivo no repositório — transparência que vale mais comercialmente do que cobertura total.</li>
+  </ol>
+
+  <!-- ================= 2. CLASSES ================= -->
+  <h2 style="margin: 28px 0 10px; font-size: 18px; font-weight: 600; border-bottom: 2px solid #9a7b1e; padding-bottom: 6px;">2 · Classes de conformidade BPMN 2.0.2</h2>
+  <p style="margin: 0 0 12px;">A OMG define subclasses de conformidade de Process Modeling justamente para que ferramentas não precisem da spec inteira:</p>
+  <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 12px;">
+    <thead>
+      <tr style="background: #f6edd4;">
+        <th style="text-align: left; padding: 7px 10px; border: 1px solid #e2ddd3; font-weight: 600;">Classe</th>
+        <th style="text-align: left; padding: 7px 10px; border: 1px solid #e2ddd3; font-weight: 600;">O que exige</th>
+        <th style="text-align: left; padding: 7px 10px; border: 1px solid #e2ddd3; font-weight: 600;">Posição do bpmn-react</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;"><strong>Descriptive</strong></td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Subconjunto para documentação de negócio: eventos none/message/timer, tasks principais, subProcess, callActivity, XOR/AND, pools, lanes, messageFlow, data, artefatos.</td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">~70% hoje · <strong>100% ao fim da F7</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;"><strong>Analytic</strong></td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Descriptive + todos os tipos de evento (boundary, throw/catch, non-interrupting), gateway event-based, loop/multi-instance, sinalização completa.</td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;"><strong>Alvo estratégico — fim da F8</strong></td>
+      </tr>
+      <tr>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;"><strong>Common Executable</strong></td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Semântica de execução (expressões, data I/O formal, bindings de engine).</td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Fora de propósito — a ferramenta é de <em>modelagem e governança</em>, não engine. Reavaliar só se surgir demanda de execução.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ================= 3. FASES ================= -->
+  <h2 style="margin: 28px 0 10px; font-size: 18px; font-weight: 600; border-bottom: 2px solid #9a7b1e; padding-bottom: 6px;">3 · Roadmap por fases</h2>
+  <p style="margin: 0 0 12px;">Continuação da numeração existente (F1–F4 merged, F5 em curso). Critério de merge inalterado: <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px;">CI verde (build-test + e2e) → merge</span>.</p>
+  <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 12px;">
+    <thead>
+      <tr style="background: #f6edd4;">
+        <th style="text-align: left; padding: 7px 10px; border: 1px solid #e2ddd3; font-weight: 600; white-space: nowrap;">Fase · versão</th>
+        <th style="text-align: left; padding: 7px 10px; border: 1px solid #e2ddd3; font-weight: 600;">Escopo</th>
+        <th style="text-align: left; padding: 7px 10px; border: 1px solid #e2ddd3; font-weight: 600;">Critério de aceite</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3; white-space: nowrap;"><strong>F5a/5b</strong> · v1.0<br><span style="color: #1a6a54; font-family: 'IBM Plex Mono', monospace; font-size: 10px;">EM CURSO</span></td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Lanes interativas (drag atualiza flowNodeRefs, undoável), <strong>messageFlow</strong> e <strong>association</strong> reais no XML, multi-pool com processos separados, endurecimento (StrictMode, stress ~350 nós) + engenharia de release (semver, npm, CHANGELOG).</td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Round-trip lossless com Camunda incluindo colaboração multi-pool; 1.0.0 publicado.</td>
+      </tr>
+      <tr>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3; white-space: nowrap;"><strong>F6</strong> · v1.1<br><span style="color: #6f675a; font-family: 'IBM Plex Mono', monospace; font-size: 10px;">EVENTOS</span></td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Definições de evento: <strong>message, timer, error, signal, escalation, conditional, link, terminate</strong>; intermediate throw/catch; <strong>boundaryEvent</strong> interrupting e non-interrupting (o item de maior valor por esforço); event-based gateway; artefato group.</td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Todo diagrama Camunda com boundary/timer/message importa sem warnings; paleta com sub-menu de eventos.</td>
+      </tr>
+      <tr>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3; white-space: nowrap;"><strong>F7</strong> · v1.2<br><span style="color: #6f675a; font-family: 'IBM Plex Mono', monospace; font-size: 10px;">ATIVIDADES</span></td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;"><strong>subProcess aninhado</strong> (expand/collapse com drill-down), <strong>callActivity</strong>, sendTask/receiveTask/manualTask, marcadores loop e multi-instance, dataStore e dataAssociation.</td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Classe <strong>Descriptive 100%</strong>; hierarquia round-trips com DI de subprocesso.</td>
+      </tr>
+      <tr>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3; white-space: nowrap;"><strong>F8</strong> · v1.3<br><span style="color: #6f675a; font-family: 'IBM Plex Mono', monospace; font-size: 10px;">CONFORMIDADE</span></td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Validação <strong>XSD opcional</strong> contra o schema oficial, suíte de interoperabilidade (corpus de arquivos Camunda/bpmn.io/Signavio como fixtures), <strong>matriz de conformidade pública</strong> gerada por script a partir dos testes, declaração formal de classe Analytic no README.</td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Classe <strong>Analytic declarada e verificável</strong>; corpus ≥ 50 arquivos externos round-trip.</td>
+      </tr>
+      <tr>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3; white-space: nowrap;"><strong>F9</strong> · v2.0<br><span style="color: #6f675a; font-family: 'IBM Plex Mono', monospace; font-size: 10px;">DMN</span></td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;"><strong>businessRuleTask</strong> ligado a decision tables DMN 1.x (novo pacote <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">@bpmn-react/dmn</span>): editor de tabela, import/export DMN XML, link bidirecional gateway ↔ decisão.</td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Tabela DMN abre no Camunda; decisão referenciada round-trips.</td>
+      </tr>
+      <tr>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3; white-space: nowrap;"><strong>F10</strong> · v2.x<br><span style="color: #6f675a; font-family: 'IBM Plex Mono', monospace; font-size: 10px;">VALOR</span></td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Mapeamento <strong>VDML/BMM</strong> do domínio btv: deliverable → value proposition, gate → governance decision, squad → org unit — via extensionElements, sem novo editor. É a ponte natural do nome BuildToValue.</td>
+        <td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Export VDML-annotated validado; whitepaper de mapeamento publicado.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin: 0 0 10px; font-size: 12px; color: #6f675a;">Fora de escopo deliberado: <strong>Conversation e Choreography diagrams</strong> (raríssimos em ferramentas comerciais), <strong>CMMN</strong> (mercado insuficiente — reavaliar por demanda), <strong>transaction/compensation e event subprocess</strong> (pós-Analytic, v2.x+), <strong>SBVR</strong> (no máximo glossário ligado a labels).</p>
+
+  <!-- ================= 4. MATRIZ ================= -->
+  <h2 style="margin: 28px 0 10px; font-size: 18px; font-weight: 600; border-bottom: 2px solid #9a7b1e; padding-bottom: 6px;">4 · Matriz de conformidade elemento a elemento</h2>
+  <p style="margin: 0 0 8px; font-size: 12.5px;">Classe OMG: <strong>D</strong> Descriptive · <strong>A</strong> Analytic · <strong>CE</strong> Common Executable. Status: <span style="color: #1a6a54; font-weight: 600;">●</span> suportado · <span style="color: #9a7b1e; font-weight: 600;">◐</span> parcial · <span style="color: #6f675a;">○</span> planejado · <span style="color: #b3372f;">✕</span> fora de escopo.</p>
+
+  <table style="width: 100%; border-collapse: collapse; font-size: 11.5px; margin-bottom: 12px;">
+    <thead>
+      <tr style="background: #f6edd4;">
+        <th style="text-align: left; padding: 6px 9px; border: 1px solid #e2ddd3; font-weight: 600;">Elemento BPMN 2.0.2</th>
+        <th style="text-align: center; padding: 6px 9px; border: 1px solid #e2ddd3; font-weight: 600; width: 52px;">Classe</th>
+        <th style="text-align: center; padding: 6px 9px; border: 1px solid #e2ddd3; font-weight: 600; width: 52px;">Hoje</th>
+        <th style="text-align: center; padding: 6px 9px; border: 1px solid #e2ddd3; font-weight: 600; width: 60px;">Alvo</th>
+        <th style="text-align: left; padding: 6px 9px; border: 1px solid #e2ddd3; font-weight: 600;">Nota</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="5" style="padding: 5px 9px; border: 1px solid #e2ddd3; background: #faf9f6; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: #9a7b1e;">EVENTOS</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">startEvent / endEvent (none)</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #1a6a54;">●</td><td style="text-align: center; border: 1px solid #e2ddd3;">—</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">round-trip completo com DI</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">start/end message · timer</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F6</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">eventDefinition + glifo no círculo</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">intermediateCatch / Throw (message, timer, signal, link)</td><td style="text-align: center; border: 1px solid #e2ddd3;">A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F6</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">círculo duplo; throw com glifo preenchido</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">boundaryEvent interrupting (message, timer, error)</td><td style="text-align: center; border: 1px solid #e2ddd3;">A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F6</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;"><strong>maior valor por esforço</strong> — ancoragem à borda da activity</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">boundaryEvent non-interrupting</td><td style="text-align: center; border: 1px solid #e2ddd3;">A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F6</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">borda tracejada</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">terminate · error · escalation · conditional end/throw</td><td style="text-align: center; border: 1px solid #e2ddd3;">A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F6</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;"></td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">compensation events</td><td style="text-align: center; border: 1px solid #e2ddd3;">A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">v2.x</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">pós-Analytic, junto com transaction</td></tr>
+
+      <tr><td colspan="5" style="padding: 5px 9px; border: 1px solid #e2ddd3; background: #faf9f6; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: #9a7b1e;">ATIVIDADES</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">task · userTask · serviceTask · scriptTask</td><td style="text-align: center; border: 1px solid #e2ddd3;">D/A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #1a6a54;">●</td><td style="text-align: center; border: 1px solid #e2ddd3;">—</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;"></td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">sendTask · receiveTask · manualTask</td><td style="text-align: center; border: 1px solid #e2ddd3;">A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F7</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">glifos novos apenas — mesma ActivityBox</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">businessRuleTask</td><td style="text-align: center; border: 1px solid #e2ddd3;">A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F9</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">entregue junto com DMN</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">subProcess (flat)</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #9a7b1e;">◐</td><td style="text-align: center; border: 1px solid #e2ddd3;">F7</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">hoje sem flow elements aninhados</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">subProcess aninhado (expand/collapse)</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F7</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">drill-down no canvas; DI hierárquico</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">callActivity</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F7</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">sinergia com o registry (referenciar diagrama versionado)</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">loop · multi-instance markers</td><td style="text-align: center; border: 1px solid #e2ddd3;">A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F7</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">marcadores na base da activity</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">eventSubProcess · transaction</td><td style="text-align: center; border: 1px solid #e2ddd3;">A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">v2.x</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">nicho; depende de F6+F7</td></tr>
+
+      <tr><td colspan="5" style="padding: 5px 9px; border: 1px solid #e2ddd3; background: #faf9f6; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: #9a7b1e;">GATEWAYS</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">exclusive · parallel · inclusive</td><td style="text-align: center; border: 1px solid #e2ddd3;">D/A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #1a6a54;">●</td><td style="text-align: center; border: 1px solid #e2ddd3;">—</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;"></td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">eventBasedGateway</td><td style="text-align: center; border: 1px solid #e2ddd3;">A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F6</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">requer intermediate events primeiro</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">complexGateway</td><td style="text-align: center; border: 1px solid #e2ddd3;">A</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #b3372f;">✕</td><td style="text-align: center; border: 1px solid #e2ddd3;">—</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">raríssimo na prática; import degrada com warning</td></tr>
+
+      <tr><td colspan="5" style="padding: 5px 9px; border: 1px solid #e2ddd3; background: #faf9f6; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: #9a7b1e;">SWIMLANES &amp; COLABORAÇÃO</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">pool (participant) · lane (laneSet)</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #1a6a54;">●</td><td style="text-align: center; border: 1px solid #e2ddd3;">—</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">F4; isHorizontal DI</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">lane membership interativa (flowNodeRef por drag)</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #9a7b1e;">◐</td><td style="text-align: center; border: 1px solid #e2ddd3;">F5a</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">hoje é dado; passa a ser geométrico e undoável</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">multi-pool (processos separados) · messageFlow</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F5a</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">em curso</td></tr>
+
+      <tr><td colspan="5" style="padding: 5px 9px; border: 1px solid #e2ddd3; background: #faf9f6; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: #9a7b1e;">DADOS &amp; ARTEFATOS</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">dataObjectReference · textAnnotation</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #1a6a54;">●</td><td style="text-align: center; border: 1px solid #e2ddd3;">—</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;"></td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">association</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F5a</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">em curso</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">dataStore · dataAssociation</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F7</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;"></td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">group</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F6</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">retângulo tracejado não-semântico</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">dataInput / dataOutput formais (ioSpecification)</td><td style="text-align: center; border: 1px solid #e2ddd3;">CE</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #b3372f;">✕</td><td style="text-align: center; border: 1px solid #e2ddd3;">—</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">semântica de execução</td></tr>
+
+      <tr><td colspan="5" style="padding: 5px 9px; border: 1px solid #e2ddd3; background: #faf9f6; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 1.5px; color: #9a7b1e;">INFRAESTRUTURA XML / DI</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">BPMNDiagram/Plane/Shape/Edge + Bounds/waypoints</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #1a6a54;">●</td><td style="text-align: center; border: 1px solid #e2ddd3;">—</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">layout automático quando DI ausente</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">extensionElements (vendor bpmnr:)</td><td style="text-align: center; border: 1px solid #e2ddd3;">D</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #1a6a54;">●</td><td style="text-align: center; border: 1px solid #e2ddd3;">—</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">versão, lifecycle, tipos custom</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">validação XSD contra schema oficial</td><td style="text-align: center; border: 1px solid #e2ddd3;">—</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #6f675a;">○</td><td style="text-align: center; border: 1px solid #e2ddd3;">F8</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">opcional (CLI validate --xsd); parser continua XXE-safe</td></tr>
+      <tr><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">Conversation / Choreography diagrams</td><td style="text-align: center; border: 1px solid #e2ddd3;">—</td><td style="text-align: center; border: 1px solid #e2ddd3; color: #b3372f;">✕</td><td style="text-align: center; border: 1px solid #e2ddd3;">—</td><td style="padding: 5px 9px; border: 1px solid #e2ddd3;">tipos de diagrama distintos, quase sem adoção de mercado</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ================= 5. VIZINHAS ================= -->
+  <h2 style="margin: 28px 0 10px; font-size: 18px; font-weight: 600; border-bottom: 2px solid #9a7b1e; padding-bottom: 6px;">5 · Especificações vizinhas da categoria</h2>
+  <p style="margin: 0 0 12px;">Das 18 especificações da categoria Business Modeling da OMG, estas são as relevantes para a ferramenta:</p>
+  <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 12px;">
+    <thead>
+      <tr style="background: #f6edd4;">
+        <th style="text-align: left; padding: 7px 10px; border: 1px solid #e2ddd3; font-weight: 600;">Spec</th>
+        <th style="text-align: left; padding: 7px 10px; border: 1px solid #e2ddd3; font-weight: 600;">Relação com a ferramenta</th>
+        <th style="text-align: left; padding: 7px 10px; border: 1px solid #e2ddd3; font-weight: 600; white-space: nowrap;">Recomendação</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding: 7px 10px; border: 1px solid #e2ddd3;"><strong>DMN 1.x</strong></td><td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Decision tables ligadas a businessRuleTask/gateways. Integração mais natural e vendável — Camunda/Signavio já treinaram o mercado.</td><td style="padding: 7px 10px; border: 1px solid #e2ddd3; color: #1a6a54;"><strong>F9 · fazer</strong></td></tr>
+      <tr><td style="padding: 7px 10px; border: 1px solid #e2ddd3;"><strong>VDML 1.1</strong></td><td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Modelagem de entrega de valor. O domínio btv: (deliverable, gate, squad) já é um proto-VDML — mapear via extensionElements.</td><td style="padding: 7px 10px; border: 1px solid #e2ddd3; color: #1a6a54;"><strong>F10 · mapear</strong></td></tr>
+      <tr><td style="padding: 7px 10px; border: 1px solid #e2ddd3;"><strong>BMM 1.3</strong></td><td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Motivação (goals, means, directives) — anotar processos com o "porquê". Combina com o ledger de governança.</td><td style="padding: 7px 10px; border: 1px solid #e2ddd3; color: #1a6a54;"><strong>F10 · mapear</strong></td></tr>
+      <tr><td style="padding: 7px 10px; border: 1px solid #e2ddd3;"><strong>CMMN 1.1</strong></td><td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Case management (trabalho não-estruturado). Editor inteiro à parte; adoção de mercado fraca.</td><td style="padding: 7px 10px; border: 1px solid #e2ddd3; color: #9a7b1e;"><strong>Por demanda</strong></td></tr>
+      <tr><td style="padding: 7px 10px; border: 1px solid #e2ddd3;"><strong>SBVR 1.5</strong></td><td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Vocabulário e regras de negócio. No máximo: glossário de termos ligado a labels de elementos.</td><td style="padding: 7px 10px; border: 1px solid #e2ddd3; color: #9a7b1e;"><strong>Por demanda</strong></td></tr>
+      <tr><td style="padding: 7px 10px; border: 1px solid #e2ddd3;"><strong>BPMM 1.0</strong></td><td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Maturidade de processos (níveis 1–5). Não é software — mas o lifecycle draft→retired + registry já suportam avaliações BPMM como conteúdo/consultoria.</td><td style="padding: 7px 10px; border: 1px solid #e2ddd3; color: #6f675a;"><strong>Posicionamento</strong></td></tr>
+      <tr><td style="padding: 7px 10px; border: 1px solid #e2ddd3;">BPDM, BACM, PPMN, SDMN, DTV, PRR, CTS2, CWM, MIPS, WfMF, SCE</td><td style="padding: 7px 10px; border: 1px solid #e2ddd3;">Metamodelos legados, vocabulários ou domínios sem interseção com o produto.</td><td style="padding: 7px 10px; border: 1px solid #e2ddd3; color: #b3372f;"><strong>Ignorar</strong></td></tr>
+    </tbody>
+  </table>
+
+  <!-- ================= 6. RISCOS ================= -->
+  <h2 style="margin: 28px 0 10px; font-size: 18px; font-weight: 600; border-bottom: 2px solid #9a7b1e; padding-bottom: 6px;">6 · Riscos e dependências técnicas</h2>
+  <ul style="margin: 0 0 10px; padding-left: 22px;">
+    <li style="margin-bottom: 6px;"><strong>Performance (F6–F7):</strong> boundary events e subprocessos aninhados multiplicam elementos por diagrama; o teto atual de ~300–400 elementos SVG vira gargalo. A virtualização do canvas (já no roadmap pós-1.0) deve entrar <em>antes</em> ou <em>junto</em> da F7.</li>
+    <li style="margin-bottom: 6px;"><strong>Roteador de edges:</strong> boundary events exigem saídas ancoradas na borda — esbarra na pendência do roteador com desvio de obstáculos (pendencias.md). A opção barata (port-offset no roteador ortogonal) resolve para F6; o roteador A* fica para F7+ como PR isolada com orçamento de performance.</li>
+    <li style="margin-bottom: 6px;"><strong>XSD no browser (F8):</strong> validação XSD completa client-side é pesada; recomendação: XSD no CLI/Node e validação estrutural no browser — declarado na matriz.</li>
+    <li><strong>Escopo DMN (F9):</strong> é um metamodelo inteiro; limitar à decision table + DRD mínimo (mesma filosofia do perfil MVP do BPMN — perfil documentado, warnings em import).</li>
+  </ul>
+
+  <div style="margin-top: 28px; padding-top: 12px; border-top: 1px solid #e2ddd3; display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a;">
+    <span>BUILDTOVALUE · ROADMAP OMG · v1</span>
+    <span>fontes: omg.org/spec (categoria Business Modeling) · docs/format-spec.md · pendencias.md</span>
+  </div>
+</div>
+</x-import>
+</x-dc>
+</body>
+</html>
