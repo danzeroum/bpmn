@@ -27,10 +27,13 @@ Documented deliberately so expectations are managed — none of these fail silen
 ## Interaction
 - Touch gestures: basic pointer events work on touch devices, but pinch-zoom and long-press menus
   are not implemented.
-- Inline label editing on the canvas is not implemented — labels are edited in the properties
-  panel.
+- Labels can be edited inline on the canvas (double-click a node) or in the properties panel.
 
 ## Governance
 - The library records `UserContext` data as given; authentication/authorization is the host
   application's responsibility.
-- `AuditLedger` keeps entries in memory; durable storage happens through the `AuditSink` seam.
+- `AuditLedger` and `VersionRegistry` keep entries in memory; durable storage happens through their
+  `AuditSink` / `RegistrySink` seams.
+- `VersionTimeline` (React) is presentational and decoupled — it renders a plain
+  `VersionTimelineItem[]`, so the host maps its registry (or any version source) to that shape and
+  the React layer never depends on `@bpmn-react/registry`.

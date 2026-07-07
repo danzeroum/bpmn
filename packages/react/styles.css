@@ -381,3 +381,124 @@
   color: var(--bpmnr-text-muted);
   font-size: 12px;
 }
+
+/* --------------------------------------------------------- timeline */
+
+.bpmnr-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+}
+
+.bpmnr-timeline-empty {
+  color: var(--bpmnr-text-muted);
+  padding: 6px 2px;
+}
+
+.bpmnr-timeline-item {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding: 0 0 12px 4px;
+}
+
+.bpmnr-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 12px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--bpmnr-panel-border, #e2ddd3);
+}
+
+.bpmnr-timeline-item:last-child::before {
+  display: none;
+}
+
+.bpmnr-timeline-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-top: 4px;
+  z-index: 1;
+  box-shadow: 0 0 0 3px var(--bpmnr-panel-bg, #fff);
+}
+
+.bpmnr-timeline-item[data-current='true'] .bpmnr-timeline-dot {
+  box-shadow: 0 0 0 3px var(--bpmnr-panel-bg, #fff), 0 0 0 5px var(--bpmnr-selected, #1a6a54);
+}
+
+.bpmnr-timeline-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.bpmnr-timeline-body:disabled {
+  cursor: default;
+}
+
+.bpmnr-timeline-body:focus-visible {
+  outline: 2px solid var(--bpmnr-selected, #1a6a54);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.bpmnr-timeline-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.bpmnr-timeline-status {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.bpmnr-timeline-channel {
+  font-size: 10px;
+  color: var(--bpmnr-text-muted);
+  border: 1px solid var(--bpmnr-panel-border, #e2ddd3);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.bpmnr-timeline-date {
+  font-size: 10px;
+  color: var(--bpmnr-text-muted);
+  margin-left: auto;
+}
+
+.bpmnr-timeline-summary {
+  color: var(--bpmnr-text-muted);
+  line-height: 1.4;
+}
+
+.bpmnr-timeline-approvers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.bpmnr-timeline-approver {
+  font-size: 10px;
+  background: var(--bpmnr-status-active, #dff0e6);
+  color: #1a6a54;
+  border-radius: 4px;
+  padding: 1px 6px;
+}

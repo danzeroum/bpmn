@@ -14,6 +14,7 @@ export * from './state/canvasStore.js';
 // Canvas building blocks
 export * from './canvas/Canvas.js';
 export * from './canvas/NodeRenderer.js';
+export * from './canvas/NodeLabelEditor.js';
 export * from './canvas/EdgeRenderer.js';
 export * from './canvas/Defs.js';
 export * from './canvas/overlays.js';
@@ -37,4 +38,5 @@ export * from './ui/Toolbar.js';
 export * from './ui/MiniMap.js';
 export * from './ui/StatusBadge.js';
 export * from './ui/DiffView.js';
+export * from './ui/VersionTimeline.js';
 export * from './ui/exporters.js';
