@@ -199,13 +199,19 @@ test('exports PNG', async ({ page }) => {
 });
 
 test('rejects invalid XML imports with a readable error', async ({ page }) => {
-  page.on('dialog', async (dialog) => {
-    expect(dialog.message()).toContain('Import failed');
-    await dialog.accept();
+  // Resolve the dialog deterministically: accept it, then assert on the
+  // captured message. Asserting *inside* the handler risks an unhandled
+  // rejection that leaves the modal open and hangs the file input.
+  const dialogMessage = new Promise<string>((resolve) => {
+    page.once('dialog', (dialog) => {
+      const message = dialog.message();
+      void dialog.accept().then(() => resolve(message));
+    });
   });
   await page
     .locator('.demo-import input')
     .setInputFiles({ name: 'broken.xml', mimeType: 'application/xml', buffer: Buffer.from('<not-bpmn>') });
+  expect(await dialogMessage).toContain('Import failed');
   // The sample diagram is still intact
   await expect(page.locator('[data-node-type="btv:squad"]')).toBeVisible();
 });
