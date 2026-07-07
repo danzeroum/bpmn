@@ -99,7 +99,7 @@ export class BpmnXmlConverter {
       id: `Definitions_${processId}`,
       targetNamespace: 'http://bpmn-react.io/bpmn',
       exporter: 'bpmn-react',
-      exporterVersion: '0.1.0',
+      exporterVersion: '1.0.0',
     });
 
     // Pools become participants inside a collaboration referencing the process.

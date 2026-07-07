@@ -1,6 +1,6 @@
 {
   "name": "@bpmn-react/registry",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Headless version governance for bpmn-react: a queryable registry of diagram versions with temporal validity, publication channels/environments, dual changelog and execution pinning (run-binding). Zero runtime dependencies.",
   "license": "Apache-2.0",
   "type": "module",
@@ -36,5 +36,13 @@
     "audit",
     "changelog",
     "rollout"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/registry"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

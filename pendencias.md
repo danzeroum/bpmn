@@ -1,81 +1,57 @@
 # Pendências — decisões que deixei para você analisar
 
 Documento vivo com os pontos onde parei por serem **decisões de produto/arquitetura** (não
-apenas execução) ou por estarem, na minha avaliação, além do que consigo entregar sozinho com
-segurança sem quebrar produção. Nada aqui bloqueia o que já foi entregue — são próximos passos.
+apenas execução) ou por dependerem de credenciais/ações fora do repositório. Nada aqui bloqueia
+o que já foi entregue.
 
-Última atualização: implementação da Fase 4 (pools/lanes no perfil XML).
-
----
-
-## 1. Roteador de arestas com desvio de obstáculos (avaliação pedida na Fase 4)
-
-**Situação atual:** as arestas usam Bézier cúbica (padrão) ou ortogonal simples (Manhattan em
-L, com colapso de waypoints colineares). Nenhum dos dois desvia de nós no caminho — uma aresta
-pode cruzar por cima de uma tarefa.
-
-**Avaliação:** implementar um roteador que evita obstáculos de verdade (estilo bpmn.io/A\*) é
-**significativo** e, no meu julgamento, está no limite do que dá para fazer autonomamente sem
-risco de regressão. Envolve:
-
-- Grid de navegação / visibility graph a partir das bounding boxes de todos os nós;
-- Busca de caminho (A\* ou Dijkstra) com penalização de curvas e proximidade;
-- Simplificação do caminho + ancoragem estável nas portas (senão a aresta "pula" a cada
-  micro-movimento);
-- Recalcular de forma incremental e barata durante drag (hoje o `routeOrthogonal` é O(1); um
-  A\* ingênuo a 60fps num diagrama de 300 nós não fecha o orçamento de performance que
-  documentamos).
-
-**Minha recomendação:** tratar como item **pós-1.0**, próprio, com uma interface de roteador
-plugável (o core já registra routers), para não acoplar ao MVP. Se você quiser que eu avance,
-sugiro fazer numa PR isolada e dedicada, com benchmark de performance como critério de aceite.
-**Não implementei nesta rodada de propósito** — quis evitar entregar um roteador meia-boca que
-piorasse a experiência atual. Preciso do seu aval para priorizar.
-
-**Alternativa barata (se quiser algo já):** melhorar o ortogonal atual para desviar só do nó de
-origem/destino (offset mínimo nas portas) — isso eu consigo fazer com segurança. Me diga se
-vale.
+Última atualização: Fase 5 (caminho para a v1.0).
 
 ---
 
-## 2. Pools/lanes — fronteiras do MVP entregue
+## 1. Publicação no npm (ação sua, obrigatória para fechar a v1.0)
 
-O que **entreguei** (Fase 4): tipos `pool` e `lane` no core, render como swimlane (contêiner
-atrás do fluxo), ida-e-volta no XML (`collaboration`/`participant` + `laneSet`/`lane`/
-`flowNodeRef`), DI com `isHorizontal`, itens de paleta, testes de round-trip e de z-order.
+O release está preparado no repositório (versões `1.0.0`, `CHANGELOG.md`, workflow de
+publicação), mas **publicar de fato exige duas ações que só você pode fazer**:
 
-Ficaram **deliberadamente de fora** (precisam de decisão sua):
+1. **Reservar o escopo `@bpmn-react` no npm** (criar a organização em npmjs.com) — ou me dizer
+   qual escopo usar (`@buildtovalue/bpmn-*`? outro?). Se o escopo já estiver tomado por
+   terceiros, precisamos renomear os pacotes *antes* do primeiro publish.
+2. **Adicionar o secret `NPM_TOKEN`** no GitHub (Settings → Secrets → Actions) com um token de
+   automação do npm. O workflow `release.yml` roda em `workflow_dispatch` com `dry_run=true` por
+   padrão — dá para validar tudo sem publicar; desmarque o dry-run quando quiser soltar.
 
-1. **Contenção geométrica / membership automática.** Hoje `lane.properties.flowNodeRefs` é dado
-   puro: arrastar um nó para dentro de outra lane **não** atualiza a associação sozinho. Fazer
-   isso direito exige hit-test de contêiner no drop, realce da lane-alvo e um comando que
-   atualiza o `flowNodeRefs` de forma undoável. É viável, mas muda a semântica de drag e quero
-   seu ok no comportamento esperado (ex.: mover nó move a lane junto? redimensionar a lane
-   reflowa os filhos?).
+## 2. Roteador de arestas com desvio de obstáculos (mantido pós-1.0)
 
-2. **Multi-pool / colaboração real.** O MVP é single-process: N pools são exportados como N
-   participants referenciando o **mesmo** processo. Colaboração de verdade (múltiplos processos,
-   `messageFlow` entre pools) é outro modelo de dados e não cabe no MVP. Precisa de decisão de
-   escopo.
+Continua fora, de propósito. Um roteador correto (visibility graph + A\*, ancoragem estável,
+recálculo incremental durante drag) é um subsistema com orçamento de performance próprio; um
+meia-boca degradaria a UX atual. O core já registra routers plugáveis, então dá para entregar
+como minor release (`1.x`) sem quebrar nada. Se quiser algo imediato e barato: melhorar o
+ortogonal para desviar dos nós de origem/destino (offset nas portas) — consigo fazer com
+segurança, me diga se prioriza.
 
-3. **Redimensionar/auto-reflow de lanes.** Lanes hoje são retângulos independentes; não há
-   "quando eu aumento a lane 2, empurra a lane 3". Comportamento de swimlane completo é um
-   subsistema à parte.
+## 3. Multi-pool / colaboração real (decisão de escopo de produto)
 
-**Minha recomendação:** deixar 1 e 3 para uma fase "swimlanes interativas" e 2 para quando
-houver caso de uso concreto de colaboração entre processos. O MVP atual já cobre "desenhar e
-trocar por XML um diagrama com raias".
+O perfil v1 é single-process: N pools exportam como N participants apontando para o **mesmo**
+processo, e `messageFlow` cruza raias visualmente dentro dele. Colaboração de verdade (um
+processo por pool, message flows entre processos separados) é outro modelo de dados. Precisa de
+caso de uso concreto antes de investir.
 
----
+## 4. Comportamento de swimlane "completo" (pós-1.0)
 
-## 3. Pontos menores (posso resolver sozinho quando você confirmar prioridade)
+Entregue na Fase 5a: soltar um nó dentro de uma lane atualiza a membership (undoável, com
+highlight do alvo), refs velhas são filtradas no export e apontadas pela regra
+`STALE_LANE_REF`. Ficaram para uma fase "swimlane layout" pós-1.0, se você quiser:
 
-- **App de exemplo** não tem ainda um diagrama demonstrando raias. Posso adicionar um botão
-  "inserir exemplo com pool/lanes" no demo — é seguro, só não quis inflar a PR da Fase 4.
-- **Ícones de paleta** para pool/lane são caracteres unicode (▤ / ▬); se quiser SVG próprios,
-  me avise.
+- Arrastar a lane/pool levando os nós internos junto.
+- Redimensionar uma lane empurrando/reflowando as lanes irmãs.
 
----
+## Resolvidas (para histórico)
 
-*Se nenhum destes for prioridade agora, pode ignorar o arquivo — está aqui só para não perder o
-contexto das decisões que ficaram em aberto.*
+- ~~Lane membership manual/data-only~~ → interativa na Fase 5a.
+- ~~`messageFlow`/`association` ausentes do perfil XML~~ → mapeados de verdade na Fase 5a.
+- ~~Pools/lanes marcados como "unreachable" pela validação~~ → corrigido na Fase 5a.
+- ~~Exemplo sem raias / ícones de paleta~~ → paleta tem Pool/Lane; demo continua focado no
+  domínio BTV (adicionar um exemplo com raias ao demo é trivial se você quiser).
+
+*Se nada disto for prioridade agora, pode ignorar o arquivo — está aqui para não perder o
+contexto das decisões em aberto.*

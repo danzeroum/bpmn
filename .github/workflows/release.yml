@@ -1,0 +1,47 @@
+# Publishes the @bpmn-react/* packages to npm.
+#
+# Manual trigger only (workflow_dispatch). Defaults to a DRY RUN so the whole
+# pipeline can be validated without publishing; untick dry_run to release.
+#
+# Requirements (see pendencias.md):
+#   - The npm scope (@bpmn-react) must exist and be owned by you.
+#   - Repository secret NPM_TOKEN must hold an npm automation token.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (validate everything, publish nothing)'
+        type: boolean
+        default: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+      - run: pnpm install --frozen-lockfile
+
+      # The full quality gate must be green before anything reaches npm.
+      - run: pnpm check:no-runtime-deps
+      - run: pnpm lint
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test:coverage
+
+      # Private packages (the example app) are skipped automatically.
+      - name: Publish to npm
+        run: >
+          pnpm -r publish --access public --no-git-checks
+          ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

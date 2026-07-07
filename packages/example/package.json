@@ -1,7 +1,7 @@
 {
   "name": "@bpmn-react/example",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Demo app for bpmn-react (Vite + React).",
   "license": "Apache-2.0",
   "type": "module",

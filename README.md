@@ -17,9 +17,10 @@ What makes it different from generic BPMN editors:
   (`removedInVersion`) and *superseded* (`supersedesEdgeId`), preserving a complete lineage for audit.
 - **Cryptographic audit ledger** — an append-only, SHA-256 hash-chained ledger records every change;
   any retroactive tampering breaks the chain and is detected by `verify()`.
-- **BPMN 2.0 XML interoperability** — import/export with full BPMN DI (shapes, bounds, waypoints)
-  so diagrams round-trip with Camunda Modeler and bpmn.io tools. Custom properties travel inside
-  standard `extensionElements`.
+- **BPMN 2.0 XML interoperability** — import/export with full BPMN DI (shapes, bounds, waypoints),
+  pools & lanes (`collaboration`/`participant`, `laneSet` with interactive membership),
+  `messageFlow` and `association`, so diagrams round-trip with Camunda Modeler and bpmn.io tools.
+  Custom properties travel inside standard `extensionElements`.
 - **Extensible by design** — custom node types, shapes, palette items, validation rules and XML
   mappings are registered through a declarative plugin object. Your domain vocabulary lives in a
   plugin, not in a fork.
@@ -81,9 +82,24 @@ pnpm --filter @bpmn-react/example dev   # run the demo app
 - [BPMN 2.0 XML format profile](docs/format-spec.md)
 - [Known limitations](docs/limitations.md)
 
+## Stability & versioning
+
+All packages are released in lockstep and follow **semantic versioning** from `1.0.0`:
+
+- The **public API** is the set of documented exports of each package — frozen by the
+  `apiSurface.test.ts` contract tests, so any accidental surface change fails CI.
+- Breaking changes only happen in **major** versions, preceded by a deprecation period
+  (deprecated APIs keep working for at least one minor release and log a warning).
+- New capabilities (e.g. additional BPMN profile elements, new routers) arrive in **minor**
+  versions; fixes in **patches**.
+- The BPMN XML profile is itself versioned: documents exported today will always re-import in
+  future 1.x releases.
+
+See [CHANGELOG.md](CHANGELOG.md) for release history.
+
 ## Known limitations (summary)
 
-- The BPMN 2.0 XML converter supports a documented **MVP profile** (see
+- The BPMN 2.0 XML converter supports a documented **profile** (see
   [docs/format-spec.md](docs/format-spec.md)), not the full ~500-page OMG spec. Unknown elements are
   ignored with warnings on import.
 - SVG rendering is optimized for diagrams up to **~300–400 elements**. Virtualization and a canvas
