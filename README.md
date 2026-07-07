@@ -5,8 +5,8 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 `bpmn-react` is a from-scratch implementation of a BPMN process designer. It does **not** depend on
-`bpmn-js`, `diagram-js`, React Flow or any other diagramming library — the rendering engine is native
-SVG driven by React, and the domain engine is pure TypeScript with **zero runtime dependencies**.
+any third-party diagramming library — the rendering engine is native SVG driven by React, and the
+domain engine is pure TypeScript with **zero runtime dependencies**.
 
 What makes it different from generic BPMN editors:
 
