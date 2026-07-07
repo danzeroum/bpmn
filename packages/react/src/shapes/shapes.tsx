@@ -277,6 +277,31 @@ export function InclusiveGatewayShape(props: ShapeProps) {
   );
 }
 
+/** Event-based gateway: a pentagon inside a double ring, inside the diamond. */
+export function EventBasedGatewayShape(props: ShapeProps) {
+  const { width, height } = props.node;
+  const cx = width / 2;
+  const cy = height / 2;
+  const stroke = strokeFor(props.selected);
+  const ro = Math.min(width, height) * 0.28;
+  const ri = ro - 3;
+  const rp = ri * 0.62;
+  // Regular pentagon pointing up.
+  const pts = Array.from({ length: 5 }, (_, i) => {
+    const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+    return `${(cx + rp * Math.cos(a)).toFixed(2)},${(cy + rp * Math.sin(a)).toFixed(2)}`;
+  }).join(' ');
+  return (
+    <g>
+      <GatewayDiamond {...props} />
+      <circle cx={cx} cy={cy} r={ro} fill="none" stroke={stroke} strokeWidth={1.4} />
+      <circle cx={cx} cy={cy} r={ri} fill="none" stroke={stroke} strokeWidth={1.1} />
+      <polygon points={pts} fill="none" stroke={stroke} strokeWidth={1.2} strokeLinejoin="round" />
+      {gatewayLabel(props.node)}
+    </g>
+  );
+}
+
 export function SubProcessShape({ node, selected }: ShapeProps) {
   const boxSize = 14;
   return (
@@ -300,6 +325,29 @@ export function SubProcessShape({ node, selected }: ShapeProps) {
         <rect width={boxSize} height={boxSize} rx={2} />
         <path d={`M ${boxSize / 2} 3 V ${boxSize - 3} M 3 ${boxSize / 2} H ${boxSize - 3}`} />
       </g>
+    </g>
+  );
+}
+
+/**
+ * Group: a non-semantic artifact — a dashed rounded rectangle that visually
+ * frames a set of nodes. The interior is `fill: none` so clicks fall through to
+ * the framed flow nodes; only the border and label are interactive.
+ */
+export function GroupShape({ node, selected }: ShapeProps) {
+  return (
+    <g>
+      <rect
+        width={node.width}
+        height={node.height}
+        rx={12}
+        ry={12}
+        fill="none"
+        stroke={strokeFor(selected)}
+        strokeWidth={strokeWidthFor(selected)}
+        strokeDasharray="8,4"
+      />
+      <ShapeLabel label={node.label} width={node.width} y={18} color={theme.textMuted} />
     </g>
   );
 }

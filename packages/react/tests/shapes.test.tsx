@@ -4,7 +4,7 @@ import { createDiagram, createNode } from '@bpmn-react/core';
 import { BpmnViewer } from '../src/index.js';
 
 /**
- * Renders every one of the 17 built-in BPMN shapes at least once and checks
+ * Renders every one of the 19 built-in BPMN shapes at least once and checks
  * a couple of type-specific visual properties, so a rendering refactor that
  * silently breaks an untouched shape is caught.
  */
@@ -98,6 +98,23 @@ const EXPECTATIONS: Expectation[] = [
     },
   },
   {
+    type: 'eventBasedGateway',
+    label: 'Pick',
+    check: (root) => {
+      expect(root.querySelectorAll('polygon')).toHaveLength(2); // diamond + inner pentagon
+      expect(root.querySelectorAll('circle')).toHaveLength(2); // double ring
+    },
+  },
+  {
+    type: 'group',
+    label: 'Cluster',
+    check: (root) => {
+      const rect = root.querySelector('rect')!;
+      expect(rect.getAttribute('stroke-dasharray')).toBe('8,4');
+      expect(rect.getAttribute('fill')).toBe('none'); // interior click-through
+    },
+  },
+  {
     type: 'subProcess',
     label: 'Sub',
     check: (root) => expect(root.querySelectorAll('rect')).toHaveLength(2), // body + expand icon
@@ -167,13 +184,15 @@ describe('built-in shapes render correctly', () => {
     expect(msg.querySelectorAll('rect').length).toBeGreaterThan(0);
   });
 
-  it('covers exactly the 17 registered built-in types (fails loudly if one is added without a fixture)', () => {
+  it('covers exactly the 19 registered built-in types (fails loudly if one is added without a fixture)', () => {
     expect(EXPECTATIONS.map((e) => e.type).sort()).toEqual(
       [
         'boundaryEvent',
         'dataObject',
         'endEvent',
+        'eventBasedGateway',
         'exclusiveGateway',
+        'group',
         'inclusiveGateway',
         'intermediateCatchEvent',
         'intermediateThrowEvent',

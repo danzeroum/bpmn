@@ -41,7 +41,8 @@ releases.
 | `boundaryEvent` | ✓ | ✓ | `attachedToRef` + `cancelActivity` (see below) |
 | `messageEventDefinition`, `timerEventDefinition`, … | ✓ | ✓ | event definition child (see below) |
 | `task`, `userTask`, `serviceTask`, `scriptTask` | ✓ | ✓ | |
-| `exclusiveGateway`, `parallelGateway`, `inclusiveGateway` | ✓ | ✓ | |
+| `exclusiveGateway`, `parallelGateway`, `inclusiveGateway`, `eventBasedGateway` | ✓ | ✓ | |
+| `group` | ✓ | ✓ | non-semantic artifact (dashed frame) |
 | `subProcess` | ✓ | ✓ | flat (no nested flow elements yet) |
 | `dataObjectReference`, `textAnnotation` | ✓ | ✓ | |
 | `sequenceFlow` | ✓ | ✓ | `sourceRef`/`targetRef`/`name` |
@@ -52,7 +53,7 @@ releases.
 | `bpmndi:BPMNDiagram/Plane/Shape` + `dc:Bounds` | ✓ | ✓ | node coordinates (`isHorizontal` on pools/lanes) |
 | `bpmndi:BPMNEdge` + `di:waypoint` | ✓ | ✓ | edge routing (computed orthogonally when absent) |
 | `extensionElements` | ✓ | ✓ | see below |
-| anything else (`callActivity`, `eventBasedGateway`, `group`, …) | warning, skipped | – | roadmap |
+| anything else (`callActivity`, nested `subProcess` flow, DMN, …) | warning, skipped | – | roadmap |
 
 Documents without DI import with an automatic grid layout (and a warning).
 

@@ -31,8 +31,10 @@ const EXPECTED_EXPORTS = [
   'EdgeRenderer',
   'EditorConfigProvider',
   'EndEventShape',
+  'EventBasedGatewayShape',
   'ExclusiveGatewayShape',
   'GridLayer',
+  'GroupShape',
   'InclusiveGatewayShape',
   'IntermediateCatchEventShape',
   'IntermediateThrowEventShape',
@@ -86,13 +88,15 @@ describe('@bpmn-react/react public API surface', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });
 
-  it('every one of the 17 built-in shapes is registered in BUILT_IN_SHAPES', () => {
+  it('every one of the 19 built-in shapes is registered in BUILT_IN_SHAPES', () => {
     expect(Object.keys(api.BUILT_IN_SHAPES).sort()).toEqual(
       [
         'boundaryEvent',
         'dataObject',
         'endEvent',
+        'eventBasedGateway',
         'exclusiveGateway',
+        'group',
         'inclusiveGateway',
         'intermediateCatchEvent',
         'intermediateThrowEvent',

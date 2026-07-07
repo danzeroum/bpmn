@@ -205,6 +205,23 @@ describe('BpmnXmlConverter round-trip', () => {
     const after = JSON.stringify(normalizeForDiff(imported));
     expect(after).toBe(before);
   });
+
+  it('round-trips an event-based gateway and a group artifact', () => {
+    const converter = new BpmnXmlConverter();
+    const diagram = createDiagram({ name: 'GwGroup', id: 'gg' });
+    diagram.nodes = {
+      g: createNode({ type: 'eventBasedGateway', id: 'g', x: 40, y: 40 }),
+      grp: createNode({ type: 'group', id: 'grp', label: 'Cluster', x: 120, y: 20 }),
+    };
+    const xml = converter.toXml(diagram);
+    expect(xml).toContain('<bpmn:eventBasedGateway id="g"');
+    expect(xml).toContain('<bpmn:group id="grp"');
+    const { diagram: imported, warnings } = converter.fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(JSON.stringify(normalizeForDiff(imported))).toBe(
+      JSON.stringify(normalizeForDiff(diagram)),
+    );
+  });
 });
 
 describe('BpmnXmlConverter — pools & lanes', () => {
@@ -427,6 +444,30 @@ describe('BpmnXmlConverter.fromXml — external documents', () => {
     expect(diagram.nodes.w1.properties.eventDefinition).toBe('timer');
     expect(diagram.nodes.e1.type).toBe('endEvent');
     expect(diagram.nodes.e1.properties.eventDefinition).toBe('terminate');
+  });
+
+  it('imports an event-based gateway and a group artifact without warnings', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  id="defs" targetNamespace="http://example.com">
+  <bpmn2:process id="proc_1" name="Gateway + group">
+    <bpmn2:eventBasedGateway id="g1" name="Wait for"/>
+    <bpmn2:group id="grp1" name="Cluster"/>
+  </bpmn2:process>
+  <bpmndi:BPMNDiagram id="d1">
+    <bpmndi:BPMNPlane id="p1" bpmnElement="proc_1">
+      <bpmndi:BPMNShape id="g1_di" bpmnElement="g1"><dc:Bounds x="40" y="40" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="grp1_di" bpmnElement="grp1"><dc:Bounds x="120" y="20" width="220" height="140"/></bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn2:definitions>`;
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(diagram.nodes.g1.type).toBe('eventBasedGateway');
+    expect(diagram.nodes.grp1.type).toBe('group');
+    expect(diagram.nodes.grp1.width).toBe(220);
   });
 
   it('imports a Camunda boundary event without warnings', () => {

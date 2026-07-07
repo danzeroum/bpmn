@@ -83,9 +83,11 @@ export const BUILT_IN_NODE_TYPES: NodeTypeDefinition[] = [
   { type: 'exclusiveGateway', label: 'Exclusive Gateway', category: 'gateway', defaultSize: { width: 50, height: 50 }, xml: { tag: 'exclusiveGateway' } },
   { type: 'parallelGateway', label: 'Parallel Gateway', category: 'gateway', defaultSize: { width: 50, height: 50 }, xml: { tag: 'parallelGateway' } },
   { type: 'inclusiveGateway', label: 'Inclusive Gateway', category: 'gateway', defaultSize: { width: 50, height: 50 }, xml: { tag: 'inclusiveGateway' } },
+  { type: 'eventBasedGateway', label: 'Event-based Gateway', category: 'gateway', defaultSize: { width: 50, height: 50 }, xml: { tag: 'eventBasedGateway' } },
   { type: 'subProcess', label: 'Sub-Process', category: 'activity', defaultSize: { width: 200, height: 120 }, xml: { tag: 'subProcess' } },
   { type: 'dataObject', label: 'Data Object', category: 'data', defaultSize: { width: 36, height: 50 }, xml: { tag: 'dataObjectReference' } },
   { type: 'textAnnotation', label: 'Text Annotation', category: 'artifact', defaultSize: { width: 120, height: 40 }, xml: { tag: 'textAnnotation' } },
+  { type: 'group', label: 'Group', category: 'artifact', defaultSize: { width: 220, height: 140 }, xml: { tag: 'group' } },
   { type: 'pool', label: 'Pool', category: 'container', defaultSize: { width: 600, height: 250 }, xml: { tag: 'participant' } },
   { type: 'lane', label: 'Lane', category: 'container', defaultSize: { width: 570, height: 120 }, xml: { tag: 'lane' } },
 ];
