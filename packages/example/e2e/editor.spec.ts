@@ -12,7 +12,18 @@ async function nodeCount(page: Page): Promise<number> {
 test('renders the sample diagram with domain shapes', async ({ page }) => {
   await expect(page.locator('[data-node-type="btv:squad"]')).toBeVisible();
   await expect(page.locator('[data-node-type="btv:gate"]')).toBeVisible();
+  // The pending gate conveys its state through an accessible <title> now that
+  // the glyph replaced the ✋ emoji.
+  await expect(page.locator('[data-node-type="btv:gate"] title')).toHaveText(
+    'aguardando aprovação',
+  );
   await expect(page.locator('[data-edge-id="e3"]')).toBeVisible();
+  // Domain edge styling reaches the DOM: the feedback edge (gate → reviewer)
+  // uses the open arrowhead marker.
+  await expect(page.locator('[data-edge-id="e5"] path[marker-end]').first()).toHaveAttribute(
+    'marker-end',
+    'url(#bpmnr-edge-open)',
+  );
   await expect(page.getByRole('status', { name: /Version/ })).toContainText('Draft');
 });
 

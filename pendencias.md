@@ -4,7 +4,7 @@ Documento vivo com os pontos onde parei por serem **decisões de produto/arquite
 apenas execução) ou por dependerem de credenciais/ações fora do repositório. Nada aqui bloqueia
 o que já foi entregue.
 
-Última atualização: Fase 5 (caminho para a v1.0).
+Última atualização: design system de notação BuildToValue (PRs 1–3 do handoff).
 
 ---
 
@@ -44,6 +44,33 @@ highlight do alvo), refs velhas são filtradas no export e apontadas pela regra
 
 - Arrastar a lane/pool levando os nós internos junto.
 - Redimensionar uma lane empurrando/reflowando as lanes irmãs.
+
+## 5. Design system BuildToValue — follow-ups das PRs 1–3
+
+As três primeiras PRs do handoff (`docs/design_handoff_btv_bpmn/`) entregaram: tokens `--btv-*`
+(light+dark) em `packages/react/styles.css`; os 6 shapes na notação BTV (chanfro dourado, tags,
+glifos) + ícones de paleta ReactNode; e estilos de aresta por tipo de domínio no `EdgeRenderer`
+(campo declarativo `edgeStyles` no `BpmnPlugin`, sem `btv:*` hardcoded no react). Ficou de fora,
+de propósito:
+
+- **Estados de shape §5.3** (badge de erro de validação com código; cadeado de gate congelado
+  fora do vértice direito). São overlays de canvas — vivem no `NodeRenderer`/`overlays.tsx`, não
+  nos shapes puros (princípio §6.1), então são uma PR de canvas separada. O sinal de erro já
+  existe de forma textual na validação; falta a camada visual sobre o nó.
+- **Ícones de linha da paleta core** (§5.5): a folha 07 desenha 16 ícones; as PRs 1–3 só trocaram
+  os 6 do domínio. Trocar os core (`start`/`task`/`gateway`/…) por SVG ReactNode é retrocompatível
+  (`PaletteItem.icon` já é `ReactNode`), mas mexe em `packages/react/src/ui/paletteItems.ts` e no
+  `apiSurface` — fazer quando priorizado.
+- **Regra de rotulação das tags (documentar):** só os *cards* levam a tag small-caps
+  (SQUAD/PROMPT/CONNECTOR); formas geométricas auto-identificáveis (Persona pílula, Gate hexágono,
+  Deliverable flâmula) não. Está comentado no topo de `shapes.tsx`; convém elevar ao handoff/futuro
+  `CONFORMANCE.md` para o próximo shape não quebrar a consistência de arquitetura de informação.
+- **Agrupamento da paleta** (Core / BuildToValue) com cabeçalhos — hoje é lista plana. Prepara o
+  sub-menu de eventos da F6; é mudança de UI no `Palette.tsx`.
+- **Export XES do ledger** (candidato pós-F8): o ledger hash-chained + o registry já são um event
+  log. Exportar em XES habilitaria *process mining* do "processo real de design" vs. o documentado —
+  diferencial que ferramentas de modelagem puras não têm. Sinergia: os critérios de aprovação do
+  Gate btv são candidatos naturais a decision table quando a F9 (DMN) chegar.
 
 ## Resolvidas (para histórico)
 

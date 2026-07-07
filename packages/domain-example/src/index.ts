@@ -6,8 +6,9 @@ import {
   type ValidationIssue,
   type ValidationRule,
 } from '@bpmn-react/core';
-import type { BpmnPlugin } from '@bpmn-react/react';
+import type { BpmnPlugin, EdgeStyle } from '@bpmn-react/react';
 import {
+  BTV_PALETTE_ICONS,
   ConnectorShape,
   DeliverableShape,
   GateShape,
@@ -20,6 +21,38 @@ export * from './shapes.js';
 
 /** Domain edge types layered on top of the generic model. */
 export const DOMAIN_EDGE_TYPES = ['handoff', 'approval', 'feedback', 'escalation'] as const;
+
+/**
+ * Visual language for the domain edge types (§5.4). Colors are `var(--btv-*)`
+ * so dark mode and export stay correct; the EdgeRenderer composes these with
+ * the closed/selected states. A handoff carries a purpose chip (paired with
+ * `handoffNeedsPurposeRule`); an approval carries a check disc.
+ */
+export const DOMAIN_EDGE_STYLES: Record<string, EdgeStyle> = {
+  handoff: {
+    stroke: 'var(--btv-edge-handoff, #44403a)',
+    strokeWidth: 1.5,
+    marker: 'filled',
+    midDecoration: 'purpose-chip',
+  },
+  approval: {
+    stroke: 'var(--btv-edge-approval, #1a6a54)',
+    strokeWidth: 2,
+    marker: 'filled',
+    midDecoration: 'check-disc',
+  },
+  feedback: {
+    stroke: 'var(--btv-edge-feedback, #9a5580)',
+    strokeWidth: 1.5,
+    dash: '5,4',
+    marker: 'open',
+  },
+  escalation: {
+    stroke: 'var(--btv-edge-escalation, #b3372f)',
+    strokeWidth: 1.5,
+    marker: 'double-chevron',
+  },
+};
 
 /**
  * Domain vocabulary mapped onto interoperable BPMN tags: exported files open
@@ -111,13 +144,14 @@ export const domainExamplePlugin: BpmnPlugin = {
     'btv:connector': ConnectorShape,
     'btv:deliverable': DeliverableShape,
   },
+  edgeStyles: DOMAIN_EDGE_STYLES,
   paletteItems: [
-    { id: 'btv-squad', label: 'Squad', nodeType: 'btv:squad', icon: '⬚' },
-    { id: 'btv-persona', label: 'Persona', nodeType: 'btv:persona', icon: '👤', defaultProperties: { role: '' } },
-    { id: 'btv-gate', label: 'Approval Gate', nodeType: 'btv:gate', icon: '✋', defaultProperties: { approved: false } },
-    { id: 'btv-prompt', label: 'Prompt', nodeType: 'btv:prompt', icon: '📝' },
-    { id: 'btv-connector', label: 'Connector', nodeType: 'btv:connector', icon: '🔌' },
-    { id: 'btv-deliverable', label: 'Deliverable', nodeType: 'btv:deliverable', icon: '🏁' },
+    { id: 'btv-squad', label: 'Squad', nodeType: 'btv:squad', icon: BTV_PALETTE_ICONS['btv:squad'] },
+    { id: 'btv-persona', label: 'Persona', nodeType: 'btv:persona', icon: BTV_PALETTE_ICONS['btv:persona'], defaultProperties: { role: '' } },
+    { id: 'btv-gate', label: 'Approval Gate', nodeType: 'btv:gate', icon: BTV_PALETTE_ICONS['btv:gate'], defaultProperties: { approved: false } },
+    { id: 'btv-prompt', label: 'Prompt', nodeType: 'btv:prompt', icon: BTV_PALETTE_ICONS['btv:prompt'] },
+    { id: 'btv-connector', label: 'Connector', nodeType: 'btv:connector', icon: BTV_PALETTE_ICONS['btv:connector'] },
+    { id: 'btv-deliverable', label: 'Deliverable', nodeType: 'btv:deliverable', icon: BTV_PALETTE_ICONS['btv:deliverable'] },
   ],
   validationRules: [gateSinglePredecessorRule, squadNeedsPersonaRule, handoffNeedsPurposeRule],
   registerRules: (engine) => {
