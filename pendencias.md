@@ -187,6 +187,24 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   (mesmo modal do Designer, §4.2); o demo DRD usa o LifecyclePanel ao lado em vez de abrir
   o modal de dentro da tabela — escolha de wiring do host, não do componente.
 
+## 8.0.2 Handoff 5 F-C1 — interpretações registradas (elemento fechado + banner)
+
+- **"viewingVersion !== active" (aceite 10.5.6):** o modelo não tem um conceito separado de
+  "versão em visualização" — o banner aparece quando a superfície NÃO é a linha ativa editável:
+  view somente-leitura (`BpmnViewer`/host) ou versão superseded (`deprecated`/`retired`).
+  Draft/test/candidate/active em edição não exibem banner (o StatusBadge já dá o selo).
+  Se o produto ganhar um "view snapshot vN" explícito, o banner já cobre (host carrega o
+  snapshot em viewer).
+- **Semver no selo "FECHADO vX.Y":** `removedInVersion` guarda o ID da versão e o diagrama não
+  carrega um mapa id→semver do histórico. Quando o fechamento é da versão carregada, o selo usa
+  o semver dela; caso contrário cai para `FECHADO #<id7>` (mono, estilo hash — a 5b mitigada
+  prevê hash no pill). Um resolver de host (`versionLabels`) é aditivo se a fidelidade total
+  for exigida.
+- **Hachura sobre bounding box (rx10), não sobre o outline do shape:** shapes de plugin são
+  arbitrários; recortar a hachura pelo path exigiria clipPath por nó (N defs — contra o
+  orçamento "1 def/N usos"). O wash + hachura em card arredondado é o visual da folha de
+  estresse.
+
 ## 8. Protótipos (Handoff 3) — decisões de escopo em aberto
 
 - **Handoff 2 recebido e reconciliado** (chegou via mensagem após as PRs 4–6; a pasta

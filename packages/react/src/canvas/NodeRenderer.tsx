@@ -13,7 +13,7 @@ import { DefaultShape } from '../shapes/index.js';
 import { theme } from '../shapes/common.js';
 import type { Interactions } from './useInteractions.js';
 import { NodeLabelEditor } from './NodeLabelEditor.js';
-import { SHADOW_FILTER_ID } from './Defs.js';
+import { CLOSED_HATCH_PATTERN_ID, SHADOW_FILTER_ID } from './Defs.js';
 import { ShapeErrorBoundary } from './ShapeErrorBoundary.js';
 import { fitViewport } from './viewport.js';
 
@@ -57,6 +57,9 @@ function NodeRendererInner({
   const issueBadge = useCanvasState((s) => s.issueBadges[node.id] ?? null);
   const Shape = config.shapes[node.type] ?? DefaultShape;
   const closed = node.removedInVersion !== undefined;
+  // Hover state exists ONLY for closed nodes (the seal gate, 5b mitigada):
+  // enter/leave fire per closed node, so regular nodes never pay for it.
+  const hovered = useCanvasState((s) => closed && s.hoveredId === node.id);
   const rendered = resizeRect
     ? { ...node, x: resizeRect.x, y: resizeRect.y, width: resizeRect.width, height: resizeRect.height }
     : node;
@@ -73,12 +76,21 @@ function NodeRendererInner({
       data-node-type={node.type}
       data-selected={selected || undefined}
       data-node-issue-state={issueBadge?.severity}
+      data-node-closed={closed || undefined}
       role="button"
       aria-label={`${node.type}: ${node.label}`}
-      opacity={closed ? 0.45 : 1}
+      opacity={closed ? 0.75 : 1}
       style={{ cursor: editable ? 'grab' : 'default' }}
       onPointerDown={editable ? (e) => interactions.onNodePointerDown(e, node.id) : undefined}
       onDoubleClick={editable ? (e) => interactions.onNodeDoubleClick(e, node.id) : undefined}
+      onPointerEnter={closed ? () => store.setState({ hoveredId: node.id }) : undefined}
+      onPointerLeave={
+        closed
+          ? () => {
+              if (store.getState().hoveredId === node.id) store.setState({ hoveredId: null });
+            }
+          : undefined
+      }
     >
       {/* Inner wrapper: the enter animation scales here (CSS transform) so it
           never fights the positional transform attribute on the outer <g>. */}
@@ -101,6 +113,25 @@ function NodeRendererInner({
             <Shape node={rendered} selected={selected} />
           )}
         </ShapeErrorBoundary>
+        {/* Closed treatment (Handoff 5 §5, 5b mitigada): desaturating paper
+            wash + the shared 45° hatch — always on, never color-only. */}
+        {closed && (
+          <g data-node-closed-hatch pointerEvents="none">
+            <rect
+              width={rendered.width}
+              height={rendered.height}
+              rx={10}
+              fill="var(--btv-closed-fill, #f0eee9)"
+              opacity={0.55}
+            />
+            <rect
+              width={rendered.width}
+              height={rendered.height}
+              rx={10}
+              fill={`url(#${CLOSED_HATCH_PATTERN_ID})`}
+            />
+          </g>
+        )}
       </g>
       {editing && <NodeLabelEditor node={rendered} />}
 
@@ -137,6 +168,11 @@ function NodeRendererInner({
         />
       )}
 
+      {/* Seal pill gated on hover/selection — 30+ closed elements must never
+          become badge confetti (aceite 10.5.6). */}
+      {closed && (hovered || selected) && (
+        <ClosedSeal removedInVersion={node.removedInVersion!} width={rendered.width} />
+      )}
       {node.type === 'subProcess' && (
         <SubProcessControls node={rendered} editable={editable} />
       )}
@@ -277,6 +313,50 @@ function IssueBadge({
           {code}
         </text>
       )}
+    </g>
+  );
+}
+
+/**
+ * Seal pill of a closed element (Handoff 5 §5): "FECHADO vX.Y" in the
+ * ARQUIVADA style, pinned above the node — rendered ONLY while the node is
+ * hovered or selected (5b mitigada; aceite 10.5.6). When the closing
+ * version is not the loaded one, the pill falls back to the version id
+ * (mono, hash-like) — the diagram model carries no version history map.
+ */
+function ClosedSeal({ removedInVersion, width }: { removedInVersion: string; width: number }) {
+  const { diagram } = useDiagram();
+  const label =
+    removedInVersion === diagram.version.id
+      ? `FECHADO v${diagram.version.semanticVersion}`
+      : `FECHADO #${removedInVersion.slice(0, 7)}`;
+  const pillWidth = label.length * 5.6 + 14;
+  return (
+    <g
+      data-closed-seal
+      pointerEvents="none"
+      transform={`translate(${(width - pillWidth) / 2}, -26)`}
+    >
+      <rect
+        width={pillWidth}
+        height={18}
+        rx={9}
+        fill="var(--bpmnr-status-retired, #efece6)"
+        stroke="var(--btv-pedigree-line, #a49c8f)"
+        strokeWidth={1}
+      />
+      <text
+        x={pillWidth / 2}
+        y={9}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={9}
+        letterSpacing={0.6}
+        fontFamily="ui-monospace, monospace"
+        fill="var(--bpmnr-status-retired-fg, #6f675a)"
+      >
+        {label}
+      </text>
     </g>
   );
 }

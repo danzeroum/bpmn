@@ -159,7 +159,12 @@ export function buildSampleDiagram(): BpmnDiagram {
  * by orthogonal edges with explicit waypoints (rounded corners) and periodic
  * handoffs (purpose chips).
  */
-export function buildStressDiagram(count = 350): BpmnDiagram {
+/**
+ * F-C1 aceite 10.5.6: with `closedCount` > 0, that many grid nodes are
+ * closed (removedInVersion) so the perf canary measures the shared-pattern
+ * hatch at scale — 30+ closed elements must hold the fps floor.
+ */
+export function buildStressDiagram(count = 350, closedCount = 0): BpmnDiagram {
   const registry = createDefaultRegistry();
   for (const def of DOMAIN_NODE_TYPES) registry.register(def);
 
@@ -193,6 +198,11 @@ export function buildStressDiagram(count = 350): BpmnDiagram {
       registry,
     );
     sizes[id] = registry.get(type).defaultSize;
+    // Spread the closed elements across the grid (every Nth node) so panning
+    // always keeps hatched nodes in the frame.
+    if (closedCount > 0 && i % Math.max(1, Math.floor(count / closedCount)) === 0) {
+      nodes[id] = { ...nodes[id], removedInVersion: v };
+    }
   }
   diagram.nodes = nodes;
 
@@ -307,6 +317,32 @@ export function buildDeadlockDiagram(): BpmnDiagram {
     f6: edge('f6', 'join', 'end'),
   };
 
+  return diagram;
+}
+
+/**
+ * A superseded snapshot of the sample (Handoff 5 §5, `?closed=1`): several
+ * elements closed in this version, status deprecated — the canvas shows the
+ * always-on hatch + desaturation, the hover/selection-gated "FECHADO" seal
+ * and the fixed version banner (aceite 10.5.6).
+ */
+export function buildClosedDiagram(): BpmnDiagram {
+  const diagram = buildSampleDiagram();
+  diagram.id = 'demo-closed-snapshot';
+  diagram.name = 'Content production (superseded)';
+  diagram.version = {
+    ...diagram.version,
+    semanticVersion: '0.2.0',
+    status: 'deprecated',
+    changeSummary: 'Snapshot deprecado para demonstrar elementos fechados (F-C1).',
+  };
+  const v = diagram.version.id;
+  for (const id of ['writer', 'prompt', 'returns', 'returnsInspect', 'returnsRefund', 'score']) {
+    diagram.nodes[id] = { ...diagram.nodes[id], removedInVersion: v };
+  }
+  for (const id of ['e2', 'e11']) {
+    if (diagram.edges[id]) diagram.edges[id] = { ...diagram.edges[id], removedInVersion: v };
+  }
   return diagram;
 }
 

@@ -1812,3 +1812,21 @@
   gap: 6px;
   justify-content: space-between;
 }
+
+/* Version context banner (Handoff 5 §5): fixed top-left over the canvas. */
+.bpmnr-version-banner {
+  position: absolute;
+  top: 60px;
+  left: 12px;
+  z-index: 22;
+  pointer-events: none;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.6px;
+  color: var(--bpmnr-status-retired-fg, #6f675a);
+  background: var(--bpmnr-status-retired, #efece6);
+  border: 1px solid var(--btv-pedigree-line, #a49c8f);
+  box-shadow: 0 2px 8px rgba(68, 64, 58, 0.1);
+}

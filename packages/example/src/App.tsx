@@ -20,6 +20,7 @@ import { domainExamplePlugin } from '@bpmn-react/domain-example';
 import { callActivityBindingRule, VersionRegistry } from '@bpmn-react/registry';
 import { soundnessPromotionRule, soundnessRules } from '@bpmn-react/soundness';
 import {
+  buildClosedDiagram,
   buildDeadlockDiagram,
   buildDrdDiagram,
   buildSampleDiagram,
@@ -99,9 +100,10 @@ export function App() {
     // `?deadlock=1` loads the XOR-split → AND-join trap (soundness e2e).
     const params = new URLSearchParams(window.location.search);
     const stress = params.get('stress');
-    if (stress) return buildStressDiagram(Number(stress) || 350);
+    if (stress) return buildStressDiagram(Number(stress) || 350, Number(params.get('closed')) || 0);
     if (params.get('deadlock')) return buildDeadlockDiagram();
     if (params.get('drd')) return buildDrdDiagram();
+    if (params.get('closed')) return buildClosedDiagram();
     return buildSampleDiagram();
   });
   const [editorKey, setEditorKey] = useState(0);
