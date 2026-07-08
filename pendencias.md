@@ -27,6 +27,15 @@ eles seguem o padrão do `dmn`/`healthcare`: nome provisório `@bpmn-react/<x>` 
 (workspace-only, isentos do release). Nada é publicado sem a sua decisão (Handoff 6 §11). A
 recomendação registrada no handoff continua sendo `@buildtovalue/*`.
 
+## 1.1 Handoff 6 — "política" sem node type correspondente (decisão de produto)
+
+O Handoff 6 S-2 pede um adapter de **política** para a Biblioteca, mas nenhum pacote de domínio
+define um node type "política" hoje. O `policyAdapter` mapeia para o conceito mais próximo — o
+Approval Gate (`btv:gate`) do domain-example — e a classificação aceita override explícito via
+`diagram.metadata.artifactType: 'política'`. Se "política" deve ser um tipo próprio (com shape,
+validação e vocabulário), é uma extensão de domínio a especificar; o adapter atual troca de
+predicado em uma linha quando isso existir.
+
 ## 2. Roteador de arestas com desvio de obstáculos (mantido pós-1.0)
 
 Continua fora, de propósito. Um roteador correto (visibility graph + A\*, ancoragem estável,

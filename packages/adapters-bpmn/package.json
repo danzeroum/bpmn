@@ -1,0 +1,50 @@
+{
+  "name": "@bpmn-react/adapters-bpmn",
+  "version": "1.0.0",
+  "description": "ArtifactAdapter implementations for the BuildToValue Studio library (Handoff 6 S-2): BPMN flow, persona, prompt, connector and policy adapters over the version registry, a DMN decision adapter, headless SVG thumbnails, plus the in-memory \"recipe\" fixture adapter that proves the library's genericity (acid test §10.1). Workspace-only — the publish scope awaits pendencias.md §1. Zero runtime dependencies beyond @bpmn-react/*.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@bpmn-react/core": "workspace:*",
+    "@bpmn-react/library": "workspace:*",
+    "@bpmn-react/registry": "workspace:*"
+  },
+  "keywords": [
+    "bpmn",
+    "catalog",
+    "adapter",
+    "governance",
+    "buildtovalue"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/adapters-bpmn"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "private": true
+}
