@@ -50,7 +50,7 @@ test('reject flow: justification gate (min 10 chars) then ledger confirmation', 
 
 test('keyboard: queue reachable and decidable without a mouse (§10.8)', async ({ page }) => {
   await page.goto('/?studio=1#/revisao');
-  await expect(page.getByRole('option')).toHaveCount(1);
+  await expect(page.getByRole('listbox').getByRole('option')).toHaveCount(1);
   // Tab to the approve button and hit Enter — decision without a mouse
   await page.getByRole('button', { name: 'Aprovar como process-owner' }).focus();
   await page.keyboard.press('Enter');

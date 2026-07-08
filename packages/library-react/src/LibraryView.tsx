@@ -21,6 +21,10 @@ export interface LibraryViewProps {
   initialQuery?: LibraryQuery;
   /** Fired on every query change so the host can sync URL state (§10.7). */
   onQueryChange?: (query: LibraryQuery) => void;
+  /** Restores a selection (deep link / back navigation — §10.7). */
+  initialSelection?: ArtifactRef;
+  /** Fired on every selection change so the host can sync URL state (§10.7). */
+  onSelectionChange?: (ref: ArtifactRef | undefined) => void;
   onWarning?: (warning: AdapterWarning) => void;
 }
 
@@ -36,11 +40,21 @@ const SORTS: Array<{ value: LibrarySort; label: string }> = [
  * search, sortable card grid and the detail drawer. Read-only by
  * construction: the only outbound calls are `onAction` descriptors.
  */
-export function LibraryView({ adapters, onAction, initialQuery, onQueryChange, onWarning }: LibraryViewProps) {
+export function LibraryView({
+  adapters,
+  onAction,
+  initialQuery,
+  onQueryChange,
+  initialSelection,
+  onSelectionChange,
+  onWarning,
+}: LibraryViewProps) {
   const library = useLibrary({
     adapters,
     ...(initialQuery ? { initialQuery } : {}),
     ...(onQueryChange ? { onQueryChange } : {}),
+    ...(initialSelection ? { initialSelection } : {}),
+    ...(onSelectionChange ? { onSelectionChange } : {}),
     ...(onWarning ? { onWarning } : {}),
   });
   const { query, setQuery, result, selected, select, detail } = library;
