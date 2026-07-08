@@ -31,6 +31,7 @@ const EXPECTED_EXPORTS = [
   'CommandStack',
   'DC_NS',
   'DEFAULT_EXTENSION_NS',
+  'DEFAULT_PORT_OFFSET',
   'DEFAULT_TRANSITIONS',
   'DI_NS',
   'DomXmlAdapter',
