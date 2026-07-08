@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: Camunda docs messaging pattern.
+  Pattern: sendTask/receiveTask pair with script post-processing (variant 1).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_msg0" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_msg0" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:sendTask id="Task_send" name="Send quote 0" />
+    <bpmn:receiveTask id="Task_recv" name="Await answer" />
+    <bpmn:scriptTask id="Task_calc" name="Compute totals" />
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_Start_1_Task_send" sourceRef="Start_1" targetRef="Task_send" />
+    <bpmn:sequenceFlow id="Flow_Task_send_Task_recv" sourceRef="Task_send" targetRef="Task_recv" />
+    <bpmn:sequenceFlow id="Flow_Task_recv_Task_calc" sourceRef="Task_recv" targetRef="Task_calc" />
+    <bpmn:sequenceFlow id="Flow_Task_calc_End_1" sourceRef="Task_calc" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Definitions_msg0_diagram">
+    <bpmndi:BPMNPlane id="Definitions_msg0_plane" bpmnElement="Process_msg0">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_send_di" bpmnElement="Task_send">
+        <dc:Bounds x="330" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_recv_di" bpmnElement="Task_recv">
+        <dc:Bounds x="500" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_calc_di" bpmnElement="Task_calc">
+        <dc:Bounds x="670" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="840" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_1_Task_send_di" bpmnElement="Flow_Start_1_Task_send">
+        <di:waypoint x="220" y="130" />
+        <di:waypoint x="330" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Task_send_Task_recv_di" bpmnElement="Flow_Task_send_Task_recv">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="500" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Task_recv_Task_calc_di" bpmnElement="Flow_Task_recv_Task_calc">
+        <di:waypoint x="560" y="130" />
+        <di:waypoint x="670" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Task_calc_End_1_di" bpmnElement="Flow_Task_calc_End_1">
+        <di:waypoint x="730" y="130" />
+        <di:waypoint x="840" y="130" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

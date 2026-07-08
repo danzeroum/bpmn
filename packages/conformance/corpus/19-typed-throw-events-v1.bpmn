@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: OMG spec examples (signals and escalations).
+  Pattern: signal/escalation/link throw events + terminate end (variant 1).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_thr0" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_thr0" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:intermediateThrowEvent id="Throw_signal" name="Broadcast">
+      <bpmn:signalEventDefinition id="Sd_1" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:intermediateThrowEvent id="Throw_esc" name="Escalate 0">
+      <bpmn:escalationEventDefinition id="Ed_1" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:endEvent id="End_term" name="Kill all">
+      <bpmn:terminateEventDefinition id="Kd_1" />
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Start_1_Throw_signal" sourceRef="Start_1" targetRef="Throw_signal" />
+    <bpmn:sequenceFlow id="Flow_Throw_signal_Throw_esc" sourceRef="Throw_signal" targetRef="Throw_esc" />
+    <bpmn:sequenceFlow id="Flow_Throw_esc_End_term" sourceRef="Throw_esc" targetRef="End_term" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Definitions_thr0_diagram">
+    <bpmndi:BPMNPlane id="Definitions_thr0_plane" bpmnElement="Process_thr0">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Throw_signal_di" bpmnElement="Throw_signal">
+        <dc:Bounds x="330" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Throw_esc_di" bpmnElement="Throw_esc">
+        <dc:Bounds x="500" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_term_di" bpmnElement="End_term">
+        <dc:Bounds x="670" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_1_Throw_signal_di" bpmnElement="Flow_Start_1_Throw_signal">
+        <di:waypoint x="220" y="130" />
+        <di:waypoint x="330" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Throw_signal_Throw_esc_di" bpmnElement="Flow_Throw_signal_Throw_esc">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="500" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Throw_esc_End_term_di" bpmnElement="Flow_Throw_esc_End_term">
+        <di:waypoint x="560" y="130" />
+        <di:waypoint x="670" y="130" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: OMG spec collaboration example.
+  Pattern: two participants with a message flow between activities (variant 2).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_mf1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:collaboration id="Collab_1">
+    <bpmn:participant id="Pool_customer" name="Customer" processRef="Process_mf1" />
+    <bpmn:participant id="Pool_supplier" name="Supplier 1" processRef="Process_mf1" />
+    <bpmn:messageFlow id="Mf_order" name="order" sourceRef="Task_order" targetRef="Task_fulfil" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_mf1" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:task id="Task_order" name="Place order" />
+    <bpmn:task id="Task_fulfil" name="Fulfil order" />
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Task_order" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_fulfil" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diag_mf1">
+    <bpmndi:BPMNPlane id="Plane_mf1" bpmnElement="Collab_1">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="112" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_order_di" bpmnElement="Task_order">
+        <dc:Bounds x="260" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_fulfil_di" bpmnElement="Task_fulfil">
+        <dc:Bounds x="260" y="300" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="460" y="312" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Mf_order_di" bpmnElement="Mf_order">
+        <di:waypoint x="320" y="160" />
+        <di:waypoint x="320" y="300" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

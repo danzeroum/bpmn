@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: bpmn.io subprocess demo.
+  Pattern: embedded subProcess with inner flow (variant 2).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_sub1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_sub1" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:subProcess id="Sub_1" name="Handle order 1">
+      <bpmn:startEvent id="Sub_start" />
+      <bpmn:task id="Sub_task" name="Pick items" />
+      <bpmn:endEvent id="Sub_end" />
+      <bpmn:sequenceFlow id="Sub_f1" sourceRef="Sub_start" targetRef="Sub_task" />
+      <bpmn:sequenceFlow id="Sub_f2" sourceRef="Sub_task" targetRef="Sub_end" />
+    </bpmn:subProcess>
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_Start_1_Sub_1" sourceRef="Start_1" targetRef="Sub_1" />
+    <bpmn:sequenceFlow id="Flow_Sub_1_End_1" sourceRef="Sub_1" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Definitions_sub1_diagram">
+    <bpmndi:BPMNPlane id="Definitions_sub1_plane" bpmnElement="Process_sub1">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_1_di" bpmnElement="Sub_1">
+        <dc:Bounds x="330" y="100" width="200" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="500" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_1_Sub_1_di" bpmnElement="Flow_Start_1_Sub_1">
+        <di:waypoint x="220" y="130" />
+        <di:waypoint x="330" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Sub_1_End_1_di" bpmnElement="Flow_Sub_1_End_1">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="500" y="130" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

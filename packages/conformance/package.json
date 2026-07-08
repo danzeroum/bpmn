@@ -1,0 +1,48 @@
+{
+  "name": "@bpmn-react/conformance",
+  "version": "1.0.0",
+  "description": "OMG BPMN 2.0 conformance tooling for bpmn-react: interoperability corpus, element-by-element conformance matrix and generated CONFORMANCE.md. Zero runtime dependencies.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "gen:corpus": "node scripts/gen-corpus.mjs"
+  },
+  "dependencies": {
+    "@bpmn-react/core": "workspace:*"
+  },
+  "keywords": [
+    "bpmn",
+    "conformance",
+    "interoperability",
+    "omg",
+    "corpus"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/conformance"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
