@@ -9,6 +9,7 @@ import {
   type UserContext,
   type VersionStatus,
 } from '@bpmn-react/core';
+import { useCanvasStore } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { DiffView } from './DiffView.js';
@@ -53,7 +54,8 @@ export function PromotionPanel({
   onActivated,
 }: PromotionPanelProps) {
   const { diagram, replaceDiagram } = useDiagram();
-  const { lifecycleEngine, emitEditorEvent } = useEditorConfig();
+  const { lifecycleEngine, validationEngine, emitEditorEvent } = useEditorConfig();
+  const canvasStore = useCanvasStore();
   const [gates, setGates] = useState<PromotionGate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -63,6 +65,30 @@ export function PromotionPanel({
   const version = diagram.version;
   const diff = useMemo(() => computeDiff(baseline, diagram), [baseline, diagram]);
   const trail = useMemo(() => lifecycleTrail(lifecycleEngine), [lifecycleEngine]);
+  // Soundness section (Handoff 4 §C2): the SND_* issues the host's
+  // validation engine reports (registered via the soundness plugin). Errors
+  // also block activation through the promotion gate — this section explains
+  // WHY and points at the offending elements.
+  const soundnessErrors = useMemo(
+    () =>
+      open
+        ? validationEngine
+            .validate(diagram)
+            .issues.filter((issue) => issue.code.startsWith('SND_') && issue.severity === 'error')
+        : [],
+    [open, validationEngine, diagram],
+  );
+
+  const showOnCanvas = () => {
+    const badges: Record<string, 'error' | 'warning'> = {};
+    for (const issue of soundnessErrors) {
+      // Edge-anchored issues badge the edge's source node.
+      const nodeId = issue.nodeId ?? (issue.edgeId ? diagram.edges[issue.edgeId]?.sourceId : undefined);
+      if (nodeId) badges[nodeId] = 'error';
+    }
+    canvasStore.setState({ issueBadges: badges, selectedIds: Object.keys(badges) });
+    onClose();
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -222,6 +248,35 @@ export function PromotionPanel({
                 </div>
               </div>
             ))}
+
+            <div
+              className="bpmnr-promotion-gate bpmnr-promotion-soundness"
+              data-satisfied={soundnessErrors.length === 0}
+            >
+              <span aria-hidden>{soundnessErrors.length === 0 ? '✓' : '○'}</span>
+              <div>
+                <strong>
+                  Soundness ·{' '}
+                  {soundnessErrors.length === 0
+                    ? '0 erros'
+                    : `${soundnessErrors.length} erro(s)`}
+                </strong>
+                {soundnessErrors.length > 0 && (
+                  <>
+                    <ul className="bpmnr-promotion-soundness-codes">
+                      {[...new Set(soundnessErrors.map((issue) => issue.code))].map((code) => (
+                        <li key={code}>
+                          <code>{code}</code>
+                        </li>
+                      ))}
+                    </ul>
+                    <button type="button" onClick={showOnCanvas}>
+                      ver no canvas
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
 
             <div className="bpmnr-promotion-diff">
               <strong>Diff vs baseline</strong>

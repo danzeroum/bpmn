@@ -3,11 +3,12 @@ import {
   createDiagram,
   createEdge,
   createNode,
+  LifecycleEngine,
   ValidationEngine,
   type BpmnDiagram,
   type ValidationIssue,
 } from '@bpmn-react/core';
-import { analyzeSoundness, soundnessRules, SOUNDNESS_RULES } from '../src/index.js';
+import { analyzeSoundness, soundnessPromotionRule, soundnessRules, SOUNDNESS_RULES } from '../src/index.js';
 
 /** Terse builder: nodes as `id:type`, edges as `source->target`. */
 function flow(nodeSpecs: string[], edgeSpecs: string[], patch?: (d: BpmnDiagram) => void): BpmnDiagram {
@@ -357,5 +358,65 @@ describe('performance (aceite C2)', () => {
     const elapsed = performance.now() - started;
     expect(issues.filter((i) => i.severity === 'error')).toEqual([]);
     expect(elapsed).toBeLessThan(50);
+  });
+});
+
+describe('soundnessPromotionRule (aceite C2 — gate de promoção)', () => {
+  const trapDiagram = () =>
+    flow(
+      ['s:startEvent', 'x:exclusiveGateway', 'a:task', 'b:task', 'j:parallelGateway', 'e:endEvent'],
+      ['s->x', 'x->a', 'x->b', 'a->j', 'b->j', 'j->e'],
+    );
+  const actor = { id: 'u1', name: 'Ana', role: 'Owner' };
+
+  it('blocks promotion to active with the offending codes in the reason', async () => {
+    const rule = soundnessPromotionRule();
+    const verdict = await rule({
+      diagram: trapDiagram(),
+      target: 'active',
+      actor,
+      reason: 'activate',
+    });
+    expect(verdict.allowed).toBe(false);
+    expect(verdict.reason).toContain('SND_DEADLOCK_JOIN');
+  });
+
+  it('never blocks other targets, and never blocks on warnings alone', async () => {
+    const rule = soundnessPromotionRule();
+    // Same unsound diagram, but the target is not 'active'.
+    expect(
+      (await rule({ diagram: trapDiagram(), target: 'test', actor, reason: 'r' })).allowed,
+    ).toBe(true);
+    // Warning-only diagram (unmatched split): promotion to active passes.
+    const warningsOnly = flow(
+      ['s:startEvent', 'x:exclusiveGateway', 'a:task', 'b:task', 'ea:endEvent', 'eb:endEvent'],
+      ['s->x', 'x->a', 'x->b', 'a->ea', 'b->eb'],
+    );
+    expect(
+      (await rule({ diagram: warningsOnly, target: 'active', actor, reason: 'r' })).allowed,
+    ).toBe(true);
+  });
+
+  it('integrates with LifecycleEngine.evaluateGates as a failing gate', async () => {
+    const engine = new LifecycleEngine({
+      minApprovalRoles: 0,
+      minChangeSummaryLength: 0,
+      promotionRules: [soundnessPromotionRule({ locale: 'pt' })],
+    });
+    const diagram = trapDiagram();
+    diagram.version.status = 'candidate';
+    const gates = await engine.evaluateGates({
+      diagram,
+      target: 'active',
+      actor,
+      reason: 'ok',
+    });
+    const ruleGate = gates.find((gate) => gate.id === 'rule:0');
+    expect(ruleGate?.satisfied).toBe(false);
+    expect(ruleGate?.detail).toContain('SND_DEADLOCK_JOIN');
+    expect(ruleGate?.detail).toContain('bloqueiam');
+    await expect(
+      engine.promote({ diagram, target: 'active', actor, reason: 'ok' }),
+    ).rejects.toThrow(/SND_DEADLOCK_JOIN/);
   });
 });

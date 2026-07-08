@@ -27,9 +27,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@bpmn-react/conformance": "workspace:*",
     "@bpmn-react/core": "workspace:*",
     "@bpmn-react/registry": "workspace:*",
-    "@bpmn-react/conformance": "workspace:*"
+    "@bpmn-react/soundness": "workspace:*"
   },
   "repository": {
     "type": "git",

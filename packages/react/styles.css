@@ -469,6 +469,38 @@
   font-size: 11px;
 }
 
+/* Soundness section (Handoff 4 §C2): red card with the SND_* codes. */
+.bpmnr-promotion-soundness[data-satisfied='false'] {
+  border-color: var(--bpmnr-danger, #b3372f);
+  background: var(--bpmnr-status-deprecated-bg, #f7e6e0);
+}
+
+.bpmnr-promotion-soundness[data-satisfied='false'] > span {
+  color: var(--bpmnr-danger, #b3372f);
+  font-weight: 700;
+}
+
+.bpmnr-promotion-soundness-codes {
+  margin: 4px 0 6px;
+  padding-left: 18px;
+  font-size: 11px;
+}
+
+.bpmnr-promotion-soundness-codes code {
+  font-family: ui-monospace, monospace;
+  color: var(--bpmnr-danger, #b3372f);
+}
+
+.bpmnr-promotion-soundness button {
+  border: 1px solid var(--bpmnr-panel-border);
+  background: var(--bpmnr-panel-bg);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--bpmnr-text);
+}
+
 .bpmnr-promotion-summary {
   display: block;
   width: 100%;

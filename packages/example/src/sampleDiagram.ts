@@ -108,6 +108,8 @@ export function buildSampleDiagram(): BpmnDiagram {
     e7: edge('e7', 'publish', 'post', 'sequenceFlow', 'CMS emits the deliverable'),
     e8: edge('e8', 'publish', 'returns', 'sequenceFlow', 'Returned items enter the returns flow'),
     e9: edge('e9', 'gate', 'billing', 'sequenceFlow', 'Approved work triggers shared billing'),
+    // The timeout handler leads somewhere (soundness: SND_BOUNDARY_NO_OUTFLOW).
+    e10: edge('e10', 'publishTimeout', 'reviewer', 'feedback', 'Timeout notifies the reviewer'),
     // Inner flow — same scope (both children of the returns sub-process).
     r1: edge('r1', 'returnsInspect', 'returnsRefund', 'sequenceFlow', 'Approved return is refunded'),
     // Data association: refund step writes to the returns store (may cross
@@ -233,6 +235,44 @@ export function buildStressDiagram(count = 350): BpmnDiagram {
     });
   }
   diagram.edges = edges;
+
+  return diagram;
+}
+
+/**
+ * The classic soundness trap (Handoff 4 §C): an XOR-split feeding an
+ * AND-join — the exclusive gateway routes ONE token, the parallel join waits
+ * for BOTH, so the process deadlocks. Loaded via `?deadlock=1`; the
+ * promotion e2e asserts SND_DEADLOCK_JOIN blocks activation.
+ */
+export function buildDeadlockDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-deadlock', name: 'Deadlock trap', createdBy: 'demo' });
+  diagram.description = 'XOR-split into AND-join: estruturalmente não-são.';
+  const v = diagram.version.id;
+
+  const make = (type: string, id: string, label: string, x: number, y: number) =>
+    createNode({ type, id, label, x, y, properties: {}, versionId: v }, registry);
+
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 60, 160),
+    decide: make('exclusiveGateway', 'decide', 'Aprovado?', 180, 153),
+    yes: make('task', 'yes', 'Seguir', 320, 60),
+    no: make('task', 'no', 'Revisar', 320, 240),
+    join: make('parallelGateway', 'join', 'Sincronizar', 520, 153),
+    end: make('endEvent', 'end', 'Fim', 660, 160),
+  };
+
+  const edge = (id: string, sourceId: string, targetId: string) =>
+    createEdge({ id, sourceId, targetId, type: 'sequenceFlow', versionId: v });
+  diagram.edges = {
+    f1: edge('f1', 'start', 'decide'),
+    f2: edge('f2', 'decide', 'yes'),
+    f3: edge('f3', 'decide', 'no'),
+    f4: edge('f4', 'yes', 'join'),
+    f5: edge('f5', 'no', 'join'),
+    f6: edge('f6', 'join', 'end'),
+  };
 
   return diagram;
 }

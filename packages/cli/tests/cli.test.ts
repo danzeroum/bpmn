@@ -64,6 +64,29 @@ describe('validateCommand', () => {
     expect(result.valid).toBe(false);
     expect(formatValidation(result)).toContain('ORPHAN_EDGE');
   });
+
+  it('includes soundness rules (SND_* codes) headlessly', async () => {
+    const { dir, diagram } = await fixture();
+    // Classic trap: XOR-split feeding an AND-join.
+    diagram.nodes.x = createNode({ type: 'exclusiveGateway', id: 'x', x: 300, y: 10 });
+    diagram.nodes.a = createNode({ type: 'task', id: 'a', x: 400, y: 0 });
+    diagram.nodes.b = createNode({ type: 'task', id: 'b', x: 400, y: 60 });
+    diagram.nodes.j = createNode({ type: 'parallelGateway', id: 'j', x: 500, y: 10 });
+    diagram.nodes.end = createNode({ type: 'endEvent', id: 'end', x: 600, y: 10 });
+    Object.assign(diagram.edges, {
+      e2: createEdge({ id: 'e2', sourceId: 'task', targetId: 'x' }),
+      e3: createEdge({ id: 'e3', sourceId: 'x', targetId: 'a' }),
+      e4: createEdge({ id: 'e4', sourceId: 'x', targetId: 'b' }),
+      e5: createEdge({ id: 'e5', sourceId: 'a', targetId: 'j' }),
+      e6: createEdge({ id: 'e6', sourceId: 'b', targetId: 'j' }),
+      e7: createEdge({ id: 'e7', sourceId: 'j', targetId: 'end' }),
+    });
+    const path = join(dir, 'deadlock.json');
+    await writeFile(path, new JsonSerializer().serialize(diagram));
+    const { result } = await validateCommand(path);
+    expect(result.valid).toBe(false);
+    expect(formatValidation(result)).toContain('SND_DEADLOCK_JOIN');
+  });
 });
 
 describe('exportCommand', () => {
