@@ -5,7 +5,7 @@ import {
   createNode,
   type BpmnDiagram,
 } from '@bpmn-react/core';
-import { resolveCallActivities, VersionRegistry } from '../src/index.js';
+import { callActivityBindingRule, resolveCallActivities, VersionRegistry } from '../src/index.js';
 
 async function versionedProcess(
   processId: string,
@@ -108,5 +108,34 @@ describe('resolveCallActivities (F7 registry synergy)', () => {
     expect(resolve('2026-03-01T00:00:00.000Z')?.entry?.version.id).toBe('b1');
     expect(resolve('2026-09-01T00:00:00.000Z')?.entry?.version.id).toBe('b2');
     expect(resolve('2026-01-15T00:00:00.000Z')?.entry).toBeUndefined();
+  });
+});
+
+describe('callActivityBindingRule (Handoff 5 §3.2 — CALL_REF_MISSING)', () => {
+  let registry: VersionRegistry;
+
+  beforeEach(async () => {
+    registry = new VersionRegistry();
+    await registry.register(
+      await versionedProcess('billing', 'b1', { from: '2026-01-01T00:00:00.000Z' }),
+    );
+  });
+
+  it('flags unresolved and target-less call activities as errors', () => {
+    const rule = callActivityBindingRule(registry, '2026-03-01T00:00:00.000Z');
+    const issues = rule(callerDiagram());
+    // 'charge' resolves to billing b1 at this date; 'orphan' has no target.
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({
+      code: 'CALL_REF_MISSING',
+      severity: 'error',
+      nodeId: 'orphan',
+    });
+  });
+
+  it('flags a reference with no version in effect at the date', () => {
+    const rule = callActivityBindingRule(registry, '2025-01-01T00:00:00.000Z');
+    const codes = rule(callerDiagram()).map((issue) => issue.nodeId).sort();
+    expect(codes).toEqual(['charge', 'orphan']);
   });
 });

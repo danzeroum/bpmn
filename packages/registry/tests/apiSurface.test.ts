@@ -11,6 +11,7 @@ const EXPECTED_EXPORTS = [
   'RegistryError',
   'VersionRegistry',
   'bindRun',
+  'callActivityBindingRule',
   'resolveCallActivities',
   'verifyRunBinding',
 ].sort();

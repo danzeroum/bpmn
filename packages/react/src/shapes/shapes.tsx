@@ -340,35 +340,82 @@ export function EventBasedGatewayShape(props: ShapeProps) {
   );
 }
 
+/** Height of the expanded sub-process title strip (Handoff 5 §3.3) — the
+ * double-click drill target (rename stays on the body/inspector). */
+export const SUBPROCESS_TITLE_HEIGHT = 30;
+
 export function SubProcessShape({ node, selected }: ShapeProps) {
-  // Expanded sub-processes are light containers whose children render on top
-  // (the interactive expand/collapse marker lives in the NodeRenderer, so the
-  // shape stays pure). Collapsed ones look like a regular activity card.
+  // Expanded sub-processes are light containers with a 30px TITLE STRIP
+  // (name left, `subProcess` tag right, 1px divider) whose children render
+  // on top; the interactive expand/collapse marker lives in the NodeRenderer
+  // so the shape stays pure. Collapsed ones look like a regular activity
+  // card. Collapse keeps the stored DI bounds (pendencias.md — Handoff 5
+  // §3.0); the 160ms transition animates the fill, not the geometry.
   const expanded = isSubProcessExpanded(node);
+  if (!expanded) {
+    return (
+      <g>
+        <rect
+          width={node.width}
+          height={node.height}
+          rx={10}
+          ry={10}
+          fill={theme.fillActivity}
+          stroke={strokeFor(selected)}
+          strokeWidth={strokeWidthFor(selected)}
+        />
+        <ShapeLabel label={node.label} width={node.width} y={20} />
+      </g>
+    );
+  }
   return (
     <g>
       <rect
         width={node.width}
         height={node.height}
-        rx={10}
-        ry={10}
-        fill={expanded ? theme.fill : theme.fillActivity}
+        rx={12}
+        ry={12}
+        fill={theme.fill}
         stroke={strokeFor(selected)}
         strokeWidth={strokeWidthFor(selected)}
       />
-      <ShapeLabel label={node.label} width={node.width} y={20} />
+      <g data-subprocess-title>
+        <line
+          x1={0}
+          y1={SUBPROCESS_TITLE_HEIGHT}
+          x2={node.width}
+          y2={SUBPROCESS_TITLE_HEIGHT}
+          stroke="var(--bpmnr-panel-border, #e2ddd3)"
+          strokeWidth={1}
+        />
+        <text x={12} y={19} fontSize={12} fontWeight={600} fill={theme.text}>
+          {node.label}
+        </text>
+        <text
+          x={node.width - 12}
+          y={19}
+          textAnchor="end"
+          fontSize={9}
+          fontFamily="ui-monospace, monospace"
+          fill={theme.textMuted}
+        >
+          subProcess
+        </text>
+      </g>
     </g>
   );
 }
 
 /**
- * Call activity: invokes another process (`properties.calledElement`). The
- * BPMN notation is an activity card with a THICK border and a static [+]
- * marker — the contents live in the called process, so the marker never
- * expands in place (drill happens through the registry, not the canvas).
+ * Business rule task (Handoff 5 §3.1): activity card with the DMN table
+ * glyph top-left. When `properties.decisionRef` is set, a gold link badge
+ * (pill straddling the top-right border) marks the bound decision — visual
+ * only until F-B2 wires navigation (no click handler, default cursor; an
+ * informative tooltip is allowed already).
  */
-export function CallActivityShape({ node, selected }: ShapeProps) {
-  const boxSize = 14;
+export function BusinessRuleTaskShape({ node, selected }: ShapeProps) {
+  const decisionRef =
+    typeof node.properties.decisionRef === 'string' ? node.properties.decisionRef : undefined;
   return (
     <g>
       <rect
@@ -376,16 +423,99 @@ export function CallActivityShape({ node, selected }: ShapeProps) {
         height={node.height}
         rx={10}
         ry={10}
-        fill={theme.fillActivity}
+        fill={theme.fill}
         stroke={strokeFor(selected)}
-        strokeWidth={selected ? 4 : 3}
+        strokeWidth={strokeWidthFor(selected)}
+      />
+      {/* Table glyph 16×12: frame + header band (0.25) + header line + column divider. */}
+      <g transform="translate(9, 8)" stroke={theme.stroke} fill="none" strokeWidth={1.2}>
+        <rect width={16} height={12} rx={1} />
+        <rect width={16} height={3} fill={theme.stroke} opacity={0.25} stroke="none" />
+        <path d="M 0 4 H 16 M 5.5 0 V 12" />
+      </g>
+      <ShapeLabel label={node.label} width={node.width} y={node.height / 2 + 4} />
+      {decisionRef && (
+        <g
+          data-decision-link
+          transform={`translate(${node.width - 36}, -8)`}
+          style={{ cursor: 'default' }}
+        >
+          <title>{`Decisão vinculada: ${decisionRef}`}</title>
+          <rect
+            width={30}
+            height={16}
+            rx={8}
+            fill="var(--btv-dmn-link-badge-bg, #f6edd4)"
+            stroke="var(--btv-dmn-link-badge-stroke, #9a7b1e)"
+            strokeWidth={1}
+          />
+          {/* Mini decision table 9×9 + check. */}
+          <g
+            transform="translate(5, 3.5)"
+            stroke="var(--btv-dmn-link-badge-stroke, #9a7b1e)"
+            fill="none"
+            strokeWidth={1}
+          >
+            <rect width={9} height={9} rx={1} />
+            <path d="M 0 3 H 9 M 4.5 3 V 9" />
+          </g>
+          <path
+            d="M 18 8 L 20.5 10.5 L 25 5.5"
+            stroke="var(--btv-dmn-link-badge-stroke, #9a7b1e)"
+            fill="none"
+            strokeWidth={1.4}
+          />
+        </g>
+      )}
+    </g>
+  );
+}
+
+/**
+ * Call activity (Handoff 5 §3.2): invokes another process
+ * (`properties.calledElement`) — white card with a THICK 3.5 border and a
+ * static [+] marker (the contents live in the called process; drill happens
+ * through the registry, not the canvas). When the host resolves the binding
+ * (`properties.calledElementLabel`, e.g. "Billing@4.2.0"), a mono footer
+ * shows it. The broken-reference state (CALL_REF_MISSING) is painted by the
+ * canvas issue overlay (registry rule + CSS stroke override).
+ */
+export function CallActivityShape({ node, selected }: ShapeProps) {
+  const boxSize = 14;
+  const binding =
+    typeof node.properties.calledElementLabel === 'string'
+      ? node.properties.calledElementLabel
+      : undefined;
+  return (
+    <g>
+      <rect
+        width={node.width}
+        height={node.height}
+        rx={10}
+        ry={10}
+        fill={theme.fill}
+        stroke={strokeFor(selected)}
+        strokeWidth={selected ? 2.5 : 3.5}
       />
       <ShapeLabel label={node.label} width={node.width} y={20} />
+      {binding && (
+        <text
+          x={node.width / 2}
+          y={node.height - 22}
+          textAnchor="middle"
+          fontSize={9}
+          fontFamily="ui-monospace, monospace"
+          fill={theme.textMuted}
+        >
+          {`→ ${binding.length > 24 ? `${binding.slice(0, 23)}…` : binding}`}
+        </text>
+      )}
       <g
-        transform={`translate(${node.width / 2 - boxSize / 2}, ${node.height - boxSize - 5})`}
+        data-call-marker
+        transform={`translate(${node.width / 2 - boxSize / 2}, ${node.height - 16})`}
         stroke={theme.textMuted}
         fill="none"
-        strokeWidth={1.4}
+        strokeWidth={1.5}
       >
         <rect width={boxSize} height={boxSize} rx={2} />
         <path d={`M ${boxSize / 2} 3 V ${boxSize - 3} M 3 ${boxSize / 2} H ${boxSize - 3}`} />

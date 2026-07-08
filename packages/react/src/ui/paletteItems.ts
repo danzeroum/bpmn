@@ -16,6 +16,7 @@ export const BUILT_IN_PALETTE: PaletteItem[] = [
   { id: 'sendTask', label: 'Send Task', nodeType: 'sendTask', icon: CORE_PALETTE_ICONS.sendTask, group: 'core' },
   { id: 'receiveTask', label: 'Receive Task', nodeType: 'receiveTask', icon: CORE_PALETTE_ICONS.receiveTask, group: 'core' },
   { id: 'manualTask', label: 'Manual Task', nodeType: 'manualTask', icon: CORE_PALETTE_ICONS.manualTask, group: 'core' },
+  { id: 'businessRuleTask', label: 'Business Rule Task', nodeType: 'businessRuleTask', icon: CORE_PALETTE_ICONS.businessRuleTask, group: 'core' },
   { id: 'exclusiveGateway', label: 'Exclusive Gateway', nodeType: 'exclusiveGateway', icon: CORE_PALETTE_ICONS.exclusiveGateway, group: 'core' },
   { id: 'parallelGateway', label: 'Parallel Gateway', nodeType: 'parallelGateway', icon: CORE_PALETTE_ICONS.parallelGateway, group: 'core' },
   { id: 'subProcess', label: 'Sub-Process', nodeType: 'subProcess', icon: CORE_PALETTE_ICONS.subProcess, group: 'core' },

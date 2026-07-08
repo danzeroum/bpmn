@@ -152,6 +152,22 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   aparecer no uso, promover a análise de dominadores (ainda O(V+E) com Lengauer-Tarjan) em PR
   própria.
 
+## 8.0 Handoff 5 (BPM+) — reconciliação §3.0: divergências mantidas (aprovadas 08/07)
+
+- **Tamanho dos cards de activity (spec 150×70 × main 120×60):** mantido 120×60 — TODA a
+  família activity da main (task, userTask, …) usa 120×60; mudar só businessRuleTask e
+  callActivity quebraria a consistência interna. Proporções internas da spec preservadas
+  (glifo, badge, marcador). Aprovado: "consistência de família vence".
+- **Coordenadas dos filhos do subprocesso (spec relativas × main absolutas):** mantidas
+  absolutas — o BPMN DI da OMG usa bounds absolutos; o round-trip lossless com
+  Camunda/bpmn.io depende disso. Resultado visual idêntico. Aprovado: "a spec estava errada".
+- **Bounds de colapso (spec força card 150×70 × main preserva o DI):** mantido o tamanho
+  armazenado — forçar o card visual divergiria do DI exportado (Camunda também preserva o
+  bounds colapsado). A transição de 160ms anima o fill (o que de fato muda), não a geometria.
+- **Conflito de gesto no subprocesso expandido:** duplo-clique no TÍTULO (faixa 30px) =
+  drill-down (§7.6); duplo-clique no CORPO = rename inline; campo Label no inspector
+  garante descobribilidade. Coberto por e2e.
+
 ## 8. Protótipos (Handoff 3) — decisões de escopo em aberto
 
 - **Handoff 2 recebido e reconciliado** (chegou via mensagem após as PRs 4–6; a pasta

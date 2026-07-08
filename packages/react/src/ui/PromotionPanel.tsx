@@ -80,11 +80,11 @@ export function PromotionPanel({
   );
 
   const showOnCanvas = () => {
-    const badges: Record<string, 'error' | 'warning'> = {};
+    const badges: Record<string, { severity: 'error' | 'warning'; code?: string }> = {};
     for (const issue of soundnessErrors) {
       // Edge-anchored issues badge the edge's source node.
       const nodeId = issue.nodeId ?? (issue.edgeId ? diagram.edges[issue.edgeId]?.sourceId : undefined);
-      if (nodeId) badges[nodeId] = 'error';
+      if (nodeId) badges[nodeId] = { severity: 'error', code: issue.code };
     }
     canvasStore.setState({ issueBadges: badges, selectedIds: Object.keys(badges) });
     onClose();

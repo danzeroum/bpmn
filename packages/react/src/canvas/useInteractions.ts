@@ -3,11 +3,14 @@ import {
   activeNodes,
   addEdgeCommand,
   attachedBoundaryEventIds,
+  childrenOf,
   descendantIdsOf,
   compositeCommand,
   createEdge,
   getAnchorPoint,
+  getBoundingBox,
   isContainerType,
+  isSubProcessExpanded,
   laneFlowNodeRefs,
   moveNodeCommand,
   resizeNodeCommand,
@@ -25,8 +28,9 @@ import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import type { ResizeCorner } from '../state/canvasStore.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
-import { panViewport, screenToWorld } from './viewport.js';
+import { fitViewport, panViewport, screenToWorld } from './viewport.js';
 import { isNodeVisible } from './visibility.js';
+import { SUBPROCESS_TITLE_HEIGHT } from '../shapes/shapes.js';
 
 const DRAG_THRESHOLD = 4;
 
@@ -140,14 +144,44 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
     [store, world],
   );
 
-  /** Node double-click → begin inline label editing (edit mode only). */
+  /**
+   * Node double-click. One navigation gesture for the whole family (Handoff
+   * 5 §7.6): on an EXPANDED sub-process' title strip it drills down; on the
+   * body (and every other node) it begins inline label editing — rename
+   * stays discoverable via body double-click and the inspector's Label field.
+   */
   const onNodeDoubleClick = useCallback(
-    (event: { stopPropagation: () => void }, nodeId: string) => {
+    (
+      event: { stopPropagation: () => void; clientX?: number; clientY?: number },
+      nodeId: string,
+    ) => {
       if (store.getState().readOnly) return;
       event.stopPropagation();
+      const node = diagramRef.current.nodes[nodeId];
+      if (
+        node &&
+        node.type === 'subProcess' &&
+        isSubProcessExpanded(node) &&
+        event.clientX !== undefined &&
+        event.clientY !== undefined
+      ) {
+        const point = world({ clientX: event.clientX, clientY: event.clientY });
+        if (point.y - node.y <= SUBPROCESS_TITLE_HEIGHT) {
+          const children = childrenOf(diagramRef.current, nodeId);
+          if (children.length > 0) {
+            const { viewport } = store.getState();
+            store.setState({
+              drillId: nodeId,
+              selectedIds: [],
+              viewport: fitViewport(getBoundingBox(children), viewport.width / viewport.height),
+            });
+            return;
+          }
+        }
+      }
       store.setState({ editingNodeId: nodeId, selectedIds: [nodeId] });
     },
-    [store],
+    [store, world],
   );
 
   /** Resize-handle pointerdown → begin a resize gesture. */

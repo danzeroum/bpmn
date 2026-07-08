@@ -1,6 +1,7 @@
 import type { ShapeComponent } from '../plugins/types.js';
 import {
   BoundaryEventShape,
+  BusinessRuleTaskShape,
   CallActivityShape,
   DataObjectShape,
   DataStoreShape,
@@ -43,6 +44,7 @@ export const BUILT_IN_SHAPES: Record<string, ShapeComponent> = {
   sendTask: SendTaskShape,
   receiveTask: ReceiveTaskShape,
   manualTask: ManualTaskShape,
+  businessRuleTask: BusinessRuleTaskShape,
   exclusiveGateway: ExclusiveGatewayShape,
   parallelGateway: ParallelGatewayShape,
   inclusiveGateway: InclusiveGatewayShape,

@@ -366,7 +366,7 @@ const SCENARIOS = [
   {
     name: 'degraded-elements',
     source: 'Signavio-style export with elements outside the profile',
-    description: 'complexGateway + businessRuleTask degrade with warnings; callActivity imports natively (F7-3)',
+    description: 'complexGateway degrades with a warning; businessRuleTask (F-A) and callActivity (F7-3) import natively',
     build: (v) =>
       processXml(`Definitions_deg${v}`, `Process_deg${v}`, [
         { tag: 'startEvent', id: 'Start_1' },

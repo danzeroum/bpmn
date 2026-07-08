@@ -229,6 +229,34 @@
   text-overflow: ellipsis;
 }
 
+/* Governance identity per level (Handoff 5 §10.3): semver + vigência seal. */
+.bpmnr-breadcrumb-semver {
+  margin-left: 5px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--bpmnr-text-muted);
+}
+
+.bpmnr-breadcrumb-seal {
+  margin-left: 5px;
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  background: var(--bpmnr-status-draft, #faf9f6);
+  color: var(--bpmnr-status-draft-fg, #44403a);
+  border: 1px solid var(--bpmnr-panel-border, #e2ddd3);
+}
+
+.bpmnr-breadcrumb-seal[data-status='test'] { background: var(--bpmnr-status-test, #e3ecf7); color: var(--bpmnr-status-test-fg, #33567e); }
+.bpmnr-breadcrumb-seal[data-status='candidate'] { background: var(--bpmnr-status-candidate, #f6edd4); color: var(--bpmnr-status-candidate-fg, #7a611e); }
+.bpmnr-breadcrumb-seal[data-status='active'] { background: var(--bpmnr-status-active, #dff0e6); color: var(--bpmnr-status-active-fg, #1a6a54); }
+.bpmnr-breadcrumb-seal[data-status='deprecated'] { background: var(--bpmnr-status-deprecated, #f7e6e0); color: var(--bpmnr-status-deprecated-fg, #b3372f); }
+.bpmnr-breadcrumb-seal[data-status='retired'] { background: var(--bpmnr-status-retired, #efece6); color: var(--bpmnr-status-retired-fg, #6f675a); }
+
 .bpmnr-toolbar-veto {
   font-size: 11px;
   color: var(--bpmnr-danger);
@@ -282,6 +310,20 @@
 
 .bpmnr-canvas g[data-node-shadow] {
   transition: filter 120ms ease-out;
+}
+
+/* Handoff 5 §3.2 — CALL_REF_MISSING: the shape's stroke and marker turn
+   error-red while the issue overlay marks the node (CSS wins over SVG
+   presentation attributes, so shapes stay pure). */
+.bpmnr-canvas g[data-node-type='callActivity'][data-node-issue-state='error'] rect,
+.bpmnr-canvas g[data-node-type='callActivity'][data-node-issue-state='error'] [data-call-marker] path {
+  stroke: var(--btv-error, #b3372f);
+}
+
+/* Handoff 5 §3.3 — expand/collapse transitions the container fill 160ms
+   (geometry is preserved: collapsed bounds come from the DI). */
+.bpmnr-canvas g[data-node-type='subProcess'] rect {
+  transition: fill 160ms ease-out;
 }
 
 .bpmnr-canvas g[data-node-id]:hover > g > g[data-node-shadow] {

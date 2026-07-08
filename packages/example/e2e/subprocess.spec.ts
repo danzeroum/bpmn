@@ -68,3 +68,28 @@ test('shows the dotted data association once the sub-process is expanded', async
   await expect(line).toHaveAttribute('stroke-dasharray', '2,4');
   await expect(line).toHaveAttribute('marker-end', 'url(#bpmnr-edge-open)');
 });
+
+test('double-click on the TITLE drills; double-click on the body edits (F-A)', async ({ page }) => {
+  // Expand first so the title strip exists.
+  await page.locator('[data-node-id="returns"] [data-subprocess-toggle]').click();
+  const sub = page.locator('[data-node-id="returns"]');
+  const box = (await sub.boundingBox())!;
+
+  // Title strip (top ~30px world units): drills down, does NOT open the editor.
+  await page.mouse.dblclick(box.x + box.width / 2, box.y + 8);
+  await expect(page.locator('[data-node-id="returns"]')).toHaveCount(0);
+  await expect(page.locator('[data-node-id="returnsInspect"]')).toBeVisible();
+  const breadcrumb = page.getByRole('navigation', { name: 'Sub-process navigation' });
+  // Governance identity per level (Handoff 5 §10.3): semver + vigência seal.
+  await expect(breadcrumb).toContainText('v0.1.0');
+  await expect(breadcrumb).toContainText('RASCUNHO');
+  await expect(page.locator('svg.bpmnr-canvas foreignObject input')).toHaveCount(0);
+
+  // Back up; double-click the BODY: inline label editor, no drill.
+  await breadcrumb.getByRole('button', { name: 'Back to process' }).click();
+  const again = (await page.locator('[data-node-id="returns"]').boundingBox())!;
+  await page.mouse.dblclick(again.x + again.width / 2, again.y + again.height * 0.6);
+  await expect(page.locator('[data-node-id="returns"]')).toBeVisible();
+  await expect(page.locator('svg.bpmnr-canvas foreignObject input')).toBeVisible();
+  await page.keyboard.press('Escape');
+});

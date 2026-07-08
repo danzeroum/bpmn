@@ -70,10 +70,17 @@ export interface CanvasState {
   drillId: string | null;
   /**
    * Validation/soundness badges by node id (shape-state pendência §5): the
-   * node renders a `!` disc until the map is cleared. Populated by Validate
-   * and by the PromotionPanel's "ver no canvas".
+   * node renders a `!` disc — and the stable issue code below the shape when
+   * present (Handoff 5 §3.2, e.g. CALL_REF_MISSING) — until the map is
+   * cleared. Populated by Validate and the PromotionPanel's "ver no canvas".
    */
-  issueBadges: Record<string, 'error' | 'warning'>;
+  issueBadges: Record<string, NodeIssueBadge>;
+}
+
+export interface NodeIssueBadge {
+  severity: 'error' | 'warning';
+  /** Stable issue code rendered mono below the shape (optional). */
+  code?: string;
 }
 
 export type CanvasStore = Store<CanvasState>;

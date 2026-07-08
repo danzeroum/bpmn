@@ -11,7 +11,7 @@ round-trip work, some interactions pending; **degraded** — imported with a
 warning and downgraded; **unsupported** — ignored on import with a warning.
 
 - **Descriptive class: 100%** — declarable ✅
-- **Analytic class: 96%**
+- **Analytic class: 100%**
 
 | Element | Status | Class | Maps to | Notes |
 |---|---|---|---|---|
@@ -22,7 +22,7 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:sendTask` | ✅ supported | analytic | `sendTask` |  |
 | `bpmn:receiveTask` | ✅ supported | analytic | `receiveTask` |  |
 | `bpmn:manualTask` | ✅ supported | analytic | `manualTask` |  |
-| `bpmn:businessRuleTask` | ⛔ unsupported | analytic | — | Roadmap F9 (DMN) — ignored with a warning today. |
+| `bpmn:businessRuleTask` | ✅ supported | analytic | `businessRuleTask` | DMN table glyph + decision-link badge (properties.decisionRef); decision table editor lands with Handoff 5 F-B. |
 | `bpmn:subProcess` | ✅ supported | descriptive | `subProcess` | Nested children as first-class nodes (lossless round-trip, DI isExpanded); expand/collapse and drill-down in the editor. |
 | `bpmn:callActivity` | ✅ supported | descriptive | `callActivity` | Native calledElement; @bpmn-react/registry resolves the called process version (resolveCallActivities/activeAt). |
 | `bpmn:transaction` | ⛔ unsupported | extended | — | Deliberately out of scope before v2.x. |
