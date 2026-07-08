@@ -8,9 +8,13 @@ import * as api from '../src/index.js';
  * diff means an export was added, renamed, or removed.
  */
 const EXPECTED_EXPORTS = [
+  'EVIDENCE_COLLAPSE_THRESHOLD',
+  'SACM_SPEC_VERSION',
   'attestVersion',
   'attestationHash',
+  'buildAssuranceCase',
   'canonicalAttestation',
+  'renderAssuranceCaseHtml',
   'toXES',
   'verifyLedger',
 ].sort();

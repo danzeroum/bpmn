@@ -2,6 +2,7 @@
 import { BpmnLifecycleError, type VersionStatus } from '@bpmn-react/core';
 import {
   approveCommand,
+  assuranceCaseCommand,
   auditCommand,
   certifyCommand,
   diffCommand,
@@ -28,6 +29,7 @@ const USAGE = `bpmn-react — headless BPMN diagram tooling
 Usage:
   bpmn-react validate <file.(json|xml|bpmn)>
   bpmn-react certify <file.bpmn> [--json] [--require <descriptive|analytic>] [--report <path.json>]
+  bpmn-react certify <file.bpmn> --assurance-case <out.html> [--ledger <ledger.json>] [--sacm-version <label>]
   bpmn-react audit <ledger.json> [--json]
   bpmn-react export-xes <ledger.json> [--registry <registry.json>] [-o <log.xes>]
   bpmn-react export <input> --to <xml|json> [-o <output>]
@@ -184,6 +186,23 @@ async function main(argv: string[]): Promise<number> {
         if (!file) return usage();
         if (require !== undefined && require !== 'descriptive' && require !== 'analytic') {
           return usage();
+        }
+        // F-C3: print-ready SACM assurance case, 100% derived from the
+        // ledger + promotion approvals (aceite 10.5.8).
+        const assurancePath = valueOf(rest, '--assurance-case');
+        if (assurancePath) {
+          const ledgerPath = valueOf(rest, '--ledger');
+          const sacmVersion = valueOf(rest, '--sacm-version');
+          const outcome = await assuranceCaseCommand(file, assurancePath, {
+            ...(ledgerPath ? { ledger: ledgerPath } : {}),
+            ...(sacmVersion ? { sacmVersion } : {}),
+          });
+          console.log(
+            `Assurance case (${outcome.claims} claims) → ${assurancePath} · cadeia ${
+              outcome.intact ? 'íntegra' : 'QUEBRADA'
+            } · ${outcome.supported ? 'todos os claims sustentados' : 'há claims NÃO sustentados'}`,
+          );
+          return outcome.intact && outcome.supported ? 0 : 1;
         }
         const reportPath = valueOf(rest, '--report');
         const report = await certifyCommand(file, {

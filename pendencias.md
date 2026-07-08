@@ -216,6 +216,21 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
 - **Card raiz não clicável:** DiffView é sempre do par adjacente; a primeira versão não tem
   predecessor. Alternativa (diff contra vazio) rejeitada — renderizaria um "add" enganoso.
 
+## 8.0.4 Handoff 5 F-C3 — interpretações registradas (relatório SACM)
+
+- **"página n/N" (§11.2):** o gerador emite o padrão CSS Paged Media
+  (`@page { @bottom-right: "página " counter(page)/counter(pages) }`) + o rodapé de auditoria
+  em `position: fixed` (imprime em toda página no Chromium). Margin boxes com contadores são
+  honrados por engines de paged media (Prince/WeasyPrint/pipelines de PDF); o print preview do
+  Chromium ainda não os suporta — limitação do engine, não do documento. Se o produto exigir
+  n/N visível no Chromium, a alternativa é paginação explícita no gerador (mudança contida).
+- **Taxonomia canônica de claims:** C1 "aprovação formal" (arg A1 = aprovações + entradas de
+  promoção) e C2 "conteúdo rastreável a comandos" (arg A2 = demais entradas da cadeia). É a
+  menor taxonomia 100% derivável do ledger; novas famílias de claim (ex.: soundness no gate)
+  são aditivas quando o produto pedir.
+- **SACM 2.3 confirmado** em omg.org/spec/SACM (formal, out/2023) na implementação, como o
+  §11.4 pede; o rótulo segue parametrizado (`SACM_SPEC_VERSION` / `--sacm-version`).
+
 ## 8. Protótipos (Handoff 3) — decisões de escopo em aberto
 
 - **Handoff 2 recebido e reconciliado** (chegou via mensagem após as PRs 4–6; a pasta
