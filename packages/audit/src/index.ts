@@ -7,3 +7,14 @@ export {
 } from './attest.js';
 export { verifyLedger, type LedgerLike, type VerificationReport } from './verify.js';
 export { toXES, type XesOptions } from './xes.js';
+export {
+  buildAssuranceCase,
+  EVIDENCE_COLLAPSE_THRESHOLD,
+  SACM_SPEC_VERSION,
+  type AssuranceArgument,
+  type AssuranceCase,
+  type AssuranceCaseOptions,
+  type AssuranceClaim,
+  type AssuranceEvidence,
+} from './assuranceCase.js';
+export { renderAssuranceCaseHtml } from './sacmReport.js';

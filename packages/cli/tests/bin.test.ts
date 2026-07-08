@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { createDiagram, createEdge, createNode, JsonSerializer } from '@bpmn-react/core';
+import { AuditLedger, createDiagram, createEdge, createNode, JsonSerializer } from '@bpmn-react/core';
 
 /**
  * Exercises `bin.ts` — the actual script users invoke as `bpmn-react ...` —
@@ -298,5 +298,49 @@ describe('bin: certify (Handoff 4 §A2)', () => {
     expect(res.stdout).toContain('relatório: ' + out);
     const report = JSON.parse(await readFile(out, 'utf8'));
     expect(report.achievedClass).toBe('descriptive');
+  });
+
+  it('--assurance-case renders the SACM report from the ledger (F-C3)', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bpmnr-bin-sacm-'));
+    const out = join(dir, 'assurance.html');
+    const ledger = new AuditLedger();
+    await ledger.append({ type: 'NODE_ADDED', userId: 'ana', versionId: 'v1', details: {} });
+    await ledger.append({ type: 'VERSION_PROMOTED', userId: 'ana', versionId: 'v1', details: {} });
+    await ledger.flush();
+    const ledgerPath = join(dir, 'ledger.json');
+    await writeFile(ledgerPath, JSON.stringify(ledger.export()));
+
+    const res = await runCli([
+      'certify',
+      join(corpus, '01-linear-approval-v1.bpmn'),
+      '--assurance-case',
+      out,
+      '--ledger',
+      ledgerPath,
+      '--sacm-version',
+      'SACM 2.3',
+    ]);
+    // Corpus file carries real approvals + the ledger evidences commands:
+    // every claim supported → exit 0.
+    expect(res.code).toBe(0);
+    expect(res.stdout).toContain('cadeia íntegra');
+    expect(res.stdout).toContain('todos os claims sustentados');
+    const html = await readFile(out, 'utf8');
+    expect(html).toContain('BTV CERTIFY · ASSURANCE CASE · SACM 2.3');
+    expect(html).not.toContain('não sustentado');
+    expect(html).toContain('data-chain-intact="true"');
+    expect(html).not.toContain('prefers-color-scheme'); // §11.3
+
+    // Without a ledger there is no command evidence: C2 unsupported →
+    // exit 1 and the verdict lands in the report (10.5.8).
+    const bare = await runCli([
+      'certify',
+      join(corpus, '01-linear-approval-v1.bpmn'),
+      '--assurance-case',
+      out,
+    ]);
+    expect(bare.code).toBe(1);
+    expect(bare.stdout).toContain('NÃO sustentados');
+    expect(await readFile(out, 'utf8')).toContain('não sustentado');
   });
 });

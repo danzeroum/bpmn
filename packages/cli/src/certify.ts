@@ -4,11 +4,47 @@ import {
   type CertifiableClass,
   type CertifyReport,
 } from '@bpmn-react/conformance';
+import { buildAssuranceCase, renderAssuranceCaseHtml } from '@bpmn-react/audit';
+import { BpmnXmlConverter, type AuditEntry } from '@bpmn-react/core';
 
 export interface CertifyCommandOptions {
   require?: CertifiableClass;
   /** Write the JSON report to this path (e.g. certify-report.json). */
   report?: string;
+}
+
+export interface AssuranceCaseCommandOptions {
+  /** Ledger export (ledger.json) evidencing the case; omit → empty chain. */
+  ledger?: string;
+  /** "SACM x.y" header label override (§11.4 — parameterized). */
+  sacmVersion?: string;
+}
+
+/**
+ * `bpmn-react certify <file.bpmn> --assurance-case <out.html>` (F-C3):
+ * renders the print-ready SACM report 100% from governance records — the
+ * diagram's version identity/approvals plus the ledger entries. Returns
+ * whether every claim is supported (drives the exit code).
+ */
+export async function assuranceCaseCommand(
+  xmlPath: string,
+  outPath: string,
+  options: AssuranceCaseCommandOptions = {},
+): Promise<{ supported: boolean; claims: number; intact: boolean }> {
+  const xml = await readFile(xmlPath, 'utf8');
+  const { diagram } = new BpmnXmlConverter().fromXml(xml);
+  const ledger: { entries: AuditEntry[] } = options.ledger
+    ? (JSON.parse(await readFile(options.ledger, 'utf8')) as { entries: AuditEntry[] })
+    : { entries: [] };
+  const assurance = await buildAssuranceCase(diagram, ledger, {
+    ...(options.sacmVersion ? { specVersion: options.sacmVersion } : {}),
+  });
+  await writeFile(outPath, renderAssuranceCaseHtml(assurance), 'utf8');
+  return {
+    supported: assurance.claims.every((claim) => claim.supported),
+    claims: assurance.claims.length,
+    intact: assurance.verification.intact,
+  };
 }
 
 /** `bpmn-react certify <file>` — conformance certificate for third-party CI. */
