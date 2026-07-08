@@ -36,7 +36,7 @@ export const CONFORMANCE_MATRIX: ConformanceEntry[] = [
   { element: 'bpmn:receiveTask', status: 'supported', conformanceClass: 'analytic', mappedTo: 'receiveTask' },
   { element: 'bpmn:manualTask', status: 'supported', conformanceClass: 'analytic', mappedTo: 'manualTask' },
   { element: 'bpmn:businessRuleTask', status: 'unsupported', conformanceClass: 'analytic', notes: 'Roadmap F9 (DMN) — ignored with a warning today.' },
-  { element: 'bpmn:subProcess', status: 'partial', conformanceClass: 'descriptive', mappedTo: 'subProcess', notes: 'Nested model + lossless round-trip (children as first-class nodes, DI isExpanded); expanded rendering/drill-down lands with F7-2.' },
+  { element: 'bpmn:subProcess', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'subProcess', notes: 'Nested children as first-class nodes (lossless round-trip, DI isExpanded); expand/collapse and drill-down in the editor.' },
   { element: 'bpmn:callActivity', status: 'unsupported', conformanceClass: 'descriptive', notes: 'Roadmap F7 — registry synergy (activeAt).' },
   { element: 'bpmn:transaction', status: 'unsupported', conformanceClass: 'extended', notes: 'Deliberately out of scope before v2.x.' },
   { element: 'bpmn:adHocSubProcess', status: 'unsupported', conformanceClass: 'extended' },

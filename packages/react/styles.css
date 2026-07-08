@@ -194,6 +194,41 @@
   text-align: center;
 }
 
+/* Drill-down breadcrumb (F7-2): process › sub-process trail. */
+.bpmnr-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 320px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.bpmnr-breadcrumb button {
+  font-size: 12px;
+  color: var(--bpmnr-text-muted);
+}
+
+.bpmnr-breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.bpmnr-breadcrumb-sep {
+  color: var(--bpmnr-text-muted);
+  font-size: 12px;
+}
+
+.bpmnr-breadcrumb-current {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bpmnr-text);
+  padding: 0 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .bpmnr-toolbar-veto {
   font-size: 11px;
   color: var(--bpmnr-danger);

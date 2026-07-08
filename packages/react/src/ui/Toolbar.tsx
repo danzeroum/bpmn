@@ -1,8 +1,12 @@
 import { useRef, useState, type ReactNode } from 'react';
 import {
   BpmnXmlConverter,
+  childrenOf,
   getBoundingBox,
   JsonSerializer,
+  nodeParentId,
+  type BpmnDiagram,
+  type BpmnNode,
   type ValidationIssue,
 } from '@bpmn-react/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
@@ -27,6 +31,7 @@ export function Toolbar({ extra }: ToolbarProps) {
   const config = useEditorConfig();
   const snapEnabled = useCanvasState((s) => s.snapEnabled);
   const viewportWidth = useCanvasState((s) => s.viewport.width);
+  const drillId = useCanvasState((s) => s.drillId);
   const [issues, setIssues] = useState<ValidationIssue[] | null>(null);
   const issuesRef = useRef<HTMLDivElement | null>(null);
 
@@ -82,6 +87,24 @@ export function Toolbar({ extra }: ToolbarProps) {
 
   const findSvg = () => document.querySelector<SVGSVGElement>('svg.bpmnr-canvas');
 
+  // Drill-down breadcrumb (F7-2): the chain of sub-processes from the root to
+  // the current view. Empty when looking at the whole process.
+  const trail = drillId !== null ? breadcrumbTrail(diagram, drillId) : [];
+
+  const drillTo = (targetId: string | null) => {
+    const scope =
+      targetId === null
+        ? Object.values(diagram.nodes).filter((node) => nodeParentId(node) === undefined)
+        : childrenOf(diagram, targetId);
+    const svg = findSvg();
+    const aspect = svg && svg.clientHeight > 0 ? svg.clientWidth / svg.clientHeight : 1.5;
+    store.setState({
+      drillId: targetId,
+      selectedIds: [],
+      ...(scope.length > 0 ? { viewport: fitViewport(getBoundingBox(scope), aspect) } : {}),
+    });
+  };
+
   return (
     <div className="bpmnr-toolbar" role="toolbar" aria-label="Editor toolbar">
       <button type="button" onClick={undo} disabled={!canUndo} aria-label="Undo" title="Undo (Ctrl+Z)">
@@ -111,6 +134,32 @@ export function Toolbar({ extra }: ToolbarProps) {
       >
         ⌗
       </button>
+      {trail.length > 0 && (
+        <>
+          <span className="bpmnr-toolbar-sep" />
+          <nav className="bpmnr-breadcrumb" aria-label="Sub-process navigation">
+            <button type="button" onClick={() => drillTo(null)} aria-label="Back to process">
+              {diagram.name}
+            </button>
+            {trail.map((node, index) => (
+              <span key={node.id} className="bpmnr-breadcrumb-item">
+                <span className="bpmnr-breadcrumb-sep" aria-hidden="true">
+                  ›
+                </span>
+                {index === trail.length - 1 ? (
+                  <span className="bpmnr-breadcrumb-current" aria-current="page">
+                    {node.label}
+                  </span>
+                ) : (
+                  <button type="button" onClick={() => drillTo(node.id)}>
+                    {node.label}
+                  </button>
+                )}
+              </span>
+            ))}
+          </nav>
+        </>
+      )}
       <span className="bpmnr-toolbar-sep" />
       <button type="button" onClick={validate} aria-label="Validate diagram">
         ✓ Validate
@@ -168,6 +217,20 @@ export function Toolbar({ extra }: ToolbarProps) {
       )}
     </div>
   );
+}
+
+/** Chain of sub-processes from the outermost ancestor down to `drillId`. */
+function breadcrumbTrail(diagram: BpmnDiagram, drillId: string): BpmnNode[] {
+  const trail: BpmnNode[] = [];
+  const seen = new Set<string>();
+  let current: BpmnNode | undefined = diagram.nodes[drillId];
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id);
+    trail.unshift(current);
+    const parentId = nodeParentId(current);
+    current = parentId !== undefined ? diagram.nodes[parentId] : undefined;
+  }
+  return trail;
 }
 
 function slug(name: string): string {

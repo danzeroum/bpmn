@@ -12,11 +12,14 @@ import { expect, test } from '@playwright/test';
 const NODES = 350;
 const MIN_FPS = 15;
 
+/** Grid nodes plus the expanded sub-process band (containers + 4 children each). */
+const withHierarchy = (count: number) => count + Math.max(2, Math.floor(count / 100)) * 5;
+
 test('pans and zooms a 350-node diagram above the fps floor', async ({ page }) => {
   test.slow();
   await page.goto(`/?stress=${NODES}`);
   await expect(page.locator('svg.bpmnr-canvas')).toBeVisible();
-  await expect(page.locator('[data-node-id]')).toHaveCount(NODES);
+  await expect(page.locator('[data-node-id]')).toHaveCount(withHierarchy(NODES));
   // Shadows are on at 100% zoom (activities/cards cast them).
   expect(await page.locator('svg.bpmnr-canvas g[filter]').count()).toBeGreaterThan(0);
 
@@ -70,7 +73,7 @@ test('pans and zooms a 350-node diagram above the fps floor', async ({ page }) =
 test('drops node shadows below the semantic-zoom threshold', async ({ page }) => {
   await page.goto('/?stress=48');
   await expect(page.locator('svg.bpmnr-canvas')).toBeVisible();
-  await expect(page.locator('[data-node-id]')).toHaveCount(48);
+  await expect(page.locator('[data-node-id]')).toHaveCount(withHierarchy(48));
   expect(await page.locator('svg.bpmnr-canvas g[filter]').count()).toBeGreaterThan(0);
 
   // Zoom out well past 50% (viewport width > 2400 ⇒ zoom < 0.5).
