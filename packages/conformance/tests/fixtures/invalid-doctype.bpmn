@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE definitions [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Evil">
+  <bpmn:process id="P1"><bpmn:startEvent id="Start_1" /></bpmn:process>
+</bpmn:definitions>

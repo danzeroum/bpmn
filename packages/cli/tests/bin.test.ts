@@ -261,3 +261,42 @@ describe('bin.ts — registry & governance subcommands', () => {
     expect(res.stdout).toContain('Promoted to active');
   });
 });
+
+describe('bin: certify (Handoff 4 §A2)', () => {
+  const corpus = join(__dirname, '../../conformance/corpus');
+  const fixtures = join(__dirname, '../../conformance/tests/fixtures');
+
+  it('certifies a descriptive corpus file (exit 0, human output)', async () => {
+    const res = await runCli(['certify', join(corpus, '01-linear-approval-v1.bpmn')]);
+    expect(res.code).toBe(0);
+    expect(res.stdout).toContain('XML bem-formado · XXE-safe');
+    expect(res.stdout).toContain('Round-trip lossless');
+    expect(res.stdout).toContain('Classe certificável: DESCRIPTIVE');
+  });
+
+  it('fails --require descriptive on an analytic file (exit 1) and passes --require analytic', async () => {
+    const file = join(corpus, '16-boundary-events-v1.bpmn');
+    expect((await runCli(['certify', file, '--require', 'descriptive'])).code).toBe(1);
+    expect((await runCli(['certify', file, '--require', 'analytic'])).code).toBe(0);
+  });
+
+  it('returns exit 2 for malformed XML and DOCTYPE, exit 1 for structural violations with --require', async () => {
+    expect((await runCli(['certify', join(fixtures, 'invalid-malformed.bpmn')])).code).toBe(2);
+    const doctype = await runCli(['certify', join(fixtures, 'invalid-doctype.bpmn'), '--json']);
+    expect(doctype.code).toBe(2);
+    expect(JSON.parse(doctype.stdout).xxeSafe).toBe(false);
+    expect(
+      (await runCli(['certify', join(fixtures, 'invalid-structure.bpmn'), '--require', 'descriptive'])).code,
+    ).toBe(1);
+  });
+
+  it('writes the JSON report with --report', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bpmnr-bin-certify-'));
+    const out = join(dir, 'certify-report.json');
+    const res = await runCli(['certify', join(corpus, '01-linear-approval-v1.bpmn'), '--report', out]);
+    expect(res.code).toBe(0);
+    expect(res.stdout).toContain('relatório: ' + out);
+    const report = JSON.parse(await readFile(out, 'utf8'));
+    expect(report.achievedClass).toBe('descriptive');
+  });
+});

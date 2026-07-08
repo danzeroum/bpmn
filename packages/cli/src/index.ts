@@ -10,6 +10,7 @@ import {
 import { loadDiagram } from './io.js';
 
 export * from './io.js';
+export * from './certify.js';
 export * from './registry.js';
 export * from './promote.js';
 
