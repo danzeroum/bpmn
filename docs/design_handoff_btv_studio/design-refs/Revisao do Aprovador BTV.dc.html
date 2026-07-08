@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #faf9f6; }
+  a { color: #9a7b1e; } a:hover { color: #7a611e; }
+</style>
+</helmet>
+<div style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; height: 100vh; display: flex; flex-direction: column; background: #faf9f6; overflow: hidden;">
+
+  <!-- ============ HEADER ============ -->
+  <header data-screen-label="Header" style="height: 58px; flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2ddd3; display: flex; align-items: center; gap: 14px; padding: 0 20px; z-index: 6;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 26px; height: 26px; border-radius: 7px; background: #9a7b1e; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">B</div>
+      <div style="font-weight: 600; font-size: 14px;">BuildToValue <span style="color: #6f675a; font-weight: 400;">Studio</span></div>
+    </div>
+    <div style="width: 1px; height: 22px; background: #e2ddd3;"></div>
+    <nav style="display: flex; gap: 4px; font-size: 12.5px;">
+      <a href="Biblioteca de Templates BTV.dc.html" style="padding: 6px 12px; border-radius: 8px; color: #6f675a; text-decoration: none;" style-hover="background: #f2efe8;">Biblioteca</a>
+      <span style="padding: 6px 12px; border-radius: 8px; background: #f6edd4; color: #7a611e; font-weight: 600;">Revisão</span>
+      <a href="Ledger Explorer BTV.dc.html" style="padding: 6px 12px; border-radius: 8px; color: #6f675a; text-decoration: none;" style-hover="background: #f2efe8;">Auditoria</a>
+    </nav>
+    <div style="flex: 1;"></div>
+    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6f675a;">
+      <div style="width: 26px; height: 26px; border-radius: 50%; background: #dff0e6; color: #1a6a54; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px;">MC</div>
+      Marta Costa · papel: <strong style="color: #262220;">compliance</strong>
+    </div>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0;">
+
+    <!-- ============ FILA DE APROVAÇÕES ============ -->
+    <aside data-screen-label="Fila" style="width: 296px; flex-shrink: 0; background: #ffffff; border-right: 1px solid #e2ddd3; overflow-y: auto; display: flex; flex-direction: column;">
+      <div style="padding: 14px 14px 8px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e;">FILA DE APROVAÇÃO · SEU PAPEL: COMPLIANCE</div>
+      </div>
+      <sc-for list="{{ queue }}" as="q" hint-placeholder-count="3">
+        <div onClick="{{ q.pick }}" style="padding: 12px 14px; border-bottom: 1px solid #efece6; cursor: pointer; background: {{ q.bg }}; border-left: 3px solid {{ q.accent }};" style-hover="background: #faf9f6;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px;">
+            <div style="font-size: 13px; font-weight: 600;">{{ q.name }}</div>
+            <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #44403a;">{{ q.version }}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; margin-top: 5px; flex-wrap: wrap;">
+            <span style="background: {{ q.sealBg }}; color: {{ q.sealFg }}; font-size: 9px; font-weight: 700; letter-spacing: 0.6px; border-radius: 999px; padding: 2px 8px;">{{ q.sealLabel }}</span>
+            <span style="font-size: 10.5px; color: #6f675a;">{{ q.meta }}</span>
+          </div>
+          <div style="font-size: 10.5px; color: {{ q.slaColor }}; margin-top: 4px; font-weight: 500;">{{ q.sla }}</div>
+        </div>
+      </sc-for>
+      <div style="padding: 12px 14px; font-size: 11px; color: #6f675a; line-height: 1.6;">
+        Concluídas hoje: <strong style="color: #1a6a54;">2 aprovadas</strong> · 1 rejeitada
+      </div>
+    </aside>
+
+    <!-- ============ ÁREA DE REVISÃO ============ -->
+    <main data-screen-label="Revisão" style="flex: 1; min-width: 0; overflow-y: auto; padding: 20px 28px;">
+      <div style="max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px;">
+
+        <!-- Cabeçalho do pedido -->
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;">
+          <div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 2px; color: #9a7b1e; margin-bottom: 4px;">PEDIDO DE PROMOÇÃO · CANDIDATE → ACTIVE</div>
+            <h1 style="margin: 0; font-size: 22px; font-weight: 700;">Onboarding de Cliente <span style="font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 500; color: #44403a;">v2.1.0</span></h1>
+            <div style="font-size: 12px; color: #6f675a; margin-top: 4px;">solicitado por ana.ruiz · hoje 09:14 · canal: piloto → geral</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #e8d9ae; border-radius: 999px; padding: 4px 12px 4px 5px; background: #fdfaf1; flex-shrink: 0;">
+            <span style="background: #f6edd4; color: #7a611e; font-size: 10px; font-weight: 700; letter-spacing: 1px; border-radius: 999px; padding: 3px 10px;">● CANDIDATA</span>
+            <span style="font-size: 11px; color: #6f675a;">aprovações: {{ apCount }}/2</span>
+          </div>
+        </div>
+
+        <!-- change_summary -->
+        <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 12px; padding: 16px 18px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 8px;">CHANGE SUMMARY (DA SOLICITANTE)</div>
+          <div style="font-size: 13.5px; line-height: 1.6;">"Adiciona geração de plano por IA com timeout de 48h e decisão DMN no gate de briefing. Objetivo: reduzir tempo de onboarding em 30% (BMM goal G-04)."</div>
+        </section>
+
+        <!-- Diff visual -->
+        <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 12px; padding: 16px 18px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e;">DIFF VS V2.0.0 (ATIVA) · 4 MUDANÇAS</div>
+            <a href="#" style="font-size: 11.5px; font-weight: 600;">abrir no canvas →</a>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px;">
+            <div style="display: flex; gap: 10px; align-items: center;"><span style="width: 18px; text-align: center; border-radius: 4px; font-weight: 700; background: #dff0e6; color: #1a6a54;">+</span> prompt "Gerar plano de conta" (lane Agentes IA)</div>
+            <div style="display: flex; gap: 10px; align-items: center;"><span style="width: 18px; text-align: center; border-radius: 4px; font-weight: 700; background: #dff0e6; color: #1a6a54;">+</span> boundary timer 48h → escalation "Notificar líder"</div>
+            <div style="display: flex; gap: 10px; align-items: center;"><span style="width: 18px; text-align: center; border-radius: 4px; font-weight: 700; background: #f7f0dc; color: #7a611e;">~</span> gate "Aprovar briefing" → decisão DMN "Critérios de aprovação" v1.0.0</div>
+            <div style="display: flex; gap: 10px; align-items: center;"><span style="width: 18px; text-align: center; border-radius: 4px; font-weight: 700; background: #e3ecf7; color: #33567e;">⤳</span> edge e-07 encerrada · sucedida por e-12 (supersede)</div>
+          </div>
+        </section>
+
+        <!-- Verificações automáticas -->
+        <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 12px; padding: 16px 18px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 10px;">VERIFICAÇÕES AUTOMÁTICAS · TRUST LAYER</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div style="border: 1px solid #bcdcc9; background: #f2f9f4; border-radius: 9px; padding: 9px 12px; font-size: 12px;"><strong style="color: #1a6a54;">✓ Soundness</strong> · 9 regras · 0 erros · 1 aviso (SND_IMPLICIT_MERGE)</div>
+            <div style="border: 1px solid #bcdcc9; background: #f2f9f4; border-radius: 9px; padding: 9px 12px; font-size: 12px;"><strong style="color: #1a6a54;">✓ Conformidade</strong> · Descriptive 100% · round-trip lossless</div>
+            <div style="border: 1px solid #bcdcc9; background: #f2f9f4; border-radius: 9px; padding: 9px 12px; font-size: 12px;"><strong style="color: #1a6a54;">✓ Ledger</strong> · cadeia íntegra · 47 entradas verificadas</div>
+            <div style="border: 1px solid #bcdcc9; background: #f2f9f4; border-radius: 9px; padding: 9px 12px; font-size: 12px;"><strong style="color: #1a6a54;">✓ Dependências</strong> · prompt v1.3.0 ativa · decisão DMN v1.0.0 ativa</div>
+          </div>
+        </section>
+
+        <!-- Decisão -->
+        <sc-if value="{{ pending }}" hint-placeholder-val="{{ true }}">
+          <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 12px; padding: 16px 18px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 10px;">SUA DECISÃO · PAPEL: COMPLIANCE</div>
+            <div style="font-size: 12px; color: #6f675a; margin-bottom: 12px; line-height: 1.6;">operação (J. Reis) já aprovou às 10:02. A sua é a 2ª e última aprovação — ao aprovar, a ativação NÃO é automática: a solicitante executa a promoção final no Designer.</div>
+            <div style="display: flex; gap: 10px;">
+              <button onClick="{{ approve }}" style="border: none; background: #1a6a54; color: #ffffff; border-radius: 8px; height: 38px; padding: 0 22px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;" style-hover="background: #14523f;">Aprovar como compliance</button>
+              <button onClick="{{ reject }}" style="border: 1px solid #d9a8a2; background: transparent; color: #b3372f; border-radius: 8px; height: 38px; padding: 0 18px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;" style-hover="background: #f7e6e0;">Rejeitar com justificativa…</button>
+            </div>
+          </section>
+        </sc-if>
+        <sc-if value="{{ decided }}" hint-placeholder-val="{{ false }}">
+          <section style="background: #f2f9f4; border: 1px solid #bcdcc9; border-radius: 12px; padding: 16px 18px; display: flex; align-items: center; gap: 12px;">
+            <span style="color: #1a6a54; font-weight: 700; font-size: 18px;">✓</span>
+            <div style="font-size: 13px; line-height: 1.6;"><strong>Aprovação registrada</strong> — compliance (M. Costa) · gravada no ledger <span style="font-family: 'IBM Plex Mono', monospace; color: #7a611e;">#c4e2…9f</span>. Aprovações completas (2/2); ana.ruiz foi notificada para executar a ativação.</div>
+          </section>
+        </sc-if>
+
+        <div style="font-size: 11px; color: #6f675a; padding-bottom: 24px;">Esta tela é somente leitura sobre o modelo — revisar nunca edita. Toda decisão vira entrada auditável no ledger.</div>
+      </div>
+    </main>
+  </div>
+
+  <footer style="height: 30px; flex-shrink: 0; background: #ffffff; border-top: 1px solid #e2ddd3; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a;">
+    <span>studio · revisão do aprovador · rules engine: multi-role (2 papéis distintos)</span>
+    <span>ledger íntegro ✓</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { selected: 'onb', decided: false };
+
+  renderVals() {
+    const s = this.state;
+    const QUEUE = [
+      { id: 'onb', name: 'Onboarding de Cliente', version: 'v2.1.0', sealLabel: 'CANDIDATA', sealBg: '#f6edd4', sealFg: '#7a611e', meta: '1/2 aprovações', sla: 'SLA: responde em 2 dias', slaColor: '#7a611e' },
+      { id: 'gate', name: 'Gate: Aprovação Dupla', version: 'v1.1.0', sealLabel: 'CANDIDATA', sealBg: '#f6edd4', sealFg: '#7a611e', meta: '0/2 aprovações', sla: 'SLA: responde em 4 dias', slaColor: '#6f675a' },
+      { id: 'sdr', name: 'Agente SDR (IA)', version: 'v2.0.0', sealLabel: 'TESTE INTERNO', sealBg: '#e3ecf7', sealFg: '#33567e', meta: 'test → candidate · 0/1', sla: 'sem prazo', slaColor: '#6f675a' },
+    ];
+    return {
+      queue: QUEUE.map((q) => ({
+        ...q,
+        bg: s.selected === q.id ? '#fdfaf1' : 'transparent',
+        accent: s.selected === q.id ? '#9a7b1e' : 'transparent',
+        pick: () => this.setState({ selected: q.id }),
+      })),
+      pending: !s.decided,
+      decided: s.decided,
+      apCount: s.decided ? 2 : 1,
+      approve: () => this.setState({ decided: true }),
+      reject: () => this.setState({ decided: false }),
+    };
+  }
+}
+</script>
+</body>
+</html>

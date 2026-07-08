@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #faf9f6; }
+  a { color: #9a7b1e; } a:hover { color: #7a611e; }
+</style>
+</helmet>
+<div style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; height: 100vh; display: flex; flex-direction: column; background: #faf9f6; overflow: hidden;">
+
+  <!-- ============ HEADER ============ -->
+  <header data-screen-label="Header" style="height: 58px; flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2ddd3; display: flex; align-items: center; gap: 14px; padding: 0 20px; z-index: 6;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 26px; height: 26px; border-radius: 7px; background: #9a7b1e; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">B</div>
+      <div style="font-weight: 600; font-size: 14px;">BuildToValue <span style="color: #6f675a; font-weight: 400;">Studio</span></div>
+    </div>
+    <div style="width: 1px; height: 22px; background: #e2ddd3;"></div>
+    <nav style="display: flex; gap: 4px; font-size: 12.5px;">
+      <a href="Biblioteca de Templates BTV.dc.html" style="padding: 6px 12px; border-radius: 8px; color: #6f675a; text-decoration: none;" style-hover="background: #f2efe8;">Biblioteca</a>
+      <a href="Revisao do Aprovador BTV.dc.html" style="padding: 6px 12px; border-radius: 8px; color: #6f675a; text-decoration: none;" style-hover="background: #f2efe8;">Revisão</a>
+      <span style="padding: 6px 12px; border-radius: 8px; background: #f6edd4; color: #7a611e; font-weight: 600;">Auditoria</span>
+    </nav>
+    <div style="flex: 1;"></div>
+    <button onClick="{{ verify }}" style="border: 1px solid {{ verifyBorder }}; background: {{ verifyBg }}; color: {{ verifyFg }}; border-radius: 8px; height: 32px; padding: 0 14px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;">{{ verifyLabel }}</button>
+    <button style="border: 1px solid #e2ddd3; background: transparent; border-radius: 8px; height: 32px; padding: 0 14px; font-family: inherit; font-size: 12.5px; color: #262220; cursor: pointer;" style-hover="background: #f2efe8;">Exportar XES</button>
+  </header>
+
+  <!-- ============ BARRA DE FILTROS ============ -->
+  <div data-screen-label="Filtros" style="flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2ddd3; display: flex; align-items: center; gap: 8px; padding: 10px 20px; flex-wrap: wrap;">
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e;">FILTROS</span>
+    <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+      <button onClick="{{ f.pick }}" style="border: 1px solid {{ f.border }}; background: {{ f.bg }}; color: {{ f.fg }}; border-radius: 999px; padding: 5px 13px; font-family: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer;">{{ f.label }} <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; opacity: 0.75;">{{ f.count }}</span></button>
+    </sc-for>
+    <div style="width: 1px; height: 20px; background: #e2ddd3;"></div>
+    <span style="border: 1px solid #e2ddd3; border-radius: 999px; padding: 5px 13px; font-size: 11.5px; color: #6f675a;">artefato: Onboarding de Cliente ✕</span>
+    <span style="border: 1px solid #e2ddd3; border-radius: 999px; padding: 5px 13px; font-size: 11.5px; color: #6f675a;">período: últimos 30 dias ✕</span>
+  </div>
+
+  <!-- Banner de verificação -->
+  <sc-if value="{{ verified }}" hint-placeholder-val="{{ false }}">
+    <div style="flex-shrink: 0; background: #f2f9f4; border-bottom: 1px solid #bcdcc9; padding: 9px 20px; font-size: 12.5px; display: flex; align-items: center; gap: 10px;">
+      <span style="color: #1a6a54; font-weight: 700;">✓ Cadeia íntegra</span>
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #44403a;">47/47 entradas verificadas · head #a3f9…e1 · SHA-256 · verificado agora (08/07/2026 14:12)</span>
+      <a href="#" style="font-size: 11.5px; font-weight: 600; margin-left: auto;">baixar VerificationReport.json</a>
+    </div>
+  </sc-if>
+
+  <div style="flex: 1; display: flex; min-height: 0;">
+
+    <!-- ============ TRILHA DE EVENTOS ============ -->
+    <main data-screen-label="Trilha" style="flex: 1; min-width: 0; overflow-y: auto; padding: 18px 24px;">
+      <div style="max-width: 720px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 12px;">TRILHA · ONBOARDING DE CLIENTE · 47 ENTRADAS (8 VISÍVEIS NO FILTRO)</div>
+        <sc-for list="{{ events }}" as="ev" hint-placeholder-count="8">
+          <div onClick="{{ ev.pick }}" style="display: flex; gap: 12px; cursor: pointer; border-radius: 10px; padding: 9px 10px; background: {{ ev.bg }}; border: 1px solid {{ ev.border }};" style-hover="background: #f7f5f0;">
+            <div style="display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 20px;">
+              <div style="width: 10px; height: 10px; border-radius: {{ ev.dotRadius }}; background: {{ ev.dotColor }}; margin-top: 4px;"></div>
+              <div style="flex: 1; width: 1.5px; background: #e2ddd3; margin-top: 4px;"></div>
+            </div>
+            <div style="flex: 1; padding-bottom: 8px;">
+              <div style="display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;">
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.5px; color: {{ ev.dotColor }};">{{ ev.type }}</span>
+                <span style="font-size: 12.5px; font-weight: 500;">{{ ev.title }}</span>
+              </div>
+              <div style="font-size: 11px; color: #6f675a; margin-top: 2px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <span>{{ ev.who }}</span><span>{{ ev.when }}</span>
+                <span style="font-family: 'IBM Plex Mono', monospace;">{{ ev.hash }}</span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </main>
+
+    <!-- ============ DETALHE DA ENTRADA ============ -->
+    <aside data-screen-label="Detalhe da entrada" style="width: 340px; flex-shrink: 0; background: #ffffff; border-left: 1px solid #e2ddd3; overflow-y: auto; padding: 16px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 8px;">ENTRADA DO LEDGER · {{ selType }}</div>
+      <div style="font-size: 15px; font-weight: 700; margin-bottom: 10px;">{{ selTitle }}</div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 12px; margin-bottom: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.9; color: #44403a;">
+        index: {{ selIndex }}<br>
+        hash: {{ selHash }}<br>
+        prev: {{ selPrev }}<br>
+        autor: {{ selWho }}<br>
+        quando: {{ selWhen }}<br>
+        íntegra: <span style="color: #1a6a54; font-weight: 600;">✓ verificada</span>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 12px; margin-bottom: 10px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 6px;">PAYLOAD</div>
+        <div style="font-size: 12px; line-height: 1.6; color: #44403a;">{{ selPayload }}</div>
+      </div>
+
+      <sc-if value="{{ selHasAttestation }}" hint-placeholder-val="{{ false }}">
+        <div style="border: 1px solid #e8d9ae; background: #fdfaf1; border-radius: 10px; padding: 11px 12px; margin-bottom: 10px;">
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 6px;">ATTESTATION · SNAPSHOT DA PROMOÇÃO</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.9; color: #44403a;">
+            xmlHash: #77b2…4c<br>
+            ledgerHead: #a3f9…e1<br>
+            aprovadores: operação, compliance<br>
+            effectiveFrom: 07/07/2026
+          </div>
+          <a href="#" style="font-size: 11.5px; font-weight: 600;">baixar attestation.json</a>
+        </div>
+      </sc-if>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button style="border: 1px solid #e2ddd3; background: transparent; border-radius: 8px; padding: 9px 0; font-family: inherit; font-size: 12.5px; font-weight: 600; color: #262220; cursor: pointer;" style-hover="background: #f2efe8;">Ver diff desta mudança</button>
+        <button style="border: 1px solid #e2ddd3; background: transparent; border-radius: 8px; padding: 9px 0; font-family: inherit; font-size: 12.5px; font-weight: 600; color: #262220; cursor: pointer;" style-hover="background: #f2efe8;">Abrir versão no Designer (leitura)</button>
+      </div>
+    </aside>
+  </div>
+
+  <footer style="height: 30px; flex-shrink: 0; background: #ffffff; border-top: 1px solid #e2ddd3; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a;">
+    <span>studio · auditoria · verifyLedger + attestation + XES (@buildtovalue/audit)</span>
+    <span>respondendo: "quem mudou o quê, quando — e a cadeia está íntegra?"</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { filter: 'todos', selected: 4, verified: false };
+
+  static EVENTS = [
+    { i: 47, kind: 'promo', type: 'PROMOTION', title: 'v2.1.0 candidate → active', who: 'ana.ruiz', when: '07/07 16:40', hash: '#a3f9…e1', payload: 'Ativação executada após 2/2 aprovações. v2.0.0 → deprecated (effectiveUntil 07/07). Attestation gravado.', attest: true },
+    { i: 46, kind: 'aprova', type: 'APPROVAL', title: 'compliance aprovou v2.1.0', who: 'marta.costa', when: '07/07 14:12', hash: '#c4e2…9f', payload: 'Aprovação de papel compliance no gate multi-role (2ª de 2).', attest: false },
+    { i: 45, kind: 'aprova', type: 'APPROVAL', title: 'operação aprovou v2.1.0', who: 'j.reis', when: '07/07 10:02', hash: '#91bd…3a', payload: 'Aprovação de papel operação no gate multi-role (1ª de 2).', attest: false },
+    { i: 44, kind: 'check', type: 'SOUNDNESS', title: '9 regras · 0 erros · 1 aviso', who: 'sistema', when: '07/07 09:15', hash: '#5f07…c8', payload: 'SND_IMPLICIT_MERGE (warning) em "Notificar líder". Nenhum erro bloqueante — gate de promoção liberado.', attest: false },
+    { i: 43, kind: 'edita', type: 'COMMAND', title: 'edge e-07 encerrada · sucedida por e-12', who: 'ana.ruiz', when: '05/07 11:33', hash: '#f3a9…c2', payload: 'supersedesEdgeId: e-07 → e-12. Imutabilidade temporal: a versão antiga permanece consultável.', attest: false },
+    { i: 42, kind: 'edita', type: 'COMMAND', title: '+ boundary timer 48h em "Gerar plano"', who: 'ana.ruiz', when: '05/07 11:30', hash: '#8c1e…77', payload: 'boundaryEvent (timerEventDefinition, non-interrupting=false) anexado com t=0.33 lado inferior.', attest: false },
+    { i: 41, kind: 'edita', type: 'COMMAND', title: '+ prompt "Gerar plano de conta"', who: 'ana.ruiz', when: '05/07 11:22', hash: '#2b9d…10', payload: 'Nó btv:prompt criado na lane Agentes IA, vinculado ao template prompt v1.3.0 (bindRun).', attest: false },
+    { i: 40, kind: 'promo', type: 'PROMOTION', title: 'v2.1.0 test → candidate', who: 'ana.ruiz', when: '04/07 17:05', hash: '#66aa…b4', payload: 'Promoção com change_summary registrado. Canal: piloto.', attest: false },
+  ];
+
+  renderVals() {
+    const s = this.state;
+    const KIND = {
+      promo: { color: '#9a7b1e', radius: '2px' },
+      aprova: { color: '#1a6a54', radius: '50%' },
+      edita: { color: '#44403a', radius: '50%' },
+      check: { color: '#33567e', radius: '2px' },
+    };
+    const match = (e) => s.filter === 'todos' || e.kind === s.filter;
+    const list = Component.EVENTS.filter(match);
+    const cur = Component.EVENTS.find((e) => e.i === s.selected) ?? list[0] ?? Component.EVENTS[0];
+
+    const count = (k) => (k === 'todos' ? Component.EVENTS.length : Component.EVENTS.filter((e) => e.kind === k).length);
+    const filters = [
+      { key: 'todos', label: 'Todos' },
+      { key: 'promo', label: 'Promoções' },
+      { key: 'aprova', label: 'Aprovações' },
+      { key: 'edita', label: 'Comandos' },
+      { key: 'check', label: 'Verificações' },
+    ].map((f) => ({
+      ...f,
+      count: count(f.key),
+      bg: s.filter === f.key ? '#9a7b1e' : 'transparent',
+      fg: s.filter === f.key ? '#ffffff' : '#44403a',
+      border: s.filter === f.key ? '#9a7b1e' : '#e2ddd3',
+      pick: () => this.setState({ filter: f.key }),
+    }));
+
+    return {
+      filters,
+      events: list.map((e) => ({
+        ...e,
+        dotColor: KIND[e.kind].color,
+        dotRadius: KIND[e.kind].radius,
+        bg: s.selected === e.i ? '#fdfaf1' : 'transparent',
+        border: s.selected === e.i ? '#e8d9ae' : 'transparent',
+        pick: () => this.setState({ selected: e.i }),
+      })),
+      selType: cur.type,
+      selTitle: cur.title,
+      selIndex: cur.i,
+      selHash: cur.hash,
+      selPrev: Component.EVENTS.find((e) => e.i === cur.i - 1)?.hash ?? '#genesis',
+      selWho: cur.who,
+      selWhen: cur.when + '/2026',
+      selPayload: cur.payload,
+      selHasAttestation: cur.attest,
+      verified: s.verified,
+      verify: () => this.setState({ verified: !s.verified }),
+      verifyLabel: s.verified ? '✓ Cadeia íntegra (47/47)' : 'Verificar cadeia',
+      verifyBg: s.verified ? '#dff0e6' : 'transparent',
+      verifyFg: s.verified ? '#1a6a54' : '#262220',
+      verifyBorder: s.verified ? '#1a6a54' : '#e2ddd3',
+    };
+  }
+}
+</script>
+</body>
+</html>
