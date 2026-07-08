@@ -49,6 +49,7 @@ const EXPECTED_EXPORTS = [
   'IntermediateCatchEventShape',
   'IntermediateThrowEventShape',
   'LaneShape',
+  'LedgerStatus',
   'MAX_VIEWPORT_WIDTH',
   'MIN_VIEWPORT_WIDTH',
   'ManualTaskShape',

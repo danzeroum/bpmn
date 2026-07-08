@@ -45,6 +45,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'audit',
+      include: ['packages/audit/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'react',
       include: ['packages/react/tests/**/*.test.{ts,tsx}'],
       environment: 'jsdom',

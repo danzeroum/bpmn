@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  AuditLedger,
   BpmnXmlConverter,
   createDiagram,
   createEdge,
@@ -11,7 +12,9 @@ import {
   JsonSerializer,
 } from '@bpmn-react/core';
 import {
+  auditCommand,
   certifyCommand,
+  formatAudit,
   diffCommand,
   formatCertify,
   exportCommand,
@@ -171,5 +174,47 @@ describe('certifyCommand / formatCertify (Handoff 4 §A2)', () => {
     expect(report.roundTripLossless).toBe(true);
     const { readFile } = await import('node:fs/promises');
     expect(JSON.parse(await readFile(out, 'utf8')).achievedClass).toBe('descriptive');
+  });
+});
+
+describe('auditCommand', () => {
+  async function ledgerFixture() {
+    const dir = await mkdtemp(join(tmpdir(), 'bpmnr-audit-'));
+    const ledger = new AuditLedger();
+    await ledger.append({ type: 'NODE_ADDED', userId: 'ana', versionId: 'v1', details: { nodeId: 'a' } });
+    await ledger.append({ type: 'VERSION_ACTIVATED', userId: 'bia', versionId: 'v1', details: {} });
+    return { dir, ledger };
+  }
+
+  it('verifies an intact exported ledger (exit path 0)', async () => {
+    const { dir, ledger } = await ledgerFixture();
+    const path = join(dir, 'ledger.json');
+    await writeFile(path, JSON.stringify(ledger.export()));
+    const report = await auditCommand(path);
+    expect(report.intact).toBe(true);
+    expect(formatAudit(report)).toContain('íntegro ✓');
+  });
+
+  it('detects a tampered byte and points at the entry (exit path 1)', async () => {
+    const { dir, ledger } = await ledgerFixture();
+    const exported = ledger.export();
+    exported.entries[1] = { ...exported.entries[1], userId: 'eve' };
+    const path = join(dir, 'tampered.json');
+    await writeFile(path, JSON.stringify(exported));
+    const report = await auditCommand(path);
+    expect(report.intact).toBe(false);
+    expect(report.firstBreak?.index).toBe(1);
+    expect(formatAudit(report)).toContain('QUEBRADO ✗');
+    expect(formatAudit(report)).toContain('#1');
+  });
+
+  it('rejects files that are not exported ledgers', async () => {
+    const { dir } = await ledgerFixture();
+    const path = join(dir, 'not-ledger.json');
+    await writeFile(path, JSON.stringify({ nope: true }));
+    await expect(auditCommand(path)).rejects.toThrow('missing "entries"');
+    const bad = join(dir, 'bad.json');
+    await writeFile(bad, '{oops');
+    await expect(auditCommand(bad)).rejects.toThrow('not valid JSON');
   });
 });

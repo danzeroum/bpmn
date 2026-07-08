@@ -9,9 +9,11 @@ import * as api from '../src/index.js';
  */
 const EXPECTED_EXPORTS = [
   'approveCommand',
+  'auditCommand',
   'certifyCommand',
   'diffCommand',
   'exportCommand',
+  'formatAudit',
   'formatCertify',
   'formatDiff',
   'formatEntry',

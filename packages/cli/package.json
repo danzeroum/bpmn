@@ -27,6 +27,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@bpmn-react/audit": "workspace:*",
     "@bpmn-react/conformance": "workspace:*",
     "@bpmn-react/core": "workspace:*",
     "@bpmn-react/registry": "workspace:*",

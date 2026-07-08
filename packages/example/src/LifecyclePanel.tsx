@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { attestationHash, attestVersion } from '@bpmn-react/audit';
 import {
   computeDiff,
   type AuditLedger,
@@ -6,6 +7,7 @@ import {
   type UserContext,
   type VersionStatus,
 } from '@bpmn-react/core';
+import { VersionRegistry } from '@bpmn-react/registry';
 import {
   DiffView,
   PromotionPanel,
@@ -26,7 +28,10 @@ const ACTORS: UserContext[] = [
  * lifecycle (activation goes through the formal PromotionPanel), clone
  * active diagrams into new drafts, inspect the diff since the baseline.
  */
-export function LifecyclePanel({ ledger }: { ledger?: AuditLedger } = {}) {
+export function LifecyclePanel({
+  ledger,
+  onLedgerAppend,
+}: { ledger?: AuditLedger; onLedgerAppend?: () => void } = {}) {
   const { diagram, replaceDiagram } = useDiagram();
   // The plugin-configured engine — the same one the StatusBadge and the
   // PromotionPanel reflect (never a parallel instance).
@@ -37,6 +42,10 @@ export function LifecyclePanel({ ledger }: { ledger?: AuditLedger } = {}) {
   const [showDiff, setShowDiff] = useState(false);
   const [promoOpen, setPromoOpen] = useState(false);
   const [lastActive, setLastActive] = useState<{ semanticVersion: string } | null>(null);
+  // Session-local registry: activated versions are registered so the
+  // attestation (B1) can be built and anchored into the shared ledger.
+  const registryRef = useRef<VersionRegistry | null>(null);
+  if (registryRef.current === null) registryRef.current = new VersionRegistry();
   const [history, setHistory] = useState<VersionTimelineItem[]>([]);
 
   // Session-local version history, one entry per semver: refreshed as the
@@ -220,6 +229,26 @@ export function LifecyclePanel({ ledger }: { ledger?: AuditLedger } = {}) {
         onActivated={({ diagram: promoted }) => {
           setBaseline(promoted);
           setLastActive({ semanticVersion: promoted.version.semanticVersion });
+          // Attestation (Handoff 4 §B1): register the activated version and
+          // anchor its signable snapshot into the hash-chained ledger.
+          void (async () => {
+            const registry = registryRef.current!;
+            await registry.register(promoted);
+            const attestation = await attestVersion(registry, promoted.id, promoted.version.id, {
+              ...(ledger ? { ledger } : {}),
+            });
+            await ledger?.append({
+              type: 'VERSION_ATTESTED',
+              userId: actor.id,
+              versionId: promoted.version.id,
+              details: {
+                attestationHash: await attestationHash(attestation),
+                xmlHash: attestation.xmlHash,
+                ledgerHeadHash: attestation.ledgerHeadHash,
+              },
+            });
+            onLedgerAppend?.();
+          })();
         }}
       />
     </aside>
