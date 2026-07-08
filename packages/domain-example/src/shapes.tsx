@@ -20,8 +20,9 @@ const sw = (selected: boolean) => (selected ? 2.5 : 1.5);
 const GOLD = 'var(--btv-gold, #9a7b1e)';
 
 function TypeTag({ text, x, y, color }: { text: string; x: number; y: number; color: string }) {
+  // data-shape-tag: hidden by the semantic-zoom CSS below 60% (craft pack A5).
   return (
-    <text x={x} y={y} fontSize={8} letterSpacing={1.4} fill={color} pointerEvents="none">
+    <text x={x} y={y} fontSize={8} letterSpacing={1.4} fill={color} pointerEvents="none" data-shape-tag>
       {text}
     </text>
   );

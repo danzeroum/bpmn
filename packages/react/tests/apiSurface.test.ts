@@ -54,6 +54,8 @@ const EXPECTED_EXPORTS = [
   'PropertiesPanel',
   'ReceiveTaskShape',
   'ScriptTaskShape',
+  'SEAL_LABELS',
+  'SEMANTIC_ZOOM_MIN',
   'SHADOW_FILTER_ID',
   'SHADOW_HOVER_FILTER_ID',
   'SelectionBoxOverlay',

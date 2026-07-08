@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   computeDiff,
   type AuditLedger,
@@ -6,7 +6,14 @@ import {
   type UserContext,
   type VersionStatus,
 } from '@bpmn-react/core';
-import { DiffView, PromotionPanel, useDiagram, useEditorConfig } from '@bpmn-react/react';
+import {
+  DiffView,
+  PromotionPanel,
+  useDiagram,
+  useEditorConfig,
+  VersionTimeline,
+  type VersionTimelineItem,
+} from '@bpmn-react/react';
 
 const ACTORS: UserContext[] = [
   { id: 'u-owner', role: 'owner', name: 'Olivia (owner)' },
@@ -30,6 +37,45 @@ export function LifecyclePanel({ ledger }: { ledger?: AuditLedger } = {}) {
   const [showDiff, setShowDiff] = useState(false);
   const [promoOpen, setPromoOpen] = useState(false);
   const [lastActive, setLastActive] = useState<{ semanticVersion: string } | null>(null);
+  const [history, setHistory] = useState<VersionTimelineItem[]>([]);
+
+  // Session-local version history, one entry per semver: refreshed as the
+  // version record evolves; a newly active version closes the vigência of
+  // the previously active one (mirrors what a registry-backed host derives
+  // from channelTimeline).
+  useEffect(() => {
+    const v = diagram.version;
+    const roles = [...new Set(v.approvedBy.map((a) => a.role))];
+    setHistory((prev) => {
+      const exists = prev.some((item) => item.semanticVersion === v.semanticVersion);
+      const refreshed: VersionTimelineItem = {
+        id: v.id,
+        semanticVersion: v.semanticVersion,
+        status: v.status,
+        changeSummary: v.changeSummary,
+        approvers: roles,
+        effectiveFrom: v.effectiveFrom,
+        effectiveUntil: v.effectiveUntil,
+        current: true,
+      };
+      let next = prev.map((item) =>
+        item.semanticVersion === v.semanticVersion
+          ? { ...item, ...refreshed }
+          : { ...item, current: false },
+      );
+      if (!exists) next = [...next, refreshed];
+      if (v.status === 'active') {
+        next = next.map((item) =>
+          item.semanticVersion !== v.semanticVersion &&
+          item.status === 'active' &&
+          !item.effectiveUntil
+            ? { ...item, status: 'deprecated' as const, effectiveUntil: v.effectiveFrom }
+            : item,
+        );
+      }
+      return next;
+    });
+  }, [diagram.version]);
 
   const version = diagram.version;
   const targets = engine.allowedTargets(version.status);
@@ -137,6 +183,11 @@ export function LifecyclePanel({ ledger }: { ledger?: AuditLedger } = {}) {
           {message}
         </p>
       )}
+
+      <div className="demo-history">
+        <strong>Histórico</strong>
+        <VersionTimeline items={history} />
+      </div>
 
       <dl className="demo-version-meta">
         <dt>Version id</dt>

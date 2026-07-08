@@ -137,6 +137,7 @@ function EdgeRendererInner({
       )}
       {edge.label && (
         <text
+          className="bpmnr-edge-label"
           x={geometry.midpoint.x}
           y={geometry.midpoint.y - 8}
           textAnchor="middle"

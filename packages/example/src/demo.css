@@ -85,6 +85,17 @@
   overflow: auto;
 }
 
+.demo-history {
+  margin-top: 10px;
+}
+
+.demo-history .bpmnr-timeline {
+  max-height: 180px;
+  overflow-y: auto;
+  margin: 6px 0 0;
+  padding-left: 4px;
+}
+
 .demo-lifecycle h3,
 .demo-audit h3 {
   margin: 0 0 8px;

@@ -18,6 +18,14 @@ export interface CanvasProps {
 }
 
 /**
+ * Semantic zoom (craft pack A5): below this zoom the canvas is stamped
+ * `data-zoom-band="reduced"` and CSS fades out secondary ink — edge labels
+ * and domain type tags ([data-shape-tag]). Same threshold as the purpose
+ * chip in the EdgeRenderer.
+ */
+export const SEMANTIC_ZOOM_MIN = 0.6;
+
+/**
  * The SVG canvas. Pan/zoom via the `viewBox` attribute (crisp text at every
  * zoom level); world-coordinate conversion via `getScreenCTM().inverse()`.
  */
@@ -53,6 +61,7 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
       className="bpmnr-canvas"
       role="application"
       aria-label={`BPMN diagram: ${diagram.name}`}
+      data-zoom-band={1200 / viewport.width >= SEMANTIC_ZOOM_MIN ? 'full' : 'reduced'}
       width="100%"
       height="100%"
       viewBox={`${viewport.x} ${viewport.y} ${viewport.width} ${viewport.height}`}

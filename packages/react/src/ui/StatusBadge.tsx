@@ -5,9 +5,10 @@ import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 /**
  * Canonical seal labels (Handoff 3 §5 — "usar em TODO o produto"). Labels are
  * presentation; `data-status` is the machine-readable contract. Colors live in
- * styles.css under `[data-status]` so themes can override them.
+ * styles.css under `[data-status]` so themes can override them. Shared with
+ * the VersionTimeline so every seal in the product reads the same.
  */
-const STATUS_LABELS: Record<VersionStatus, string> = {
+export const SEAL_LABELS: Record<VersionStatus, string> = {
   draft: 'RASCUNHO',
   test: 'TESTE INTERNO',
   candidate: 'CANDIDATA',
@@ -34,7 +35,7 @@ export function StatusBadge({ channel }: StatusBadgeProps) {
   const { diagram } = useDiagram();
   const { lifecycleEngine } = useEditorConfig();
   const { status, semanticVersion, approvedBy, effectiveFrom, effectiveUntil } = diagram.version;
-  const label = STATUS_LABELS[status] ?? STATUS_LABELS.draft;
+  const label = SEAL_LABELS[status] ?? SEAL_LABELS.draft;
 
   const distinctRoles = [...new Set(approvedBy.map((a) => a.role))];
   let meta: string | undefined;
