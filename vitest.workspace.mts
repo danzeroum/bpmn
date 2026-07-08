@@ -73,6 +73,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'adapters-bpmn',
+      include: ['packages/adapters-bpmn/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'react',
       include: ['packages/react/tests/**/*.test.{ts,tsx}'],
       environment: 'jsdom',

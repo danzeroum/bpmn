@@ -16,6 +16,18 @@ All notable changes to the `@bpmn-react/*` packages are documented here. The pro
   test (no imports from `core`/`registry`/`react` — Handoff 6 §10.2).
 - Workspace-only (`private: true`) until the npm-scope decision (pendências §1).
 
+### Adapters BPMN (`@bpmn-react/adapters-bpmn`) — new package (Handoff 6, S-2)
+- Concrete `ArtifactAdapter`s over the version registry: flow, persona, prompt, connector and
+  policy adapters as thin configurations of one `createRegistryAdapter` factory; observer
+  channel picks the relevant version via publication windows.
+- DMN decisions as "mais um adapter" (`dmnDecisionAdapter`): `dmn:decision` nodes of registered
+  diagrams, duck-typed on the DMN vocabulary so the package stays headless.
+- Headless SVG thumbnails (`diagramThumbnail`, `decisionThumbnail`) drawn from diagram geometry
+  with `--btv-*` token colors — thumbnails are data, never imported components (§3.1).
+- The "recipe" acid-test fixture (`createRecipeAdapter`) + `tests/acidez.test.ts` proving the
+  library works with a non-BPMN adapter alone (Handoff 6 §10.1).
+- Workspace-only (`private: true`) until the npm-scope decision (pendências §1).
+
 ## 1.0.0 — 2026-07-07
 
 First stable release. All packages (`core`, `react`, `registry`, `domain-example`, `cli`) move

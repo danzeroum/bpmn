@@ -51,6 +51,18 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.0)(jsdom@25.0.1)
 
+  packages/adapters-bpmn:
+    dependencies:
+      '@bpmn-react/core':
+        specifier: workspace:*
+        version: link:../core
+      '@bpmn-react/library':
+        specifier: workspace:*
+        version: link:../library
+      '@bpmn-react/registry':
+        specifier: workspace:*
+        version: link:../registry
+
   packages/audit:
     dependencies:
       '@bpmn-react/core':
