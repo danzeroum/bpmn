@@ -1,4 +1,5 @@
 import type { Point, Rect } from '../model/types.js';
+import { roundCoord } from '../persistence/hash.js';
 
 export type Side = 'left' | 'right' | 'top' | 'bottom';
 
@@ -65,6 +66,22 @@ export interface EdgeGeometry {
   end: Point;
   /** Point suitable for placing a label. */
   midpoint: Point;
+}
+
+/**
+ * Straight-line connection between two rectangles, anchored on their borders
+ * — the DMN DRD routing (requirement edges are straight per spec; Handoff 5
+ * §4.1). No bends, no curvature.
+ */
+export function straightConnection(source: Rect, target: Rect): EdgeGeometry {
+  const start = getAnchorPoint(source, rectCenter(target)).point;
+  const end = getAnchorPoint(target, rectCenter(source)).point;
+  return {
+    path: `M ${roundCoord(start.x)} ${roundCoord(start.y)} L ${roundCoord(end.x)} ${roundCoord(end.y)}`,
+    start,
+    end,
+    midpoint: { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 },
+  };
 }
 
 /**

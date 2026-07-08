@@ -1,10 +1,11 @@
 import { useRef, useState } from 'react';
 import { AuditLedger, BpmnXmlConverter, type BpmnDiagram } from '@bpmn-react/core';
 import { BpmnEditor, resolveEditorConfig, useDiagram, type BpmnPlugin } from '@bpmn-react/react';
+import { dmnPlugin } from '@bpmn-react/dmn';
 import { domainExamplePlugin } from '@bpmn-react/domain-example';
 import { callActivityBindingRule, VersionRegistry } from '@bpmn-react/registry';
 import { soundnessPromotionRule, soundnessRules } from '@bpmn-react/soundness';
-import { buildDeadlockDiagram, buildSampleDiagram, buildStressDiagram } from './sampleDiagram.js';
+import { buildDeadlockDiagram, buildDrdDiagram, buildSampleDiagram, buildStressDiagram } from './sampleDiagram.js';
 import { LifecyclePanel } from './LifecyclePanel.js';
 import { AuditPanel } from './AuditPanel.js';
 import './demo.css';
@@ -37,7 +38,7 @@ const bindingPlugin: BpmnPlugin = {
   validationRules: [callActivityBindingRule(demoProcessRegistry)],
 };
 
-const PLUGINS = [domainExamplePlugin, observabilityPlugin, soundnessPlugin, bindingPlugin];
+const PLUGINS = [domainExamplePlugin, dmnPlugin, observabilityPlugin, soundnessPlugin, bindingPlugin];
 
 export function App() {
   const [diagram, setDiagram] = useState<BpmnDiagram>(() => {
@@ -47,6 +48,7 @@ export function App() {
     const stress = params.get('stress');
     if (stress) return buildStressDiagram(Number(stress) || 350);
     if (params.get('deadlock')) return buildDeadlockDiagram();
+    if (params.get('drd')) return buildDrdDiagram();
     return buildSampleDiagram();
   });
   const [editorKey, setEditorKey] = useState(0);

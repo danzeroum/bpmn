@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import {
+  straightConnection,
   waypointsToPath,
   type BpmnEdge,
   type BpmnNode,
@@ -13,6 +14,7 @@ import {
   ARROW_MARKER_MUTED_ID,
   ARROW_MARKER_SELECTED_ID,
   EDGE_MARKER_CHEVRON_ID,
+  EDGE_MARKER_DISC_ID,
   EDGE_MARKER_FILLED_ID,
   EDGE_MARKER_OPEN_ID,
 } from './Defs.js';
@@ -27,6 +29,7 @@ const DOMAIN_MARKER: Record<NonNullable<EdgeStyle['marker']>, string> = {
   filled: EDGE_MARKER_FILLED_ID,
   open: EDGE_MARKER_OPEN_ID,
   'double-chevron': EDGE_MARKER_CHEVRON_ID,
+  disc: EDGE_MARKER_DISC_ID,
 };
 
 export interface EdgeRendererProps {
@@ -81,6 +84,11 @@ function EdgeRendererInner({
 
   const closed = edge.removedInVersion !== undefined;
   const domainStyle: EdgeStyle | undefined = config.edgeStyles[edge.type];
+  // DMN requirement edges route STRAIGHT regardless of the editor's router
+  // (Handoff 5 §4.1); explicit waypoints still win.
+  if (domainStyle?.routing === 'straight' && !(edge.waypoints && edge.waypoints.length >= 2 && !dragging)) {
+    geometry = straightConnection(shiftedSource, shiftedTarget);
+  }
 
   // State always wins: closed (retired) → muted dashed, selected → highlight.
   // The domain style only paints the resting (open, unselected) edge.

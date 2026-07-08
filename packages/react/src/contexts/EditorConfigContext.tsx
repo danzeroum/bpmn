@@ -81,6 +81,28 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
   let edgeRouter: EdgeRouterFn = cubicBezierConnection;
   let autosave = true;
 
+  // Family/domain color contract (Handoff 5 §10.3): one wheel step per
+  // domain — a collision is a build warning; gold/green are reserved for
+  // governance/approval and rejected as domain body colors.
+  const wheelClaims = new Map<number, string>();
+  for (const plugin of resolved) {
+    if (plugin.colorWheelDegree !== undefined) {
+      const holder = wheelClaims.get(plugin.colorWheelDegree);
+      if (holder) {
+        console.warn(
+          `[bpmn-react] color wheel collision: plugins "${holder}" and "${plugin.id}" both claim the ${plugin.colorWheelDegree}° step — each domain must claim its own (Handoff 5 §7.4)`,
+        );
+      } else {
+        wheelClaims.set(plugin.colorWheelDegree, plugin.id);
+      }
+    }
+    if (plugin.bodyColor && /btv-gold|btv-green|#9a7b1e|#1a6a54/i.test(plugin.bodyColor)) {
+      console.warn(
+        `[bpmn-react] plugin "${plugin.id}" uses a RESERVED color as domain body color (gold = governance/value, green = approval/selection — Handoff 5 §7.5)`,
+      );
+    }
+  }
+
   for (const plugin of resolved) {
     for (const def of plugin.nodeTypes ?? []) {
       if (!registry.has(def.type)) registry.register(def);

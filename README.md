@@ -36,6 +36,7 @@ What makes it different from generic BPMN editors:
 | [`@bpmn-react/conformance`](packages/conformance) | OMG conformance tooling: interoperability corpus (50+ files), element-by-element matrix, `certifyXml`. |
 | [`@bpmn-react/soundness`](packages/soundness) | Structural soundness analysis: deadlock/livelock/dead-branch rules over the process graph (O(V+E), scope-aware), plugin-compatible. |
 | [`@bpmn-react/audit`](packages/audit) | Demonstrable integrity: hash-chain ledger verification (`verifyLedger`), canonical promotion attestations (`attestVersion`), XES 2.0 export for process mining (`toXES`). |
+| [`@bpmn-react/dmn`](packages/dmn) | DMN family (wheel step 185°): DRD node types/shapes, requirement edges (straight routing) and a DMN 1.3+ XML converter. Workspace-only until the npm-scope decision (pendências §1). |
 | [`@bpmn-react/cli`](packages/cli) | Headless CLI: `validate`, `certify`, `export`, `diff`, registry/governance commands. |
 | [`@bpmn-react/example`](packages/example) | Demo app (Vite) with the full designer. |
 

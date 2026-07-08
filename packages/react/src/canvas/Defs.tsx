@@ -12,6 +12,7 @@ export const ARROW_MARKER_SELECTED_ID = 'bpmnr-arrow-selected';
 export const EDGE_MARKER_FILLED_ID = 'bpmnr-edge-filled';
 export const EDGE_MARKER_OPEN_ID = 'bpmnr-edge-open';
 export const EDGE_MARKER_CHEVRON_ID = 'bpmnr-edge-chevron';
+export const EDGE_MARKER_DISC_ID = 'bpmnr-edge-disc';
 
 /** Craft-pack drop shadow, applied only to activity/card shapes. */
 export const SHADOW_FILTER_ID = 'bpmnr-shadow';
@@ -95,6 +96,18 @@ export function Defs({ gridSize }: { gridSize: number }) {
         orient="auto-start-reverse"
       >
         <path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="context-stroke" strokeWidth="1.4" />
+      </marker>
+      {/* Filled disc — the DMN authority-requirement tip (Handoff 5 §4.1). */}
+      <marker
+        id={EDGE_MARKER_DISC_ID}
+        viewBox="0 0 10 10"
+        refX="5"
+        refY="5"
+        markerWidth="7"
+        markerHeight="7"
+        orient="auto-start-reverse"
+      >
+        <circle cx="5" cy="5" r="3.5" fill="context-stroke" />
       </marker>
       {/* Double chevron for escalation edges. */}
       <marker

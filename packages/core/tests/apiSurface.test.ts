@@ -117,6 +117,7 @@ const EXPECTED_EXPORTS = [
   'selfConnectionRule',
   'sha256Hex',
   'snapToGrid',
+  'straightConnection',
   'staleLaneRefRule',
   'supersedeEdgeCommand',
   'unknownTypeRule',
