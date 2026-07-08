@@ -18,6 +18,8 @@
   --bpmnr-panel-bg: #ffffff;
   --bpmnr-panel-border: #e2ddd3;
   --bpmnr-minimap-bg: rgba(250, 249, 246, 0.92);
+  --bpmnr-shadow: #44403a;
+  --bpmnr-hover: #f2efe8;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -38,6 +40,8 @@
     --bpmnr-panel-bg: #26241f;
     --bpmnr-panel-border: #3a362f;
     --bpmnr-minimap-bg: rgba(29, 27, 24, 0.92);
+    --bpmnr-shadow: #000000;
+    --bpmnr-hover: #2d2a25;
   }
 }
 
@@ -68,6 +72,9 @@
   top: 60px;
   left: 10px;
   z-index: 3;
+  /* The grouped palette can outgrow small hosts — scroll instead of clipping. */
+  max-height: calc(100% - 80px);
+  overflow-y: auto;
 }
 
 .bpmnr-chrome-right {
@@ -109,6 +116,7 @@
   cursor: pointer;
   font-size: 13px;
   color: var(--bpmnr-text);
+  transition: background-color 120ms ease-out;
 }
 
 .bpmnr-toolbar button:hover:not(:disabled) {
@@ -202,22 +210,55 @@
   width: 150px;
 }
 
+.bpmnr-palette-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bpmnr-palette-group + .bpmnr-palette-group {
+  margin-top: 8px;
+}
+
+.bpmnr-palette-group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 4px 8px 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--bpmnr-palette-header-color, var(--bpmnr-text-muted));
+}
+
+.bpmnr-palette-group-badge {
+  padding: 0 5px;
+  border-radius: 999px;
+  border: 1px solid var(--bpmnr-panel-border);
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+
 .bpmnr-palette-item {
   display: flex;
   align-items: center;
   gap: 8px;
   border: none;
-  background: transparent;
+  background: var(--bpmnr-palette-item-bg, transparent);
   border-radius: 6px;
   padding: 6px 8px;
   cursor: pointer;
   font-size: 12px;
   color: var(--bpmnr-text);
   text-align: left;
+  transition: background-color 120ms ease-out;
 }
 
 .bpmnr-palette-item:hover {
-  background: var(--bpmnr-panel-border);
+  background: var(--bpmnr-palette-item-hover-bg, var(--bpmnr-hover));
 }
 
 .bpmnr-palette-item:focus-visible {
@@ -226,6 +267,9 @@
 
 .bpmnr-palette-icon {
   width: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 
@@ -447,6 +491,7 @@
   cursor: pointer;
   color: inherit;
   font: inherit;
+  transition: background-color 120ms ease-out;
 }
 
 .bpmnr-timeline-body:disabled {
@@ -518,6 +563,7 @@
   /* marca */
   --btv-gold: #9a7b1e;            /* ouro 9 — completude/valor */
   --btv-gold-soft: #f6edd4;
+  --btv-palette-item-bg: #fdfaf1; /* fundo de repouso dos itens btv na paleta */
   --btv-green: #1a6a54;           /* verde — equilíbrio/aprovação (== --bpmnr-selected) */
 
   /* domínio */
@@ -544,6 +590,7 @@
   :root {
     --btv-gold: #cba84b;
     --btv-gold-soft: #33301f;
+    --btv-palette-item-bg: #2b2820;
     --btv-green: #57b895;
 
     --btv-squad-fill: #262a36;      --btv-squad-stroke: #8d9cd6;

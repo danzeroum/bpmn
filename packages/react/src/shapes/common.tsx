@@ -2,6 +2,13 @@ import type { ReactNode } from 'react';
 import { activityMarkerOf } from '@bpmn-react/core';
 import type { ShapeProps } from '../plugins/types.js';
 
+/**
+ * Corner radius for orthogonal edge bends (craft spec: r8). A presentation
+ * constant of this renderer, not a plugin decision — the core still emits
+ * sharp polylines by default.
+ */
+export const EDGE_CORNER_RADIUS = 8;
+
 /** Theme tokens — override via CSS variables (see styles.css). */
 export const theme = {
   stroke: 'var(--bpmnr-stroke, #44403a)',

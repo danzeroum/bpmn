@@ -24,6 +24,29 @@ export interface PaletteItem {
   /** Small SVG/emoji/text icon rendered in the palette button. */
   icon?: ReactNode;
   defaultProperties?: Record<string, unknown>;
+  /**
+   * Id of the `PaletteGroup` this item renders under. Ungrouped items are
+   * appended after all groups, preserving pre-group behavior.
+   */
+  group?: string;
+}
+
+/**
+ * Palette section header. Groups render in registration order (built-ins
+ * first, then plugins); a plugin re-registering an existing id replaces it
+ * in place. Colors should be `var(--x, #hex)` like everywhere else.
+ */
+export interface PaletteGroup {
+  id: string;
+  label: string;
+  /** Small pill after the label (e.g. a feature tag like 'F6'). */
+  badge?: string;
+  /** Header text color override (defaults to the muted text color). */
+  headerColor?: string;
+  /** Resting background of the group's items. */
+  itemBackground?: string;
+  /** Hover background of the group's items. */
+  itemHoverBackground?: string;
 }
 
 export type EdgeRouterFn = (source: Rect, target: Rect) => EdgeGeometry;
@@ -61,6 +84,8 @@ export interface BpmnPlugin {
   shapes?: Record<string, ShapeComponent>;
   /** Extra palette entries. */
   paletteItems?: PaletteItem[];
+  /** Palette section headers for this plugin's items. */
+  paletteGroups?: PaletteGroup[];
   /** Visual styles for domain edge types, keyed by `edge.type`. */
   edgeStyles?: Record<string, EdgeStyle>;
   /** Domain validation rules appended to the ValidationEngine. */

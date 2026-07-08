@@ -4,6 +4,7 @@ import type {
   BpmnEdge,
   BpmnNode,
   BpmnVersion,
+  Point,
   VersionStatus,
 } from './types.js';
 import { createDefaultRegistry, type NodeTypeRegistry } from './registry.js';
@@ -82,6 +83,8 @@ export interface CreateEdgeOptions {
   label?: string;
   purpose?: string;
   properties?: Record<string, unknown>;
+  /** Fixed routing points (world coordinates). */
+  waypoints?: Point[];
   supersedesEdgeId?: string;
   createdBy?: string;
   versionId?: string;
@@ -96,6 +99,7 @@ export function createEdge(options: CreateEdgeOptions): BpmnEdge {
     targetId: options.targetId,
     ...(options.label !== undefined ? { label: options.label } : {}),
     ...(options.purpose !== undefined ? { purpose: options.purpose } : {}),
+    ...(options.waypoints !== undefined ? { waypoints: options.waypoints } : {}),
     properties: options.properties ?? {},
     createdInVersion: options.versionId ?? '0',
     ...(options.supersedesEdgeId ? { supersedesEdgeId: options.supersedesEdgeId } : {}),

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { BpmnXmlConverter, type BpmnDiagram } from '@bpmn-react/core';
 import { BpmnEditor, resolveEditorConfig, useDiagram } from '@bpmn-react/react';
 import { domainExamplePlugin } from '@bpmn-react/domain-example';
-import { buildSampleDiagram } from './sampleDiagram.js';
+import { buildSampleDiagram, buildStressDiagram } from './sampleDiagram.js';
 import { LifecyclePanel } from './LifecyclePanel.js';
 import { AuditPanel } from './AuditPanel.js';
 import './demo.css';
@@ -10,7 +10,11 @@ import './demo.css';
 const PLUGINS = [domainExamplePlugin];
 
 export function App() {
-  const [diagram, setDiagram] = useState<BpmnDiagram>(() => buildSampleDiagram());
+  const [diagram, setDiagram] = useState<BpmnDiagram>(() => {
+    // `?stress=350` loads the synthetic perf grid (see perf.spec.ts / NFR).
+    const stress = new URLSearchParams(window.location.search).get('stress');
+    return stress ? buildStressDiagram(Number(stress) || 350) : buildSampleDiagram();
+  });
   const [editorKey, setEditorKey] = useState(0);
   const latestRef = useRef(diagram);
 
