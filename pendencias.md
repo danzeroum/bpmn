@@ -20,6 +20,13 @@ publicação), mas **publicar de fato exige duas ações que só você pode faze
    automação do npm. O workflow `release.yml` roda em `workflow_dispatch` com `dry_run=true` por
    padrão — dá para validar tudo sem publicar; desmarque o dry-run quando quiser soltar.
 
+**Atualização (Handoff 6 — decisão agora URGENTE):** o BuildToValue Studio adiciona **4 pacotes
+novos** que precisam do escopo definido antes de qualquer publish: `<scope>/library`,
+`<scope>/library-react`, `<scope>/studio` e `<scope>/adapters-bpmn`. Enquanto a decisão não sai,
+eles seguem o padrão do `dmn`/`healthcare`: nome provisório `@bpmn-react/<x>` + `"private": true`
+(workspace-only, isentos do release). Nada é publicado sem a sua decisão (Handoff 6 §11). A
+recomendação registrada no handoff continua sendo `@buildtovalue/*`.
+
 ## 2. Roteador de arestas com desvio de obstáculos (mantido pós-1.0)
 
 Continua fora, de propósito. Um roteador correto (visibility graph + A\*, ancoragem estável,

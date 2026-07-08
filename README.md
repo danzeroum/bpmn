@@ -38,6 +38,7 @@ What makes it different from generic BPMN editors:
 | [`@bpmn-react/audit`](packages/audit) | Demonstrable integrity: hash-chain ledger verification (`verifyLedger`), canonical promotion attestations (`attestVersion`), XES 2.0 export for process mining (`toXES`). |
 | [`@bpmn-react/dmn`](packages/dmn) | DMN family (wheel step 185°): DRD node types/shapes, requirement edges (straight routing) and a DMN 1.3+ XML converter. Workspace-only until the npm-scope decision (pendências §1). |
 | [`@bpmn-react/healthcare`](packages/healthcare) | Healthcare pack (wheel step 305°): clinical vocabulary mapped to interoperable BPMN (`bpmnr:meta` preserves identity) with visible validation for unlinked clinical decisions. Workspace-only until the npm-scope decision (pendências §1). |
+| [`@bpmn-react/library`](packages/library) | Generic artifact catalog for BuildToValue Studio: `ArtifactAdapter` contract + headless search/filter/sort — knows nothing about BPMN; adapters plug in. Workspace-only until the npm-scope decision (pendências §1). |
 | [`@bpmn-react/cli`](packages/cli) | Headless CLI: `validate`, `certify`, `export`, `diff`, registry/governance commands. |
 | [`@bpmn-react/example`](packages/example) | Demo app (Vite) with the full designer. |
 

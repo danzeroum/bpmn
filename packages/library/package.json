@@ -1,0 +1,45 @@
+{
+  "name": "@bpmn-react/library",
+  "version": "1.0.0",
+  "description": "Generic, ecosystem-independent artifact catalog for BuildToValue Studio (Handoff 6 S-1): the ArtifactAdapter contract plus headless search/filter/sort/count logic. Knows nothing about BPMN, DMN or any concrete artifact type — adapters plug in. Workspace-only — the publish scope awaits pendencias.md §1. Zero dependencies, including @bpmn-react/*.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "catalog",
+    "artifact",
+    "lifecycle",
+    "governance",
+    "headless"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/library"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "private": true
+}
