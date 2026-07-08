@@ -1,6 +1,7 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import type { AuditEntry } from '@bpmn-react/core';
-import { verifyLedger, type VerificationReport } from '@bpmn-react/audit';
+import { toXES, verifyLedger, type VerificationReport } from '@bpmn-react/audit';
+import { loadRegistry } from './registry.js';
 
 /**
  * `bpmn-react audit <ledger.json>` (Handoff 4 §B1): re-verifies an exported
@@ -36,4 +37,34 @@ export function formatAudit(report: VerificationReport): string {
     `  encontrado: ${brk.actual}`,
     `Verificado em ${report.verifiedAt}.`,
   ].join('\n');
+}
+
+async function readLedgerFile(path: string): Promise<{ entries: AuditEntry[] }> {
+  const raw = await readFile(path, 'utf8');
+  let data: { entries?: AuditEntry[] };
+  try {
+    data = JSON.parse(raw) as { entries?: AuditEntry[] };
+  } catch (cause) {
+    throw new Error(`${path} is not valid JSON: ${(cause as Error).message}`);
+  }
+  if (!Array.isArray(data.entries)) {
+    throw new Error(`${path} is not an exported ledger (missing "entries" array)`);
+  }
+  return { entries: data.entries };
+}
+
+/**
+ * `bpmn-react export-xes <ledger.json> [--registry <registry.json>] [-o out.xes]`
+ * (Handoff 4 §B2): converts the governance history to IEEE XES 2.0 so the
+ * real design process can be mined in ProM/Celonis/Disco.
+ */
+export async function exportXesCommand(
+  ledgerPath: string,
+  options: { registryPath?: string; output?: string } = {},
+): Promise<string> {
+  const ledger = await readLedgerFile(ledgerPath);
+  const registry = options.registryPath ? await loadRegistry(options.registryPath) : undefined;
+  const xes = toXES(ledger, registry ? { registry } : {});
+  if (options.output) await writeFile(options.output, xes, 'utf8');
+  return xes;
 }
