@@ -1,0 +1,57 @@
+{
+  "name": "@bpmn-react/library-react",
+  "version": "1.0.0",
+  "description": "React UI for the generic BuildToValue library (Handoff 6 S-3): gallery with status/type filter chips, search, artifact cards and the detail drawer — all generic, driven exclusively by the ArtifactAdapter contract. Workspace-only — the publish scope awaits pendencias.md §1. Zero runtime dependencies beyond @bpmn-react/*.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./styles.css": "./styles.css"
+  },
+  "files": [
+    "dist",
+    "styles.css",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "dependencies": {
+    "@bpmn-react/library": "workspace:*",
+    "@bpmn-react/react": "workspace:*"
+  },
+  "devDependencies": {
+    "@bpmn-react/adapters-bpmn": "workspace:*"
+  },
+  "keywords": [
+    "catalog",
+    "gallery",
+    "react",
+    "artifact",
+    "governance"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/library-react"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "private": true
+}

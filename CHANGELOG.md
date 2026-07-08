@@ -28,6 +28,26 @@ All notable changes to the `@bpmn-react/*` packages are documented here. The pro
   library works with a non-BPMN adapter alone (Handoff 6 §10.1).
 - Workspace-only (`private: true`) until the npm-scope decision (pendências §1).
 
+### Library React (`@bpmn-react/library-react`) — new package (Handoff 6, S-3)
+- `<LibraryView>`: the Biblioteca gallery (visual spec Handoff 3 §5) — fixed status chips +
+  dynamic type chips (one per adapter) with live counts, search, sort, card grid (adapter-drawn
+  thumbnails placed as data) and the 316px detail drawer where optional fields → optional UI,
+  never "N/A". Read-only: `onAction(ref, action)` descriptors are the only outbound call.
+- `useLibrary` hook wiring the headless catalog to React state, including adapter invalidation
+  (`subscribe`) and the `initialQuery`/`onQueryChange` URL-state seam (§10.7).
+- UI half of the §10.1 acid test: the whole gallery exercised with the S-2 recipe adapter alone.
+- Workspace-only (`private: true`) until the npm-scope decision (pendências §1).
+
+### React (`@bpmn-react/react`)
+- `StatusBadge` standalone mode (Handoff 6 §10.6): a new optional `seal` prop renders the same
+  canonical seal from explicit data outside the editor contexts (Biblioteca/Revisão/Ledger
+  screens). Editor behavior unchanged; fully retrocompatible.
+
+### Example (`@bpmn-react/example`)
+- `?library=1` surface: LibraryView over a demo registry (flow + persona adapters) plus the
+  recipe acid-test adapter, with query state round-tripping to the URL; e2e coverage for
+  filter/selection/action (`e2e/library.spec.ts`).
+
 ## 1.0.0 — 2026-07-07
 
 First stable release. All packages (`core`, `react`, `registry`, `domain-example`, `cli`) move
