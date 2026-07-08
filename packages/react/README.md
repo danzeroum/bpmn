@@ -10,6 +10,8 @@ zero runtime dependencies (React as peer).
 - Granular external store (`useSyncExternalStore`) — gestures never re-render the whole tree
 - 12 built-in BPMN shapes, themable via `--bpmnr-*` CSS variables (light/dark)
 - Declarative plugin objects: node types, shapes, palette items, validation and governance rules
+- Observability without telemetry: plugins can register `onEditorEvent` and receive
+  `node.created` / `edge.connected` / `promotion.completed` / `import.warning` / `render.slow`
 - `DiffView`, SVG/PNG exporters
 
 ```tsx

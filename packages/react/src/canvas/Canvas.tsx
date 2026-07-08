@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode, type WheelEvent } from 'react';
 import { activeEdges, activeNodes } from '@bpmn-react/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
+import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { applyWheelZoom } from './viewport.js';
 import { useInteractions } from './useInteractions.js';
 import { Defs, GridLayer } from './Defs.js';
@@ -33,12 +34,34 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const { diagram } = useDiagram();
   const store = useCanvasStore();
+  const config = useEditorConfig();
   const viewport = useCanvasState((s) => s.viewport);
   const gridSize = useCanvasState((s) => s.gridSize);
   const isPanning = useCanvasState((s) => s.isPanning);
   const interactions = useInteractions(svgRef);
 
   useKeyboardShortcuts(interactions);
+
+  // Observability (§2): while panning, watch frame pacing and report the
+  // first frame over 32ms — once per gesture, so a slow pan can't flood the
+  // host's sink.
+  useEffect(() => {
+    if (!isPanning) return;
+    let raf = 0;
+    let last = performance.now();
+    let reported = false;
+    const tick = () => {
+      const now = performance.now();
+      if (!reported && now - last > 32) {
+        reported = true;
+        config.emitEditorEvent('render.slow', { frameMs: Math.round(now - last) });
+      }
+      last = now;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isPanning, config]);
 
   // Wheel zoom must be a non-passive listener to preventDefault scrolling.
   useEffect(() => {

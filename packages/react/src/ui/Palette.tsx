@@ -37,7 +37,10 @@ export function Palette() {
       config.registry,
     );
     const verdict = execute(addNodeCommand(node));
-    if (verdict.allowed) store.setState({ selectedIds: [node.id], lastCreatedNodeId: node.id });
+    if (verdict.allowed) {
+      store.setState({ selectedIds: [node.id], lastCreatedNodeId: node.id });
+      config.emitEditorEvent('node.created', { nodeType });
+    }
   };
 
   // Items render under their group (groups keep registration order); items

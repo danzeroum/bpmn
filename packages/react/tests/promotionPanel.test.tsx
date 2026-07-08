@@ -131,18 +131,23 @@ describe('PromotionPanel — gates reflect the core state machine', () => {
     const ledger = new AuditLedger();
     const onActivated = vi.fn();
     const onClose = vi.fn();
+    const onEditorEvent = vi.fn();
     let diagram = candidateDiagram();
     // Quorum met up front: the panel opens ready to activate.
     diagram = { ...diagram, version: { ...diagram.version, approvedBy: [
       { userId: owner.id, role: owner.role, approvedAt: '2026-07-07T10:00:00Z', reason: 'ok' },
       { userId: ops.id, role: ops.role, approvedAt: '2026-07-07T11:00:00Z', reason: 'ok' },
     ] } };
-    renderPanel(diagram, {
-      ledger,
-      onActivated,
-      onClose,
-      previousActive: { semanticVersion: '2.0.0', runsPinned: 3 },
-    });
+    renderPanel(
+      diagram,
+      {
+        ledger,
+        onActivated,
+        onClose,
+        previousActive: { semanticVersion: '2.0.0', runsPinned: 3 },
+      },
+      [{ id: 'obs/capture', onEditorEvent }],
+    );
 
     const dialog = await screen.findByRole('dialog', { name: 'Ativar v2.1.0' });
     // Side effects are announced before activation.
@@ -160,6 +165,13 @@ describe('PromotionPanel — gates reflect the core state machine', () => {
     expect(result.diagram.version.status).toBe('active');
     expect(result.ledgerEntry.type).toBe('VERSION_ACTIVATED');
     expect(onClose).toHaveBeenCalled();
+    // Observability: the promotion emits a completed event with the hash.
+    expect(onEditorEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'promotion.completed',
+        meta: expect.objectContaining({ semanticVersion: '2.1.0', status: 'active' }),
+      }),
+    );
 
     // Auto-dismiss after 6s.
     vi.advanceTimersByTime(6100);

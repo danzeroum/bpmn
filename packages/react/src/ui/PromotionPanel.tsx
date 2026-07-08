@@ -53,7 +53,7 @@ export function PromotionPanel({
   onActivated,
 }: PromotionPanelProps) {
   const { diagram, replaceDiagram } = useDiagram();
-  const { lifecycleEngine } = useEditorConfig();
+  const { lifecycleEngine, emitEditorEvent } = useEditorConfig();
   const [gates, setGates] = useState<PromotionGate[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -131,6 +131,11 @@ export function PromotionPanel({
       setToast(parts.join(' · '));
       if (toastTimer.current) clearTimeout(toastTimer.current);
       toastTimer.current = setTimeout(() => setToast(null), 6000);
+      emitEditorEvent('promotion.completed', {
+        semanticVersion: promoted.version.semanticVersion,
+        status: promoted.version.status,
+        ...(entry ? { ledgerHash: entry.hash } : {}),
+      });
       onActivated?.({ diagram: promoted, ledgerEntry: entry });
       onClose();
     } catch (cause) {

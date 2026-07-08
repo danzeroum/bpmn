@@ -1,13 +1,23 @@
 import { useRef, useState } from 'react';
 import { AuditLedger, BpmnXmlConverter, type BpmnDiagram } from '@bpmn-react/core';
-import { BpmnEditor, resolveEditorConfig, useDiagram } from '@bpmn-react/react';
+import { BpmnEditor, resolveEditorConfig, useDiagram, type BpmnPlugin } from '@bpmn-react/react';
 import { domainExamplePlugin } from '@bpmn-react/domain-example';
 import { buildSampleDiagram, buildStressDiagram } from './sampleDiagram.js';
 import { LifecyclePanel } from './LifecyclePanel.js';
 import { AuditPanel } from './AuditPanel.js';
 import './demo.css';
 
-const PLUGINS = [domainExamplePlugin];
+// Observability sink (§2): the host decides what to do with editor events —
+// here they go to the console (lead time, import warnings, slow frames are
+// the product KPIs a real host would measure).
+const observabilityPlugin: BpmnPlugin = {
+  id: 'demo/observability',
+  onEditorEvent: (event) => {
+    console.debug('[editor-event]', event.type, event.meta ?? {});
+  },
+};
+
+const PLUGINS = [domainExamplePlugin, observabilityPlugin];
 
 export function App() {
   const [diagram, setDiagram] = useState<BpmnDiagram>(() => {
@@ -34,7 +44,9 @@ export function App() {
     try {
       const { diagram: imported, warnings } = converter.fromXml(text);
       if (warnings.length > 0) {
-         
+        // Observability (§2): import warnings are a product KPI.
+        config.emitEditorEvent('import.warning', { count: warnings.length, warnings });
+
         alert(`Imported with warnings:\n${warnings.join('\n')}`);
       }
       replaceFromOutside(imported);
