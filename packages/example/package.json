@@ -24,6 +24,7 @@
     "@bpmn-react/react": "workspace:*",
     "@bpmn-react/registry": "workspace:*",
     "@bpmn-react/soundness": "workspace:*",
+    "@bpmn-react/studio": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

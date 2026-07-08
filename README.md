@@ -41,6 +41,7 @@ What makes it different from generic BPMN editors:
 | [`@bpmn-react/library`](packages/library) | Generic artifact catalog for BuildToValue Studio: `ArtifactAdapter` contract + headless search/filter/sort — knows nothing about BPMN; adapters plug in. Workspace-only until the npm-scope decision (pendências §1). |
 | [`@bpmn-react/library-react`](packages/library-react) | React UI for the generic library: gallery with status/type chips, search, cards and detail drawer — driven exclusively by the adapter contract. Workspace-only until the npm-scope decision (pendências §1). |
 | [`@bpmn-react/adapters-bpmn`](packages/adapters-bpmn) | Concrete `ArtifactAdapter`s over the registry (flow, persona, prompt, connector, policy, DMN decision) + headless SVG thumbnails + the "recipe" acid-test fixture. Workspace-only until the npm-scope decision (pendências §1). |
+| [`@bpmn-react/studio`](packages/studio) | BuildToValue Studio: shell with hash navigation + Revisão do Aprovador (engine-derived queue, real verification calls, immutable ledger decisions — approving never activates). Workspace-only until the npm-scope decision (pendências §1). |
 | [`@bpmn-react/cli`](packages/cli) | Headless CLI: `validate`, `certify`, `export`, `diff`, registry/governance commands. |
 | [`@bpmn-react/example`](packages/example) | Demo app (Vite) with the full designer. |
 

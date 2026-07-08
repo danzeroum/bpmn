@@ -88,6 +88,14 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'studio',
+      include: ['packages/studio/tests/**/*.test.{ts,tsx}'],
+      environment: 'jsdom',
+      setupFiles: ['packages/studio/tests/setup.ts'],
+    },
+  },
+  {
+    test: {
       name: 'react',
       include: ['packages/react/tests/**/*.test.{ts,tsx}'],
       environment: 'jsdom',
