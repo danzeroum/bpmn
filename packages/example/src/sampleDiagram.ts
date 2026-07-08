@@ -7,6 +7,7 @@ import {
 } from '@bpmn-react/core';
 import { DOMAIN_NODE_TYPES } from '@bpmn-react/domain-example';
 import { DMN_NODE_TYPES, type DecisionTable } from '@bpmn-react/dmn';
+import { HC_NODE_TYPES } from '@bpmn-react/healthcare';
 
 /**
  * The demo credit decision ("First · 4 regras · 2→1"), owned by the DRD
@@ -356,6 +357,39 @@ export function buildClosedDiagram(): BpmnDiagram {
   for (const id of ['e2', 'e11']) {
     if (diagram.edges[id]) diagram.edges[id] = { ...diagram.edges[id], removedInVersion: v };
   }
+  return diagram;
+}
+
+/**
+ * Clinical pathway demo (Handoff 5 §6, `?hc=1`): the 305° family — a
+ * clinical task feeding a decision WITHOUT a linked DMN table (amber ▲
+ * chip + HC_DECISION_UNLINKED on Validate), one linked decision, the
+ * guideline document and a pathway gate.
+ */
+export function buildHealthcareDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  for (const def of HC_NODE_TYPES) registry.register(def);
+  const diagram = createDiagram({ id: 'demo-hc-sepse', name: 'Protocolo de sepse', createdBy: 'demo' });
+  diagram.description = 'Via clínica com decisão DMN vinculada e uma pendente de vínculo.';
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    triage: make('hc:clinicalTask', 'triage', 'Triagem', 60, 120),
+    antibiotic: make('hc:clinicalDecision', 'antibiotic', 'Iniciar antibiótico?', 260, 120),
+    dose: make('hc:clinicalDecision', 'dose', 'Escalonar dose?', 260, 260, {
+      decisionRef: 'demo-decision-risk',
+    }),
+    protocol: make('hc:guideline', 'protocol', 'Protocolo 2026', 60, 250),
+    route: make('hc:pathwayGate', 'route', 'Via crítica?', 500, 122),
+  };
+  const flow = (id: string, sourceId: string, targetId: string) =>
+    createEdge({ id, sourceId, targetId, type: 'sequenceFlow', versionId: v });
+  diagram.edges = {
+    h1: flow('h1', 'triage', 'antibiotic'),
+    h2: flow('h2', 'antibiotic', 'route'),
+    h3: createEdge({ id: 'h3', sourceId: 'protocol', targetId: 'antibiotic', type: 'association', versionId: v }),
+  };
   return diagram;
 }
 

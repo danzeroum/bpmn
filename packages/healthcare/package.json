@@ -1,0 +1,52 @@
+{
+  "name": "@bpmn-react/healthcare",
+  "version": "1.0.0",
+  "description": "Healthcare pack for bpmn-react (Handoff 5 Fase D, wheel degree 305): clinical node types mapped to interoperable BPMN (clinicalTask→userTask, clinicalDecision→businessRuleTask, guideline→dataObjectReference, pathwayGate→exclusiveGateway) with visible validation for unlinked clinical decisions. Workspace-only — the publish scope awaits pendencias.md §1. Zero runtime dependencies beyond @bpmn-react/*.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "dependencies": {
+    "@bpmn-react/core": "workspace:*",
+    "@bpmn-react/react": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/dmn"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "dmn",
+    "drd",
+    "decision-model",
+    "bpmn",
+    "omg"
+  ],
+  "private": true
+}

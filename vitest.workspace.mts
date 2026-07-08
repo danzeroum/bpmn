@@ -59,6 +59,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'healthcare',
+      include: ['packages/healthcare/tests/**/*.test.{ts,tsx}'],
+      environment: 'jsdom',
+    },
+  },
+  {
+    test: {
       name: 'react',
       include: ['packages/react/tests/**/*.test.{ts,tsx}'],
       environment: 'jsdom',

@@ -124,6 +124,9 @@ importers:
       '@bpmn-react/domain-example':
         specifier: workspace:*
         version: link:../domain-example
+      '@bpmn-react/healthcare':
+        specifier: workspace:*
+        version: link:../healthcare
       '@bpmn-react/react':
         specifier: workspace:*
         version: link:../react
@@ -149,6 +152,18 @@ importers:
       vite:
         specifier: ^6.0.3
         version: 6.4.3(@types/node@22.20.0)
+
+  packages/healthcare:
+    dependencies:
+      '@bpmn-react/core':
+        specifier: workspace:*
+        version: link:../core
+      '@bpmn-react/react':
+        specifier: workspace:*
+        version: link:../react
+      react:
+        specifier: '>=18'
+        version: 18.3.1
 
   packages/react:
     dependencies:
