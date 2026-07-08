@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: Camunda Modeler export with loop characteristics.
+  Pattern: standard loop + sequential/parallel multi-instance (variant 1).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_loop0" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_loop0" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:task id="Task_loop" name="Poll status">
+      <bpmn:standardLoopCharacteristics id="Lc_1" />
+    </bpmn:task>
+    <bpmn:userTask id="Task_mi" name="Approve items 0">
+      <bpmn:multiInstanceLoopCharacteristics id="Mi_1" isSequential="true" />
+    </bpmn:userTask>
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_Start_1_Task_loop" sourceRef="Start_1" targetRef="Task_loop" />
+    <bpmn:sequenceFlow id="Flow_Task_loop_Task_mi" sourceRef="Task_loop" targetRef="Task_mi" />
+    <bpmn:sequenceFlow id="Flow_Task_mi_End_1" sourceRef="Task_mi" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Definitions_loop0_diagram">
+    <bpmndi:BPMNPlane id="Definitions_loop0_plane" bpmnElement="Process_loop0">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_loop_di" bpmnElement="Task_loop">
+        <dc:Bounds x="330" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_mi_di" bpmnElement="Task_mi">
+        <dc:Bounds x="500" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="670" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_1_Task_loop_di" bpmnElement="Flow_Start_1_Task_loop">
+        <di:waypoint x="220" y="130" />
+        <di:waypoint x="330" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Task_loop_Task_mi_di" bpmnElement="Flow_Task_loop_Task_mi">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="500" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Task_mi_End_1_di" bpmnElement="Flow_Task_mi_End_1">
+        <di:waypoint x="560" y="130" />
+        <di:waypoint x="670" y="130" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

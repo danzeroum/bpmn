@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: Camunda docs pattern (race between message and timer).
+  Pattern: event gateway -> message catch | timer catch (variant 1).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_evgw0" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_evgw0" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:eventBasedGateway id="Gw_race" />
+    <bpmn:intermediateCatchEvent id="Catch_msg" name="Reply">
+      <bpmn:messageEventDefinition id="Md_1" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:intermediateCatchEvent id="Catch_timer" name="Timeout 0h">
+      <bpmn:timerEventDefinition id="Td_1" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:task id="Task_go" name="Proceed" />
+    <bpmn:task id="Task_remind" name="Send reminder" />
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Gw_race" />
+    <bpmn:sequenceFlow id="Flow_m" sourceRef="Gw_race" targetRef="Catch_msg" />
+    <bpmn:sequenceFlow id="Flow_t" sourceRef="Gw_race" targetRef="Catch_timer" />
+    <bpmn:sequenceFlow id="Flow_m2" sourceRef="Catch_msg" targetRef="Task_go" />
+    <bpmn:sequenceFlow id="Flow_t2" sourceRef="Catch_timer" targetRef="Task_remind" />
+    <bpmn:sequenceFlow id="Flow_g" sourceRef="Task_go" targetRef="End_1" />
+    <bpmn:sequenceFlow id="Flow_r" sourceRef="Task_remind" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Definitions_evgw0_diagram">
+    <bpmndi:BPMNPlane id="Definitions_evgw0_plane" bpmnElement="Process_evgw0">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_race_di" bpmnElement="Gw_race">
+        <dc:Bounds x="330" y="100" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Catch_msg_di" bpmnElement="Catch_msg">
+        <dc:Bounds x="500" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Catch_timer_di" bpmnElement="Catch_timer">
+        <dc:Bounds x="670" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_go_di" bpmnElement="Task_go">
+        <dc:Bounds x="840" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_remind_di" bpmnElement="Task_remind">
+        <dc:Bounds x="1010" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="160" y="240" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="220" y="130" />
+        <di:waypoint x="330" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_m_di" bpmnElement="Flow_m">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="500" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_t_di" bpmnElement="Flow_t">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="670" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_m2_di" bpmnElement="Flow_m2">
+        <di:waypoint x="560" y="130" />
+        <di:waypoint x="840" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_t2_di" bpmnElement="Flow_t2">
+        <di:waypoint x="730" y="130" />
+        <di:waypoint x="1010" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_g_di" bpmnElement="Flow_g">
+        <di:waypoint x="900" y="130" />
+        <di:waypoint x="160" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_r_di" bpmnElement="Flow_r">
+        <di:waypoint x="1070" y="130" />
+        <di:waypoint x="160" y="270" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

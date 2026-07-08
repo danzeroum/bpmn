@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: bpmn.io starter diagram.
+  Pattern: XOR split/join with named flows (variant 1).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_xor0" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_xor0" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:exclusiveGateway id="Gw_split" name="Approved?" />
+    <bpmn:task id="Task_yes" name="Fulfil" />
+    <bpmn:task id="Task_no" name="Reject (0)" />
+    <bpmn:exclusiveGateway id="Gw_join" />
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Gw_split" />
+    <bpmn:sequenceFlow id="Flow_yes" sourceRef="Gw_split" targetRef="Task_yes" name="yes" />
+    <bpmn:sequenceFlow id="Flow_no" sourceRef="Gw_split" targetRef="Task_no" name="no" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_yes" targetRef="Gw_join" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_no" targetRef="Gw_join" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Gw_join" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Definitions_xor0_diagram">
+    <bpmndi:BPMNPlane id="Definitions_xor0_plane" bpmnElement="Process_xor0">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_split_di" bpmnElement="Gw_split">
+        <dc:Bounds x="330" y="100" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_yes_di" bpmnElement="Task_yes">
+        <dc:Bounds x="500" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_no_di" bpmnElement="Task_no">
+        <dc:Bounds x="670" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_join_di" bpmnElement="Gw_join">
+        <dc:Bounds x="840" y="100" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="1010" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="220" y="130" />
+        <di:waypoint x="330" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_yes_di" bpmnElement="Flow_yes">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="500" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_no_di" bpmnElement="Flow_no">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="670" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="560" y="130" />
+        <di:waypoint x="840" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="730" y="130" />
+        <di:waypoint x="840" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5">
+        <di:waypoint x="900" y="130" />
+        <di:waypoint x="1010" y="130" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: Camunda docs pattern (error handling).
+  Pattern: error boundary + conditional catch (variant 3).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_err2" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_err2" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:serviceTask id="Task_call" name="Call API 2" />
+    <bpmn:boundaryEvent id="Bnd_err" name="Failed" attachedToRef="Task_call">
+      <bpmn:errorEventDefinition id="ErrD_1" />
+    </bpmn:boundaryEvent>
+    <bpmn:intermediateCatchEvent id="Catch_cond" name="Quota OK">
+      <bpmn:conditionalEventDefinition id="Cd_1" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:task id="Task_retry" name="Retry later" />
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Task_call" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_call" targetRef="Catch_cond" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Catch_cond" targetRef="End_1" />
+    <bpmn:sequenceFlow id="Flow_e" sourceRef="Bnd_err" targetRef="Task_retry" />
+    <bpmn:sequenceFlow id="Flow_r" sourceRef="Task_retry" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Definitions_err2_diagram">
+    <bpmndi:BPMNPlane id="Definitions_err2_plane" bpmnElement="Process_err2">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_call_di" bpmnElement="Task_call">
+        <dc:Bounds x="330" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Bnd_err_di" bpmnElement="Bnd_err">
+        <dc:Bounds x="500" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Catch_cond_di" bpmnElement="Catch_cond">
+        <dc:Bounds x="670" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_retry_di" bpmnElement="Task_retry">
+        <dc:Bounds x="840" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="1010" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="220" y="130" />
+        <di:waypoint x="330" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="670" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="730" y="130" />
+        <di:waypoint x="1010" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e_di" bpmnElement="Flow_e">
+        <di:waypoint x="560" y="130" />
+        <di:waypoint x="840" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_r_di" bpmnElement="Flow_r">
+        <di:waypoint x="900" y="130" />
+        <di:waypoint x="1010" y="130" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: Camunda Modeler export with attached events.
+  Pattern: interrupting timer + non-interrupting message boundaries (variant 3).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_bnd2" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_bnd2" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:userTask id="Task_work" name="Long running work 2" />
+    <bpmn:boundaryEvent id="Bnd_timer" name="Deadline" attachedToRef="Task_work">
+      <bpmn:timerEventDefinition id="Td_b" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="Bnd_msg" name="Update" attachedToRef="Task_work" cancelActivity="false">
+      <bpmn:messageEventDefinition id="Md_b" />
+    </bpmn:boundaryEvent>
+    <bpmn:task id="Task_escalate" name="Escalate" />
+    <bpmn:task id="Task_log" name="Log update" />
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Task_work" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_work" targetRef="End_1" />
+    <bpmn:sequenceFlow id="Flow_esc" sourceRef="Bnd_timer" targetRef="Task_escalate" />
+    <bpmn:sequenceFlow id="Flow_log" sourceRef="Bnd_msg" targetRef="Task_log" />
+    <bpmn:sequenceFlow id="Flow_e2" sourceRef="Task_escalate" targetRef="End_1" />
+    <bpmn:sequenceFlow id="Flow_l2" sourceRef="Task_log" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Definitions_bnd2_diagram">
+    <bpmndi:BPMNPlane id="Definitions_bnd2_plane" bpmnElement="Process_bnd2">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_work_di" bpmnElement="Task_work">
+        <dc:Bounds x="330" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Bnd_timer_di" bpmnElement="Bnd_timer">
+        <dc:Bounds x="500" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Bnd_msg_di" bpmnElement="Bnd_msg">
+        <dc:Bounds x="670" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_escalate_di" bpmnElement="Task_escalate">
+        <dc:Bounds x="840" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_log_di" bpmnElement="Task_log">
+        <dc:Bounds x="1010" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="160" y="240" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="220" y="130" />
+        <di:waypoint x="330" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="160" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_esc_di" bpmnElement="Flow_esc">
+        <di:waypoint x="560" y="130" />
+        <di:waypoint x="840" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_log_di" bpmnElement="Flow_log">
+        <di:waypoint x="730" y="130" />
+        <di:waypoint x="1010" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_e2_di" bpmnElement="Flow_e2">
+        <di:waypoint x="900" y="130" />
+        <di:waypoint x="160" y="270" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_l2_di" bpmnElement="Flow_l2">
+        <di:waypoint x="1070" y="130" />
+        <di:waypoint x="160" y="270" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

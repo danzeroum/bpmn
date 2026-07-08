@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: Camunda Modeler collaboration export.
+  Pattern: participant pool + two lanes + flowNodeRefs (variant 3).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_col2" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:collaboration id="Collab_1">
+    <bpmn:participant id="Pool_ops" name="Operations 2" processRef="Process_col2" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_col2" isExecutable="true">
+    <bpmn:laneSet id="Lanes_1">
+      <bpmn:lane id="Lane_front" name="Front office">
+        <bpmn:flowNodeRef>Start_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_intake</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_back" name="Back office">
+        <bpmn:flowNodeRef>Task_process</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_1</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:userTask id="Task_intake" name="Intake" />
+    <bpmn:serviceTask id="Task_process" name="Process" />
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Task_intake" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_intake" targetRef="Task_process" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_process" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diag_col2">
+    <bpmndi:BPMNPlane id="Plane_col2" bpmnElement="Collab_1">
+      <bpmndi:BPMNShape id="Pool_ops_di" bpmnElement="Pool_ops" isHorizontal="true">
+        <dc:Bounds x="120" y="60" width="740" height="300" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_front_di" bpmnElement="Lane_front" isHorizontal="true">
+        <dc:Bounds x="150" y="60" width="710" height="150" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_back_di" bpmnElement="Lane_back" isHorizontal="true">
+        <dc:Bounds x="150" y="210" width="710" height="150" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="200" y="112" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_intake_di" bpmnElement="Task_intake">
+        <dc:Bounds x="300" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_process_di" bpmnElement="Task_process">
+        <dc:Bounds x="480" y="250" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="680" y="262" width="36" height="36" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

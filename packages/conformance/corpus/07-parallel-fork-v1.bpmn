@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: Camunda Modeler example export.
+  Pattern: AND split/join, parallel service tasks (variant 1).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_and0" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_and0" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:parallelGateway id="Gw_fork" />
+    <bpmn:serviceTask id="Task_a" name="Charge card" />
+    <bpmn:serviceTask id="Task_b" name="Reserve stock 0" />
+    <bpmn:parallelGateway id="Gw_join" />
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Gw_fork" />
+    <bpmn:sequenceFlow id="Flow_a" sourceRef="Gw_fork" targetRef="Task_a" />
+    <bpmn:sequenceFlow id="Flow_b" sourceRef="Gw_fork" targetRef="Task_b" />
+    <bpmn:sequenceFlow id="Flow_a2" sourceRef="Task_a" targetRef="Gw_join" />
+    <bpmn:sequenceFlow id="Flow_b2" sourceRef="Task_b" targetRef="Gw_join" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Gw_join" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Definitions_and0_diagram">
+    <bpmndi:BPMNPlane id="Definitions_and0_plane" bpmnElement="Process_and0">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_fork_di" bpmnElement="Gw_fork">
+        <dc:Bounds x="330" y="100" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_a_di" bpmnElement="Task_a">
+        <dc:Bounds x="500" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_b_di" bpmnElement="Task_b">
+        <dc:Bounds x="670" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_join_di" bpmnElement="Gw_join">
+        <dc:Bounds x="840" y="100" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="1010" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="220" y="130" />
+        <di:waypoint x="330" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_a_di" bpmnElement="Flow_a">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="500" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_b_di" bpmnElement="Flow_b">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="670" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_a2_di" bpmnElement="Flow_a2">
+        <di:waypoint x="560" y="130" />
+        <di:waypoint x="840" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_b2_di" bpmnElement="Flow_b2">
+        <di:waypoint x="730" y="130" />
+        <di:waypoint x="840" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="900" y="130" />
+        <di:waypoint x="1010" y="130" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

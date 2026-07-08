@@ -31,6 +31,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'conformance',
+      include: ['packages/conformance/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'react',
       include: ['packages/react/tests/**/*.test.{ts,tsx}'],
       environment: 'jsdom',

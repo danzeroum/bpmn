@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: OMG spec example (artifacts).
+  Pattern: data object + association + text annotation + group (variant 1).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_data0" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_data0" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:task id="Task_fill" name="Fill form 0" />
+    <bpmn:dataObjectReference id="Data_form" name="Form" />
+    <bpmn:textAnnotation id="Note_1">
+      <bpmn:text>Reviewed quarterly</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:group id="Group_1" />
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Task_fill" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_fill" targetRef="End_1" />
+    <bpmn:association id="Assoc_1" sourceRef="Task_fill" targetRef="Note_1" />
+    <bpmn:association id="Assoc_2" sourceRef="Task_fill" targetRef="Data_form" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Definitions_data0_diagram">
+    <bpmndi:BPMNPlane id="Definitions_data0_plane" bpmnElement="Process_data0">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_fill_di" bpmnElement="Task_fill">
+        <dc:Bounds x="330" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Data_form_di" bpmnElement="Data_form">
+        <dc:Bounds x="500" y="100" width="36" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Note_1_di" bpmnElement="Note_1">
+        <dc:Bounds x="670" y="100" width="120" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Group_1_di" bpmnElement="Group_1">
+        <dc:Bounds x="840" y="100" width="220" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="1010" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="220" y="130" />
+        <di:waypoint x="330" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="1010" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Assoc_1_di" bpmnElement="Assoc_1">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="670" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Assoc_2_di" bpmnElement="Assoc_2">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="500" y="130" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

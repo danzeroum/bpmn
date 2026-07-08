@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: OMG BPMN 2.0 spec example (order handling).
+  Pattern: OR split with default-style continuation (variant 2).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_or1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_or1" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:inclusiveGateway id="Gw_or" name="Extras?" />
+    <bpmn:task id="Task_wrap" name="Gift wrap" />
+    <bpmn:task id="Task_note" name="Add note v1" />
+    <bpmn:inclusiveGateway id="Gw_merge" />
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Gw_or" />
+    <bpmn:sequenceFlow id="Flow_w" sourceRef="Gw_or" targetRef="Task_wrap" />
+    <bpmn:sequenceFlow id="Flow_n" sourceRef="Gw_or" targetRef="Task_note" />
+    <bpmn:sequenceFlow id="Flow_w2" sourceRef="Task_wrap" targetRef="Gw_merge" />
+    <bpmn:sequenceFlow id="Flow_n2" sourceRef="Task_note" targetRef="Gw_merge" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Gw_merge" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Definitions_or1_diagram">
+    <bpmndi:BPMNPlane id="Definitions_or1_plane" bpmnElement="Process_or1">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_or_di" bpmnElement="Gw_or">
+        <dc:Bounds x="330" y="100" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_wrap_di" bpmnElement="Task_wrap">
+        <dc:Bounds x="500" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_note_di" bpmnElement="Task_note">
+        <dc:Bounds x="670" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_merge_di" bpmnElement="Gw_merge">
+        <dc:Bounds x="840" y="100" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="1010" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="220" y="130" />
+        <di:waypoint x="330" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w_di" bpmnElement="Flow_w">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="500" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_n_di" bpmnElement="Flow_n">
+        <di:waypoint x="390" y="130" />
+        <di:waypoint x="670" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_w2_di" bpmnElement="Flow_w2">
+        <di:waypoint x="560" y="130" />
+        <di:waypoint x="840" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_n2_di" bpmnElement="Flow_n2">
+        <di:waypoint x="730" y="130" />
+        <di:waypoint x="840" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="900" y="130" />
+        <di:waypoint x="1010" y="130" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

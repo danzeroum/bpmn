@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: hand-edited export with a broken flow reference.
+  Pattern: sequence flow referencing a missing node (warning expected) (variant 3).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_dang2" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_dang2" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:task id="Task_a" name="Step 2" />
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Task_a" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_a" targetRef="End_1" />
+    <bpmn:sequenceFlow id="Flow_ghost" sourceRef="Task_a" targetRef="Task_missing" />
+  </bpmn:process>
+</bpmn:definitions>
