@@ -4,6 +4,9 @@ import {
   createDiagram,
   createEdge,
   createNode,
+  crossScopeEdgeRule,
+  missingStartEventRule,
+  subProcessParentRule,
   unknownTypeRule,
   ValidationEngine,
   type BpmnDiagram,
@@ -144,5 +147,86 @@ describe('ValidationEngine', () => {
     diagram.nodes.alien = { ...createNode({ type: 'task', id: 'alien' }), type: 'alien:thing' };
     const result = engine.validate(diagram);
     expect(result.issues.some((i) => i.code === 'UNKNOWN_NODE_TYPE')).toBe(true);
+  });
+});
+
+describe('sub-process containment rules (F7)', () => {
+  function nested(): BpmnDiagram {
+    const diagram = createDiagram({ name: 'Nested' });
+    diagram.nodes = {
+      start: createNode({ type: 'startEvent', id: 'start' }),
+      sub: createNode({ type: 'subProcess', id: 'sub', properties: { isExpanded: true } }),
+      innerStart: createNode({ type: 'startEvent', id: 'innerStart', properties: { parentId: 'sub' } }),
+      innerTask: createNode({ type: 'task', id: 'innerTask', properties: { parentId: 'sub' } }),
+      end: createNode({ type: 'endEvent', id: 'end' }),
+    };
+    diagram.edges = {
+      f1: createEdge({ id: 'f1', sourceId: 'start', targetId: 'sub' }),
+      f2: createEdge({ id: 'f2', sourceId: 'sub', targetId: 'end' }),
+      inner: createEdge({ id: 'inner', sourceId: 'innerStart', targetId: 'innerTask' }),
+    };
+    return diagram;
+  }
+
+  it('accepts a sound hierarchy', () => {
+    const diagram = nested();
+    expect(subProcessParentRule(diagram)).toEqual([]);
+    expect(crossScopeEdgeRule(diagram)).toEqual([]);
+  });
+
+  it('flags a parentId that is missing or not a sub-process', () => {
+    const diagram = nested();
+    diagram.nodes.innerTask = {
+      ...diagram.nodes.innerTask,
+      properties: { parentId: 'ghost' },
+    };
+    diagram.nodes.innerStart = {
+      ...diagram.nodes.innerStart,
+      properties: { parentId: 'end' },
+    };
+    const codes = subProcessParentRule(diagram).map((i) => i.code);
+    expect(codes).toEqual(['INVALID_PARENT_REF', 'INVALID_PARENT_REF']);
+  });
+
+  it('flags containment cycles', () => {
+    const diagram = createDiagram({ name: 'Cycle' });
+    diagram.nodes = {
+      a: createNode({ type: 'subProcess', id: 'a', properties: { parentId: 'b' } }),
+      b: createNode({ type: 'subProcess', id: 'b', properties: { parentId: 'a' } }),
+    };
+    const codes = subProcessParentRule(diagram).map((i) => i.code);
+    expect(codes).toContain('PARENT_CYCLE');
+  });
+
+  it('flags sequence flows crossing a sub-process boundary', () => {
+    const diagram = nested();
+    diagram.edges.leak = createEdge({ id: 'leak', sourceId: 'innerTask', targetId: 'end' });
+    const issues = crossScopeEdgeRule(diagram);
+    expect(issues.map((i) => i.code)).toEqual(['CROSS_SCOPE_EDGE']);
+    expect(issues[0].edgeId).toBe('leak');
+  });
+
+  it('lets a boundary event on an inner activity flow inside its host scope', () => {
+    const diagram = nested();
+    diagram.nodes.bnd = createNode({
+      type: 'boundaryEvent',
+      id: 'bnd',
+      properties: { attachedToRef: 'innerTask', parentId: 'sub' },
+    });
+    diagram.nodes.handler = createNode({
+      type: 'task',
+      id: 'handler',
+      properties: { parentId: 'sub' },
+    });
+    diagram.edges.escal = createEdge({ id: 'escal', sourceId: 'bnd', targetId: 'handler' });
+    expect(crossScopeEdgeRule(diagram)).toEqual([]);
+  });
+
+  it('does not let an inner start event satisfy the outer process', () => {
+    const diagram = nested();
+    delete diagram.nodes.start;
+    delete diagram.edges.f1;
+    const codes = missingStartEventRule(diagram).map((i) => i.code);
+    expect(codes).toEqual(['MISSING_START_EVENT']);
   });
 });

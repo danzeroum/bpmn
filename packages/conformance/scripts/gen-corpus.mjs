@@ -262,23 +262,62 @@ const SCENARIOS = [
   },
   {
     name: 'subprocess',
-    source: 'bpmn.io subprocess demo',
-    description: 'embedded subProcess with inner flow',
-    build: (v) =>
-      processXml(`Definitions_sub${v}`, `Process_sub${v}`, [
-        { tag: 'startEvent', id: 'Start_1' },
-        {
-          tag: 'subProcess', id: 'Sub_1', name: `Handle order ${v}`, w: 200, h: 120,
-          children: [
-            '<bpmn:startEvent id="Sub_start" />',
-            '<bpmn:task id="Sub_task" name="Pick items" />',
-            '<bpmn:endEvent id="Sub_end" />',
-            '<bpmn:sequenceFlow id="Sub_f1" sourceRef="Sub_start" targetRef="Sub_task" />',
-            '<bpmn:sequenceFlow id="Sub_f2" sourceRef="Sub_task" targetRef="Sub_end" />',
-          ],
-        },
-        { tag: 'endEvent', id: 'End_1' },
-      ], chain(['Start_1', 'Sub_1', 'End_1'])),
+    source: 'Camunda Modeler embedded sub-process export',
+    description: 'expanded subProcess with inner start/task/end and child DI',
+    build: (v) => `<bpmn:definitions ${NS} id="Definitions_sub${v}" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_sub${v}" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:subProcess id="Sub_1" name="Handle order ${v}">
+      <bpmn:startEvent id="Sub_start" />
+      <bpmn:task id="Sub_task" name="Pick items" />
+      <bpmn:endEvent id="Sub_end" />
+      <bpmn:sequenceFlow id="Sub_f1" sourceRef="Sub_start" targetRef="Sub_task" />
+      <bpmn:sequenceFlow id="Sub_f2" sourceRef="Sub_task" targetRef="Sub_end" />
+    </bpmn:subProcess>
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Sub_1" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Sub_1" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diag_sub${v}">
+    <bpmndi:BPMNPlane id="Plane_sub${v}" bpmnElement="Process_sub${v}">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_1_di" bpmnElement="Sub_1" isExpanded="true">
+        <dc:Bounds x="260" y="100" width="420" height="220" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_start_di" bpmnElement="Sub_start">
+        <dc:Bounds x="290" y="182" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_task_di" bpmnElement="Sub_task">
+        <dc:Bounds x="380" y="170" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_end_di" bpmnElement="Sub_end">
+        <dc:Bounds x="560" y="182" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="740" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Sub_f1_di" bpmnElement="Sub_f1">
+        <di:waypoint x="326" y="200" />
+        <di:waypoint x="380" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Sub_f2_di" bpmnElement="Sub_f2">
+        <di:waypoint x="500" y="200" />
+        <di:waypoint x="560" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="196" y="210" />
+        <di:waypoint x="260" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="680" y="210" />
+        <di:waypoint x="740" y="210" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
+`,
   },
   {
     name: 'loop-markers',
@@ -467,6 +506,50 @@ const SCENARIOS = [
     <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_a" targetRef="End_1" />
     <bpmn:sequenceFlow id="Flow_ghost" sourceRef="Task_a" targetRef="Task_missing" />
   </bpmn:process>
+</bpmn:definitions>
+`,
+  },
+  {
+    name: 'nested-subprocess',
+    source: 'Camunda Modeler export with two nesting levels',
+    description: 'collapsed inner subProcess inside an expanded outer one',
+    build: (v) => `<bpmn:definitions ${NS} id="Definitions_nest${v}" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_nest${v}" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:subProcess id="Outer_1" name="Fulfilment ${v}">
+      <bpmn:startEvent id="Outer_start" />
+      <bpmn:userTask id="Outer_task" name="Prepare" />
+      <bpmn:subProcess id="Inner_1" name="Quality check">
+        <bpmn:task id="Inner_task" name="Inspect" />
+      </bpmn:subProcess>
+      <bpmn:endEvent id="Outer_end" />
+      <bpmn:sequenceFlow id="Of_1" sourceRef="Outer_start" targetRef="Outer_task" />
+      <bpmn:sequenceFlow id="Of_2" sourceRef="Outer_task" targetRef="Inner_1" />
+      <bpmn:sequenceFlow id="Of_3" sourceRef="Inner_1" targetRef="Outer_end" />
+    </bpmn:subProcess>
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Outer_1" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Outer_1" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diag_nest${v}">
+    <bpmndi:BPMNPlane id="Plane_nest${v}" bpmnElement="Process_nest${v}">
+      <bpmndi:BPMNShape id="Outer_1_di" bpmnElement="Outer_1" isExpanded="true">
+        <dc:Bounds x="240" y="80" width="520" height="260" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Inner_1_di" bpmnElement="Inner_1" isExpanded="false">
+        <dc:Bounds x="520" y="170" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Outer_task_di" bpmnElement="Outer_task">
+        <dc:Bounds x="340" y="180" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="150" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="800" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
 </bpmn:definitions>
 `,
   },

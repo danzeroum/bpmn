@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Interoperability corpus (bpmn-react). Structural equivalent of: bpmn.io subprocess demo.
-  Pattern: embedded subProcess with inner flow (variant 1).
+  Interoperability corpus (bpmn-react). Structural equivalent of: Camunda Modeler embedded sub-process export.
+  Pattern: expanded subProcess with inner start/task/end and child DI (variant 1).
   Generated content (scripts/gen-corpus.mjs) - no proprietary material.
   License: Apache-2.0.
 -->
@@ -16,27 +16,44 @@
       <bpmn:sequenceFlow id="Sub_f2" sourceRef="Sub_task" targetRef="Sub_end" />
     </bpmn:subProcess>
     <bpmn:endEvent id="End_1" />
-    <bpmn:sequenceFlow id="Flow_Start_1_Sub_1" sourceRef="Start_1" targetRef="Sub_1" />
-    <bpmn:sequenceFlow id="Flow_Sub_1_End_1" sourceRef="Sub_1" targetRef="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Sub_1" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Sub_1" targetRef="End_1" />
   </bpmn:process>
-  <bpmndi:BPMNDiagram id="Definitions_sub0_diagram">
-    <bpmndi:BPMNPlane id="Definitions_sub0_plane" bpmnElement="Process_sub0">
+  <bpmndi:BPMNDiagram id="Diag_sub0">
+    <bpmndi:BPMNPlane id="Plane_sub0" bpmnElement="Process_sub0">
       <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
-        <dc:Bounds x="160" y="100" width="36" height="36" />
+        <dc:Bounds x="160" y="192" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Sub_1_di" bpmnElement="Sub_1">
-        <dc:Bounds x="330" y="100" width="200" height="120" />
+      <bpmndi:BPMNShape id="Sub_1_di" bpmnElement="Sub_1" isExpanded="true">
+        <dc:Bounds x="260" y="100" width="420" height="220" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_start_di" bpmnElement="Sub_start">
+        <dc:Bounds x="290" y="182" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_task_di" bpmnElement="Sub_task">
+        <dc:Bounds x="380" y="170" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_end_di" bpmnElement="Sub_end">
+        <dc:Bounds x="560" y="182" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
-        <dc:Bounds x="500" y="100" width="36" height="36" />
+        <dc:Bounds x="740" y="192" width="36" height="36" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Flow_Start_1_Sub_1_di" bpmnElement="Flow_Start_1_Sub_1">
-        <di:waypoint x="220" y="130" />
-        <di:waypoint x="330" y="130" />
+      <bpmndi:BPMNEdge id="Sub_f1_di" bpmnElement="Sub_f1">
+        <di:waypoint x="326" y="200" />
+        <di:waypoint x="380" y="200" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_Sub_1_End_1_di" bpmnElement="Flow_Sub_1_End_1">
-        <di:waypoint x="390" y="130" />
-        <di:waypoint x="500" y="130" />
+      <bpmndi:BPMNEdge id="Sub_f2_di" bpmnElement="Sub_f2">
+        <di:waypoint x="500" y="200" />
+        <di:waypoint x="560" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="196" y="210" />
+        <di:waypoint x="260" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="680" y="210" />
+        <di:waypoint x="740" y="210" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
