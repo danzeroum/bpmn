@@ -33,6 +33,7 @@ export default defineConfig({
         'packages/soundness/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
         'packages/audit/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
         'packages/dmn/src/**': { statements: 90, branches: 80, functions: 90, lines: 90 },
+        'packages/healthcare/src/**': { statements: 90, branches: 80, functions: 90, lines: 90 },
         'packages/react/src/**': { statements: 65, branches: 60, functions: 65, lines: 65 },
       },
     },

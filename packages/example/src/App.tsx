@@ -18,11 +18,13 @@ import {
   type DecisionSummary,
 } from '@bpmn-react/dmn';
 import { domainExamplePlugin } from '@bpmn-react/domain-example';
+import { healthcarePlugin } from '@bpmn-react/healthcare';
 import { callActivityBindingRule, VersionRegistry } from '@bpmn-react/registry';
 import { soundnessPromotionRule, soundnessRules } from '@bpmn-react/soundness';
 import {
   buildClosedDiagram,
   buildDeadlockDiagram,
+  buildHealthcareDiagram,
   buildDrdDiagram,
   buildSampleDiagram,
   buildStressDiagram,
@@ -93,7 +95,7 @@ const dmnDemoPlugin: BpmnPlugin = {
   ],
 };
 
-const PLUGINS = [domainExamplePlugin, dmnDemoPlugin, observabilityPlugin, soundnessPlugin, bindingPlugin];
+const PLUGINS = [domainExamplePlugin, dmnDemoPlugin, healthcarePlugin, observabilityPlugin, soundnessPlugin, bindingPlugin];
 
 export function App() {
   const [diagram, setDiagram] = useState<BpmnDiagram>(() => {
@@ -105,6 +107,7 @@ export function App() {
     if (params.get('deadlock')) return buildDeadlockDiagram();
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
+    if (params.get('hc')) return buildHealthcareDiagram();
     return buildSampleDiagram();
   });
   const [editorKey, setEditorKey] = useState(0);

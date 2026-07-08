@@ -17,6 +17,7 @@
     "@bpmn-react/core": "workspace:*",
     "@bpmn-react/dmn": "workspace:*",
     "@bpmn-react/domain-example": "workspace:*",
+    "@bpmn-react/healthcare": "workspace:*",
     "@bpmn-react/react": "workspace:*",
     "@bpmn-react/registry": "workspace:*",
     "@bpmn-react/soundness": "workspace:*",
