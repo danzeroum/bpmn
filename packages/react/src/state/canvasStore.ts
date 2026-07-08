@@ -62,6 +62,8 @@ export interface CanvasState {
   gridSize: number;
   snapEnabled: boolean;
   readOnly: boolean;
+  /** Node created by the last palette insert — plays the enter animation once. */
+  lastCreatedNodeId: string | null;
 }
 
 export type CanvasStore = Store<CanvasState>;
@@ -83,6 +85,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     gridSize: 20,
     snapEnabled: true,
     readOnly: false,
+    lastCreatedNodeId: null,
     ...partial,
   });
 }

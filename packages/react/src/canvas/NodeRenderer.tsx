@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import type { BpmnNode } from '@bpmn-react/core';
-import { useCanvasState } from '../contexts/CanvasContext.js';
+import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { DefaultShape } from '../shapes/index.js';
 import { theme } from '../shapes/common.js';
@@ -38,22 +38,29 @@ function NodeRendererInner({
   editing,
 }: NodeRendererProps) {
   const config = useEditorConfig();
+  const store = useCanvasStore();
   // Boolean selector: nodes re-render only when crossing the zoom threshold
   // (same pattern as the purpose chip in EdgeRenderer).
   const shadowsVisible = useCanvasState((s) => 1200 / s.viewport.width >= SHADOW_MIN_ZOOM);
+  // Freshly created node plays the 120ms enter animation (craft pack A3).
+  const entering = useCanvasState((s) => s.lastCreatedNodeId === node.id);
   const Shape = config.shapes[node.type] ?? DefaultShape;
   const closed = node.removedInVersion !== undefined;
   const rendered = resizeRect
     ? { ...node, x: resizeRect.x, y: resizeRect.y, width: resizeRect.width, height: resizeRect.height }
     : node;
   const typeDef = config.registry.has(node.type) ? config.registry.get(node.type) : undefined;
-  const hasShadow = typeDef ? (typeDef.visual?.shadow ?? typeDef.category === 'activity') : false;
+  // Shadows drop while the node is dragged (perf) and restore on drop.
+  const dragging = dx !== 0 || dy !== 0;
+  const hasShadow =
+    !dragging && (typeDef ? (typeDef.visual?.shadow ?? typeDef.category === 'activity') : false);
 
   return (
     <g
       transform={`translate(${rendered.x + dx}, ${rendered.y + dy})`}
       data-node-id={node.id}
       data-node-type={node.type}
+      data-selected={selected || undefined}
       role="button"
       aria-label={`${node.type}: ${node.label}`}
       opacity={closed ? 0.45 : 1}
@@ -61,14 +68,23 @@ function NodeRendererInner({
       onPointerDown={editable ? (e) => interactions.onNodePointerDown(e, node.id) : undefined}
       onDoubleClick={editable ? (e) => interactions.onNodeDoubleClick(e, node.id) : undefined}
     >
-      {/* The filter wraps only the shape so halo/ports/handles stay crisp. */}
-      {hasShadow && shadowsVisible ? (
-        <g filter={`url(#${SHADOW_FILTER_ID})`}>
+      {/* Inner wrapper: the enter animation scales here (CSS transform) so it
+          never fights the positional transform attribute on the outer <g>. */}
+      <g
+        className={entering ? 'bpmnr-node-enter' : undefined}
+        onAnimationEnd={
+          entering ? () => store.setState({ lastCreatedNodeId: null }) : undefined
+        }
+      >
+        {/* The filter wraps only the shape so halo/ports/handles stay crisp. */}
+        {hasShadow && shadowsVisible ? (
+          <g data-node-shadow filter={`url(#${SHADOW_FILTER_ID})`}>
+            <Shape node={rendered} selected={selected} />
+          </g>
+        ) : (
           <Shape node={rendered} selected={selected} />
-        </g>
-      ) : (
-        <Shape node={rendered} selected={selected} />
-      )}
+        )}
+      </g>
       {editing && <NodeLabelEditor node={rendered} />}
 
       {connectHover && (
@@ -104,11 +120,11 @@ function NodeRendererInner({
         />
       )}
 
+      {/* Ports live in the DOM whenever the node is editable; CSS fades them
+          in on hover/selection (craft pack A2 — no per-node hover state). */}
+      {editable && <ConnectionPorts node={rendered} interactions={interactions} />}
       {editable && selected && (
-        <>
-          <ConnectionPorts node={rendered} interactions={interactions} />
-          <ResizeHandles node={rendered} nodeId={node.id} interactions={interactions} />
-        </>
+        <ResizeHandles node={rendered} nodeId={node.id} interactions={interactions} />
       )}
     </g>
   );

@@ -174,8 +174,24 @@ export function PromotionPanel({
                     {gate.id === 'approvals' && ` (${gate.current}/${gate.required})`}
                   </strong>
                   {!gate.satisfied && <p className="bpmnr-promotion-detail">{gate.detail}</p>}
-                  {gate.id === 'change-summary' && gate.satisfied && (
-                    <p className="bpmnr-promotion-detail">{version.changeSummary}</p>
+                  {gate.id === 'change-summary' && (
+                    <textarea
+                      className="bpmnr-promotion-summary"
+                      aria-label="change_summary"
+                      rows={2}
+                      defaultValue={version.changeSummary}
+                      placeholder={`Descreva a mudança (mín. ${lifecycleEngine.requiredChangeSummaryLength} caracteres)`}
+                      onBlur={(event) => {
+                        const value = event.target.value;
+                        if (value === version.changeSummary) return;
+                        // Same immutable pattern as engine.approve: a new
+                        // version record — gates re-evaluate automatically.
+                        replaceDiagram({
+                          ...diagram,
+                          version: { ...version, changeSummary: value },
+                        });
+                      }}
+                    />
                   )}
                   {gate.id === 'approvals' && (
                     <div className="bpmnr-promotion-approvers">

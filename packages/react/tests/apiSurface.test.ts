@@ -55,6 +55,7 @@ const EXPECTED_EXPORTS = [
   'ReceiveTaskShape',
   'ScriptTaskShape',
   'SHADOW_FILTER_ID',
+  'SHADOW_HOVER_FILTER_ID',
   'SelectionBoxOverlay',
   'SendTaskShape',
   'ServiceTaskShape',

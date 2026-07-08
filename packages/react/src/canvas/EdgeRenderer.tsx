@@ -107,6 +107,7 @@ function EdgeRendererInner({
   return (
     <g
       data-edge-id={edge.id}
+      data-selected={selected || undefined}
       role="link"
       aria-label={edge.label ?? `${edge.type} connection`}
       onPointerDown={(event) => {

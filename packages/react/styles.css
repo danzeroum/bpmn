@@ -212,6 +212,73 @@
   color: var(--bpmnr-selected);
 }
 
+/* ------------------------------------------- canvas interactive states
+   Craft pack A2/A3: hover/selection affordances in pure CSS — no per-node
+   React state, so pan over 350 nodes never re-renders. Base shadows stay as
+   SVG attributes (export-faithful); hover elevation is a CSS override that
+   only exists on screen. */
+
+.bpmnr-canvas g[data-node-shadow] {
+  transition: filter 120ms ease-out;
+}
+
+.bpmnr-canvas g[data-node-id]:hover > g > g[data-node-shadow] {
+  filter: url(#bpmnr-shadow-hover);
+}
+
+.bpmnr-canvas [data-ports] {
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.bpmnr-canvas g[data-node-id]:hover [data-ports],
+.bpmnr-canvas g[data-node-id][data-selected] [data-ports] {
+  opacity: 1;
+}
+
+.bpmnr-canvas g[data-edge-id] path[marker-end] {
+  transition: stroke 120ms ease-out, stroke-width 120ms ease-out;
+}
+
+.bpmnr-canvas g[data-edge-id]:not([data-selected]):hover path[marker-end] {
+  stroke: color-mix(in oklab, var(--bpmnr-stroke, #44403a), var(--bpmnr-selected, #1a6a54) 40%);
+  stroke-width: 2;
+}
+
+.bpmnr-node-enter {
+  animation: bpmnr-node-enter 120ms ease-out;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes bpmnr-node-enter {
+  from {
+    transform: scale(0.92);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.bpmnr-connect-preview-line {
+  animation: bpmnr-dash-march 400ms linear infinite;
+}
+
+@keyframes bpmnr-dash-march {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bpmnr-designer *,
+  .bpmnr-designer *::before,
+  .bpmnr-designer *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
 /* ----------------------------------------------------------- promotion */
 
 .bpmnr-promotion-overlay {
@@ -292,6 +359,21 @@
   margin: 4px 0 0;
   color: var(--bpmnr-text-muted);
   font-size: 11px;
+}
+
+.bpmnr-promotion-summary {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  border: 1px solid var(--bpmnr-panel-border);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--bpmnr-text);
+  background: var(--bpmnr-panel-bg);
+  resize: vertical;
 }
 
 .bpmnr-promotion-approvers {

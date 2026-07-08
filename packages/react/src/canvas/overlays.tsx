@@ -9,6 +9,7 @@ export function ConnectionPreview() {
   return (
     <g pointerEvents="none" data-connection-preview>
       <line
+        className="bpmnr-connect-preview-line"
         x1={connect.sourcePoint.x}
         y1={connect.sourcePoint.y}
         x2={connect.currentPoint.x}

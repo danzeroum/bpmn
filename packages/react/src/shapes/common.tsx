@@ -37,6 +37,7 @@ export function ShapeLabel({
   fontSize = 12,
   color = theme.text,
   maxLines = 3,
+  halo = false,
 }: {
   label: string;
   width: number;
@@ -44,6 +45,12 @@ export function ShapeLabel({
   fontSize?: number;
   color?: string;
   maxLines?: number;
+  /**
+   * Legibility halo for labels drawn OUTSIDE their shape (events, gateways):
+   * paints a canvas-colored stroke under the glyphs so text stays readable
+   * over lanes and the dot grid (craft pack A2).
+   */
+  halo?: boolean;
 }) {
   const lines = wrapLabel(label, Math.max(4, Math.floor(width / (fontSize * 0.58))), maxLines);
   return (
@@ -55,6 +62,14 @@ export function ShapeLabel({
       fill={color}
       fontFamily="inherit"
       pointerEvents="none"
+      {...(halo
+        ? {
+            paintOrder: 'stroke' as const,
+            stroke: 'var(--bpmnr-canvas-bg, #faf9f6)',
+            strokeWidth: 3,
+            strokeLinejoin: 'round' as const,
+          }
+        : {})}
     >
       {lines.map((line, index) => (
         <tspan key={index} x={width / 2} dy={index === 0 ? 0 : fontSize + 2}>

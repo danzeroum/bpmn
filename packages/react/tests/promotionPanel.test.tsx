@@ -88,6 +88,24 @@ describe('PromotionPanel — gates reflect the core state machine', () => {
     );
   });
 
+  it('collects the changelog in a textarea and re-evaluates the gate on commit', async () => {
+    const diagram = candidateDiagram();
+    diagram.version.changeSummary = 'curto';
+    renderPanel(diagram);
+    const dialog = await screen.findByRole('dialog', { name: 'Ativar v2.1.0' });
+    await waitFor(() => expect(dialog).toHaveTextContent('change summary of at least 20'));
+
+    const textarea = screen.getByLabelText('change_summary');
+    fireEvent.change(textarea, {
+      target: { value: 'Uma descrição de mudança suficientemente longa.' },
+    });
+    fireEvent.blur(textarea);
+
+    await waitFor(() =>
+      expect(dialog).not.toHaveTextContent('change summary of at least 20'),
+    );
+  });
+
   it('reports an unreachable target through the transition gate (custom matrix)', async () => {
     renderPanel(candidateDiagram(), {}, [
       {
