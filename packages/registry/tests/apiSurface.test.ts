@@ -7,7 +7,13 @@ import * as api from '../src/index.js';
  * appear here). See core/tests/apiSurface.test.ts for rationale — a failing
  * diff means an export was added, renamed, or removed.
  */
-const EXPECTED_EXPORTS = ['RegistryError', 'VersionRegistry', 'bindRun', 'verifyRunBinding'].sort();
+const EXPECTED_EXPORTS = [
+  'RegistryError',
+  'VersionRegistry',
+  'bindRun',
+  'resolveCallActivities',
+  'verifyRunBinding',
+].sort();
 
 describe('@bpmn-react/registry public API surface', () => {
   it('exports exactly the expected runtime members', () => {

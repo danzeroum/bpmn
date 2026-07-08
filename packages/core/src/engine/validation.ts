@@ -73,7 +73,7 @@ export const missingStartEventRule: ValidationRule = (diagram) => {
   ];
 };
 
-const NON_FLOW_TYPES = new Set(['textAnnotation', 'dataObject', 'group']);
+const NON_FLOW_TYPES = new Set(['textAnnotation', 'dataObject', 'dataStore', 'group']);
 
 /** Flow nodes (other than start events) should be reachable. Containers
  * (pools/lanes) are visual grouping, not flow — never flagged. Boundary events
@@ -217,7 +217,15 @@ export const crossScopeEdgeRule: ValidationRule = (diagram) => {
   };
   const issues: ValidationIssue[] = [];
   for (const edge of activeEdges(diagram)) {
-    if (edge.type === 'messageFlow' || edge.type === 'association') continue;
+    // Message flows cross pools by definition; (data) associations may reach
+    // data/annotation elements in any scope.
+    if (
+      edge.type === 'messageFlow' ||
+      edge.type === 'association' ||
+      edge.type === 'dataAssociation'
+    ) {
+      continue;
+    }
     const source = diagram.nodes[edge.sourceId];
     const target = diagram.nodes[edge.targetId];
     if (!source || !target) continue; // orphanEdgeRule owns this

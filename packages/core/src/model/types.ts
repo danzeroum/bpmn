@@ -255,6 +255,27 @@ export function isSubProcessExpanded(node: BpmnNode): boolean {
   return node.type === 'subProcess' && node.properties.isExpanded === true;
 }
 
+/**
+ * A call activity invokes another process by id (`properties.calledElement`,
+ * the standard BPMN attribute). The id is expected to match a registered
+ * diagram — `@bpmn-react/registry` resolves it to the version in effect at a
+ * given date (`resolveCallActivities`). Returns the called process id, if any.
+ */
+export function calledElementOf(node: BpmnNode): string | undefined {
+  return node.type === 'callActivity' && typeof node.properties.calledElement === 'string'
+    ? node.properties.calledElement
+    : undefined;
+}
+
+/**
+ * Data associations connect a data element (`dataObject`/`dataStore` or any
+ * plugin type with `category: 'data'`) to an activity. On export they become
+ * the standard `dataInputAssociation`/`dataOutputAssociation` nested in the
+ * activity element, so the direction decides the tag: data → activity is an
+ * input, activity → data an output.
+ */
+export const DATA_ASSOCIATION_EDGE_TYPE = 'dataAssociation';
+
 /** Returns the event-definition kind stored on a node, if it is a valid kind. */
 export function eventDefinitionOf(node: BpmnNode): EventDefinitionKind | undefined {
   const kind = node.properties.eventDefinition;

@@ -100,10 +100,10 @@ See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## BPMN 2.0 conformance
 
-The import/export profile currently covers the OMG **Descriptive** class at 94% (100% lands
-with F7's `callActivity`) and the **Analytic** class at 88% — the full element-by-element
-matrix lives in [CONFORMANCE.md](CONFORMANCE.md) (generated; freshness enforced in CI) and is
-exercised by a 50+ file interoperability corpus. Third parties can verify their own documents
+The import/export profile covers the OMG **Descriptive** class at **100%** (declarable) and
+the **Analytic** class at 96% — the full element-by-element matrix lives in
+[CONFORMANCE.md](CONFORMANCE.md) (generated; freshness enforced in CI) and is exercised by a
+50+ file interoperability corpus. Third parties can verify their own documents
 with `bpmn-react certify <file.bpmn> [--require descriptive|analytic]`.
 
 ## Known limitations (summary)

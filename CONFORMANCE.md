@@ -10,8 +10,8 @@ renders, exports and round-trips losslessly; **partial** — model and
 round-trip work, some interactions pending; **degraded** — imported with a
 warning and downgraded; **unsupported** — ignored on import with a warning.
 
-- **Descriptive class: 94%**
-- **Analytic class: 88%**
+- **Descriptive class: 100%** — declarable ✅
+- **Analytic class: 96%**
 
 | Element | Status | Class | Maps to | Notes |
 |---|---|---|---|---|
@@ -24,7 +24,7 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:manualTask` | ✅ supported | analytic | `manualTask` |  |
 | `bpmn:businessRuleTask` | ⛔ unsupported | analytic | — | Roadmap F9 (DMN) — ignored with a warning today. |
 | `bpmn:subProcess` | ✅ supported | descriptive | `subProcess` | Nested children as first-class nodes (lossless round-trip, DI isExpanded); expand/collapse and drill-down in the editor. |
-| `bpmn:callActivity` | ⛔ unsupported | descriptive | — | Roadmap F7 — registry synergy (activeAt). |
+| `bpmn:callActivity` | ✅ supported | descriptive | `callActivity` | Native calledElement; @bpmn-react/registry resolves the called process version (resolveCallActivities/activeAt). |
 | `bpmn:transaction` | ⛔ unsupported | extended | — | Deliberately out of scope before v2.x. |
 | `bpmn:adHocSubProcess` | ⛔ unsupported | extended | — |  |
 | `loopCharacteristics (standard)` | ✅ supported | analytic | `activity marker` |  |
@@ -51,11 +51,11 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:sequenceFlow` | ✅ supported | descriptive | `sequenceFlow` |  |
 | `bpmn:messageFlow` | ✅ supported | descriptive | `messageFlow` |  |
 | `bpmn:association` | ✅ supported | descriptive | `association` |  |
-| `bpmn:dataAssociation` | ⛔ unsupported | analytic | — | Roadmap F7 (dataStore + dataAssociation). |
+| `bpmn:dataAssociation` | ✅ supported | analytic | `dataAssociation` | dataInput/OutputAssociation nested in activities; bpmn.io-style synthesized property targets resolve to the owning activity. |
 | `bpmn:participant (pool)` | ✅ supported | descriptive | `pool` | v1 profile: N participants map onto a single process. |
 | `bpmn:lane / laneSet` | ✅ supported | descriptive | `lane` | Interactive membership via flowNodeRefs. |
 | `bpmn:dataObjectReference` | ✅ supported | analytic | `dataObject` |  |
-| `bpmn:dataStoreReference` | ⛔ unsupported | analytic | — | Roadmap F7. |
+| `bpmn:dataStoreReference` | ✅ supported | analytic | `dataStore` | Native dataStoreRef attribute; root-level <dataStore> declarations are not modelled. |
 | `bpmn:textAnnotation` | ✅ supported | descriptive | `textAnnotation` |  |
 | `bpmn:group` | ✅ supported | analytic | `group` |  |
 | `bpmndi:BPMNDiagram / BPMNShape / BPMNEdge` | ✅ supported | descriptive | — | Missing DI falls back to an automatic grid layout (warning). |

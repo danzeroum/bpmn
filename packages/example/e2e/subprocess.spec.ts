@@ -59,3 +59,12 @@ test('dragging an expanded sub-process carries its children', async ({ page }) =
 
   await expect.poll(async () => child.getAttribute('transform')).not.toBe(before);
 });
+
+test('shows the dotted data association once the sub-process is expanded', async ({ page }) => {
+  // Hidden while the refund step (its source) is behind the [+] marker.
+  await expect(page.locator('[data-edge-id="d1"]')).toHaveCount(0);
+  await page.locator('[data-node-id="returns"] [data-subprocess-toggle]').click();
+  const line = page.locator('[data-edge-id="d1"] path[marker-end]');
+  await expect(line).toHaveAttribute('stroke-dasharray', '2,4');
+  await expect(line).toHaveAttribute('marker-end', 'url(#bpmnr-edge-open)');
+});

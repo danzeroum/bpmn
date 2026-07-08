@@ -129,6 +129,18 @@ export const CORE_PALETTE_ICONS: Record<string, ReactNode> = {
       <path d="M 9 11.3 V 13.2 M 8.3 12.25 H 9.7" strokeWidth={1.1} />
     </Icon>
   ),
+  callActivity: (
+    <Icon strokeWidth={2.2}>
+      <rect x={2.5} y={4} width={13} height={10} rx={2} />
+      <path d="M 9 10.6 V 13 M 7.8 11.8 H 10.2" strokeWidth={1.1} />
+    </Icon>
+  ),
+  dataStore: (
+    <Icon>
+      <path d="M 3.5 5 A 5.5 1.8 0 0 1 14.5 5 V 13 A 5.5 1.8 0 0 1 3.5 13 Z" />
+      <path d="M 3.5 5 A 5.5 1.8 0 0 0 14.5 5" strokeWidth={1.1} />
+    </Icon>
+  ),
   group: (
     <Icon>
       <rect x={3} y={3.5} width={12} height={11} rx={2.5} strokeDasharray="3,2.4" />

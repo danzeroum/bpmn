@@ -107,6 +107,8 @@ const EXPECTED_EXPORTS = [
   'childrenOf',
   'descendantIdsOf',
   'isSubProcessExpanded',
+  'calledElementOf',
+  'DATA_ASSOCIATION_EDGE_TYPE',
   'subProcessParentRule',
   'crossScopeEdgeRule',
   'roundCoord',

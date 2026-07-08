@@ -24,7 +24,7 @@ describe('conformance matrix', () => {
         row.mappedTo !== undefined &&
         !row.mappedTo.includes(' ') &&
         !row.mappedTo.includes(':') &&
-        !['sequenceFlow', 'messageFlow', 'association'].includes(row.mappedTo),
+        !['sequenceFlow', 'messageFlow', 'association', 'dataAssociation'].includes(row.mappedTo),
     );
     expect(nodeRows.length).toBeGreaterThan(15);
     for (const row of nodeRows) {
@@ -32,13 +32,10 @@ describe('conformance matrix', () => {
     }
   });
 
-  it('tracks class coverage honestly (Descriptive reaches 100% with F7/callActivity)', () => {
+  it('reaches Descriptive 100% with F7-3 (callActivity landed)', () => {
     const descriptive = classCoverage(CONFORMANCE_MATRIX, 'descriptive');
     const analytic = classCoverage(CONFORMANCE_MATRIX, 'analytic');
-    // callActivity (Descriptive) is still roadmap F7 — the matrix must not
-    // overclaim before it lands.
-    expect(descriptive).toBeGreaterThanOrEqual(90);
-    expect(descriptive).toBeLessThan(100);
+    expect(descriptive).toBe(100);
     expect(analytic).toBeGreaterThanOrEqual(80);
   });
 

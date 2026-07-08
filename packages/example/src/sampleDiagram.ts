@@ -49,6 +49,14 @@ export function buildSampleDiagram(): BpmnDiagram {
     parentId: 'returns',
   });
 
+  // Call activity (F7-3): invokes the shared billing process by id — the
+  // registry resolves which VERSION is in effect when a run starts.
+  const billing = make('callActivity', 'billing', 'Billing (shared)', 550, 420, {
+    calledElement: 'demo-billing-process',
+  });
+  // Data store fed by the refund step (dotted data association).
+  const returnsDb = make('dataStore', 'returnsDb', 'Returns DB', 1270, 355);
+
   diagram.nodes = {
     squad,
     writer,
@@ -61,6 +69,8 @@ export function buildSampleDiagram(): BpmnDiagram {
     returns,
     returnsInspect: inspect,
     returnsRefund: refund,
+    billing,
+    returnsDb,
   };
 
   const edge = (
@@ -97,8 +107,12 @@ export function buildSampleDiagram(): BpmnDiagram {
     }),
     e7: edge('e7', 'publish', 'post', 'sequenceFlow', 'CMS emits the deliverable'),
     e8: edge('e8', 'publish', 'returns', 'sequenceFlow', 'Returned items enter the returns flow'),
+    e9: edge('e9', 'gate', 'billing', 'sequenceFlow', 'Approved work triggers shared billing'),
     // Inner flow — same scope (both children of the returns sub-process).
     r1: edge('r1', 'returnsInspect', 'returnsRefund', 'sequenceFlow', 'Approved return is refunded'),
+    // Data association: refund step writes to the returns store (may cross
+    // the sub-process boundary — data is visible from any scope).
+    d1: edge('d1', 'returnsRefund', 'returnsDb', 'dataAssociation', 'Refund recorded'),
   };
 
   return diagram;

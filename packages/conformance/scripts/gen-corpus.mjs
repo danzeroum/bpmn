@@ -366,7 +366,7 @@ const SCENARIOS = [
   {
     name: 'degraded-elements',
     source: 'Signavio-style export with elements outside the profile',
-    description: 'complexGateway + businessRuleTask + callActivity degrade with warnings',
+    description: 'complexGateway + businessRuleTask degrade with warnings; callActivity imports natively (F7-3)',
     build: (v) =>
       processXml(`Definitions_deg${v}`, `Process_deg${v}`, [
         { tag: 'startEvent', id: 'Start_1' },
@@ -548,6 +548,65 @@ const SCENARIOS = [
       <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
         <dc:Bounds x="800" y="192" width="36" height="36" />
       </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
+`,
+  },
+  {
+    name: 'call-activity-data',
+    source: 'bpmn.io export with call activity and data elements',
+    description: 'callActivity (calledElement) + dataObject/dataStore references + data input/output associations',
+    build: (v) => `<bpmn:definitions ${NS} id="Definitions_cad${v}" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_cad${v}" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:callActivity id="Call_billing" name="Charge customer ${v}" calledElement="Process_billing" />
+    <bpmn:task id="Task_pack" name="Pack order">
+      <bpmn:property id="Property_1" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="Din_1">
+        <bpmn:sourceRef>Data_order</bpmn:sourceRef>
+        <bpmn:targetRef>Property_1</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+      <bpmn:dataOutputAssociation id="Dout_1">
+        <bpmn:targetRef>Store_crm</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:task>
+    <bpmn:dataObject id="DataObject_1" />
+    <bpmn:dataObjectReference id="Data_order" name="Order" dataObjectRef="DataObject_1" />
+    <bpmn:dataStoreReference id="Store_crm" name="CRM" dataStoreRef="DataStore_1" />
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Call_billing" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Call_billing" targetRef="Task_pack" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_pack" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diag_cad${v}">
+    <bpmndi:BPMNPlane id="Plane_cad${v}" bpmnElement="Process_cad${v}">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="112" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Call_billing_di" bpmnElement="Call_billing">
+        <dc:Bounds x="260" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_pack_di" bpmnElement="Task_pack">
+        <dc:Bounds x="440" y="100" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Data_order_di" bpmnElement="Data_order">
+        <dc:Bounds x="420" y="240" width="36" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Store_crm_di" bpmnElement="Store_crm">
+        <dc:Bounds x="540" y="240" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="640" y="112" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Din_1_di" bpmnElement="Din_1">
+        <di:waypoint x="456" y="240" />
+        <di:waypoint x="480" y="160" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Dout_1_di" bpmnElement="Dout_1">
+        <di:waypoint x="520" y="160" />
+        <di:waypoint x="560" y="240" />
+      </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>

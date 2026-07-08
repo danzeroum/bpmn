@@ -26,8 +26,10 @@ const EXPECTED_EXPORTS = [
   'CanvasProvider',
   'ConnectedEdge',
   'ConnectedNode',
+  'CallActivityShape',
   'ConnectionPreview',
   'DataObjectShape',
+  'DataStoreShape',
   'DefaultShape',
   'Defs',
   'DiagramProvider',
@@ -104,11 +106,13 @@ describe('@bpmn-react/react public API surface', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });
 
-  it('every one of the 22 built-in shapes is registered in BUILT_IN_SHAPES', () => {
+  it('every one of the 24 built-in shapes is registered in BUILT_IN_SHAPES', () => {
     expect(Object.keys(api.BUILT_IN_SHAPES).sort()).toEqual(
       [
         'boundaryEvent',
+        'callActivity',
         'dataObject',
+        'dataStore',
         'endEvent',
         'eventBasedGateway',
         'exclusiveGateway',
