@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { BpmnXmlConverter, type BpmnDiagram } from '@bpmn-react/core';
+import { AuditLedger, BpmnXmlConverter, type BpmnDiagram } from '@bpmn-react/core';
 import { BpmnEditor, resolveEditorConfig, useDiagram } from '@bpmn-react/react';
 import { domainExamplePlugin } from '@bpmn-react/domain-example';
 import { buildSampleDiagram, buildStressDiagram } from './sampleDiagram.js';
@@ -87,10 +87,14 @@ export function App() {
 function SidePanels() {
   const { diagram } = useDiagram();
   void diagram; // subscribe so the panels stay in sync
+  // One ledger for the whole demo: command auditing (AuditPanel) and the
+  // promotion toast (PromotionPanel) share the same hash chain.
+  const ledgerRef = useRef<AuditLedger | null>(null);
+  if (ledgerRef.current === null) ledgerRef.current = new AuditLedger();
   return (
     <div className="demo-side">
-      <LifecyclePanel />
-      <AuditPanel />
+      <LifecyclePanel ledger={ledgerRef.current} />
+      <AuditPanel ledger={ledgerRef.current} />
     </div>
   );
 }

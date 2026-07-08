@@ -1,12 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   computeDiff,
-  LifecycleEngine,
+  type AuditLedger,
   type BpmnDiagram,
   type UserContext,
   type VersionStatus,
 } from '@bpmn-react/core';
-import { DiffView, useDiagram } from '@bpmn-react/react';
+import { DiffView, PromotionPanel, useDiagram, useEditorConfig } from '@bpmn-react/react';
 
 const ACTORS: UserContext[] = [
   { id: 'u-owner', role: 'owner', name: 'Olivia (owner)' },
@@ -16,16 +16,20 @@ const ACTORS: UserContext[] = [
 
 /**
  * Demo governance panel: approve as different roles, promote through the
- * lifecycle, clone active diagrams into new drafts, inspect the diff since
- * the panel's baseline.
+ * lifecycle (activation goes through the formal PromotionPanel), clone
+ * active diagrams into new drafts, inspect the diff since the baseline.
  */
-export function LifecyclePanel() {
+export function LifecyclePanel({ ledger }: { ledger?: AuditLedger } = {}) {
   const { diagram, replaceDiagram } = useDiagram();
-  const engine = useMemo(() => new LifecycleEngine(), []);
+  // The plugin-configured engine — the same one the StatusBadge and the
+  // PromotionPanel reflect (never a parallel instance).
+  const { lifecycleEngine: engine } = useEditorConfig();
   const [actor, setActor] = useState(ACTORS[0]);
   const [message, setMessage] = useState<string | null>(null);
   const [baseline, setBaseline] = useState<BpmnDiagram>(diagram);
   const [showDiff, setShowDiff] = useState(false);
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [lastActive, setLastActive] = useState<{ semanticVersion: string } | null>(null);
 
   const version = diagram.version;
   const targets = engine.allowedTargets(version.status);
@@ -42,18 +46,17 @@ export function LifecyclePanel() {
 
   const approve = () => run(() => engine.approve(diagram, actor, `Approved by ${actor.role}`));
 
+  // Non-active hops only — activation goes through the formal PromotionPanel.
   const promote = (target: VersionStatus) =>
-    run(async () => {
-      const promoted = await engine.promote({
+    run(() =>
+      engine.promote({
         diagram,
         target,
         actor,
         reason: `Promoted to ${target} after review by ${actor.role} in the demo app.`,
         diff: computeDiff(baseline, diagram),
-      });
-      if (target === 'active') setBaseline(promoted);
-      return promoted;
-    });
+      }),
+    );
 
   const cloneDraft = () =>
     run(async () => {
@@ -98,11 +101,18 @@ export function LifecyclePanel() {
       <div className="demo-promote">
         <strong>Promote</strong>
         {targets.length === 0 && <p className="demo-muted">Terminal status.</p>}
-        {targets.map((target) => (
-          <button key={target} type="button" onClick={() => promote(target)}>
-            → {target}
+        {targets
+          .filter((target) => target !== 'active')
+          .map((target) => (
+            <button key={target} type="button" onClick={() => promote(target)}>
+              → {target}
+            </button>
+          ))}
+        {targets.includes('active') && (
+          <button type="button" className="demo-promote-formal" onClick={() => setPromoOpen(true)}>
+            Promover…
           </button>
-        ))}
+        )}
         {(version.status === 'active' ||
           version.status === 'deprecated' ||
           version.status === 'retired') && (
@@ -144,6 +154,23 @@ export function LifecyclePanel() {
           </>
         )}
       </dl>
+
+      <PromotionPanel
+        open={promoOpen}
+        onClose={() => setPromoOpen(false)}
+        actor={actor}
+        approvers={[
+          { actor: ACTORS[0], label: 'Owner' },
+          { actor: ACTORS[1], label: 'Compliance' },
+        ]}
+        baseline={baseline}
+        previousActive={lastActive ?? undefined}
+        ledger={ledger}
+        onActivated={({ diagram: promoted }) => {
+          setBaseline(promoted);
+          setLastActive({ semanticVersion: promoted.version.semanticVersion });
+        }}
+      />
     </aside>
   );
 }

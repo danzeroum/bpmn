@@ -212,6 +212,184 @@
   color: var(--bpmnr-selected);
 }
 
+/* ----------------------------------------------------------- promotion */
+
+.bpmnr-promotion-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(38, 34, 32, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.bpmnr-promotion {
+  width: 540px;
+  max-width: calc(100vw - 32px);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: var(--bpmnr-panel-bg);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--bpmnr-text);
+}
+
+.bpmnr-promotion-kicker {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9.5px;
+  letter-spacing: 2px;
+  color: var(--btv-gold, #9a7b1e);
+}
+
+.bpmnr-promotion h2 {
+  margin: 2px 0;
+  font-size: 18px;
+}
+
+.bpmnr-promotion-trail {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--bpmnr-text-muted);
+}
+
+.bpmnr-promotion-trail strong {
+  color: var(--bpmnr-status-active-fg, #1a6a54);
+}
+
+.bpmnr-promotion-gate {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid var(--bpmnr-panel-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: border-color 120ms ease-out, background-color 120ms ease-out;
+}
+
+.bpmnr-promotion-gate[data-satisfied='true'] {
+  border-color: var(--bpmnr-status-active-border, #bcdcc9);
+  background: var(--bpmnr-status-active-bg, #f2f9f4);
+}
+
+.bpmnr-promotion-gate[data-satisfied='true'] > span {
+  color: var(--bpmnr-status-active-fg, #1a6a54);
+  font-weight: 700;
+}
+
+.bpmnr-promotion-gate > div {
+  flex: 1;
+}
+
+.bpmnr-promotion-detail {
+  margin: 4px 0 0;
+  color: var(--bpmnr-text-muted);
+  font-size: 11px;
+}
+
+.bpmnr-promotion-approvers {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.bpmnr-promotion-approvers button {
+  flex: 1;
+  border: 1px solid var(--bpmnr-panel-border);
+  background: transparent;
+  border-radius: 8px;
+  padding: 7px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--bpmnr-text);
+  transition: background-color 120ms ease-out, border-color 120ms ease-out;
+}
+
+.bpmnr-promotion-approvers button[data-approved='true'] {
+  border-color: var(--bpmnr-status-active-fg, #1a6a54);
+  background: var(--bpmnr-status-active, #dff0e6);
+  color: var(--bpmnr-status-active-fg, #1a6a54);
+  cursor: default;
+}
+
+.bpmnr-promotion-diff {
+  border: 1px solid var(--bpmnr-panel-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.bpmnr-promotion-warning {
+  margin: 0;
+  background: var(--bpmnr-warning-bg, #fdf6e8);
+  border: 1px solid var(--bpmnr-warning-border, #e8d9ae);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 11.5px;
+  color: var(--bpmnr-warning-fg, #7a611e);
+}
+
+.bpmnr-promotion-error {
+  margin: 0;
+  color: var(--bpmnr-danger, #b3372f);
+}
+
+.bpmnr-promotion footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.bpmnr-promotion footer button {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid var(--bpmnr-panel-border);
+  background: transparent;
+  color: var(--bpmnr-text);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 120ms ease-out;
+}
+
+.bpmnr-promotion-activate {
+  border: none !important;
+  background: var(--bpmnr-status-active-fg, #1a6a54) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.bpmnr-promotion-activate:disabled {
+  background: var(--bpmnr-disabled, #c9c4ba) !important;
+  cursor: not-allowed;
+}
+
+.bpmnr-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  background: var(--bpmnr-toast-bg, #262220);
+  color: var(--bpmnr-toast-fg, #ece8e1);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 12.5px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.bpmnr-toast > span {
+  color: var(--bpmnr-toast-check, #57b895);
+  font-weight: 700;
+  margin-right: 6px;
+}
+
 /* ------------------------------------------------------------- palette */
 
 .bpmnr-palette {
