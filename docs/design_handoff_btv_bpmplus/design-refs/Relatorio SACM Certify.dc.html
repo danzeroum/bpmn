@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #ece9e2; }
+  a { color: #9a7b1e; text-decoration: none; }
+  a:hover { color: #7a611e; text-decoration: underline; }
+</style>
+</helmet>
+<x-import component-from-global-scope="doc-page" from="./doc-page.js" size="letter" margin="0.7in" hint-size="100%,100%">
+  <div slot="header" style="border-top: 4px solid #9a7b1e; padding-top: 10px; display: flex; justify-content: space-between; align-items: baseline; font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 2px; color: #9a7b1e;">
+    <span>BTV CERTIFY · ASSURANCE CASE · SACM 2.3</span>
+    <span style="color: #6f675a; letter-spacing: 0.5px;">bpmn-react certify --assurance-case</span>
+  </div>
+  <div slot="footer" style="border-top: 1px solid #e2ddd3; padding-top: 8px; display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #6f675a;">
+    <span>cadeia sha-256 íntegra · head #a3f9e1c47b</span>
+    <span>gerado 07/07/2026 14:32 UTC · imutável</span>
+    <span>página 1/1</span>
+  </div>
+
+  <div style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220;">
+
+    <h1 style="margin: 18px 0 6px; font-size: 24px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.25;">Onboarding de Cliente <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #9a7b1e;">v2.1.0</span> conforma à política de governança BuildToValue</h1>
+    <div style="display: flex; gap: 18px; flex-wrap: wrap; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #6f675a; margin-bottom: 18px;">
+      <span>diagrama: Onboarding de Cliente</span>
+      <span>status: <span style="color: #1a6a54; font-weight: 600;">ATIVA</span> desde 07/07/2026</span>
+      <span>perfil: BPMN 2.0.2 Descriptive</span>
+      <span>snapshot: #f21c88d0</span>
+    </div>
+
+    <!-- Diagrama do caso -->
+    <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 16px 14px 10px; margin-bottom: 16px; background: #fdfdfc;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 10px;">ESTRUTURA DO CASO · CLAIM → ARGUMENT → EVIDENCE</div>
+      <svg width="100%" height="315" viewBox="0 0 660 315" data-om-raster="">
+        <!-- claim raiz -->
+        <rect x="200" y="6" width="260" height="40" fill="#ffffff" stroke="#44403a" stroke-width="1.5"></rect>
+        <text x="330" y="23" text-anchor="middle" font-size="11.5" font-weight="600" fill="#262220">C1 · v2.1.0 é confiável para produção</text>
+        <text x="330" y="38" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#6f675a">claim raiz · asserted</text>
+        <path d="M 330 46 V 62 M 120 62 H 540 M 120 62 V 78 M 330 62 V 78 M 540 62 V 78" stroke="#44403a" stroke-width="1"></path>
+
+        <!-- sub-claims -->
+        <rect x="30" y="78" width="180" height="36" fill="#ffffff" stroke="#44403a" stroke-width="1.2"></rect>
+        <text x="120" y="93" text-anchor="middle" font-size="10" font-weight="600" fill="#262220">C1.1 · conforma ao perfil</text>
+        <text x="120" y="106" text-anchor="middle" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="#6f675a">Descriptive · round-trip lossless</text>
+        <rect x="240" y="78" width="180" height="36" fill="#ffffff" stroke="#44403a" stroke-width="1.2"></rect>
+        <text x="330" y="93" text-anchor="middle" font-size="10" font-weight="600" fill="#262220">C1.2 · promoção governada</text>
+        <text x="330" y="106" text-anchor="middle" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="#6f675a">gates + 2 papéis distintos</text>
+        <rect x="450" y="78" width="180" height="36" fill="#ffffff" stroke="#44403a" stroke-width="1.2"></rect>
+        <text x="540" y="93" text-anchor="middle" font-size="10" font-weight="600" fill="#262220">C1.3 · histórico íntegro</text>
+        <text x="540" y="106" text-anchor="middle" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="#6f675a">imutabilidade temporal</text>
+
+        <!-- arguments -->
+        <path d="M 120 114 V 132 M 330 114 V 132 M 540 114 V 132" stroke="#44403a" stroke-width="1"></path>
+        <polygon points="42,132 210,132 198,168 30,168" fill="#fdfaf1" stroke="#9a7b1e" stroke-width="1.5"></polygon>
+        <text x="120" y="147" text-anchor="middle" font-size="9.5" font-weight="600" fill="#262220">A1 · por verificação</text>
+        <text x="120" y="160" text-anchor="middle" font-size="8" font-family="IBM Plex Mono, monospace" fill="#7a611e">42 fixtures · 0 warnings</text>
+        <polygon points="252,132 420,132 408,168 240,168" fill="#fdfaf1" stroke="#9a7b1e" stroke-width="1.5"></polygon>
+        <text x="330" y="147" text-anchor="middle" font-size="9.5" font-weight="600" fill="#262220">A2 · por processo</text>
+        <text x="330" y="160" text-anchor="middle" font-size="8" font-family="IBM Plex Mono, monospace" fill="#7a611e">state machine · rules engine</text>
+        <polygon points="462,132 630,132 618,168 450,168" fill="#fdfaf1" stroke="#9a7b1e" stroke-width="1.5"></polygon>
+        <text x="540" y="147" text-anchor="middle" font-size="9.5" font-weight="600" fill="#262220">A3 · por criptografia</text>
+        <text x="540" y="160" text-anchor="middle" font-size="8" font-family="IBM Plex Mono, monospace" fill="#7a611e">cadeia sha-256 verificada</text>
+
+        <!-- evidence -->
+        <path d="M 84 168 V 188 M 156 168 V 188 M 294 168 V 188 M 366 168 V 188 M 504 168 V 188 M 576 168 V 188" stroke="#44403a" stroke-width="1" stroke-dasharray="3 3"></path>
+        <g transform="translate(84, 206)"><circle r="17" fill="#dff0e6" stroke="#1a6a54" stroke-width="1.8"></circle><text y="3.5" text-anchor="middle" font-size="8" font-family="IBM Plex Mono, monospace" fill="#1a6a54">#41ce</text></g>
+        <g transform="translate(156, 206)"><circle r="17" fill="#dff0e6" stroke="#1a6a54" stroke-width="1.8"></circle><text y="3.5" text-anchor="middle" font-size="8" font-family="IBM Plex Mono, monospace" fill="#1a6a54">#88f1</text></g>
+        <g transform="translate(294, 206)"><circle r="17" fill="#dff0e6" stroke="#1a6a54" stroke-width="1.8"></circle><text y="3.5" text-anchor="middle" font-size="8" font-family="IBM Plex Mono, monospace" fill="#1a6a54">#c71d</text></g>
+        <g transform="translate(366, 206)"><circle r="17" fill="#dff0e6" stroke="#1a6a54" stroke-width="1.8"></circle><text y="3.5" text-anchor="middle" font-size="8" font-family="IBM Plex Mono, monospace" fill="#1a6a54">#0b9a</text></g>
+        <g transform="translate(504, 206)"><circle r="17" fill="#dff0e6" stroke="#1a6a54" stroke-width="1.8"></circle><text y="3.5" text-anchor="middle" font-size="8" font-family="IBM Plex Mono, monospace" fill="#1a6a54">#a3f9</text></g>
+        <g transform="translate(576, 206)"><circle r="17" fill="#dff0e6" stroke="#1a6a54" stroke-width="1.8"></circle><text y="3.5" text-anchor="middle" font-size="8" font-family="IBM Plex Mono, monospace" fill="#1a6a54">#7d21</text></g>
+        <text x="84" y="238" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#6f675a">export fixture</text>
+        <text x="156" y="238" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#6f675a">corpus camunda</text>
+        <text x="294" y="238" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#6f675a">aprov. operação</text>
+        <text x="366" y="238" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#6f675a">aprov. compliance</text>
+        <text x="504" y="238" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#6f675a">promoção v2.1.0</text>
+        <text x="576" y="238" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#6f675a">supersede v2.0.0</text>
+
+        <!-- legenda -->
+        <g transform="translate(30, 268)" font-family="IBM Plex Mono, monospace" font-size="8" fill="#6f675a">
+          <rect x="0" y="0" width="16" height="11" fill="#ffffff" stroke="#44403a" stroke-width="1"></rect><text x="22" y="9">claim</text>
+          <polygon points="66,0 88,0 84,11 62,11" fill="#fdfaf1" stroke="#9a7b1e" stroke-width="1"></polygon><text x="94" y="9">argument</text>
+          <circle cx="164" cy="5.5" r="5.5" fill="#dff0e6" stroke="#1a6a54" stroke-width="1"></circle><text x="176" y="9">evidence = entrada do ledger (nunca digitada)</text>
+          <line x1="404" y1="5.5" x2="424" y2="5.5" stroke="#44403a" stroke-width="1" stroke-dasharray="3 3"></line><text x="430" y="9">relação inferida</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Tabela de evidências -->
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 8px;">EVIDÊNCIAS · ENTRADAS DO LEDGER</div>
+    <table style="border-collapse: collapse; width: 100%; font-size: 10px; margin-bottom: 16px;">
+      <tr style="border-bottom: 1.5px solid #44403a; text-align: left;">
+        <th style="padding: 5px 8px 5px 0; font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #6f675a; font-weight: 600;">HASH</th>
+        <th style="padding: 5px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #6f675a; font-weight: 600;">EVENTO</th>
+        <th style="padding: 5px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #6f675a; font-weight: 600;">SUSTENTA</th>
+        <th style="padding: 5px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #6f675a; font-weight: 600;">AUTOR</th>
+        <th style="padding: 5px 0 5px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #6f675a; font-weight: 600;">DATA (UTC)</th>
+      </tr>
+      <tr style="border-bottom: 1px solid #e2ddd3;"><td style="padding: 5px 8px 5px 0; font-family: 'IBM Plex Mono', monospace; color: #1a6a54;">#41ce…09</td><td style="padding: 5px 8px;">export BPMN 2.0.2 + round-trip idêntico (42 fixtures)</td><td style="padding: 5px 8px; font-family: 'IBM Plex Mono', monospace;">C1.1/A1</td><td style="padding: 5px 8px;">ci · build 4812</td><td style="padding: 5px 0 5px 8px; font-family: 'IBM Plex Mono', monospace;">07/07 11:04</td></tr>
+      <tr style="border-bottom: 1px solid #e2ddd3;"><td style="padding: 5px 8px 5px 0; font-family: 'IBM Plex Mono', monospace; color: #1a6a54;">#88f1…3c</td><td style="padding: 5px 8px;">import do corpus externo sem warnings (Camunda/bpmn.io)</td><td style="padding: 5px 8px; font-family: 'IBM Plex Mono', monospace;">C1.1/A1</td><td style="padding: 5px 8px;">ci · build 4812</td><td style="padding: 5px 0 5px 8px; font-family: 'IBM Plex Mono', monospace;">07/07 11:05</td></tr>
+      <tr style="border-bottom: 1px solid #e2ddd3;"><td style="padding: 5px 8px 5px 0; font-family: 'IBM Plex Mono', monospace; color: #1a6a54;">#c71d…5e</td><td style="padding: 5px 8px;">aprovação de promoção · papel Operação</td><td style="padding: 5px 8px; font-family: 'IBM Plex Mono', monospace;">C1.2/A2</td><td style="padding: 5px 8px;">Ana Ruiz</td><td style="padding: 5px 0 5px 8px; font-family: 'IBM Plex Mono', monospace;">07/07 14:18</td></tr>
+      <tr style="border-bottom: 1px solid #e2ddd3;"><td style="padding: 5px 8px 5px 0; font-family: 'IBM Plex Mono', monospace; color: #1a6a54;">#0b9a…77</td><td style="padding: 5px 8px;">aprovação de promoção · papel Compliance</td><td style="padding: 5px 8px; font-family: 'IBM Plex Mono', monospace;">C1.2/A2</td><td style="padding: 5px 8px;">Marcos Leal</td><td style="padding: 5px 0 5px 8px; font-family: 'IBM Plex Mono', monospace;">07/07 14:25</td></tr>
+      <tr style="border-bottom: 1px solid #e2ddd3;"><td style="padding: 5px 8px 5px 0; font-family: 'IBM Plex Mono', monospace; color: #1a6a54;">#a3f9…1b</td><td style="padding: 5px 8px;">candidate → active · v2.1.0 (change_summary + diff)</td><td style="padding: 5px 8px; font-family: 'IBM Plex Mono', monospace;">C1.2/A2</td><td style="padding: 5px 8px;">state machine</td><td style="padding: 5px 0 5px 8px; font-family: 'IBM Plex Mono', monospace;">07/07 14:32</td></tr>
+      <tr><td style="padding: 5px 8px 5px 0; font-family: 'IBM Plex Mono', monospace; color: #1a6a54;">#7d21…af</td><td style="padding: 5px 8px;">v2.0.0 → descontinuada · supersede registrado</td><td style="padding: 5px 8px; font-family: 'IBM Plex Mono', monospace;">C1.3/A3</td><td style="padding: 5px 8px;">state machine</td><td style="padding: 5px 0 5px 8px; font-family: 'IBM Plex Mono', monospace;">07/07 14:32</td></tr>
+    </table>
+
+    <!-- Aprovações + veredito -->
+    <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 240px; border: 1px solid #bcdcc9; background: #f2f9f4; border-radius: 10px; padding: 12px 14px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.8px; color: #1a6a54; margin-bottom: 6px;">VEREDITO</div>
+        <div style="font-size: 13px; font-weight: 600; color: #1a6a54;">✓ Caso sustentado — 3/3 claims com evidência íntegra</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #6f675a; margin-top: 4px;">nenhum claim asserted sem evidência · cadeia verificada na geração</div>
+      </div>
+      <div style="flex: 1; min-width: 240px; border: 1px solid #e2ddd3; border-radius: 10px; padding: 12px 14px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 6px;">APROVADORES DA VIGÊNCIA</div>
+        <div style="font-size: 12px;">Ana Ruiz <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #6f675a;">· Operação · #c71d</span></div>
+        <div style="font-size: 12px; margin-top: 3px;">Marcos Leal <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #6f675a;">· Compliance · #0b9a</span></div>
+      </div>
+    </div>
+
+    <p style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #a49c8f; line-height: 1.7; margin: 16px 0 0;">Documento gerado automaticamente pelo CLI a partir do ledger — todo conteúdo acima é derivado, nunca digitado. Na implementação, tipografia usa font stack de sistema (o webfont desta referência é só da folha de design). Vocabulário SACM: claim (retângulo tinta) · argument (paralelogramo ouro) · evidence (círculo verde). Claims sem evidência renderizam em --btv-error com veredito "não sustentado".</p>
+  </div>
+</x-import>
+
+</x-dc>
+</body>
+</html>

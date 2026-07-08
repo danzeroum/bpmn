@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&amp;family=IBM+Plex+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f0eee9;font-family:'Patrick Hand',cursive}
+a{color:#9a7b1e;text-decoration:none}a:hover{text-decoration:underline}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}
+.dv-tid{font:600 10px 'IBM Plex Mono',monospace;padding:3px 7px;background:#262220;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 17px/1.2 'Patrick Hand',cursive;color:#262220}
+.dv-tsub{margin:0 0 20px;font:400 13px/1.5 'Patrick Hand',cursive;color:rgba(0,0,0,.55);max-width:820px}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px 'IBM Plex Mono',monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#262220;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 14px/1.3 'Patrick Hand',cursive;color:rgba(0,0,0,.6)}
+.dv-rec{font:600 9px 'IBM Plex Mono',monospace;letter-spacing:1px;background:#f6edd4;color:#7a611e;border:1px solid #9a7b1e;border-radius:999px;padding:2px 8px}
+.dv-card{max-width:100%;background:#fff;border:1.5px solid #44403a;border-radius:8px;box-shadow:2px 3px 0 rgba(68,64,58,.18);overflow:hidden;padding:14px;box-sizing:border-box}
+.dv-next{margin:22px 0 0;font:13px/1.5 'Patrick Hand',cursive;color:rgba(0,0,0,.5)}
+.wf{stroke:#44403a;fill:none;stroke-width:1.5}
+.wft{font-family:'Patrick Hand',cursive;fill:#44403a}
+.wfm{font-family:'IBM Plex Mono',monospace;fill:#6f675a}
+.wfg{stroke:#9a7b1e}
+.note{font:400 12.5px/1.45 'Patrick Hand',cursive;color:#6f675a;margin-top:10px;border-top:1px dashed #c9c4ba;padding-top:8px}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t0">
+  <div class="dv-thd"><a class="dv-tid" href="#t0">LO-FI</a><span class="dv-tname">Wireframes de co-criação — pacote BPM+ (DMN · PPMN · SACM)</span></div>
+  <p class="dv-tsub">Baixa fidelidade de propósito: decidir ESTRUTURA e FLUXO antes do hifi. Cada tópico responde uma decisão em aberto do handoff (§7) ou uma interação inédita (§5). A opção marcada em ouro é a recomendada — a folha hifi "BTV DMN Notation" já a materializa, mas tudo aqui é conversável. Diga "quero <a class="dv-oid" href="#2a">2a</a> em vez de <a class="dv-oid" href="#2c">2c</a>" e eu refaço o hifi.</p>
+</section>
+
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Decisão (b) — a decision table vive dentro do canvas ou em superfície própria?</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Embed total no canvas</div>
+      <div class="dv-card" style="width:340px">
+        <svg width="310" height="190" viewBox="0 0 310 190">
+          <rect x="4" y="4" width="302" height="182" rx="6" class="wf"></rect>
+          <text x="14" y="22" font-size="13" class="wft">canvas BPMN</text>
+          <rect x="18" y="34" width="90" height="44" rx="6" class="wf"></rect>
+          <text x="30" y="60" font-size="12" class="wft">ruleTask</text>
+          <path d="M108 56 L150 56" class="wf" marker-end="none"></path>
+          <rect x="150" y="30" width="146" height="120" rx="4" class="wf wfg" stroke-width="2"></rect>
+          <text x="158" y="46" font-size="11" class="wfm">tabela DMN inteira</text>
+          <path d="M158 54 H288 M158 70 H288 M158 86 H288 M158 102 H288 M158 118 H288 M158 134 H288" stroke="#c9c4ba" stroke-width="1"></path>
+          <text x="20" y="172" font-size="12" fill="#b3372f" font-family="'Patrick Hand',cursive">grid dentro de SVG = caro + zoom ruim</text>
+        </svg>
+        <div class="note">Prós: contexto total, zero navegação. Contras: fere o orçamento de performance (§4), edição de célula em SVG é hostil, tabela real não cabe em 300px.</div>
+      </div>
+    </div>
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Sempre superfície própria</div>
+      <div class="dv-card" style="width:340px">
+        <svg width="310" height="190" viewBox="0 0 310 190">
+          <rect x="4" y="4" width="140" height="182" rx="6" class="wf"></rect>
+          <text x="14" y="22" font-size="13" class="wft">canvas</text>
+          <rect x="20" y="70" width="90" height="44" rx="6" class="wf"></rect>
+          <text x="32" y="96" font-size="12" class="wft">ruleTask ▦</text>
+          <path d="M144 95 L166 95" class="wf" stroke-dasharray="4 3"></path>
+          <rect x="166" y="4" width="140" height="182" rx="6" class="wf wfg" stroke-width="2"></rect>
+          <text x="176" y="22" font-size="13" class="wft">editor de tabela</text>
+          <text x="176" y="36" font-size="10" class="wfm">(tela cheia, HTML)</text>
+          <path d="M176 48 H296 M176 66 H296 M176 84 H296 M176 102 H296 M176 120 H296" stroke="#c9c4ba" stroke-width="1"></path>
+          <text x="176" y="170" font-size="12" fill="#b3372f" font-family="'Patrick Hand',cursive">custo: perde o contexto do fluxo</text>
+        </svg>
+        <div class="note">Prós: editor DOM pleno, teclado, a11y ≥24px fácil. Contras: usuário "cai num buraco" sem ver de onde veio; toda consulta rápida vira navegação.</div>
+      </div>
+    </div>
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Peek no canvas + editor em superfície própria<span class="dv-rec">RECOMENDADA</span></div>
+      <div class="dv-card" style="width:400px">
+        <svg width="370" height="190" viewBox="0 0 370 190">
+          <rect x="4" y="4" width="362" height="182" rx="6" class="wf"></rect>
+          <text x="14" y="22" font-size="13" class="wft">canvas BPMN</text>
+          <rect x="18" y="40" width="96" height="48" rx="6" class="wf"></rect>
+          <text x="28" y="62" font-size="12" class="wft">ruleTask</text>
+          <rect x="96" y="34" width="14" height="12" rx="2" class="wf wfg"></rect>
+          <rect x="130" y="34" width="150" height="86" rx="6" class="wf wfg" stroke-width="2" fill="#fdfaf1"></rect>
+          <text x="140" y="50" font-size="10" class="wfm">PEEK · só leitura</text>
+          <text x="140" y="64" font-size="11" class="wft">hit: F · 4 regras · v1.2 ATIVA</text>
+          <path d="M140 74 H268 M140 88 H268" stroke="#c9c4ba" stroke-width="1"></path>
+          <text x="140" y="112" font-size="11" fill="#9a7b1e" font-family="'Patrick Hand',cursive">[ editar tabela → ]</text>
+          <path d="M114 58 Q126 58 130 66" class="wf" stroke-dasharray="3 3"></path>
+          <text x="18" y="150" font-size="12" class="wft">hover/seleção abre o peek (overlay HTML,</text>
+          <text x="18" y="166" font-size="12" class="wft">não SVG) · "editar" faz drill-down p/ 2c</text>
+        </svg>
+        <div class="note">Consulta rápida sem sair do fluxo; edição pesada ganha superfície digna. O peek é um overlay DOM posicionado — não entra no orçamento SVG.</div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "o peek de <a class="dv-oid" href="#1c">1c</a> mostra as 2 primeiras regras" · "sem peek, só badge"</p>
+</section>
+
+<section class="dv-turn" id="t2">
+  <div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Decisão (a) — navegação BPMN ⇄ DMN: split, aba ou drill-down?</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="2a">
+      <div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Split view</div>
+      <div class="dv-card" style="width:320px">
+        <svg width="290" height="150" viewBox="0 0 290 150">
+          <rect x="4" y="4" width="282" height="142" rx="6" class="wf"></rect>
+          <path d="M145 4 V146" class="wf"></path>
+          <text x="16" y="24" font-size="12" class="wft">diagrama</text>
+          <rect x="20" y="60" width="60" height="34" rx="5" class="wf"></rect>
+          <text x="156" y="24" font-size="12" class="wft">tabela</text>
+          <path d="M156 40 H276 M156 56 H276 M156 72 H276 M156 88 H276" stroke="#c9c4ba"></path>
+          <path d="M80 77 Q120 77 150 50" class="wf wfg" stroke-dasharray="4 3"></path>
+        </svg>
+        <div class="note">Bom p/ telas largas e edição correlacionada. Contras: metade do espaço p/ cada um; duas fontes de seleção/undo visíveis confundem o CommandStack mental.</div>
+      </div>
+    </div>
+    <div class="dv-opt" id="2b">
+      <div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Abas por artefato</div>
+      <div class="dv-card" style="width:320px">
+        <svg width="290" height="150" viewBox="0 0 290 150">
+          <rect x="4" y="24" width="282" height="122" rx="6" class="wf"></rect>
+          <rect x="10" y="6" width="86" height="20" rx="4" class="wf"></rect>
+          <text x="18" y="20" font-size="11" class="wft">Onboarding</text>
+          <rect x="100" y="6" width="96" height="20" rx="4" class="wf wfg" stroke-width="2" fill="#fdfaf1"></rect>
+          <text x="108" y="20" font-size="11" class="wft">Critérios (DMN)</text>
+          <path d="M20 60 H270 M20 78 H270 M20 96 H270" stroke="#c9c4ba"></path>
+          <text x="20" y="136" font-size="11" fill="#b3372f" font-family="'Patrick Hand',cursive">abas acumulam; relação pai-filho some</text>
+        </svg>
+        <div class="note">Familiar (IDE), mas a tabela não é "irmã" do diagrama — é filha de um nó. Aba esconde essa hierarquia e briga com a futura CMMN.</div>
+      </div>
+    </div>
+    <div class="dv-opt" id="2c">
+      <div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Drill-down + breadcrumb de governança<span class="dv-rec">RECOMENDADA</span></div>
+      <div class="dv-card" style="width:420px">
+        <svg width="390" height="170" viewBox="0 0 390 170">
+          <rect x="4" y="4" width="382" height="26" rx="5" class="wf wfg" stroke-width="2" fill="#fdfaf1"></rect>
+          <text x="14" y="21" font-size="11" class="wfm">Onboarding v2.1 ▸ Aprovar briefing ▸ tabela "Critérios" v1.2 [ATIVA]</text>
+          <rect x="4" y="38" width="382" height="108" rx="6" class="wf"></rect>
+          <text x="16" y="58" font-size="12" class="wft">superfície atual (diagrama OU tabela) — 100% do espaço</text>
+          <path d="M20 76 H370 M20 94 H370 M20 112 H370" stroke="#c9c4ba"></path>
+          <text x="16" y="138" font-size="11" class="wfm">esc / clique no breadcrumb = sobe · duplo-clique no nó = desce</text>
+          <text x="16" y="162" font-size="12" class="wft" fill="#1a6a54">mesmo padrão do drill-down de subprocesso expandido (F7) → 1 gesto p/ toda a família</text>
+        </svg>
+        <div class="note">O breadcrumb carrega versão + selo de vigência de CADA nível — a navegação é também a resposta de governança ("estou editando a v1.2 ativa da tabela dentro da v2.1 candidata do fluxo"). Split de consulta continua existindo via peek <a class="dv-oid" href="#1c">1c</a>.</div>
+      </div>
+    </div>
+    <div class="dv-opt" id="2d">
+      <div class="dv-olabel"><a class="dv-oid" href="#2d">2d</a>Seção "Decisão" no inspector (comum a todas)</div>
+      <div class="dv-card" style="width:300px">
+        <svg width="270" height="210" viewBox="0 0 270 210">
+          <rect x="4" y="4" width="262" height="202" rx="6" class="wf"></rect>
+          <text x="14" y="24" font-size="12" class="wfm">DECISÃO · DMN 1.7</text>
+          <rect x="14" y="34" width="240" height="26" rx="5" class="wf"></rect>
+          <text x="22" y="51" font-size="11" class="wft">🔍 buscar decisão no registry…</text>
+          <rect x="14" y="70" width="240" height="54" rx="5" class="wf wfg" fill="#fdfaf1"></rect>
+          <text x="22" y="88" font-size="12" class="wft">Critérios de aprovação</text>
+          <text x="22" y="104" font-size="10" class="wfm">v1.2.0 · ATIVA · hit F · 4 regras</text>
+          <text x="22" y="118" font-size="11" fill="#9a7b1e" font-family="'Patrick Hand',cursive">[ abrir → ]  [ diff ]  [ desvincular ]</text>
+          <text x="14" y="148" font-size="11" class="wft">— ou —</text>
+          <rect x="14" y="158" width="150" height="26" rx="5" class="wf" stroke-dasharray="4 3"></rect>
+          <text x="22" y="175" font-size="11" class="wft">+ criar nova tabela</text>
+          <text x="14" y="200" font-size="10" class="wfm">vínculo = comando undoável + ledger</text>
+        </svg>
+        <div class="note">Ponto único de vincular/criar/desvincular. "Criar nova" nasce como RASCUNHO no registry, já com StatusBadge.</div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "combine <a class="dv-oid" href="#2c">2c</a> com um split opcional" · "mostre o estado vazio de <a class="dv-oid" href="#2d">2d</a>"</p>
+</section>
+
+<section class="dv-turn" id="t3">
+  <div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Editor de Decision Table — estrutura e interações (item 4 do escopo)</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="3a">
+      <div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Grid puro, tudo inline<span class="dv-rec">RECOMENDADA</span></div>
+      <div class="dv-card" style="width:520px">
+        <svg width="490" height="300" viewBox="0 0 490 300">
+          <rect x="4" y="4" width="482" height="24" rx="5" class="wf"></rect>
+          <text x="12" y="20" font-size="11" class="wfm">Critérios de aprovação · [ATIVA v1.2] · undo/redo · + linha · + coluna</text>
+          <rect x="4" y="36" width="34" height="34" class="wf wfg" stroke-width="2" fill="#fdfaf1"></rect>
+          <text x="14" y="58" font-size="14" class="wft">F</text>
+          <text x="44" y="50" font-size="10" class="wfm">← hit policy (canto, spec DMN) — clique = menu U/A/P/F/C…</text>
+          <rect x="4" y="76" width="34" height="190" class="wf"></rect>
+          <text x="14" y="96" font-size="11" class="wfm">nº</text>
+          <rect x="38" y="76" width="180" height="30" class="wf"></rect>
+          <text x="46" y="96" font-size="11" class="wft">inputs (FEEL) — duplo traço →</text>
+          <rect x="222" y="76" width="140" height="30" class="wf" stroke-width="3"></rect>
+          <text x="230" y="96" font-size="11" class="wft">outputs</text>
+          <rect x="362" y="76" width="124" height="30" class="wf" stroke-dasharray="3 3"></rect>
+          <text x="370" y="96" font-size="11" class="wft">anotação</text>
+          <path d="M4 106 H486 M4 138 H486 M4 170 H486 M4 202 H486 M4 234 H486" stroke="#c9c4ba"></path>
+          <rect x="4" y="138" width="482" height="32" fill="#dff0e6" opacity="0.5"></rect>
+          <text x="12" y="158" font-size="11" class="wfm">2 ▸ linha selecionada (clique no nº) — ações: duplicar, remover, mover</text>
+          <rect x="222" y="202" width="140" height="32" fill="#fbeae7" stroke="#b3372f" stroke-width="2"></rect>
+          <text x="230" y="222" font-size="11" fill="#b3372f" font-family="'Patrick Hand',cursive">▲ célula inválida + tooltip</text>
+          <text x="12" y="256" font-size="11" class="wft">célula: 1 clique seleciona · 2 cliques/Enter edita inline · Tab avança</text>
+          <text x="12" y="284" font-size="11" class="wfm">alvos ≥ 24px · toda mutação = comando no CommandStack (undo global)</text>
+        </svg>
+        <div class="note">Espelha a anatomia canônica DMN (hit policy no canto, duplo traço input/output, nº de regra). Aprendizado zero p/ quem vem de Camunda. Header de coluna abre popover (nome, tipo, expressão FEEL).</div>
+      </div>
+    </div>
+    <div class="dv-opt" id="3b">
+      <div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>Grid + painel lateral de regra</div>
+      <div class="dv-card" style="width:360px">
+        <svg width="330" height="200" viewBox="0 0 330 200">
+          <rect x="4" y="4" width="210" height="192" rx="6" class="wf"></rect>
+          <path d="M14 40 H204 M14 70 H204 M14 100 H204 M14 130 H204" stroke="#c9c4ba"></path>
+          <rect x="14" y="70" width="190" height="30" fill="#dff0e6" opacity="0.5"></rect>
+          <rect x="222" y="4" width="104" height="192" rx="6" class="wf wfg" stroke-width="2"></rect>
+          <text x="230" y="24" font-size="11" class="wft">form da regra 2</text>
+          <path d="M230 40 H318 M230 66 H318 M230 92 H318" stroke="#c9c4ba"></path>
+          <text x="230" y="130" font-size="10" fill="#b3372f" font-family="'Patrick Hand',cursive">edição em 2 lugares =</text>
+          <text x="230" y="146" font-size="10" fill="#b3372f" font-family="'Patrick Hand',cursive">heurística de consistência ✗</text>
+        </svg>
+        <div class="note">Ajuda em expressões FEEL longas, mas duplica o modelo mental de edição. Melhor: popover contextual só quando a célula transborda.</div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "detalhe o popover de header de coluna de <a class="dv-oid" href="#3a">3a</a>" · "estado vazio da tabela nova"</p>
+</section>
+
+<section class="dv-turn" id="t4">
+  <div class="dv-thd"><a class="dv-tid" href="#t4">4</a><span class="dv-tname">Vista de linhagem / pedigree (Fase C · PPMN sobre getEdgeChain)</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="4a">
+      <div class="dv-olabel"><a class="dv-oid" href="#4a">4a</a>Lista vertical no inspector</div>
+      <div class="dv-card" style="width:280px">
+        <svg width="250" height="180" viewBox="0 0 250 180">
+          <path d="M30 20 V160" class="wf wfg" stroke-width="2"></path>
+          <circle cx="30" cy="30" r="6" fill="#1a6a54"></circle>
+          <text x="46" y="34" font-size="11" class="wft">edge atual · v2.1</text>
+          <circle cx="30" cy="80" r="6" fill="#fff" stroke="#9a7b1e" stroke-width="2"></circle>
+          <text x="46" y="84" font-size="11" class="wft">sucedeu #e41 · v2.0</text>
+          <circle cx="30" cy="130" r="6" fill="#6f675a"></circle>
+          <text x="46" y="134" font-size="11" class="wft">fechado em v1.4</text>
+        </svg>
+        <div class="note">Barato (reusa VersionTimeline), mas linear — não mostra bifurcações nem o QUÊ mudou.</div>
+      </div>
+    </div>
+    <div class="dv-opt" id="4b">
+      <div class="dv-olabel"><a class="dv-oid" href="#4b">4b</a>Faixa de pedigree horizontal (PPMN)<span class="dv-rec">RECOMENDADA</span></div>
+      <div class="dv-card" style="width:480px">
+        <svg width="450" height="200" viewBox="0 0 450 200">
+          <text x="10" y="20" font-size="11" class="wfm">PEDIGREE · "Aprovar briefing" · abre como faixa inferior do canvas</text>
+          <path d="M20 90 H430" stroke="#a49c8f" stroke-width="1.5"></path>
+          <g>
+            <rect x="30" y="60" width="90" height="60" rx="6" class="wf" stroke-dasharray="4 3" opacity="0.6"></rect>
+            <path d="M34 64 L116 116 M34 116 L116 64" stroke="#a49c8f" stroke-width="1" opacity="0.5"></path>
+            <text x="42" y="140" font-size="10" class="wfm">v1.0 · fechado</text>
+          </g>
+          <path d="M120 90 L160 90" class="wf wfg" marker-end="none"></path>
+          <text x="122" y="82" font-size="9" class="wfm">supersede</text>
+          <g>
+            <rect x="160" y="60" width="90" height="60" rx="6" class="wf" opacity="0.75"></rect>
+            <text x="172" y="140" font-size="10" class="wfm">v1.4 → v2.0</text>
+          </g>
+          <path d="M250 90 L290 90" class="wf wfg"></path>
+          <g>
+            <rect x="290" y="60" width="90" height="60" rx="6" class="wf wfg" stroke-width="2.5" fill="#fdfaf1"></rect>
+            <text x="304" y="140" font-size="10" class="wfm">ATUAL · v2.1</text>
+            <circle cx="380" cy="60" r="8" fill="#f6edd4" stroke="#9a7b1e"></circle>
+          </g>
+          <text x="10" y="172" font-size="11" class="wft">cada card = snapshot do shape na versão · clique = diff lado a lado · hash do ledger no hover</text>
+          <text x="10" y="190" font-size="11" class="wfm">tempo flui → (mesma direção do fluxo BPMN) · antecessores hachurados = fechados</text>
+        </svg>
+        <div class="note">Mostra a CADEIA como diagrama — coerente com PPMN (proveniência é notação, não metadado). Reusa a hachura de "fechado" do tópico <a class="dv-oid" href="#5b">5b</a>. DiffView existente pluga no clique.</div>
+      </div>
+    </div>
+    <div class="dv-opt" id="4c">
+      <div class="dv-olabel"><a class="dv-oid" href="#4c">4c</a>Fantasmas sobrepostos no canvas</div>
+      <div class="dv-card" style="width:280px">
+        <svg width="250" height="160" viewBox="0 0 250 160">
+          <rect x="60" y="50" width="110" height="60" rx="6" class="wf" opacity="0.25" transform="translate(-14,-12)"></rect>
+          <rect x="60" y="50" width="110" height="60" rx="6" class="wf" opacity="0.5" transform="translate(-7,-6)"></rect>
+          <rect x="60" y="50" width="110" height="60" rx="6" class="wf wfg" stroke-width="2" fill="#fff"></rect>
+          <text x="76" y="84" font-size="12" class="wft">v2.1 atual</text>
+          <text x="30" y="140" font-size="11" fill="#b3372f" font-family="'Patrick Hand',cursive">bonito, mas ilegível com &gt;3 versões</text>
+        </svg>
+        <div class="note">Efeito "onion skin". Vale como micro-preview no hover do pedigree, não como vista principal.</div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "hifi de <a class="dv-oid" href="#4b">4b</a> com o diff aberto" · "pedigree de uma edge, não de nó"</p>
+</section>
+
+<section class="dv-turn" id="t5">
+  <div class="dv-thd"><a class="dv-tid" href="#t5">5</a><span class="dv-tname">Decisão (c) — elemento fechado (removedInVersion) ao navegar versão antiga</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="5a">
+      <div class="dv-olabel"><a class="dv-oid" href="#5a">5a</a>Fantasma (opacidade)</div>
+      <div class="dv-card" style="width:250px">
+        <svg width="220" height="120" viewBox="0 0 220 120">
+          <rect x="40" y="26" width="140" height="66" rx="8" class="wf" opacity="0.3" fill="#e8ecf7"></rect>
+          <text x="66" y="64" font-size="12" class="wft" opacity="0.4">Task antiga</text>
+        </svg>
+        <div class="note">Sutil demais: some no dark mode e depende só de cor/intensidade — falha a11y do handoff §4.</div>
+      </div>
+    </div>
+    <div class="dv-opt" id="5b">
+      <div class="dv-olabel"><a class="dv-oid" href="#5b">5b</a>Hachura 45° + dessaturação + selo<span class="dv-rec">RECOMENDADA</span></div>
+      <div class="dv-card" style="width:300px">
+        <svg width="270" height="140" viewBox="0 0 270 140">
+          <defs><pattern id="wfhatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="6" stroke="#a49c8f" stroke-width="1"></line></pattern></defs>
+          <rect x="40" y="26" width="150" height="66" rx="8" fill="#f0eee9" stroke="#a49c8f" stroke-width="1.5"></rect>
+          <rect x="40" y="26" width="150" height="66" rx="8" fill="url(#wfhatch)"></rect>
+          <rect x="70" y="16" width="92" height="18" rx="9" fill="#efece6" stroke="#a49c8f"></rect>
+          <text x="80" y="29" font-size="9" class="wfm">FECHADO v1.4</text>
+          <text x="66" y="66" font-size="12" fill="#6f675a" font-family="'Patrick Hand',cursive">Task antiga</text>
+          <text x="40" y="122" font-size="11" class="wft">forma + textura + texto = não depende de cor</text>
+        </svg>
+        <div class="note">Padrão SVG `pattern` é barato (1 def, N usos). Selo usa a linha ARQUIVADA da tabela canônica de vigência. Hover mostra "fechado em v1.4 · sucedido por #e52".</div>
+      </div>
+    </div>
+    <div class="dv-opt" id="5c">
+      <div class="dv-olabel"><a class="dv-oid" href="#5c">5c</a>Só dessaturação + borda tracejada</div>
+      <div class="dv-card" style="width:250px">
+        <svg width="220" height="120" viewBox="0 0 220 120">
+          <rect x="40" y="26" width="140" height="66" rx="8" fill="#efece6" stroke="#a49c8f" stroke-width="1.5" stroke-dasharray="5 4"></rect>
+          <text x="66" y="64" font-size="12" fill="#6f675a" font-family="'Patrick Hand',cursive">Task antiga</text>
+        </svg>
+        <div class="note">Conflita com a borda tracejada que já significa RASCUNHO (StatusBadge) e non-interrupting (F6). Tracejado está "gasto" no sistema.</div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "aplique <a class="dv-oid" href="#5b">5b</a> num diagrama inteiro em versão antiga"</p>
+</section>
+
+<section class="dv-turn" id="t6">
+  <div class="dv-thd"><a class="dv-tid" href="#t6">6</a><span class="dv-tname">Decisão (d) — Assurance Case SACM: identidade própria ou herda BTV?</span></div>
+  <div class="dv-opts">
+    <div class="dv-opt" id="6a">
+      <div class="dv-olabel"><a class="dv-oid" href="#6a">6a</a>Herda 100% BTV (tela de app)</div>
+      <div class="dv-card" style="width:300px">
+        <svg width="270" height="160" viewBox="0 0 270 160">
+          <rect x="4" y="4" width="262" height="24" rx="5" class="wf"></rect>
+          <text x="12" y="20" font-size="10" class="wfm">toolbar dourada padrão</text>
+          <rect x="4" y="36" width="262" height="116" rx="6" class="wf"></rect>
+          <text x="14" y="56" font-size="11" class="wft">árvore claim → arg → evidência</text>
+          <path d="M20 70 H250 M20 90 H250 M20 110 H250" stroke="#c9c4ba"></path>
+        </svg>
+        <div class="note">Coeso, mas o artefato PERDE autoridade: auditoria espera um documento, não uma tela.</div>
+      </div>
+    </div>
+    <div class="dv-opt" id="6b">
+      <div class="dv-olabel"><a class="dv-oid" href="#6b">6b</a>Sub-marca "certify": documento sobre base BTV<span class="dv-rec">RECOMENDADA</span></div>
+      <div class="dv-card" style="width:420px">
+        <svg width="390" height="240" viewBox="0 0 390 240">
+          <rect x="60" y="10" width="270" height="220" fill="#fff" stroke="#44403a" stroke-width="1.5"></rect>
+          <path d="M60 10 H330" stroke="#9a7b1e" stroke-width="4"></path>
+          <text x="76" y="38" font-size="10" class="wfm">BTV CERTIFY · ASSURANCE CASE · SACM 2.3</text>
+          <text x="76" y="60" font-size="14" class="wft">Onboarding v2.1.0 conforma ao perfil Descriptive</text>
+          <rect x="76" y="76" width="150" height="26" class="wf"></rect>
+          <text x="84" y="93" font-size="10" class="wft">CLAIM (retângulo tinta)</text>
+          <path d="M151 102 V116"></path><path d="M151 102 V116" class="wf"></path>
+          <polygon points="86,116 226,116 216,142 76,142" class="wf wfg"></polygon>
+          <text x="94" y="133" font-size="10" class="wft">ARGUMENT (paralelogramo ouro)</text>
+          <circle cx="110" cy="170" r="14" class="wf" stroke="#1a6a54" stroke-width="2"></circle>
+          <text x="132" y="174" font-size="10" class="wft">EVIDENCE = entrada do ledger</text>
+          <text x="132" y="188" font-size="9" class="wfm">#a3f9e1 · sha-256 ✓</text>
+          <text x="76" y="216" font-size="9" class="wfm">rodapé: hash da cadeia · data · aprovadores · página n/N</text>
+        </svg>
+        <div class="note">Mesmos tokens BTV (papel, tinta, ouro, verde) mas gramática de DOCUMENTO: filete ouro no topo, tipografia serena, rodapé de auditoria, print-ready. Notação SACM canônica: claim=retângulo, argument=paralelogramo, evidence=círculo. É o "diploma" do ledger — identidade própria custaria coesão sem ganhar autoridade.</div>
+      </div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "hifi do relatório <a class="dv-oid" href="#6b">6b</a> completo" · "versão dashboard interativa antes do print"</p>
+</section>
+
+</x-dc>
+</body>
+</html>

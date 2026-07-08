@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #faf9f6; }
+  a { color: #9a7b1e; text-decoration: none; }
+  a:hover { color: #7a611e; text-decoration: underline; }
+</style>
+</helmet>
+<div style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; max-width: 1240px; margin: 0 auto; padding: 56px 40px 80px; display: flex; flex-direction: column; gap: 40px;">
+
+  <!-- ============ HEADER ============ -->
+  <header style="display: flex; flex-direction: column; gap: 16px;" data-screen-label="Identidade BPM+">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+      <div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 3px; color: #9a7b1e; margin-bottom: 8px;">BUILDTOVALUE · FAMÍLIA BPM+</div>
+        <h1 style="margin: 0; font-size: 40px; font-weight: 700; letter-spacing: -0.5px;">Notação DMN <span style="color: #26766b;">+ governança visível</span></h1>
+      </div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #6f675a; text-align: right;">bpmn-react · fases A–D<br>v1.0 · jul 2026</div>
+    </div>
+    <div style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 14px; padding: 20px 28px; font-size: 13px; color: #6f675a; line-height: 1.65; display: flex; gap: 32px; flex-wrap: wrap; align-items: center;">
+      <div style="flex: 1; min-width: 380px;"><strong style="color: #262220;">Regra de ouro:</strong> geometria, marcadores e glifos são <strong style="color: #262220;">fiéis à spec OMG</strong> (BPMN 2.0.2 · DMN · SACM) — reconhecíveis por quem usa Camunda/bpmn.io. A identidade BTV entra apenas em cor (tokens <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px;">--btv-dmn-*</span>), traço 1.5/2.5, tipografia de sistema e microdetalhes. A família DMN reivindica o degrau <strong style="color: #26766b;">185° petróleo</strong> da roda de 9 matizes.</div>
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #44403a; line-height: 2;">tokens: <a href="btv-dmn-tokens.css">btv-dmn-tokens.css</a><br>lo-fi: <a href="Wireframes BPM+ UX.dc.html">Wireframes BPM+ UX</a><br>spec: <a href="../README.md">README §pixel a pixel</a></div>
+    </div>
+  </header>
+
+  <!-- ============ 01 TOKENS ============ -->
+  <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 14px; padding: 28px;" data-screen-label="Tokens DMN">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2.5px; color: #9a7b1e; margin-bottom: 6px;">01 · TOKENS</div>
+    <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 600;">--btv-dmn-* · degrau 185° · light + dark</h2>
+    <p style="margin: 0 0 20px; font-size: 13px; color: #6f675a;">Uma família = um degrau da roda. Dentro do degrau, diferenciação por <strong style="color: #262220;">forma</strong> (spec) e por <strong style="color: #262220;">peso de fill</strong> (lógica escura, dado claro, autoridade neutra).</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px; border: 1px solid #e2ddd3; border-radius: 10px; padding: 8px 10px;"><div style="width: 34px; height: 34px; border-radius: 8px; background: #e2f0ee; border: 2px solid #26766b;"></div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #44403a;">--btv-dmn-*<br><span style="color: #6f675a;">decision · BKM</span></div></div>
+      <div style="display: flex; align-items: center; gap: 10px; border: 1px solid #e2ddd3; border-radius: 10px; padding: 8px 10px;"><div style="width: 34px; height: 34px; border-radius: 8px; background: #f1f8f6; border: 2px solid #58968b;"></div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #44403a;">--btv-dmn-input-*<br><span style="color: #6f675a;">inputData</span></div></div>
+      <div style="display: flex; align-items: center; gap: 10px; border: 1px solid #e2ddd3; border-radius: 10px; padding: 8px 10px;"><div style="width: 34px; height: 34px; border-radius: 8px; background: #faf9f6; border: 2px solid #26766b;"></div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #44403a;">--btv-dmn-knowledge-*<br><span style="color: #6f675a;">knowledgeSource</span></div></div>
+      <div style="display: flex; align-items: center; gap: 10px; border: 1px solid #e2ddd3; border-radius: 10px; padding: 8px 10px;"><div style="width: 34px; height: 34px; border-radius: 8px; background: #f6edd4; border: 2px solid #9a7b1e;"></div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #44403a;">--btv-dmn-hit-*<br><span style="color: #6f675a;">hit policy = ouro</span></div></div>
+      <div style="display: flex; align-items: center; gap: 10px; border: 1px solid #e2ddd3; border-radius: 10px; padding: 8px 10px;"><div style="width: 34px; height: 34px; border-radius: 8px; background: #fbeae7; border: 2px solid #b3372f;"></div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #44403a;">--btv-dmn-cell-invalid<br><span style="color: #6f675a;">+ ícone ▲ (a11y)</span></div></div>
+      <div style="display: flex; align-items: center; gap: 10px; border: 1px solid #e2ddd3; border-radius: 10px; padding: 8px 10px;"><div style="width: 34px; height: 34px; border-radius: 8px; background: #f2e9f6; border: 2px solid #7d5a9e;"></div><div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #44403a;">--btv-hc-*<br><span style="color: #6f675a;">healthcare · 305°</span></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 02 FASE A ============ -->
+  <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 14px; padding: 28px;" data-screen-label="Fase A — Descriptive 100%">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2.5px; color: #9a7b1e; margin-bottom: 6px;">02 · FASE A — COMPLETAR O DESCRIPTIVE</div>
+    <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 600;">businessRuleTask · callActivity · subprocesso expandido</h2>
+    <p style="margin: 0 0 20px; font-size: 13px; color: #6f675a; max-width: 820px;">Geometria core neutra ao padrão (sem chanfro/tag btv). Fills tonais <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px;">--bpmnr-fill-*</span>; único acréscimo BTV é o <strong style="color: #262220;">badge dourado de decisão vinculada</strong>, fora da geometria canônica.</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden;">
+        <div style="background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; background-color: #faf9f6; display: flex; justify-content: center; align-items: center; gap: 24px; padding: 22px 12px; flex-wrap: wrap;">
+          <svg width="170" height="110" viewBox="0 0 170 110">
+            <g transform="translate(10, 14)">
+              <rect width="150" height="70" rx="10" fill="#ffffff" stroke="#44403a" stroke-width="1.5"></rect>
+              <g transform="translate(9, 8)" stroke="#44403a" stroke-width="1.2" fill="none">
+                <rect width="16" height="12" rx="1"></rect>
+                <path d="M 0 4 H 16 M 5.5 4 V 12" ></path>
+                <path d="M 0 4 H 16" stroke-width="3" opacity="0.25"></path>
+              </g>
+              <text x="75" y="42" text-anchor="middle" font-size="12" fill="#262220">Avaliar crédito</text>
+              <text x="75" y="98" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#6f675a">default · glifo tabela 16×12</text>
+            </g>
+          </svg>
+          <svg width="170" height="110" viewBox="0 0 170 110">
+            <g transform="translate(10, 14)">
+              <rect width="150" height="70" rx="10" fill="#ffffff" stroke="#1a6a54" stroke-width="2.5"></rect>
+              <rect x="-3" y="-3" width="156" height="76" rx="12" fill="none" stroke="#1a6a54" stroke-width="1" opacity="0.35"></rect>
+              <circle cx="75" cy="0" r="4" fill="#ffffff" stroke="#1a6a54" stroke-width="1.5"></circle>
+              <circle cx="75" cy="70" r="4" fill="#ffffff" stroke="#1a6a54" stroke-width="1.5"></circle>
+              <circle cx="0" cy="35" r="4" fill="#ffffff" stroke="#1a6a54" stroke-width="1.5"></circle>
+              <circle cx="150" cy="35" r="4" fill="#ffffff" stroke="#1a6a54" stroke-width="1.5"></circle>
+              <g transform="translate(9, 8)" stroke="#44403a" stroke-width="1.2" fill="none">
+                <rect width="16" height="12" rx="1"></rect>
+                <path d="M 0 4 H 16 M 5.5 4 V 12"></path>
+              </g>
+              <g transform="translate(129, -8)">
+                <rect width="30" height="16" rx="8" fill="#f6edd4" stroke="#9a7b1e" stroke-width="1"></rect>
+                <g transform="translate(5, 3.5)" stroke="#7a611e" stroke-width="1" fill="none">
+                  <rect width="9" height="9" rx="0.5"></rect>
+                  <path d="M 0 3 H 9 M 3 3 V 9"></path>
+                </g>
+                <path d="M 18 5.5 L 21 8.5 L 26 3.5" fill="none" stroke="#7a611e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path>
+              </g>
+              <text x="75" y="42" text-anchor="middle" font-size="12" fill="#262220">Avaliar crédito</text>
+              <text x="75" y="98" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#6f675a">selecionado + DMN vinculada</text>
+            </g>
+          </svg>
+        </div>
+        <div style="padding: 12px 14px;">
+          <div style="font-size: 14px; font-weight: 600;">businessRuleTask</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a; line-height: 1.6;">150 × 70 · rx 10 · glifo tabela 16×12 no canto sup. esq. (spec) · badge de vínculo 30×16 pill sobre a borda sup. dir. (fora do card, some sem vínculo) · hover: fill --bpmnr-hover</div>
+        </div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden;">
+        <div style="background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; background-color: #faf9f6; display: flex; justify-content: center; align-items: center; gap: 24px; padding: 22px 12px; flex-wrap: wrap;">
+          <svg width="170" height="110" viewBox="0 0 170 110">
+            <g transform="translate(10, 14)">
+              <rect width="150" height="70" rx="10" fill="#ffffff" stroke="#44403a" stroke-width="3.5"></rect>
+              <g transform="translate(68, 54)">
+                <rect width="14" height="14" rx="2" fill="none" stroke="#44403a" stroke-width="1.5"></rect>
+                <path d="M 7 3 V 11 M 3 7 H 11" stroke="#44403a" stroke-width="1.5"></path>
+              </g>
+              <text x="75" y="34" text-anchor="middle" font-size="12" fill="#262220">Verificar KYC</text>
+              <text x="75" y="98" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#6f675a">default · borda 3.5 + marcador +</text>
+            </g>
+          </svg>
+          <svg width="170" height="110" viewBox="0 0 170 110">
+            <g transform="translate(10, 14)">
+              <rect width="150" height="70" rx="10" fill="#ffffff" stroke="#b3372f" stroke-width="3.5"></rect>
+              <g transform="translate(68, 54)">
+                <rect width="14" height="14" rx="2" fill="none" stroke="#b3372f" stroke-width="1.5"></rect>
+                <path d="M 7 3 V 11 M 3 7 H 11" stroke="#b3372f" stroke-width="1.5"></path>
+              </g>
+              <circle cx="150" cy="0" r="9" fill="#b3372f"></circle>
+              <text x="150" y="3.5" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">!</text>
+              <text x="75" y="34" text-anchor="middle" font-size="12" fill="#262220">Verificar KYC</text>
+              <text x="75" y="92" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#b3372f">CALL_REF_MISSING</text>
+            </g>
+          </svg>
+        </div>
+        <div style="padding: 12px 14px;">
+          <div style="font-size: 14px; font-weight: 600;">callActivity</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a; line-height: 1.6;">150 × 70 · rx 10 · borda 3.5 (spec: thick) · marcador + 14×14 rx2 centrado na base · referência quebrada: stroke --btv-error + badge r9 "!" + código mono 9px (padrão de erro existente §5.3)</div>
+        </div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden; grid-column: 1 / -1;">
+        <div style="background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; background-color: #faf9f6; display: flex; justify-content: center; align-items: center; gap: 40px; padding: 24px 12px; flex-wrap: wrap;">
+          <svg width="430" height="200" viewBox="0 0 430 200">
+            <g transform="translate(10, 10)">
+              <rect width="410" height="164" rx="12" fill="#ffffff" stroke="#44403a" stroke-width="1.5"></rect>
+              <path d="M 0 30 H 410" stroke="#e2ddd3" stroke-width="1"></path>
+              <text x="14" y="20" font-size="12" font-weight="600" fill="#262220">Análise de risco</text>
+              <text x="396" y="20" text-anchor="end" font-size="9" font-family="IBM Plex Mono, monospace" fill="#6f675a">subProcess</text>
+              <circle cx="46" cy="96" r="14" fill="#ffffff" stroke="#44403a" stroke-width="1.5"></circle>
+              <path d="M 60 96 H 96" stroke="#44403a" stroke-width="1.5"></path>
+              <path d="M 96 96 l -6 -3.5 v 7 z" fill="#44403a"></path>
+              <rect x="98" y="66" width="120" height="60" rx="9" fill="#ffffff" stroke="#44403a" stroke-width="1.5"></rect>
+              <g transform="translate(106, 73)" stroke="#44403a" stroke-width="1.1" fill="none"><rect width="14" height="10" rx="1"></rect><path d="M 0 3.4 H 14 M 4.8 3.4 V 10"></path></g>
+              <text x="158" y="100" text-anchor="middle" font-size="11" fill="#262220">Score interno</text>
+              <path d="M 218 96 H 254" stroke="#44403a" stroke-width="1.5"></path>
+              <path d="M 254 96 l -6 -3.5 v 7 z" fill="#44403a"></path>
+              <circle cx="272" cy="96" r="14" fill="#ffffff" stroke="#44403a" stroke-width="3"></circle>
+              <g transform="translate(198, 143)">
+                <rect width="14" height="14" rx="2" fill="none" stroke="#44403a" stroke-width="1.5"></rect>
+                <path d="M 3 7 H 11" stroke="#44403a" stroke-width="1.5"></path>
+              </g>
+            </g>
+          </svg>
+          <svg width="180" height="120" viewBox="0 0 180 120">
+            <g transform="translate(15, 22)">
+              <rect width="150" height="70" rx="10" fill="#ffffff" stroke="#44403a" stroke-width="1.5"></rect>
+              <g transform="translate(68, 54)">
+                <rect width="14" height="14" rx="2" fill="none" stroke="#44403a" stroke-width="1.5"></rect>
+                <path d="M 7 3 V 11 M 3 7 H 11" stroke="#44403a" stroke-width="1.5"></path>
+              </g>
+              <text x="75" y="34" text-anchor="middle" font-size="12" fill="#262220">Análise de risco</text>
+              <text x="75" y="86" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#6f675a">↕ colapsado (duplo-clique expande)</text>
+            </g>
+          </svg>
+        </div>
+        <div style="padding: 12px 14px;">
+          <div style="font-size: 14px; font-weight: 600;">Subprocesso expandido</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a; line-height: 1.6;">min 300 × 160 · rx 12 · faixa de título 30px (12px 600, divisor 1px #E2DDD3) · filhos em coordenadas relativas ao container · marcador − 14×14 na base centrada quando expandido, + quando colapsado · colapso anima 160ms · z-order: container atrás dos filhos, à frente de lanes · seleção do container: halo padrão; filhos selecionáveis individualmente · drill-down alternativo via duplo-clique no título (breadcrumb, mesmo gesto do DMN)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 DRD ============ -->
+  <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 14px; padding: 28px;" data-screen-label="Fase B — DRD">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2.5px; color: #9a7b1e; margin-bottom: 6px;">03 · FASE B — DRD (DECISION REQUIREMENTS DIAGRAM)</div>
+    <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 600;">Nós e requirement edges · formas canônicas DMN</h2>
+    <p style="margin: 0 0 20px; font-size: 13px; color: #6f675a; max-width: 820px;">Segundo tipo de diagrama no mesmo canvas (mesmo dot grid, mesma seleção, mesmo CommandStack). Toda a família no degrau 185°; diferenciação por forma, conforme spec.</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden;">
+        <div style="background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; background-color: #faf9f6; display: flex; justify-content: center; align-items: center; padding: 22px 0; min-height: 120px;">
+          <svg width="180" height="90" viewBox="0 0 180 90">
+            <g transform="translate(15, 15)">
+              <rect width="150" height="60" fill="#e2f0ee" stroke="#26766b" stroke-width="1.5"></rect>
+              <text x="75" y="30" text-anchor="middle" font-size="12" fill="#262220">Aprovação de crédito</text>
+              <g transform="translate(9, 44)" stroke="#26766b" stroke-width="1" fill="none"><rect width="12" height="9" rx="0.5"></rect><path d="M 0 3 H 12 M 4 3 V 9"></path></g>
+            </g>
+          </svg>
+        </div>
+        <div style="padding: 12px 14px;">
+          <div style="font-size: 14px; font-weight: 600;">decision</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a;">150 × 60 · retângulo reto (rx 0, spec) · glifo tabela 12×9 se tem decision table</div>
+        </div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden;">
+        <div style="background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; background-color: #faf9f6; display: flex; justify-content: center; align-items: center; padding: 22px 0; min-height: 120px;">
+          <svg width="170" height="70" viewBox="0 0 170 70">
+            <g transform="translate(15, 15)">
+              <rect width="140" height="44" rx="22" fill="#f1f8f6" stroke="#58968b" stroke-width="1.5"></rect>
+              <text x="70" y="26" text-anchor="middle" font-size="12" fill="#262220">Renda mensal</text>
+            </g>
+          </svg>
+        </div>
+        <div style="padding: 12px 14px;">
+          <div style="font-size: 14px; font-weight: 600;">inputData</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a;">140 × 44 · oval achatado (rx = h/2) · fill mais claro: dado, não lógica</div>
+        </div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden;">
+        <div style="background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; background-color: #faf9f6; display: flex; justify-content: center; align-items: center; padding: 22px 0; min-height: 120px;">
+          <svg width="150" height="90" viewBox="0 0 150 90">
+            <g transform="translate(15, 12)">
+              <path d="M 0 0 H 120 V 52 C 100 44 80 60 60 52 C 40 44 20 60 0 52 Z" fill="#faf9f6" stroke="#26766b" stroke-width="1.5"></path>
+              <text x="60" y="28" text-anchor="middle" font-size="11.5" fill="#262220">Política BACEN</text>
+            </g>
+          </svg>
+        </div>
+        <div style="padding: 12px 14px;">
+          <div style="font-size: 14px; font-weight: 600;">knowledgeSource</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a;">120 × 60 · base ondulada (spec) · fill papel: autoridade externa</div>
+        </div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden;">
+        <div style="background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; background-color: #faf9f6; display: flex; justify-content: center; align-items: center; padding: 22px 0; min-height: 120px;">
+          <svg width="170" height="70" viewBox="0 0 170 70">
+            <g transform="translate(15, 13)">
+              <path d="M 12 0 H 128 L 140 12 V 44 H 24 L 12 32 Z M 12 0 L 24 12 H 140 M 24 12 V 44" fill="#e2f0ee" stroke="#26766b" stroke-width="1.5" stroke-linejoin="round"></path>
+              <text x="84" y="32" text-anchor="middle" font-size="11.5" fill="#262220">Modelo de score</text>
+            </g>
+          </svg>
+        </div>
+        <div style="padding: 12px 14px;">
+          <div style="font-size: 14px; font-weight: 600;">businessKnowledgeModel</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a;">140 × 44 · retângulo com 2 cantos cortados 12px (spec)</div>
+        </div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden; grid-column: span 2;">
+        <div style="background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; background-color: #faf9f6; display: flex; justify-content: center; align-items: center; padding: 22px 12px; min-height: 120px;">
+          <svg width="460" height="110" viewBox="0 0 460 110">
+            <g transform="translate(10, 8)">
+              <path d="M 0 14 H 120" stroke="#26766b" stroke-width="1.5"></path>
+              <path d="M 120 14 l -9 -4.5 v 9 z" fill="#26766b"></path>
+              <text x="140" y="18" font-size="11" fill="#44403a">information requirement — sólida 1.5, seta cheia</text>
+              <path d="M 0 48 H 120" stroke="#26766b" stroke-width="1.5" stroke-dasharray="5 4"></path>
+              <path d="M 111 43.5 L 120 48 L 111 52.5" fill="none" stroke="#26766b" stroke-width="1.5"></path>
+              <text x="140" y="52" font-size="11" fill="#44403a">knowledge requirement — tracejada 5/4, seta aberta</text>
+              <path d="M 0 82 H 114" stroke="#26766b" stroke-width="1.5" stroke-dasharray="2 4"></path>
+              <circle cx="117" cy="82" r="3.5" fill="#26766b"></circle>
+              <text x="140" y="86" font-size="11" fill="#44403a">authority requirement — pontilhada 2/4, disco cheio r3.5</text>
+            </g>
+          </svg>
+        </div>
+        <div style="padding: 12px 14px;">
+          <div style="font-size: 14px; font-weight: 600;">Requirement edges</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a;">cor única --btv-dmn-edge · roteamento reto (spec desenha DRD com linhas retas, não ortogonais)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 04 DECISION TABLE ============ -->
+  <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 14px; padding: 28px;" data-screen-label="Fase B — Decision Table">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2.5px; color: #9a7b1e; margin-bottom: 6px;">04 · FASE B — EDITOR DE DECISION TABLE (HTML/DOM)</div>
+    <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 600;">Anatomia hifi · estados de célula · governança embutida</h2>
+    <p style="margin: 0 0 20px; font-size: 13px; color: #6f675a; max-width: 820px;">Superfície própria via drill-down (wireframes <a href="Wireframes BPM+ UX.dc.html#1c">1c</a>/<a href="Wireframes BPM+ UX.dc.html#2c">2c</a>). DOM comum compartilhando tokens; toda mutação passa pelo CommandStack. A tabela é um artefato versionável — StatusBadge no cabeçalho.</p>
+
+    <div style="border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #faf9f6; border-bottom: 1px solid #e2ddd3; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a; flex-wrap: wrap;">
+        <span style="color: #44403a; font-size: 12px; font-family: 'Space Grotesk', sans-serif; font-weight: 600;">Onboarding v2.1 ▸ Aprovar briefing ▸ Critérios de aprovação</span>
+        <span style="background: #dff0e6; color: #1a6a54; border-radius: 999px; padding: 2px 10px; font-weight: 600; letter-spacing: 1px;">ATIVA</span>
+        <span>v1.2.0</span>
+        <span style="flex: 1;"></span>
+        <span style="border: 1px solid #e2ddd3; border-radius: 6px; padding: 3px 8px;">↶ ↷</span>
+        <span style="border: 1px solid #e2ddd3; border-radius: 6px; padding: 3px 8px;">+ linha</span>
+        <span style="border: 1px solid #e2ddd3; border-radius: 6px; padding: 3px 8px;">+ coluna</span>
+        <span style="background: #9a7b1e; color: #fff; border-radius: 6px; padding: 3px 10px;">Promover…</span>
+      </div>
+      <div style="padding: 18px; overflow-x: auto;">
+        <table style="border-collapse: collapse; font-size: 12px; min-width: 720px;">
+          <tr>
+            <td rowspan="2" style="width: 40px; height: 56px; border: 1.5px solid #cfe0dc; background: #f6edd4; color: #7a611e; text-align: center; font-size: 17px; font-weight: 700; font-family: 'IBM Plex Mono', monospace; cursor: pointer;" title="hit policy — clique abre menu U/A/P/F/R/O/C">F</td>
+            <td colspan="2" style="border: 1.5px solid #cfe0dc; border-right: 3px double #26766b; background: #ecf4f2; color: #1d5a52; padding: 6px 12px; font-weight: 600; font-size: 10px; letter-spacing: 1.2px; font-family: 'IBM Plex Mono', monospace;">INPUT · FEEL</td>
+            <td style="border: 1.5px solid #cfe0dc; background: #ecf4f2; color: #1d5a52; padding: 6px 12px; font-weight: 600; font-size: 10px; letter-spacing: 1.2px; font-family: 'IBM Plex Mono', monospace;">OUTPUT</td>
+            <td style="border: 1.5px dashed #cfe0dc; background: #faf9f6; color: #6f675a; padding: 6px 12px; font-size: 10px; letter-spacing: 1.2px; font-family: 'IBM Plex Mono', monospace;">ANOTAÇÃO</td>
+          </tr>
+          <tr>
+            <td style="border: 1.5px solid #cfe0dc; background: #ecf4f2; padding: 6px 12px; min-width: 150px;">briefing.completo<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #58968b;">boolean</span></td>
+            <td style="border: 1.5px solid #cfe0dc; border-right: 3px double #26766b; background: #ecf4f2; padding: 6px 12px; min-width: 150px;">valor.contrato<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #58968b;">number · R$</span></td>
+            <td style="border: 1.5px solid #cfe0dc; background: #ecf4f2; padding: 6px 12px; min-width: 130px;">aprovação<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #58968b;">"auto","dupla","recusa"</span></td>
+            <td style="border: 1.5px dashed #cfe0dc; background: #faf9f6;"></td>
+          </tr>
+          <tr>
+            <td style="border: 1.5px solid #cfe0dc; background: #f7f9f8; text-align: center; font-family: 'IBM Plex Mono', monospace; color: #6f675a; height: 34px;">1</td>
+            <td style="border: 1.5px solid #cfe0dc; padding: 6px 12px; font-family: 'IBM Plex Mono', monospace;">true</td>
+            <td style="border: 1.5px solid #cfe0dc; border-right: 3px double #26766b; padding: 6px 12px; font-family: 'IBM Plex Mono', monospace;">&lt; 50000</td>
+            <td style="border: 1.5px solid #cfe0dc; padding: 6px 12px; font-family: 'IBM Plex Mono', monospace;">"auto"</td>
+            <td style="border: 1.5px dashed #cfe0dc; padding: 6px 12px; color: #6f675a; font-style: italic;">fast-track</td>
+          </tr>
+          <tr style="background: #dff0e6;">
+            <td style="border: 1.5px solid #1a6a54; background: #dff0e6; text-align: center; font-family: 'IBM Plex Mono', monospace; color: #1a6a54; font-weight: 700; height: 34px;">2 ▸</td>
+            <td style="border: 1.5px solid #cfe0dc; padding: 6px 12px; font-family: 'IBM Plex Mono', monospace;">true</td>
+            <td style="border: 1.5px solid #cfe0dc; border-right: 3px double #26766b; padding: 6px 12px; font-family: 'IBM Plex Mono', monospace;">[50000..500000]</td>
+            <td style="border: 2px solid #1a6a54; padding: 6px 12px; font-family: 'IBM Plex Mono', monospace; background: #ffffff; box-shadow: inset 0 0 0 1px #1a6a54;">"dupla"<span style="display: inline-block; width: 2px; height: 13px; background: #1a6a54; margin-left: 2px; vertical-align: middle;"></span></td>
+            <td style="border: 1.5px dashed #cfe0dc; padding: 6px 12px; color: #6f675a; font-style: italic;">gate 2 papéis</td>
+          </tr>
+          <tr>
+            <td style="border: 1.5px solid #cfe0dc; background: #f7f9f8; text-align: center; font-family: 'IBM Plex Mono', monospace; color: #6f675a; height: 34px;">3</td>
+            <td style="border: 1.5px solid #cfe0dc; padding: 6px 12px; font-family: 'IBM Plex Mono', monospace;">false</td>
+            <td style="border: 2px solid #b3372f; background: #fbeae7; padding: 6px 12px; font-family: 'IBM Plex Mono', monospace; color: #b3372f;" title="FEEL inválido: intervalo aberto sem limite">▲ &gt;= abc</td>
+            <td style="border: 1.5px solid #cfe0dc; padding: 6px 12px; font-family: 'IBM Plex Mono', monospace;">"recusa"</td>
+            <td style="border: 1.5px dashed #cfe0dc; padding: 6px 12px; color: #6f675a; font-style: italic;">—</td>
+          </tr>
+        </table>
+        <div style="display: flex; gap: 18px; margin-top: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a; flex-wrap: wrap;">
+          <span><span style="display: inline-block; width: 10px; height: 10px; background: #f6edd4; border: 1px solid #9a7b1e; vertical-align: -1px;"></span> hit policy (ouro = governança)</span>
+          <span><span style="display: inline-block; width: 10px; height: 10px; background: #dff0e6; border: 1px solid #1a6a54; vertical-align: -1px;"></span> linha selecionada / célula em edição (caret)</span>
+          <span><span style="display: inline-block; width: 10px; height: 10px; background: #fbeae7; border: 1px solid #b3372f; vertical-align: -1px;"></span> inválida = cor + borda 2 + ▲ (nunca só cor)</span>
+          <span>‖ duplo traço separa input/output (spec)</span>
+        </div>
+      </div>
+      <div style="padding: 12px 14px; border-top: 1px solid #e2ddd3;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a; line-height: 1.7;">células 34px de altura (alvo ≥ 24px + padding) · 1 clique seleciona, Enter/duplo-clique edita inline, Tab/setas navegam · header de coluna abre popover (nome, tipo, expressão) · nº da regra: clique seleciona linha, arrasto reordena, menu contextual duplica/remove · adicionar coluna insere antes do duplo traço (input) ou depois (output) · hit policy: menu com letra + nome + frase de efeito ("F — First: primeira regra que casa vence")</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 05 GOVERNANÇA ============ -->
+  <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 14px; padding: 28px;" data-screen-label="Fase C — Governança visível">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2.5px; color: #9a7b1e; margin-bottom: 6px;">05 · FASE C — GOVERNANÇA VISÍVEL (PPMN · SACM)</div>
+    <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 600;">Elemento fechado · faixa de pedigree · vocabulário SACM</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 20px;">
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden;">
+        <div style="background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; background-color: #faf9f6; display: flex; justify-content: center; align-items: center; padding: 22px 0; min-height: 140px;">
+          <svg width="230" height="120" viewBox="0 0 230 120">
+            <defs><pattern id="hatch1" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="6" stroke="#a49c8f" stroke-width="1"></line></pattern></defs>
+            <g transform="translate(40, 30)">
+              <rect width="150" height="70" rx="10" fill="#f0eee9" stroke="#a49c8f" stroke-width="1.5"></rect>
+              <rect width="150" height="70" rx="10" fill="url(#hatch1)"></rect>
+              <text x="75" y="42" text-anchor="middle" font-size="12" fill="#6f675a">Task antiga</text>
+              <g transform="translate(30, -9)">
+                <rect width="90" height="18" rx="9" fill="#efece6" stroke="#a49c8f" stroke-width="1"></rect>
+                <text x="45" y="12.5" text-anchor="middle" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="#6f675a" letter-spacing="1">FECHADO v1.4</text>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div style="padding: 12px 14px;">
+          <div style="font-size: 14px; font-weight: 600;">Elemento fechado (removedInVersion)</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a; line-height: 1.6;">dessatura para --bpmnr-canvas-bg + stroke #A49C8F + hachura pattern 45° 6px + selo pill 18px · hover: tooltip "sucedido por #e52" · não-interativo exceto abrir pedigree</div>
+        </div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden;">
+        <div style="background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; background-color: #faf9f6; display: flex; justify-content: center; align-items: center; padding: 22px 8px; min-height: 140px;">
+          <svg width="320" height="110" viewBox="0 0 320 110">
+            <defs><pattern id="hatch2" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="6" stroke="#a49c8f" stroke-width="1"></line></pattern></defs>
+            <path d="M 16 52 H 304" stroke="#a49c8f" stroke-width="1.5"></path>
+            <g transform="translate(24, 28)">
+              <rect width="70" height="48" rx="6" fill="url(#hatch2)" stroke="#a49c8f" stroke-width="1.2"></rect>
+              <text x="35" y="66" text-anchor="middle" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="#6f675a">v1.0 fechado</text>
+            </g>
+            <text x="106" y="46" font-size="8" font-family="IBM Plex Mono, monospace" fill="#9a7b1e">supersede ▸</text>
+            <g transform="translate(126, 28)">
+              <rect width="70" height="48" rx="6" fill="#ffffff" stroke="#a49c8f" stroke-width="1.2" opacity="0.8"></rect>
+              <text x="35" y="66" text-anchor="middle" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="#6f675a">v1.4→v2.0</text>
+            </g>
+            <text x="208" y="46" font-size="8" font-family="IBM Plex Mono, monospace" fill="#9a7b1e">supersede ▸</text>
+            <g transform="translate(228, 28)">
+              <rect width="70" height="48" rx="6" fill="#fdfaf1" stroke="#9a7b1e" stroke-width="2.5"></rect>
+              <text x="35" y="66" text-anchor="middle" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="#7a611e">ATUAL v2.1</text>
+            </g>
+          </svg>
+        </div>
+        <div style="padding: 12px 14px;">
+          <div style="font-size: 14px; font-weight: 600;">Faixa de pedigree (getEdgeChain → PPMN)</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a; line-height: 1.6;">faixa inferior 180px do canvas · cards 70×48 = snapshot do shape na versão · trilho 1.5 #A49C8F, tempo flui → · atual: borda gold 2.5 fill #FDFAF1 · clique = DiffView lado a lado · hover = hash do ledger</div>
+        </div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden;">
+        <div style="background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; background-color: #faf9f6; display: flex; justify-content: center; align-items: center; padding: 22px 8px; min-height: 140px;">
+          <svg width="300" height="130" viewBox="0 0 300 130">
+            <g transform="translate(70, 8)">
+              <rect width="160" height="30" fill="#ffffff" stroke="#44403a" stroke-width="1.5"></rect>
+              <text x="80" y="19" text-anchor="middle" font-size="10.5" fill="#262220">Claim: conforma ao perfil</text>
+            </g>
+            <path d="M 150 38 V 52" stroke="#44403a" stroke-width="1.2"></path>
+            <g transform="translate(78, 52)">
+              <polygon points="14,0 158,0 144,26 0,26" fill="#fdfaf1" stroke="#9a7b1e" stroke-width="1.5"></polygon>
+              <text x="79" y="17" text-anchor="middle" font-size="10.5" fill="#262220">Argument: gates 2/2</text>
+            </g>
+            <path d="M 120 78 V 94 M 180 78 V 94" stroke="#44403a" stroke-width="1.2" stroke-dasharray="3 3"></path>
+            <circle cx="120" cy="108" r="13" fill="#dff0e6" stroke="#1a6a54" stroke-width="1.8"></circle>
+            <text x="120" y="112" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#1a6a54">#a3f</text>
+            <circle cx="180" cy="108" r="13" fill="#dff0e6" stroke="#1a6a54" stroke-width="1.8"></circle>
+            <text x="180" y="112" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#1a6a54">#c71</text>
+          </svg>
+        </div>
+        <div style="padding: 12px 14px;">
+          <div style="font-size: 14px; font-weight: 600;">Vocabulário SACM (relatório certify)</div>
+          <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a; line-height: 1.6;">claim = retângulo tinta · argument = paralelogramo ouro · evidence = círculo verde com hash do ledger · relação inferida = tracejada · sub-marca documento: filete ouro 4px no topo, rodapé de auditoria (wireframe <a href="Wireframes BPM+ UX.dc.html#6b">6b</a>)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 06 HEALTHCARE ============ -->
+  <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 14px; padding: 28px;" data-screen-label="Fase D — Healthcare pack">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2.5px; color: #9a7b1e; margin-bottom: 6px;">06 · FASE D — PLUGIN HEALTHCARE (BPM+ HEALTH)</div>
+    <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 600;">Clinical pathway · degrau 305° · validação visível</h2>
+    <p style="margin: 0 0 16px; font-size: 13px; color: #6f675a; max-width: 820px;">Mesma receita do domain-example: tipos clínicos mapeados a tags BPMN padrão, assinatura de plugin (chanfro dourado + tag small-caps 8px). Um degrau da roda por domínio.</p>
+    <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start;">
+      <div style="background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; background-color: #faf9f6; border: 1px solid #e2ddd3; border-radius: 12px; display: flex; gap: 28px; align-items: center; padding: 24px; flex-wrap: wrap;">
+        <svg width="170" height="104" viewBox="0 0 170 104">
+          <g transform="translate(10, 10)">
+            <path d="M 10 0 H 136 L 150 14 V 60 Q 150 70 140 70 H 10 Q 0 70 0 60 V 10 Q 0 0 10 0 Z" fill="#f2e9f6" stroke="#7d5a9e" stroke-width="1.5"></path>
+            <path d="M 136 0 L 150 14" stroke="#9a7b1e" stroke-width="2.5"></path>
+            <g transform="translate(11, 9)" fill="none" stroke="#7d5a9e" stroke-width="1.4"><path d="M 7 0 V 14 M 0 7 H 14"></path></g>
+            <text x="75" y="40" text-anchor="middle" font-size="11.5" fill="#262220">Avaliar paciente</text>
+            <text x="10" y="63" font-size="8" letter-spacing="1.4" fill="#7d5a9e">CLINICAL TASK</text>
+            <text x="75" y="94" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#6f675a">→ userTask</text>
+          </g>
+        </svg>
+        <svg width="170" height="122" viewBox="0 0 170 122">
+          <g transform="translate(20, 28)">
+            <path d="M 10 0 H 116 L 130 14 V 60 Q 130 70 120 70 H 10 Q 0 70 0 60 V 10 Q 0 0 10 0 Z" fill="#f2e9f6" stroke="#7d5a9e" stroke-width="1.5"></path>
+            <path d="M 116 0 L 130 14" stroke="#9a7b1e" stroke-width="2.5"></path>
+            <g transform="translate(11, 9)" stroke="#7d5a9e" stroke-width="1.1" fill="none"><rect width="14" height="10" rx="1"></rect><path d="M 0 3.4 H 14 M 4.8 3.4 V 10"></path></g>
+            <text x="65" y="40" text-anchor="middle" font-size="11.5" fill="#262220">Decidir conduta</text>
+            <text x="10" y="63" font-size="8" letter-spacing="1.4" fill="#7d5a9e">CLINICAL DECISION</text>
+            <g transform="translate(46, -18)">
+              <rect width="120" height="17" rx="8.5" fill="#fdf6e8" stroke="#b8871f" stroke-width="1"></rect>
+              <text x="8" y="12" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="#7a611e">▲ sem tabela DMN vinculada</text>
+            </g>
+            <text x="65" y="94" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#6f675a">→ businessRuleTask · warning</text>
+          </g>
+        </svg>
+        <svg width="150" height="104" viewBox="0 0 150 104">
+          <g transform="translate(10, 18)">
+            <path d="M 0 40 L 24 0 H 120 L 96 40 Z" transform="skewX(0)" fill="#f2e9f6" stroke="#7d5a9e" stroke-width="1.5"></path>
+            <text x="60" y="25" text-anchor="middle" font-size="11" fill="#262220">Protocolo</text>
+            <text x="60" y="66" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#6f675a">→ dataObject (guideline)</text>
+          </g>
+        </svg>
+      </div>
+      <div style="flex: 1; min-width: 260px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a; line-height: 1.8;">
+        regra de validação visível: <span style="color: #b3372f;">clinical decision sem DMN = chip warning âmbar</span> (--btv-hc-warning-*) sobre a borda superior, mesmo lugar do badge de vínculo — presença/ausência no mesmo slot ensina o modelo.<br><br>
+        mapeia: clinicalTask → userTask · clinicalDecision → businessRuleTask · guideline → dataObjectReference · pathwayGate → exclusiveGateway. Tudo via <span style="color: #44403a;">bpmnr:meta type</span>, export 100% interoperável.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 07 GRAMÁTICA DA FAMÍLIA ============ -->
+  <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 14px; padding: 28px;" data-screen-label="Gramática da família">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2.5px; color: #9a7b1e; margin-bottom: 6px;">07 · GRAMÁTICA VISUAL DA FAMÍLIA</div>
+    <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 600;">Como BPMN + DMN + packs convivem sem virar colcha de retalhos</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 18px; font-size: 13px; color: #44403a; line-height: 1.65;">
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; padding: 16px 18px;">
+        <div style="font-weight: 600; margin-bottom: 6px;">1 · Padrão OMG = geometria neutra</div>
+        Elemento de spec (BPMN, DMN, SACM): forma canônica, fill branco/tonal neutro, tinta <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px;">#44403A</span> ou cor da família. <strong>Nunca</strong> chanfro, nunca tag small-caps. Quem vem de Camunda lê sem aprender nada.
+      </div>
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; padding: 16px 18px;">
+        <div style="font-weight: 600; margin-bottom: 6px;">2 · Plugin de domínio = assinatura BTV</div>
+        Elemento de pack (btv:, healthcare…): <strong>chanfro dourado 14px + tag de tipo 8px</strong> — o "carimbo de extensão". O chanfro é sempre ouro (governança BTV), a cor do corpo é o degrau do domínio. Vale para qualquer pack futuro.
+      </div>
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; padding: 16px 18px;">
+        <div style="font-weight: 600; margin-bottom: 6px;">3 · Uma família de notação = um degrau</div>
+        DMN = 185°. CMMN (futuro) reivindica 105° ou 65°. Dentro da família, diferenciação só por forma (spec) e peso de fill. Assim o canvas misto BPMN+DRD continua legível em escala de cinza.
+      </div>
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; padding: 16px 18px;">
+        <div style="font-weight: 600; margin-bottom: 6px;">4 · Um domínio de negócio = um degrau, por PR</div>
+        Pack reivindica 1 degrau livre documentando no próprio plugin (<span style="font-family: 'IBM Plex Mono', monospace; font-size: 11.5px;">colorWheelDegree</span>): healthcare 305°, finanças p.ex. 65°. Colisão = build warning. Livres hoje: 65°, 105°.
+      </div>
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; padding: 16px 18px;">
+        <div style="font-weight: 600; margin-bottom: 6px;">5 · Ouro e verde são reservados</div>
+        Ouro = governança/valor (hit policy, chanfro, badges de vínculo, breadcrumb). Verde = aprovação/seleção. Nenhum domínio pode usá-los como cor de corpo — é o que dá unidade à colcha.
+      </div>
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; padding: 16px 18px;">
+        <div style="font-weight: 600; margin-bottom: 6px;">6 · Um gesto de navegação</div>
+        Duplo-clique desce (subprocesso, decision table, pedigree), breadcrumb com selo de vigência sobe. O mesmo par de gestos serve BPMN, DMN e o que vier — arquitetura de informação estável.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 08 DARK ============ -->
+  <section style="background: #262220; border: 1px solid #3a352f; border-radius: 14px; padding: 28px;" data-screen-label="Dark mode">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 2.5px; color: #cba84b; margin-bottom: 6px;">08 · DARK MODE (prefers-color-scheme)</div>
+    <h2 style="margin: 0 0 16px; font-size: 20px; font-weight: 600; color: #ece8e1;">Mesmas formas, tokens dark — obrigatório em tudo</h2>
+    <div style="background-image: radial-gradient(#3a352f 1px, transparent 1px); background-size: 16px 16px; background-color: #1d1a17; border-radius: 12px; display: flex; gap: 32px; align-items: center; justify-content: center; padding: 26px; flex-wrap: wrap;">
+      <svg width="170" height="96" viewBox="0 0 170 96">
+        <g transform="translate(10, 12)">
+          <rect width="150" height="70" rx="10" fill="#2c2825" stroke="#c9c4ba" stroke-width="1.5"></rect>
+          <g transform="translate(9, 8)" stroke="#c9c4ba" stroke-width="1.2" fill="none"><rect width="16" height="12" rx="1"></rect><path d="M 0 4 H 16 M 5.5 4 V 12"></path></g>
+          <g transform="translate(129, -8)">
+            <rect width="30" height="16" rx="8" fill="#33301f" stroke="#cba84b" stroke-width="1"></rect>
+            <g transform="translate(5, 3.5)" stroke="#cba84b" stroke-width="1" fill="none"><rect width="9" height="9" rx="0.5"></rect><path d="M 0 3 H 9 M 3 3 V 9"></path></g>
+            <path d="M 18 5.5 L 21 8.5 L 26 3.5" fill="none" stroke="#cba84b" stroke-width="1.4" stroke-linecap="round"></path>
+          </g>
+          <text x="75" y="42" text-anchor="middle" font-size="12" fill="#ece8e1">Avaliar crédito</text>
+        </g>
+      </svg>
+      <svg width="180" height="96" viewBox="0 0 180 96">
+        <g transform="translate(15, 18)">
+          <rect width="150" height="60" fill="#22322f" stroke="#63b3a6" stroke-width="1.5"></rect>
+          <text x="75" y="30" text-anchor="middle" font-size="12" fill="#ece8e1">Aprovação de crédito</text>
+          <g transform="translate(9, 44)" stroke="#63b3a6" stroke-width="1" fill="none"><rect width="12" height="9" rx="0.5"></rect><path d="M 0 3 H 12 M 4 3 V 9"></path></g>
+        </g>
+      </svg>
+      <svg width="170" height="96" viewBox="0 0 170 96">
+        <g transform="translate(15, 24)">
+          <rect width="140" height="44" rx="22" fill="#1d2a27" stroke="#4f8f83" stroke-width="1.5"></rect>
+          <text x="70" y="26" text-anchor="middle" font-size="12" fill="#ece8e1">Renda mensal</text>
+        </g>
+      </svg>
+      <svg width="150" height="96" viewBox="0 0 150 96">
+        <defs><pattern id="hatchd" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="6" stroke="#6f675a" stroke-width="1"></line></pattern></defs>
+        <g transform="translate(10, 18)">
+          <rect width="130" height="56" rx="8" fill="#2c2825" stroke="#6f675a" stroke-width="1.5"></rect>
+          <rect width="130" height="56" rx="8" fill="url(#hatchd)"></rect>
+          <text x="65" y="34" text-anchor="middle" font-size="11" fill="#a49c8f">fechado v1.4</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+</div>
+
+</x-dc>
+</body>
+</html>

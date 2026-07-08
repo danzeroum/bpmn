@@ -1,0 +1,90 @@
+/* BuildToValue — extensão BPM+ (DMN / PPMN / SACM / packs de domínio)
+   Anexar APÓS btv-tokens.css. Todo consumo usa var(--…, fallback) — zero breaking change.
+
+   Roda de 9 matizes (40°): a FAMÍLIA DMN reivindica o degrau 185° (petróleo).
+   Dentro do degrau, a diferenciação é por FORMA (spec OMG), nunca por matiz novo.
+   O pack Healthcare reivindica o degrau 305° (violeta clínico).
+   Degraus livres restantes: 65°, 105°. Novos domínios reivindicam 1 degrau via PR
+   documentada (ver README §Gramática da família). */
+
+:root {
+  /* ---- DMN · degrau 185° petróleo ---- */
+  --btv-dmn-fill: #e2f0ee;            /* decision, BKM */
+  --btv-dmn-stroke: #26766b;
+  --btv-dmn-input-fill: #f1f8f6;      /* inputData — mais claro: é dado, não lógica */
+  --btv-dmn-input-stroke: #58968b;
+  --btv-dmn-knowledge-fill: #faf9f6;  /* knowledgeSource — neutro papel (autoridade externa) */
+  --btv-dmn-knowledge-stroke: #26766b;
+
+  /* requirement edges (formas conforme spec DMN; cor única da família) */
+  --btv-dmn-edge: #26766b;            /* information: sólida, seta cheia */
+                                      /* knowledge: tracejada 5/4, seta aberta */
+                                      /* authority: tracejada 2/4, disco cheio r3 na ponta */
+
+  /* decision table (HTML/DOM — compartilha tokens) */
+  --btv-dmn-table-header-bg: #ecf4f2;
+  --btv-dmn-table-header-fg: #1d5a52;
+  --btv-dmn-table-rule-bg: #f7f9f8;   /* coluna nº da regra */
+  --btv-dmn-table-grid: #cfe0dc;
+  --btv-dmn-hit-bg: #f6edd4;          /* célula de hit policy = ouro BTV (governança) */
+  --btv-dmn-hit-fg: #7a611e;
+  --btv-dmn-cell-invalid-bg: #fbeae7; /* + borda 2px --btv-error + ícone ▲ (não só cor) */
+  --btv-dmn-cell-selected: #dff0e6;   /* linha selecionada = verde aprovação suave */
+  --btv-dmn-annotation-fg: #6f675a;
+
+  /* vínculo BPMN ⇄ DMN */
+  --btv-dmn-link-badge-bg: #f6edd4;   /* badge no chanfro do businessRuleTask */
+  --btv-dmn-link-badge-stroke: #9a7b1e;
+
+  /* ---- Governança visível (PPMN / SACM) ---- */
+  --btv-pedigree-line: #a49c8f;       /* trilho da cadeia de sucessão */
+  --btv-pedigree-closed: #6f675a;     /* nó fechado (removedInVersion) */
+  --btv-closed-hatch: #a49c8f;        /* hachura 45° 6px de elemento fechado */
+  --btv-sacm-claim: #44403a;          /* claim: retângulo tinta */
+  --btv-sacm-argument: #9a7b1e;       /* argument: paralelogramo ouro */
+  --btv-sacm-evidence: #1a6a54;       /* evidence: círculo verde (entrada de ledger) */
+
+  /* ---- Pack Healthcare · degrau 305° violeta clínico ---- */
+  --btv-hc-fill: #f2e9f6;
+  --btv-hc-stroke: #7d5a9e;
+  --btv-hc-warning-bg: #fdf6e8;       /* decisão clínica sem DMN vinculada */
+  --btv-hc-warning-stroke: #b8871f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --btv-dmn-fill: #22322f;
+    --btv-dmn-stroke: #63b3a6;
+    --btv-dmn-input-fill: #1d2a27;
+    --btv-dmn-input-stroke: #4f8f83;
+    --btv-dmn-knowledge-fill: #262220;
+    --btv-dmn-knowledge-stroke: #63b3a6;
+
+    --btv-dmn-edge: #63b3a6;
+
+    --btv-dmn-table-header-bg: #24322f;
+    --btv-dmn-table-header-fg: #8fd0c4;
+    --btv-dmn-table-rule-bg: #22292a;
+    --btv-dmn-table-grid: #33473f;
+    --btv-dmn-hit-bg: #33301f;
+    --btv-dmn-hit-fg: #cba84b;
+    --btv-dmn-cell-invalid-bg: #3a2622;
+    --btv-dmn-cell-selected: #22312a;
+    --btv-dmn-annotation-fg: #a49c8f;
+
+    --btv-dmn-link-badge-bg: #33301f;
+    --btv-dmn-link-badge-stroke: #cba84b;
+
+    --btv-pedigree-line: #6f675a;
+    --btv-pedigree-closed: #a49c8f;
+    --btv-closed-hatch: #6f675a;
+    --btv-sacm-claim: #c9c4ba;
+    --btv-sacm-argument: #cba84b;
+    --btv-sacm-evidence: #57b895;
+
+    --btv-hc-fill: #2e2536;
+    --btv-hc-stroke: #b592d4;
+    --btv-hc-warning-bg: #33301f;
+    --btv-hc-warning-stroke: #cba84b;
+  }
+}
