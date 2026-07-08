@@ -23,6 +23,7 @@ function renderShell() {
         ledger: new AuditLedger(),
         now: () => '2026-07-08T00:00:00.000Z',
       }}
+      audit={{ ledger: new AuditLedger() }}
     />,
   );
 }
@@ -46,14 +47,28 @@ describe('StudioShell — navegação por hash, sem router externo (§11)', () =
     expect(screen.getByText(/SEU PAPEL: PROCESS-OWNER/)).toBeInTheDocument();
   });
 
-  it('Auditoria is the S-5 placeholder; hashchange drives navigation', async () => {
+  it('Auditoria renders the Ledger Explorer when wired; hashchange drives navigation', async () => {
     renderShell();
     window.location.hash = '#/auditoria';
     fireEvent(window, new HashChangeEvent('hashchange'));
-    expect(await screen.findByText(/Ledger Explorer — chega na S-5/)).toBeInTheDocument();
+    expect(await screen.findByTestId('ledger-explorer')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Verificar cadeia' })).toBeInTheDocument();
     window.location.hash = '#/biblioteca';
     fireEvent(window, new HashChangeEvent('hashchange'));
     expect(await screen.findByText('Bolo de fubá cremoso')).toBeInTheDocument();
+  });
+
+  it('without audit wiring the Auditoria shows the disconnected notice', async () => {
+    render(
+      <StudioShell
+        user={user}
+        library={{ adapters: [], onAction: () => {} }}
+        review={{ candidates: [], engine: new LifecycleEngine(), ledger: new AuditLedger() }}
+      />,
+    );
+    window.location.hash = '#/auditoria';
+    fireEvent(window, new HashChangeEvent('hashchange'));
+    expect(await screen.findByText('Ledger Explorer sem ledger conectado.')).toBeInTheDocument();
   });
 
   it('an unknown hash falls back to the Biblioteca', async () => {

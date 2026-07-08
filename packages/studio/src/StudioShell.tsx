@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { UserContext } from '@bpmn-react/core';
 import { LibraryView, type LibraryViewProps } from '@bpmn-react/library-react';
 import { ReviewScreen, type ReviewScreenProps } from './review/ReviewScreen.js';
+import { LedgerExplorer, type LedgerExplorerProps } from './ledger/LedgerExplorer.js';
 
 export type StudioScreen = 'biblioteca' | 'revisao' | 'auditoria';
 
@@ -17,6 +18,8 @@ export interface StudioShellProps {
   library: LibraryViewProps;
   /** Wiring of the Revisão screen; `actor` comes from `user`. */
   review: Omit<ReviewScreenProps, 'actor'>;
+  /** Wiring of the Auditoria screen (Ledger Explorer, S-5). */
+  audit?: LedgerExplorerProps;
   footer?: string;
 }
 
@@ -31,7 +34,7 @@ function screenFromHash(): StudioScreen {
  * router (§11) — and the user identity. Studio é leitura + decisões de
  * governança; edição é o Designer. Auditoria chega na S-5.
  */
-export function StudioShell({ user, library, review, footer }: StudioShellProps) {
+export function StudioShell({ user, library, review, audit, footer }: StudioShellProps) {
   const [screen, setScreen] = useState<StudioScreen>(() => screenFromHash());
 
   useEffect(() => {
@@ -75,12 +78,15 @@ export function StudioShell({ user, library, review, footer }: StudioShellProps)
       <main className="btv-studio-main">
         {screen === 'biblioteca' && <LibraryView {...library} />}
         {screen === 'revisao' && <ReviewScreen {...review} actor={user} />}
-        {screen === 'auditoria' && (
-          <section className="btv-studio-block">
-            <span className="btv-studio-kicker">AUDITORIA</span>
-            <p className="btv-studio-muted">Ledger Explorer — chega na S-5 (Handoff 6 §6).</p>
-          </section>
-        )}
+        {screen === 'auditoria' &&
+          (audit ? (
+            <LedgerExplorer {...audit} />
+          ) : (
+            <section className="btv-studio-block">
+              <span className="btv-studio-kicker">AUDITORIA</span>
+              <p className="btv-studio-muted">Ledger Explorer sem ledger conectado.</p>
+            </section>
+          ))}
       </main>
 
       <footer className="btv-studio-footer">
