@@ -19,6 +19,8 @@ export const BUILT_IN_PALETTE: PaletteItem[] = [
   { id: 'exclusiveGateway', label: 'Exclusive Gateway', nodeType: 'exclusiveGateway', icon: CORE_PALETTE_ICONS.exclusiveGateway, group: 'core' },
   { id: 'parallelGateway', label: 'Parallel Gateway', nodeType: 'parallelGateway', icon: CORE_PALETTE_ICONS.parallelGateway, group: 'core' },
   { id: 'subProcess', label: 'Sub-Process', nodeType: 'subProcess', icon: CORE_PALETTE_ICONS.subProcess, group: 'core' },
+  { id: 'callActivity', label: 'Call Activity', nodeType: 'callActivity', icon: CORE_PALETTE_ICONS.callActivity, group: 'core' },
+  { id: 'dataStore', label: 'Data Store', nodeType: 'dataStore', icon: CORE_PALETTE_ICONS.dataStore, group: 'core' },
   { id: 'group', label: 'Group', nodeType: 'group', icon: CORE_PALETTE_ICONS.group, group: 'core' },
   { id: 'endEvent', label: 'End Event', nodeType: 'endEvent', icon: CORE_PALETTE_ICONS.endEvent, group: 'core' },
   { id: 'pool', label: 'Pool', nodeType: 'pool', icon: CORE_PALETTE_ICONS.pool, group: 'core' },

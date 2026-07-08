@@ -56,6 +56,17 @@ const IGNORED_LOCAL_NAMES = new Set([
   'flowNodeRef',
   'text',
   'conditionExpression',
+  // Data-association plumbing (F7-3): the associations themselves map to the
+  // matrix; their ref children and bpmn.io's synthesized io wiring are
+  // structure, not model elements.
+  'sourceRef',
+  'targetRef',
+  'property',
+  'ioSpecification',
+  'dataInput',
+  'dataOutput',
+  'inputSet',
+  'outputSet',
   'BPMNDiagram',
   'BPMNPlane',
   'BPMNShape',

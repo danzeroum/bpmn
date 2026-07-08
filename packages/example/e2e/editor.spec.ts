@@ -29,6 +29,9 @@ test('renders the sample diagram with domain shapes', async ({ page }) => {
     'd',
     / Q /,
   );
+  // F7-3: call activity and data store render with their BPMN notation.
+  await expect(page.locator('[data-node-type="callActivity"]')).toBeVisible();
+  await expect(page.locator('[data-node-type="dataStore"]')).toBeVisible();
   await expect(page.getByRole('status', { name: /Version/ })).toContainText('RASCUNHO');
 });
 

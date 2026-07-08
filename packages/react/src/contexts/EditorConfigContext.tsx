@@ -64,7 +64,15 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
   const shapes: Record<string, ShapeComponent> = { ...BUILT_IN_SHAPES };
   const paletteItems: PaletteItem[] = [...BUILT_IN_PALETTE];
   const paletteGroups: PaletteGroup[] = [...BUILT_IN_PALETTE_GROUPS];
-  const edgeStyles: Record<string, EdgeStyle> = {};
+  // Built-in style for the standard data association: dotted, open arrowhead
+  // (BPMN notation). Plugins may override by re-declaring the key.
+  const edgeStyles: Record<string, EdgeStyle> = {
+    dataAssociation: {
+      stroke: 'var(--bpmnr-text-muted, #6f675a)',
+      dash: '2,4',
+      marker: 'open',
+    },
+  };
   const ruleEngine = createDefaultRuleEngine();
   const validationRules = [...BUILT_IN_VALIDATION_RULES];
   const preferredTypes: string[] = [];

@@ -10,7 +10,9 @@ import {
   activeNodes,
   activityMarkerOf,
   boundaryAttachedTo,
+  calledElementOf,
   childrenOf,
+  DATA_ASSOCIATION_EDGE_TYPE,
   eventDefinitionOf,
   EVENT_DEFINITION_KINDS,
   isContainerType,
@@ -109,7 +111,13 @@ export class BpmnXmlConverter {
     // sequenceFlow + bpmnr:meta, which round-trips the type losslessly.
     const edges = Object.values(diagram.edges);
     const messageFlows = pools.length > 0 ? edges.filter((e) => e.type === 'messageFlow') : [];
-    const scopedEdges = pools.length > 0 ? edges.filter((e) => e.type !== 'messageFlow') : edges;
+    // Data associations nest inside their activity element (standard BPMN),
+    // never at the process level.
+    const dataAssocsByActivity = this.groupDataAssociations(diagram);
+    const scopedEdges = edges.filter(
+      (e) =>
+        e.type !== DATA_ASSOCIATION_EDGE_TYPE && (pools.length === 0 || e.type !== 'messageFlow'),
+    );
     // Sequence flows are scoped to their container: flows between children of
     // a sub-process nest inside it, the rest stay at the process level.
     const edgesByScope = new Map<string | undefined, BpmnEdge[]>();
@@ -168,7 +176,7 @@ export class BpmnXmlConverter {
     }
 
     for (const node of flowNodes) {
-      this.writeNode(xml, node, diagram, edgesByScope);
+      this.writeNode(xml, node, diagram, edgesByScope, dataAssocsByActivity);
     }
     for (const edge of processEdges) {
       this.writeEdge(xml, edge, edge.type === 'association' ? 'association' : 'sequenceFlow');
@@ -219,6 +227,7 @@ export class BpmnXmlConverter {
     node: BpmnNode,
     diagram: BpmnDiagram,
     edgesByScope: Map<string | undefined, BpmnEdge[]>,
+    dataAssocsByActivity: Map<string, BpmnEdge[]>,
   ): void {
     const def = this.registry.has(node.type) ? this.registry.get(node.type) : undefined;
     const tag = def?.xml.tag ?? 'task';
@@ -235,16 +244,31 @@ export class BpmnXmlConverter {
         ? node.properties.attachedToRef
         : undefined;
     const nonInterrupting = isBoundary && node.properties.cancelActivity === false;
+    // A call activity's target process is the standard calledElement attribute.
+    const calledElement = calledElementOf(node);
+    // Data references carry their backing declaration id natively too.
+    const dataStoreRef =
+      node.type === 'dataStore' && typeof node.properties.dataStoreRef === 'string'
+        ? node.properties.dataStoreRef
+        : undefined;
+    const dataObjectRef =
+      node.type === 'dataObject' && typeof node.properties.dataObjectRef === 'string'
+        ? node.properties.dataObjectRef
+        : undefined;
     // Containment and expansion are encoded structurally (nesting below and
     // the DI isExpanded attribute), never as bpmnr:property.
     const isSubProcess = node.type === 'subProcess';
     const nestedNodes = isSubProcess ? childrenOf(diagram, node.id) : [];
     const nestedEdges = isSubProcess ? (edgesByScope.get(node.id) ?? []) : [];
+    const dataAssocs = dataAssocsByActivity.get(node.id) ?? [];
     const reserved = new Set<string>(['parentId']);
     if (eventDef) reserved.add('eventDefinition');
     if (marker) reserved.add('marker');
     if (attachedToRef !== undefined) reserved.add('attachedToRef');
     if (nonInterrupting) reserved.add('cancelActivity');
+    if (calledElement !== undefined) reserved.add('calledElement');
+    if (dataStoreRef !== undefined) reserved.add('dataStoreRef');
+    if (dataObjectRef !== undefined) reserved.add('dataObjectRef');
     if (isSubProcess) reserved.add('isExpanded');
     const propEntries = Object.entries(node.properties).filter(([key]) => !reserved.has(key));
     const attrs = {
@@ -252,12 +276,16 @@ export class BpmnXmlConverter {
       name: node.label,
       attachedToRef,
       cancelActivity: nonInterrupting ? 'false' : undefined,
+      calledElement,
+      dataStoreRef,
+      dataObjectRef,
     };
     const hasChildren =
       eventDef !== undefined ||
       marker !== undefined ||
       nestedNodes.length > 0 ||
-      nestedEdges.length > 0;
+      nestedEdges.length > 0 ||
+      dataAssocs.length > 0;
     const needsMeta =
       node.type !== tag ||
       node.removedInVersion !== undefined ||
@@ -291,12 +319,81 @@ export class BpmnXmlConverter {
         isSequential: marker === 'sequentialMultiInstance' ? 'true' : 'false',
       });
     }
+    // Data associations of THIS activity (standard nested elements).
+    for (const assoc of dataAssocs) {
+      this.writeDataAssociation(xml, assoc, node.id);
+    }
     // Nested flow elements (F7): children first, then the flows between them.
     for (const child of nestedNodes) {
-      this.writeNode(xml, child, diagram, edgesByScope);
+      this.writeNode(xml, child, diagram, edgesByScope, dataAssocsByActivity);
     }
     for (const edge of nestedEdges) {
       this.writeEdge(xml, edge, edge.type === 'association' ? 'association' : 'sequenceFlow');
+    }
+    xml.close();
+  }
+
+  /** True when the node's registered category is `data` (dataObject/dataStore
+   * built-ins or plugin data types). */
+  private isDataNode(node: BpmnNode | undefined): boolean {
+    if (!node) return false;
+    return this.registry.has(node.type) && this.registry.get(node.type).category === 'data';
+  }
+
+  /**
+   * Data association edges grouped by the ACTIVITY endpoint they nest under on
+   * export. Direction decides the element: data → activity is a
+   * dataInputAssociation, activity → data a dataOutputAssociation.
+   */
+  private groupDataAssociations(diagram: BpmnDiagram): Map<string, BpmnEdge[]> {
+    const byActivity = new Map<string, BpmnEdge[]>();
+    for (const edge of Object.values(diagram.edges)) {
+      if (edge.type !== DATA_ASSOCIATION_EDGE_TYPE) continue;
+      const source = diagram.nodes[edge.sourceId];
+      // Input association (data → activity) hangs off the target; anything
+      // else (including data → data, a modelling error) off the source.
+      const activityId = this.isDataNode(source) ? edge.targetId : edge.sourceId;
+      if (!diagram.nodes[activityId]) continue; // dangling — orphanEdgeRule owns this
+      byActivity.set(activityId, [...(byActivity.get(activityId) ?? []), edge]);
+    }
+    return byActivity;
+  }
+
+  /**
+   * Writes one data association nested in its activity element. Only the far
+   * (data-side) ref is written as a child ref element — the activity side is
+   * implied by nesting, mirroring how bpmn.io emits these.
+   */
+  private writeDataAssociation(xml: XmlBuilder, edge: BpmnEdge, activityId: string): void {
+    const p = this.ext.prefix;
+    const isInput = edge.targetId === activityId;
+    const tag = isInput ? 'bpmn:dataInputAssociation' : 'bpmn:dataOutputAssociation';
+    const needsMeta =
+      edge.purpose !== undefined ||
+      edge.removedInVersion !== undefined ||
+      edge.supersedesEdgeId !== undefined ||
+      Object.keys(edge.properties).length > 0 ||
+      edge.createdInVersion !== '0' ||
+      edge.label !== undefined;
+    xml.open(tag, { id: edge.id });
+    if (needsMeta) {
+      xml.open('bpmn:extensionElements');
+      xml.element(`${p}:meta`, {
+        purpose: edge.purpose,
+        label: edge.label,
+        createdInVersion: edge.createdInVersion !== '0' ? edge.createdInVersion : undefined,
+        removedInVersion: edge.removedInVersion,
+        supersedesEdgeId: edge.supersedesEdgeId,
+      });
+      for (const [key, value] of Object.entries(edge.properties)) {
+        xml.element(`${p}:property`, { name: key, value: JSON.stringify(value) });
+      }
+      xml.close();
+    }
+    if (isInput) {
+      xml.element('bpmn:sourceRef', {}, edge.sourceId);
+    } else {
+      xml.element('bpmn:targetRef', {}, edge.targetId);
     }
     xml.close();
   }
@@ -448,6 +545,15 @@ export class BpmnXmlConverter {
     'incoming',
     'outgoing',
     'documentation',
+    // Consumed by readDataAssociations on the owning activity; ioSpecification
+    // and its synthesized property targets are bpmn.io plumbing we don't model.
+    'dataInputAssociation',
+    'dataOutputAssociation',
+    'ioSpecification',
+    'property',
+    // Declaration behind a dataObjectReference — the reference carries the
+    // name/DI; the id round-trips via the reference's dataObjectRef attribute.
+    'dataObject',
   ]);
 
   /**
@@ -488,10 +594,53 @@ export class BpmnXmlConverter {
       if (!node) continue;
       if (parentId !== undefined) node.properties.parentId = parentId;
       diagram.nodes[node.id] = node;
+      this.readDataAssociations(child, node.id, diagram, warnings);
       if (node.type === 'subProcess') {
         this.readFlowElements(child, node.id, diagram, warnings);
       }
     }
+  }
+
+  /**
+   * Reads the standard dataInputAssociation/dataOutputAssociation children of
+   * an activity into `dataAssociation` edges. The activity side is implied by
+   * nesting; the data side comes from the sourceRef (input) / targetRef
+   * (output) child. bpmn.io-style targetRefs pointing at a synthesized
+   * `<bpmn:property>` are ignored — the edge targets the activity itself.
+   */
+  private readDataAssociations(
+    activityEl: XmlElement,
+    activityId: string,
+    diagram: BpmnDiagram,
+    warnings: string[],
+  ): void {
+    const read = (el: XmlElement, kind: 'input' | 'output') => {
+      const refTag = kind === 'input' ? 'sourceRef' : 'targetRef';
+      const ref = firstChildByLocalName(el, refTag)?.text.trim();
+      if (!ref) {
+        warnings.push(
+          `Ignored data ${kind} association ${el.attributes.id ?? '?'} on ${activityId} without a <${refTag}>`,
+        );
+        return;
+      }
+      const { properties, meta } = this.readExtensionElements(el);
+      const edge: BpmnEdge = {
+        id: el.attributes.id ?? generateId(),
+        type: DATA_ASSOCIATION_EDGE_TYPE,
+        sourceId: kind === 'input' ? ref : activityId,
+        targetId: kind === 'input' ? activityId : ref,
+        ...(meta.label ? { label: meta.label } : {}),
+        ...(meta.purpose ? { purpose: meta.purpose } : {}),
+        properties,
+        createdInVersion: meta.createdInVersion ?? '0',
+        ...(meta.removedInVersion ? { removedInVersion: meta.removedInVersion } : {}),
+        ...(meta.supersedesEdgeId ? { supersedesEdgeId: meta.supersedesEdgeId } : {}),
+        audit: { createdAt: new Date().toISOString(), createdBy: 'import', history: [] },
+      };
+      diagram.edges[edge.id] = edge;
+    };
+    for (const el of childrenByLocalName(activityEl, 'dataInputAssociation')) read(el, 'input');
+    for (const el of childrenByLocalName(activityEl, 'dataOutputAssociation')) read(el, 'output');
   }
 
   private readVersion(versionMeta: XmlElement | undefined): BpmnDiagram['version'] {
@@ -564,6 +713,17 @@ export class BpmnXmlConverter {
     if (type === 'boundaryEvent') {
       if (el.attributes.attachedToRef) properties.attachedToRef = el.attributes.attachedToRef;
       if (el.attributes.cancelActivity === 'false') properties.cancelActivity = false;
+    }
+    // Call activity target process / data element backing ids — all native
+    // BPMN attributes, round-tripped without bpmnr:property double-encoding.
+    if (type === 'callActivity' && el.attributes.calledElement) {
+      properties.calledElement = el.attributes.calledElement;
+    }
+    if (type === 'dataStore' && el.attributes.dataStoreRef) {
+      properties.dataStoreRef = el.attributes.dataStoreRef;
+    }
+    if (type === 'dataObject' && el.attributes.dataObjectRef) {
+      properties.dataObjectRef = el.attributes.dataObjectRef;
     }
     // Standard loopCharacteristics child → properties.marker.
     const marker = readActivityMarker(el);

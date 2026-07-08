@@ -37,7 +37,7 @@ export const CONFORMANCE_MATRIX: ConformanceEntry[] = [
   { element: 'bpmn:manualTask', status: 'supported', conformanceClass: 'analytic', mappedTo: 'manualTask' },
   { element: 'bpmn:businessRuleTask', status: 'unsupported', conformanceClass: 'analytic', notes: 'Roadmap F9 (DMN) — ignored with a warning today.' },
   { element: 'bpmn:subProcess', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'subProcess', notes: 'Nested children as first-class nodes (lossless round-trip, DI isExpanded); expand/collapse and drill-down in the editor.' },
-  { element: 'bpmn:callActivity', status: 'unsupported', conformanceClass: 'descriptive', notes: 'Roadmap F7 — registry synergy (activeAt).' },
+  { element: 'bpmn:callActivity', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'callActivity', notes: 'Native calledElement; @bpmn-react/registry resolves the called process version (resolveCallActivities/activeAt).' },
   { element: 'bpmn:transaction', status: 'unsupported', conformanceClass: 'extended', notes: 'Deliberately out of scope before v2.x.' },
   { element: 'bpmn:adHocSubProcess', status: 'unsupported', conformanceClass: 'extended' },
   { element: 'loopCharacteristics (standard)', status: 'supported', conformanceClass: 'analytic', mappedTo: 'activity marker' },
@@ -67,13 +67,13 @@ export const CONFORMANCE_MATRIX: ConformanceEntry[] = [
   { element: 'bpmn:sequenceFlow', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'sequenceFlow' },
   { element: 'bpmn:messageFlow', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'messageFlow' },
   { element: 'bpmn:association', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'association' },
-  { element: 'bpmn:dataAssociation', status: 'unsupported', conformanceClass: 'analytic', notes: 'Roadmap F7 (dataStore + dataAssociation).' },
+  { element: 'bpmn:dataAssociation', status: 'supported', conformanceClass: 'analytic', mappedTo: 'dataAssociation', notes: 'dataInput/OutputAssociation nested in activities; bpmn.io-style synthesized property targets resolve to the owning activity.' },
   // Swimlanes
   { element: 'bpmn:participant (pool)', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'pool', notes: 'v1 profile: N participants map onto a single process.' },
   { element: 'bpmn:lane / laneSet', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'lane', notes: 'Interactive membership via flowNodeRefs.' },
   // Artifacts & data
   { element: 'bpmn:dataObjectReference', status: 'supported', conformanceClass: 'analytic', mappedTo: 'dataObject' },
-  { element: 'bpmn:dataStoreReference', status: 'unsupported', conformanceClass: 'analytic', notes: 'Roadmap F7.' },
+  { element: 'bpmn:dataStoreReference', status: 'supported', conformanceClass: 'analytic', mappedTo: 'dataStore', notes: 'Native dataStoreRef attribute; root-level <dataStore> declarations are not modelled.' },
   { element: 'bpmn:textAnnotation', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'textAnnotation' },
   { element: 'bpmn:group', status: 'supported', conformanceClass: 'analytic', mappedTo: 'group' },
   // DI

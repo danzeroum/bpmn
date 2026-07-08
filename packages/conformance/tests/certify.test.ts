@@ -25,7 +25,6 @@ describe('certifyXml over the corpus (aceite A3)', () => {
       if (name.includes('degraded-elements')) {
         expect(report.unsupportedElements, name).toEqual([
           'businessRuleTask',
-          'callActivity',
           'complexGateway',
         ]);
         expect(report.achievedClass, name).toBe('none');

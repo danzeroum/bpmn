@@ -49,6 +49,10 @@ export const STRUCTURAL_MANIFEST: Record<string, ElementRule> = {
   complexGateway: { requiredAttrs: ['id'], parents: ['process', 'subProcess'] },
   dataObjectReference: { requiredAttrs: ['id'], parents: ['process', 'subProcess'] },
   dataStoreReference: { requiredAttrs: ['id'], parents: ['process', 'subProcess'] },
+  // Data associations nest inside activities (any activity tag) — only the
+  // id is structurally required; refs are child elements, not attributes.
+  dataInputAssociation: { requiredAttrs: ['id'] },
+  dataOutputAssociation: { requiredAttrs: ['id'] },
   textAnnotation: { requiredAttrs: ['id'], parents: ['process', 'subProcess'] },
   group: { requiredAttrs: ['id'], parents: ['process', 'subProcess'] },
   BPMNShape: { requiredAttrs: ['bpmnElement'] },

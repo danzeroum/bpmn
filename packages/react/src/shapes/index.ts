@@ -1,7 +1,9 @@
 import type { ShapeComponent } from '../plugins/types.js';
 import {
   BoundaryEventShape,
+  CallActivityShape,
   DataObjectShape,
+  DataStoreShape,
   DefaultShape,
   EndEventShape,
   EventBasedGatewayShape,
@@ -46,7 +48,9 @@ export const BUILT_IN_SHAPES: Record<string, ShapeComponent> = {
   inclusiveGateway: InclusiveGatewayShape,
   eventBasedGateway: EventBasedGatewayShape,
   subProcess: SubProcessShape,
+  callActivity: CallActivityShape,
   dataObject: DataObjectShape,
+  dataStore: DataStoreShape,
   textAnnotation: TextAnnotationShape,
   group: GroupShape,
   pool: PoolShape,

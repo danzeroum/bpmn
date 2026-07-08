@@ -35,9 +35,9 @@
   "34-send-receive-v1.bpmn": 0,
   "35-send-receive-v2.bpmn": 0,
   "36-send-receive-v3.bpmn": 0,
-  "37-degraded-elements-v1.bpmn": 3,
-  "38-degraded-elements-v2.bpmn": 3,
-  "39-degraded-elements-v3.bpmn": 3,
+  "37-degraded-elements-v1.bpmn": 2,
+  "38-degraded-elements-v2.bpmn": 2,
+  "39-degraded-elements-v3.bpmn": 2,
   "40-no-di-v1.bpmn": 1,
   "41-no-di-v2.bpmn": 1,
   "42-no-di-v3.bpmn": 1,
@@ -52,5 +52,8 @@
   "51-dangling-reference-v3.bpmn": 2,
   "52-nested-subprocess-v1.bpmn": 0,
   "53-nested-subprocess-v2.bpmn": 0,
-  "54-nested-subprocess-v3.bpmn": 0
+  "54-nested-subprocess-v3.bpmn": 0,
+  "55-call-activity-data-v1.bpmn": 0,
+  "56-call-activity-data-v2.bpmn": 0,
+  "57-call-activity-data-v3.bpmn": 0
 }

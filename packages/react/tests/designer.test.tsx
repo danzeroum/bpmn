@@ -210,3 +210,20 @@ describe('plugins', () => {
     expect(container.querySelector('[data-testid="persona-shape"]')).toBeInTheDocument();
   });
 });
+
+describe('data associations (F7-3)', () => {
+  it('renders the built-in dotted style with an open arrowhead', () => {
+    const diagram = createDiagram({ name: 'Data' });
+    diagram.nodes = {
+      doc: createNode({ type: 'dataObject', id: 'doc', label: 'Order', x: 40, y: 40 }),
+      work: createNode({ type: 'task', id: 'work', label: 'Handle', x: 200, y: 40 }),
+    };
+    diagram.edges = {
+      d1: createEdge({ id: 'd1', sourceId: 'doc', targetId: 'work', type: 'dataAssociation' }),
+    };
+    const { container } = render(<BpmnDesigner diagram={diagram} />);
+    const line = container.querySelector('[data-edge-id="d1"] path[marker-end]')!;
+    expect(line.getAttribute('stroke-dasharray')).toBe('2,4');
+    expect(line.getAttribute('marker-end')).toBe('url(#bpmnr-edge-open)');
+  });
+});

@@ -557,13 +557,13 @@ describe('BpmnXmlConverter.fromXml — external documents', () => {
     const xml = `<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
       <process id="p">
         <startEvent id="s"/>
-        <callActivity id="weird"/>
+        <transaction id="weird"/>
       </process>
     </definitions>`;
     const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
     expect(diagram.nodes.s).toBeDefined();
     expect(diagram.nodes.weird).toBeUndefined();
-    expect(warnings.some((w) => w.includes('callActivity'))).toBe(true);
+    expect(warnings.some((w) => w.includes('transaction'))).toBe(true);
   });
 
   it('applies a grid layout and warns when DI is missing', () => {
@@ -773,5 +773,119 @@ describe('BpmnXmlConverter — nested sub-processes (F7)', () => {
     expect(warnings.some((w) => w.includes('laneSet') && w.includes('Sub_1'))).toBe(true);
     expect(diagram.nodes.L1).toBeUndefined();
     expect(nodeParentId(diagram.nodes.T1)).toBe('Sub_1');
+  });
+});
+
+describe('BpmnXmlConverter — call activities & data elements (F7-3)', () => {
+  function dataDiagram(): BpmnDiagram {
+    const diagram = createDiagram({ name: 'Data flow', id: 'data-flow' });
+    const v = diagram.version.id;
+    diagram.nodes = {
+      call: createNode({
+        type: 'callActivity', id: 'call', label: 'Charge customer', x: 100, y: 100,
+        properties: { calledElement: 'billing-process' }, versionId: v,
+      }),
+      store: createNode({
+        type: 'dataStore', id: 'store', label: 'Orders DB', x: 300, y: 220,
+        properties: { dataStoreRef: 'DS_orders' }, versionId: v,
+      }),
+      doc: createNode({ type: 'dataObject', id: 'doc', label: 'Invoice', x: 60, y: 220, versionId: v }),
+      sub: (() => {
+        const n = createNode({
+          type: 'subProcess', id: 'sub', label: 'Fulfil', x: 260, y: 60,
+          properties: { isExpanded: true }, versionId: v,
+        });
+        n.width = 300; n.height = 140;
+        return n;
+      })(),
+      inner: createNode({
+        type: 'task', id: 'inner', label: 'Pack', x: 300, y: 100,
+        properties: { parentId: 'sub' }, versionId: v,
+      }),
+    };
+    diagram.edges = {
+      // Input: data → activity; output: activity → data.
+      din: createEdge({ id: 'din', sourceId: 'doc', targetId: 'call', type: 'dataAssociation', versionId: v }),
+      dout: createEdge({ id: 'dout', sourceId: 'call', targetId: 'store', type: 'dataAssociation', versionId: v }),
+      // Crosses the sub-process boundary — legal for data associations.
+      dnested: createEdge({ id: 'dnested', sourceId: 'inner', targetId: 'store', type: 'dataAssociation', versionId: v }),
+    };
+    return diagram;
+  }
+
+  it('exports native attributes and nested standard data associations', () => {
+    const xml = new BpmnXmlConverter().toXml(dataDiagram());
+    expect(xml).toContain('<bpmn:callActivity id="call" name="Charge customer" calledElement="billing-process"');
+    expect(xml).toContain('<bpmn:dataStoreReference id="store" name="Orders DB" dataStoreRef="DS_orders"');
+    // Encoded natively — never double-encoded as bpmnr:property.
+    expect(xml).not.toContain('name="calledElement"');
+    expect(xml).not.toContain('name="dataStoreRef"');
+    // Input association nests in the activity with the data-side sourceRef.
+    const call = xml.slice(xml.indexOf('<bpmn:callActivity'), xml.indexOf('</bpmn:callActivity>'));
+    expect(call).toContain('<bpmn:dataInputAssociation id="din">');
+    expect(call).toContain('<bpmn:sourceRef>doc</bpmn:sourceRef>');
+    expect(call).toContain('<bpmn:dataOutputAssociation id="dout">');
+    expect(call).toContain('<bpmn:targetRef>store</bpmn:targetRef>');
+    // The nested activity carries its own association inside the sub-process.
+    const sub = xml.slice(xml.indexOf('<bpmn:subProcess'), xml.indexOf('</bpmn:subProcess>'));
+    expect(sub).toContain('<bpmn:dataOutputAssociation id="dnested">');
+    // Data associations never appear at the process level as sequence flows.
+    expect(xml).not.toContain('<bpmn:sequenceFlow id="din"');
+  });
+
+  it('round-trips losslessly and byte-stable', () => {
+    const converter = () => new BpmnXmlConverter();
+    const original = dataDiagram();
+    const xml = converter().toXml(original);
+    const { diagram: imported, warnings } = converter().fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(imported.edges.din).toMatchObject({ sourceId: 'doc', targetId: 'call', type: 'dataAssociation' });
+    expect(imported.edges.dout).toMatchObject({ sourceId: 'call', targetId: 'store', type: 'dataAssociation' });
+    expect(imported.edges.dnested).toMatchObject({ sourceId: 'inner', targetId: 'store', type: 'dataAssociation' });
+    expect(imported.nodes.call.properties.calledElement).toBe('billing-process');
+    expect(imported.nodes.store.properties.dataStoreRef).toBe('DS_orders');
+    expect(normalizeForDiff(imported)).toEqual(normalizeForDiff(original));
+    expect(converter().toXml(imported)).toBe(xml);
+  });
+
+  it('imports bpmn.io-style associations (synthesized property targets ignored)', () => {
+    const xml = `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D">
+      <bpmn:process id="P">
+        <bpmn:dataObjectReference id="Doc_1" name="Order" />
+        <bpmn:dataStoreReference id="Store_1" name="CRM" />
+        <bpmn:task id="T1" name="Handle">
+          <bpmn:property id="Property_1" name="__targetRef_placeholder" />
+          <bpmn:ioSpecification id="Io_1" />
+          <bpmn:dataInputAssociation id="Din_1">
+            <bpmn:sourceRef>Doc_1</bpmn:sourceRef>
+            <bpmn:targetRef>Property_1</bpmn:targetRef>
+          </bpmn:dataInputAssociation>
+          <bpmn:dataOutputAssociation id="Dout_1">
+            <bpmn:targetRef>Store_1</bpmn:targetRef>
+          </bpmn:dataOutputAssociation>
+        </bpmn:task>
+      </bpmn:process>
+    </bpmn:definitions>`;
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
+    // Only the missing-DI grid fallback — property/ioSpecification are silent.
+    expect(warnings).toEqual(['Document has no BPMN DI — applied automatic grid layout']);
+    expect(diagram.nodes.T1.type).toBe('task');
+    expect(diagram.nodes.Store_1.type).toBe('dataStore');
+    // Input edge targets the OWNING ACTIVITY, not the synthesized property.
+    expect(diagram.edges.Din_1).toMatchObject({ sourceId: 'Doc_1', targetId: 'T1', type: 'dataAssociation' });
+    expect(diagram.edges.Dout_1).toMatchObject({ sourceId: 'T1', targetId: 'Store_1', type: 'dataAssociation' });
+  });
+
+  it('warns on a data association without a ref', () => {
+    const xml = `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D">
+      <bpmn:process id="P">
+        <bpmn:task id="T1">
+          <bpmn:dataInputAssociation id="Din_bad" />
+        </bpmn:task>
+      </bpmn:process>
+    </bpmn:definitions>`;
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
+    expect(warnings.some((w) => w.includes('Din_bad') && w.includes('sourceRef'))).toBe(true);
+    expect(diagram.edges.Din_bad).toBeUndefined();
   });
 });

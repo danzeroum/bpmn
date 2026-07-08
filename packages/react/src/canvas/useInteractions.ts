@@ -378,9 +378,19 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
             diagramRef.current,
           );
           if (verdict.allowed) {
+            // Connecting a data element (category 'data') to an activity — in
+            // either direction — is a data association, not a sequence flow.
+            const isData = (id: string) => {
+              const node = diagramRef.current.nodes[id];
+              return Boolean(
+                node && config.registry.has(node.type) && config.registry.get(node.type).category === 'data',
+              );
+            };
+            const dataAssociation = isData(sourceId) !== isData(target.id);
             const edge = createEdge({
               sourceId,
               targetId: target.id,
+              ...(dataAssociation ? { type: 'dataAssociation' } : {}),
               versionId: diagramRef.current.version.id,
             });
             execute(addEdgeCommand(edge));
@@ -427,7 +437,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
         });
       }
     },
-    [config.ruleEngine, execute, findNodeAt, store, world],
+    [config, execute, findNodeAt, store, world],
   );
 
   const cancelGestures = useCallback(() => {

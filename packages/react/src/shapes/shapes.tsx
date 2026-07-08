@@ -362,6 +362,78 @@ export function SubProcessShape({ node, selected }: ShapeProps) {
 }
 
 /**
+ * Call activity: invokes another process (`properties.calledElement`). The
+ * BPMN notation is an activity card with a THICK border and a static [+]
+ * marker — the contents live in the called process, so the marker never
+ * expands in place (drill happens through the registry, not the canvas).
+ */
+export function CallActivityShape({ node, selected }: ShapeProps) {
+  const boxSize = 14;
+  return (
+    <g>
+      <rect
+        width={node.width}
+        height={node.height}
+        rx={10}
+        ry={10}
+        fill={theme.fillActivity}
+        stroke={strokeFor(selected)}
+        strokeWidth={selected ? 4 : 3}
+      />
+      <ShapeLabel label={node.label} width={node.width} y={20} />
+      <g
+        transform={`translate(${node.width / 2 - boxSize / 2}, ${node.height - boxSize - 5})`}
+        stroke={theme.textMuted}
+        fill="none"
+        strokeWidth={1.4}
+      >
+        <rect width={boxSize} height={boxSize} rx={2} />
+        <path d={`M ${boxSize / 2} 3 V ${boxSize - 3} M 3 ${boxSize / 2} H ${boxSize - 3}`} />
+      </g>
+    </g>
+  );
+}
+
+/** Data store: the BPMN cylinder (top ellipse + body rings). */
+export function DataStoreShape({ node, selected }: ShapeProps) {
+  const { width, height } = node;
+  const ry = Math.min(10, height * 0.18);
+  const stroke = strokeFor(selected);
+  const strokeWidth = strokeWidthFor(selected);
+  return (
+    <g>
+      <path
+        d={`M 0 ${ry} A ${width / 2} ${ry} 0 0 1 ${width} ${ry} V ${height - ry} A ${width / 2} ${ry} 0 0 1 0 ${height - ry} Z`}
+        fill={theme.fill}
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+      />
+      <path
+        d={`M 0 ${ry} A ${width / 2} ${ry} 0 0 0 ${width} ${ry}`}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={strokeWidth}
+      />
+      <path
+        d={`M 0 ${ry + 4} A ${width / 2} ${ry} 0 0 0 ${width} ${ry + 4}`}
+        fill="none"
+        stroke={stroke}
+        strokeWidth={1}
+      />
+      <ShapeLabel
+        label={node.label}
+        width={width}
+        y={height + 14}
+        fontSize={11}
+        color={theme.textMuted}
+        maxLines={2}
+        halo
+      />
+    </g>
+  );
+}
+
+/**
  * Group: a non-semantic artifact — a dashed rounded rectangle that visually
  * frames a set of nodes. The interior is `fill: none` so clicks fall through to
  * the framed flow nodes; only the border and label are interactive.
