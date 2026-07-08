@@ -74,6 +74,28 @@ describe('craft pack: selection', () => {
     const port = node.querySelector('[data-port]')!;
     expect(port.getAttribute('r')).toBe('4');
   });
+
+  it('keeps ports in the DOM for hover fade-in and flags selection for CSS', () => {
+    const { container } = render(<BpmnDesigner diagram={buildDiagram()} />);
+    const node = container.querySelector('[data-node-id="task1"]')!;
+    // Before selection: ports present (CSS hides them), no data-selected.
+    expect(node.querySelector('[data-ports]')).toBeInTheDocument();
+    expect(node.getAttribute('data-selected')).toBeNull();
+
+    fireEvent.pointerDown(node, { button: 0 });
+    expect(node.getAttribute('data-selected')).toBe('true');
+    // Resize handles remain selection-only.
+    expect(node.querySelector('[data-resize-handles]')).toBeInTheDocument();
+  });
+
+  it('plays the enter animation once on palette-created nodes', () => {
+    const { container } = render(<BpmnEditor diagram={buildDiagram()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add User Task' }));
+    const entering = container.querySelector('.bpmnr-node-enter')!;
+    expect(entering).toBeInTheDocument();
+    fireEvent.animationEnd(entering);
+    expect(container.querySelector('.bpmnr-node-enter')).toBeNull();
+  });
 });
 
 describe('craft pack: shadows', () => {

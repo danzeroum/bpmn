@@ -56,6 +56,13 @@ describe('LifecycleEngine transitions', () => {
     expect(new LifecycleEngine({ minApprovalRoles: 3 }).requiredApprovalRoles).toBe(3);
   });
 
+  it('echoes the required change summary length from the config (default 20)', () => {
+    expect(engine.requiredChangeSummaryLength).toBe(20);
+    expect(
+      new LifecycleEngine({ minChangeSummaryLength: 10 }).requiredChangeSummaryLength,
+    ).toBe(10);
+  });
+
   it('throws BpmnLifecycleError on invalid promote', async () => {
     await expect(
       engine.promote({ diagram: diagramIn('draft'), target: 'active', actor: owner, reason: 'x' }),

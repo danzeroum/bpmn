@@ -71,6 +71,7 @@ export function StartEventShape({ node, selected }: ShapeProps) {
         fontSize={11}
         color={theme.textMuted}
         maxLines={2}
+        halo
       />
     </g>
   );
@@ -105,6 +106,7 @@ export function EndEventShape({ node, selected }: ShapeProps) {
         fontSize={11}
         color={theme.textMuted}
         maxLines={2}
+        halo
       />
     </g>
   );
@@ -124,7 +126,7 @@ function IntermediateEventShape({ node, selected, throwing }: ShapeProps & { thr
       <circle cx={cx} cy={cy} r={r} fill={theme.fillEvent} stroke={strokeFor(selected)} strokeWidth={strokeWidthFor(selected)} />
       <circle cx={cx} cy={cy} r={Math.max(2, r - 3)} fill="none" stroke={strokeFor(selected)} strokeWidth={strokeWidthFor(selected)} />
       {kind && eventGlyph(kind, cx, cy, r, throwing)}
-      <ShapeLabel label={node.label} width={node.width} y={node.height + 16} fontSize={11} color={theme.textMuted} maxLines={2} />
+      <ShapeLabel label={node.label} width={node.width} y={node.height + 16} fontSize={11} color={theme.textMuted} maxLines={2} halo />
     </g>
   );
 }
@@ -153,7 +155,7 @@ export function BoundaryEventShape({ node, selected }: ShapeProps) {
       <circle cx={cx} cy={cy} r={r} fill={theme.fillEvent} stroke={strokeFor(selected)} strokeWidth={strokeWidthFor(selected)} strokeDasharray={dash} />
       <circle cx={cx} cy={cy} r={Math.max(2, r - 3)} fill="none" stroke={strokeFor(selected)} strokeWidth={strokeWidthFor(selected)} strokeDasharray={dash} />
       {kind && eventGlyph(kind, cx, cy, r, false)}
-      <ShapeLabel label={node.label} width={node.width} y={node.height + 16} fontSize={11} color={theme.textMuted} maxLines={2} />
+      <ShapeLabel label={node.label} width={node.width} y={node.height + 16} fontSize={11} color={theme.textMuted} maxLines={2} halo />
     </g>
   );
 }
@@ -254,6 +256,7 @@ function gatewayLabel(node: ShapeProps['node']) {
       fontSize={11}
       color={theme.textMuted}
       maxLines={2}
+      halo
     />
   );
 }
@@ -411,6 +414,7 @@ export function DataObjectShape({ node, selected }: ShapeProps) {
         fontSize={11}
         color={theme.textMuted}
         maxLines={2}
+        halo
       />
     </g>
   );

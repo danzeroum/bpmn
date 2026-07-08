@@ -15,6 +15,8 @@ export const EDGE_MARKER_CHEVRON_ID = 'bpmnr-edge-chevron';
 
 /** Craft-pack drop shadow, applied only to activity/card shapes. */
 export const SHADOW_FILTER_ID = 'bpmnr-shadow';
+/** Elevated variant swapped in by CSS while the node is hovered. */
+export const SHADOW_HOVER_FILTER_ID = 'bpmnr-shadow-hover';
 
 /** Shared SVG defs: arrowheads, the node shadow and the dot-grid pattern. */
 export function Defs({ gridSize }: { gridSize: number }) {
@@ -27,6 +29,14 @@ export function Defs({ gridSize }: { gridSize: number }) {
           dy={1}
           stdDeviation={2}
           style={{ floodColor: 'var(--bpmnr-shadow, #44403a)', floodOpacity: 0.1 }}
+        />
+      </filter>
+      <filter id={SHADOW_HOVER_FILTER_ID} x="-30%" y="-30%" width="160%" height="180%">
+        <feDropShadow
+          dx={0}
+          dy={2}
+          stdDeviation={4}
+          style={{ floodColor: 'var(--bpmnr-shadow, #44403a)', floodOpacity: 0.12 }}
         />
       </filter>
       <marker

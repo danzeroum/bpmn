@@ -122,6 +122,11 @@ export class LifecycleEngine {
     return this.minApprovalRoles;
   }
 
+  /** Minimum changelog length required to reach 'active' (config echo for UIs). */
+  get requiredChangeSummaryLength(): number {
+    return this.minChangeSummaryLength;
+  }
+
   canTransition(from: VersionStatus, to: VersionStatus): boolean {
     return this.transitions[from]?.includes(to) ?? false;
   }

@@ -125,11 +125,18 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
 
 ## 8. Protótipos (Handoff 3) — decisões de escopo em aberto
 
-- **Handoff 2 ausente do repositório:** o Handoff 3 referencia `docs/design_handoff_btv_craft_governance/`
-  (Craft Pack §A, specs §B1/§B2, priorização MoSCoW, specs A/B/C), mas a pasta não existe na main
-  nem em nenhuma branch. As PRs 4–6 usam o Handoff 3 (que duplica as specs essenciais) + protótipos
-  como fonte da verdade. Se o Handoff 2 tiver conteúdo além disso (MoSCoW completo, specs A/B/C),
-  subir a pasta ao repo para reconciliação.
+- **Handoff 2 recebido e reconciliado** (chegou via mensagem após as PRs 4–6; a pasta
+  `docs/design_handoff_btv_craft_governance/` segue fora do repo — subir quando conveniente).
+  Divergências resolvidas a favor do **Handoff 3 + protótipos (mais novos, hifi)**: halo de seleção
+  stroke 2/opacity 0.35 (H2 §A2 pedia 1/0.3); sombra flood-opacity 0.10 (H2 §A3 pedia 0.08);
+  labels do selo em CAPS da tabela canônica (H2 §B1 pedia title-case). Divergência resolvida a
+  favor do **core como autoridade**: change_summary mínimo de 20 chars do `LifecycleEngine`
+  (H2 §B2 pedia textarea min 10 — se 10 for o desejado, é um `lifecycleConfig`, não UI).
+  Itens do H2 pendentes de decisão de produto: **promoção como comando no command bus** (hoje a
+  promoção usa `replaceDiagram` + entrada explícita no ledger, como o painel demo sempre fez; um
+  `PROMOTE_VERSION` command no core deixaria o ledger gravar sozinho — mudança de core, registrar
+  aqui em vez de decidir); **chip de canal reutilizando `.bpmnr-timeline-channel`** no selo (hoje o
+  canal aparece na linha de meta — visual do protótipo).
 - **Glifo de supersede no diff:** o protótipo do modal de promoção usa `⤳`; o `DiffView` existente
   usa `⇄`. Mantido o `⇄` do componente (o handoff §4 manda usar "as cores do DiffView existente";
   trocar o glifo é decisão de design de 1 linha se preferir fidelidade total).
