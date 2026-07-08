@@ -14,6 +14,13 @@ export const EDGE_MARKER_OPEN_ID = 'bpmnr-edge-open';
 export const EDGE_MARKER_CHEVRON_ID = 'bpmnr-edge-chevron';
 export const EDGE_MARKER_DISC_ID = 'bpmnr-edge-disc';
 
+/**
+ * Closed-element hatch (Handoff 5 §5, variante 5b mitigada): ONE pattern def
+ * per SVG, referenced by every closed node — 45° lines, 6px pitch, 1px
+ * stroke. Never color-only: the hatch itself is the a11y signal.
+ */
+export const CLOSED_HATCH_PATTERN_ID = 'bpmnr-closed-hatch';
+
 /** Craft-pack drop shadow, applied only to activity/card shapes. */
 export const SHADOW_FILTER_ID = 'bpmnr-shadow';
 /** Elevated variant swapped in by CSS while the node is hovered. */
@@ -128,6 +135,23 @@ export function Defs({ gridSize }: { gridSize: number }) {
         patternUnits="userSpaceOnUse"
       >
         <circle cx={1} cy={1} r={1} fill="var(--bpmnr-grid-dot, #d8d3c8)" />
+      </pattern>
+      {/* 45° 6px closed-element hatch — 1 def, N uses (aceite 10.5.6). */}
+      <pattern
+        id={CLOSED_HATCH_PATTERN_ID}
+        width={6}
+        height={6}
+        patternUnits="userSpaceOnUse"
+        patternTransform="rotate(45)"
+      >
+        <line
+          x1={0}
+          y1={0}
+          x2={0}
+          y2={6}
+          stroke="var(--btv-closed-hatch, #a49c8f)"
+          strokeWidth={1}
+        />
       </pattern>
     </defs>
   );
