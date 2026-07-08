@@ -6,6 +6,7 @@ import {
   certifyCommand,
   diffCommand,
   exportCommand,
+  exportXesCommand,
   formatAudit,
   formatCertify,
   formatDiff,
@@ -28,6 +29,7 @@ Usage:
   bpmn-react validate <file.(json|xml|bpmn)>
   bpmn-react certify <file.bpmn> [--json] [--require <descriptive|analytic>] [--report <path.json>]
   bpmn-react audit <ledger.json> [--json]
+  bpmn-react export-xes <ledger.json> [--registry <registry.json>] [-o <log.xes>]
   bpmn-react export <input> --to <xml|json> [-o <output>]
   bpmn-react diff <fileA> <fileB>
 
@@ -200,6 +202,18 @@ async function main(argv: string[]): Promise<number> {
         if (rest.includes('--json')) console.log(JSON.stringify(report, null, 2));
         else console.log(formatAudit(report));
         return report.intact ? 0 : 1;
+      }
+      case 'export-xes': {
+        const file = rest.find((a) => !a.startsWith('-'));
+        if (!file) return usage();
+        const output = valueOf(rest, '-o') ?? valueOf(rest, '--output');
+        const xes = await exportXesCommand(file, {
+          ...opt('registryPath', valueOf(rest, '--registry')),
+          ...opt('output', output),
+        });
+        if (!output) console.log(xes);
+        else console.log(`Written to ${output}`);
+        return 0;
       }
       case 'registry':
         return await runRegistry(rest);

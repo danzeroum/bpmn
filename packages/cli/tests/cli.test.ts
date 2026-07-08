@@ -14,6 +14,7 @@ import {
 import {
   auditCommand,
   certifyCommand,
+  exportXesCommand,
   formatAudit,
   diffCommand,
   formatCertify,
@@ -216,5 +217,22 @@ describe('auditCommand', () => {
     const bad = join(dir, 'bad.json');
     await writeFile(bad, '{oops');
     await expect(auditCommand(bad)).rejects.toThrow('not valid JSON');
+  });
+});
+
+describe('exportXesCommand', () => {
+  it('converts an exported ledger to XES and writes the output file', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bpmnr-xes-'));
+    const ledger = new AuditLedger();
+    await ledger.append({ type: 'NODE_ADDED', userId: 'ana', versionId: 'v1', details: {} });
+    const ledgerPath = join(dir, 'ledger.json');
+    await writeFile(ledgerPath, JSON.stringify(ledger.export()));
+
+    const out = join(dir, 'log.xes');
+    const xes = await exportXesCommand(ledgerPath, { output: out });
+    expect(xes).toContain('xes.version="2.0"');
+    expect(xes).toContain('key="concept:name" value="NODE_ADDED"');
+    const { readFile: read } = await import('node:fs/promises');
+    expect(await read(out, 'utf8')).toBe(xes);
   });
 });

@@ -11,6 +11,7 @@ const EXPECTED_EXPORTS = [
   'attestVersion',
   'attestationHash',
   'canonicalAttestation',
+  'toXES',
   'verifyLedger',
 ].sort();
 

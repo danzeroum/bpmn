@@ -69,10 +69,13 @@ de propósito:
   os cabeçalhos core seguem o padrão EN da UI da biblioteca ("Core BPMN"/"Events"); o protótipo
   usa PT ("EVENTOS"). i18n da UI core é decisão de produto em aberto — a camada de aplicação pode
   registrar grupos com labels PT por cima se preferir.
-- **Export XES do ledger** (candidato pós-F8): o ledger hash-chained + o registry já são um event
-  log. Exportar em XES habilitaria *process mining* do "processo real de design" vs. o documentado —
-  diferencial que ferramentas de modelagem puras não têm. Sinergia: os critérios de aprovação do
-  Gate btv são candidatos naturais a decision table quando a F9 (DMN) chegar.
+- **Export XES do ledger** — ✅ ENTREGUE (PR-B2, Handoff 4 §B2): `toXES(ledger, { registry })`
+  no `@bpmn-react/audit` + `bpmn-react export-xes` no CLI. Cada versão = trace; comandos,
+  promoções, attestations, registros e publicações = events com concept/time/org/lifecycle.
+  Habilita *process mining* do "processo real de design" vs. o documentado (ProM, Celonis,
+  Disco) — diferencial que ferramentas de modelagem puras não têm. Sinergia futura: os
+  critérios de aprovação do Gate btv são candidatos naturais a decision table quando a F9
+  (DMN) chegar.
 
 ## 6. Boundary events — interação de anexação (pós-F6 PR-B)
 

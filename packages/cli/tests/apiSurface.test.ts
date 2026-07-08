@@ -13,6 +13,7 @@ const EXPECTED_EXPORTS = [
   'certifyCommand',
   'diffCommand',
   'exportCommand',
+  'exportXesCommand',
   'formatAudit',
   'formatCertify',
   'formatDiff',
