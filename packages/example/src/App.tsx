@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
-import { AuditLedger, BpmnXmlConverter, type BpmnDiagram } from '@bpmn-react/core';
+import { AuditLedger, BpmnXmlConverter, getEdgeChain, type BpmnDiagram } from '@bpmn-react/core';
 import {
   BpmnEditor,
+  EdgePedigreeStrip,
   resolveEditorConfig,
   useCanvasState,
   useDiagram,
@@ -182,6 +183,7 @@ export function App() {
             />
           )}
           {drdMode && <DrdTableSurface initialDecisionId={decisionParam} />}
+          <PedigreeSurface />
         </BpmnEditor>
       </main>
     </div>
@@ -235,6 +237,27 @@ function DrdTableSurface({ initialDecisionId }: { initialDecisionId: string | nu
       />
     </div>
   );
+}
+
+/**
+ * Edge pedigree (Handoff 5 §5): selecting an edge that belongs to a
+ * supersession chain (length > 1) docks the pedigree strip over the lower
+ * canvas. Esc order: DiffView do par adjacente → faixa → seleção (§11.1).
+ */
+function PedigreeSurface() {
+  const { diagram } = useDiagram();
+  const selectedIds = useCanvasState((s) => s.selectedIds);
+  const edge = selectedIds.length === 1 ? diagram.edges[selectedIds[0]] : undefined;
+  const chain = edge ? getEdgeChain(diagram, edge.id) : [];
+
+  const [dismissedFor, setDismissedFor] = useState<string | null>(null);
+  const [lastEdge, setLastEdge] = useState<string | null>(edge?.id ?? null);
+  if ((edge?.id ?? null) !== lastEdge) {
+    setLastEdge(edge?.id ?? null);
+    if (edge) setDismissedFor(null);
+  }
+  if (!edge || chain.length < 2 || dismissedFor === edge.id) return null;
+  return <EdgePedigreeStrip edgeId={edge.id} onClose={() => setDismissedFor(edge.id)} />;
 }
 
 /** Right-hand governance/audit column rendered inside the editor context. */

@@ -17,7 +17,7 @@ test('superseded snapshot shows hatch, hover-gated seal and the version banner',
   await expect(banner).toBeVisible();
   await expect(banner).toContainText('VISUALIZANDO v0.2.0');
   await expect(banner).toContainText('somente leitura');
-  await expect(banner).toContainText('8 elementos fechados nesta versão');
+  await expect(banner).toContainText('10 elementos fechados nesta versão');
 
   // ONE pattern def per SVG, N hatched nodes using it (4 visible: the two
   // closed children live inside the collapsed 'returns' sub-process).

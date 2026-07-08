@@ -205,6 +205,17 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   orçamento "1 def/N usos"). O wash + hachura em card arredondado é o visual da folha de
   estresse.
 
+## 8.0.3 Handoff 5 F-C2 — decisões de escopo (faixa de pedigree)
+
+- **"hover = hash do ledger":** a faixa não consulta storage de governança (mesma regra do
+  VersionTimeline) — o host injeta `ledgerHash(edge)` e o hash aparece no tooltip do card.
+  O demo não injeta (a cadeia do sample é estática, sem entradas correspondentes no ledger
+  da sessão); coberto por teste com resolver stub.
+- **Rótulo do card:** label/purpose da edge + tag de versão (`vX.Y` quando criada na versão
+  carregada; `#id7` caso contrário — mesmo fallback do selo FECHADO, §8.0.2).
+- **Card raiz não clicável:** DiffView é sempre do par adjacente; a primeira versão não tem
+  predecessor. Alternativa (diff contra vazio) rejeitada — renderizaria um "add" enganoso.
+
 ## 8. Protótipos (Handoff 3) — decisões de escopo em aberto
 
 - **Handoff 2 recebido e reconciliado** (chegou via mensagem após as PRs 4–6; a pasta

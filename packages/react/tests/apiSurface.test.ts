@@ -35,6 +35,7 @@ const EXPECTED_EXPORTS = [
   'Defs',
   'DiagramProvider',
   'DiffView',
+  'EdgePedigreeStrip',
   'EDGE_CORNER_RADIUS',
   'EDGE_MARKER_CHEVRON_ID',
   'CLOSED_HATCH_PATTERN_ID',
