@@ -298,3 +298,37 @@ test('businessRuleTask shows the decision-link badge; broken call ref shows its 
   await page.getByRole('button', { name: 'Close validation' }).click();
   await expect(page.locator('[data-node-issue]')).toHaveCount(0);
 });
+
+test('decision peek opens on selection outside the SVG, Esc closes it before the selection', async ({
+  page,
+}) => {
+  const score = page.locator('[data-node-id="score"]');
+  await score.scrollIntoViewIfNeeded();
+  await score.click();
+
+  // Peek is an HTML overlay — zero nodes inserted into the SVG (10.5.1).
+  const peek = page.locator('[data-decision-peek="demo-decision-risk"]');
+  await expect(peek).toBeVisible();
+  expect(await page.locator('svg.bpmnr-canvas [data-decision-peek]').count()).toBe(0);
+  await expect(peek).toContainText('Aprovar crédito?');
+  await expect(peek).toContainText('First · 4 regras · 2→1');
+  await expect(peek).toContainText('editar tabela →');
+  await expect(peek.locator('.bpmnr-breadcrumb-seal')).toHaveText('RASCUNHO');
+
+  const svgCount = await page.locator('svg.bpmnr-canvas *').count();
+  // 1º Esc: closes the peek, selection preserved (§11.1)...
+  await page.keyboard.press('Escape');
+  await expect(peek).toHaveCount(0);
+  await expect(score).toHaveAttribute('data-selected', 'true');
+  // ...and the SVG element count is untouched by the peek's lifecycle.
+  expect(await page.locator('svg.bpmnr-canvas *').count()).toBe(svgCount);
+
+  // 2º Esc: clears the selection.
+  await page.keyboard.press('Escape');
+  await expect(score).not.toHaveAttribute('data-selected', 'true');
+
+  // Inspector: DECISÃO · DMN section shows the linked card (wireframe 2d).
+  await score.click();
+  await expect(page.locator('[data-decision-card="demo-decision-risk"]')).toBeVisible();
+  await expect(page.locator('.btv-dmn-inspector-kicker')).toContainText('DECISÃO · DMN 1.3');
+});

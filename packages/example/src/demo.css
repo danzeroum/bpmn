@@ -160,3 +160,15 @@
 .demo-audit code {
   font-size: 10px;
 }
+
+/* Decision table surface (DRD mode): the decision's own editing surface,
+   docked over the lower canvas — the SVG stays behind, untouched. */
+.demo-table-surface {
+  position: absolute;
+  left: 16px;
+  right: 340px;
+  bottom: 16px;
+  max-height: 48%;
+  overflow: auto;
+  z-index: 18;
+}

@@ -43,5 +43,6 @@ export * from './ui/DiffView.js';
 export * from './ui/PromotionPanel.js';
 export * from './ui/LedgerStatus.js';
 export * from './ui/GovernanceBreadcrumb.js';
+export * from './gestures/useDismissal.js';
 export * from './ui/VersionTimeline.js';
 export * from './ui/exporters.js';

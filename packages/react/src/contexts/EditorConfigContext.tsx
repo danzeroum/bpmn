@@ -15,6 +15,7 @@ import type {
   EdgeRouterFn,
   EdgeStyle,
   EditorEventHandler,
+  InspectorSection,
   PaletteGroup,
   PaletteItem,
   ShapeComponent,
@@ -31,6 +32,8 @@ export interface EditorConfig {
   paletteGroups: PaletteGroup[];
   /** Domain edge styles keyed by `edge.type`, merged across plugins. */
   edgeStyles: Record<string, EdgeStyle>;
+  /** Plugin inspector sections, in registration order. */
+  inspectorSections: InspectorSection[];
   ruleEngine: RuleEngine;
   validationEngine: ValidationEngine;
   lifecycleEngine: LifecycleEngine;
@@ -77,6 +80,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
   const validationRules = [...BUILT_IN_VALIDATION_RULES];
   const preferredTypes: string[] = [];
   const eventHandlers: EditorEventHandler[] = [];
+  const inspectorSections: InspectorSection[] = [];
   let lifecycleEngine = new LifecycleEngine();
   let edgeRouter: EdgeRouterFn = cubicBezierConnection;
   let autosave = true;
@@ -111,6 +115,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
     Object.assign(shapes, plugin.shapes ?? {});
     Object.assign(edgeStyles, plugin.edgeStyles ?? {});
     paletteItems.push(...(plugin.paletteItems ?? []));
+    inspectorSections.push(...(plugin.inspectorSections ?? []));
     for (const group of plugin.paletteGroups ?? []) {
       const existing = paletteGroups.findIndex((g) => g.id === group.id);
       if (existing >= 0) paletteGroups[existing] = group;
@@ -137,6 +142,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
     paletteItems,
     paletteGroups,
     edgeStyles,
+    inspectorSections,
     ruleEngine,
     validationEngine: new ValidationEngine(validationRules),
     lifecycleEngine,

@@ -19,6 +19,12 @@ import { DMN_NODE_TYPES, type DmnEdgeType } from './model.js';
 
 export const DMN_NS = 'https://www.omg.org/spec/DMN/20191111/MODEL/';
 export const DMNDI_NS = 'https://www.omg.org/spec/DMN/20191111/DMNDI/';
+/**
+ * Human-readable spec version matching DMN_NS (20191111 = DMN 1.3). §11.4:
+ * surfaces show this configured string — "DMN 1.x" is never hardcoded in a
+ * component; hosts override it where their converter targets change.
+ */
+export const DMN_SPEC_VERSION = 'DMN 1.3';
 const DC_NS = 'http://www.omg.org/spec/DMN/20180521/DC/';
 const DI_NS = 'http://www.omg.org/spec/DMN/20180521/DI/';
 const EXT = { prefix: 'bpmnr', uri: 'http://bpmn-react.io/schema/1.0' };

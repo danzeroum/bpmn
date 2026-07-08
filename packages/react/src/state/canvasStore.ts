@@ -75,12 +75,25 @@ export interface CanvasState {
    * cleared. Populated by Validate and the PromotionPanel's "ver no canvas".
    */
   issueBadges: Record<string, NodeIssueBadge>;
+  /** Open overlays, bottom→top. Esc pops the top (Handoff 5 §11.1). */
+  dismissals: DismissalEntry[];
 }
 
 export interface NodeIssueBadge {
   severity: 'error' | 'warning';
   /** Stable issue code rendered mono below the shape (optional). */
   code?: string;
+}
+
+/**
+ * One entry of the SINGLE Esc dismissal stack (Handoff 5 §11.1): Esc always
+ * closes the highest open overlay first — popover → peek → selection →
+ * breadcrumb up. Components register while open (see `useDismissal`);
+ * never wire independent Esc listeners.
+ */
+export interface DismissalEntry {
+  id: string;
+  close: () => void;
 }
 
 export type CanvasStore = Store<CanvasState>;
@@ -106,6 +119,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     dirtySinceExport: false,
     drillId: null,
     issueBadges: {},
+    dismissals: [],
     ...partial,
   });
 }

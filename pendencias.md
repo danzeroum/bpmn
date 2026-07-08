@@ -168,6 +168,25 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   drill-down (§7.6); duplo-clique no CORPO = rename inline; campo Label no inspector
   garante descobribilidade. Coberto por e2e.
 
+## 8.0.1 Handoff 5 F-B2 — decisões de escopo (editor de decision table)
+
+- **Reordenação de regras por arrasto (spec §4.2 "arrasto reordena"):** implementada como
+  botões ↑/↓ no menu contextual da regra (junto de duplicar/remover). Drag-and-drop de
+  linhas HTML exige ghost row + auto-scroll + a11y própria — custo alto para o mesmo
+  resultado; os botões cumprem o aceite (mutação = 1 comando no stack). Elevar para drag
+  é polimento incremental se aprovado.
+- **XML nativo `<decisionTable>` no export DMN:** a tabela hoje round-tripa como JSON na
+  extensão `bpmnr:property` (byte-stável, coberto por teste). Serializar para o elemento
+  canônico `dmn:decisionTable` (inputs/outputs/rules como XML) é o próximo passo de
+  interoperabilidade com Camunda/Trisotech — mudança contida no `DmnXmlConverter`,
+  registrada aqui em vez de decidida.
+- **Popover de transbordo FEEL (folha de estados):** expressões longas hoje ficam na célula
+  (o inline input rola horizontalmente). O popover dedicado de transbordo da folha hifi
+  fica para quando houver telemetria de células longas reais.
+- **Botão "Promover…" na superfície da tabela:** o `DecisionTableEditor` expõe `onPromote`
+  (mesmo modal do Designer, §4.2); o demo DRD usa o LifecyclePanel ao lado em vez de abrir
+  o modal de dentro da tabela — escolha de wiring do host, não do componente.
+
 ## 8. Protótipos (Handoff 3) — decisões de escopo em aberto
 
 - **Handoff 2 recebido e reconciliado** (chegou via mensagem após as PRs 4–6; a pasta

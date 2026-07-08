@@ -1,11 +1,31 @@
 import { useRef, useState } from 'react';
 import { AuditLedger, BpmnXmlConverter, type BpmnDiagram } from '@bpmn-react/core';
-import { BpmnEditor, resolveEditorConfig, useDiagram, type BpmnPlugin } from '@bpmn-react/react';
-import { dmnPlugin } from '@bpmn-react/dmn';
+import {
+  BpmnEditor,
+  resolveEditorConfig,
+  useCanvasState,
+  useDiagram,
+  useDismissal,
+  type BpmnPlugin,
+  type GovernanceBreadcrumbLevel,
+} from '@bpmn-react/react';
+import {
+  DecisionPeek,
+  DecisionTableEditor,
+  decisionInspectorSection,
+  dmnPlugin,
+  type DecisionSummary,
+} from '@bpmn-react/dmn';
 import { domainExamplePlugin } from '@bpmn-react/domain-example';
 import { callActivityBindingRule, VersionRegistry } from '@bpmn-react/registry';
 import { soundnessPromotionRule, soundnessRules } from '@bpmn-react/soundness';
-import { buildDeadlockDiagram, buildDrdDiagram, buildSampleDiagram, buildStressDiagram } from './sampleDiagram.js';
+import {
+  buildDeadlockDiagram,
+  buildDrdDiagram,
+  buildSampleDiagram,
+  buildStressDiagram,
+  DEMO_DECISION_TABLE,
+} from './sampleDiagram.js';
 import { LifecyclePanel } from './LifecyclePanel.js';
 import { AuditPanel } from './AuditPanel.js';
 import './demo.css';
@@ -38,7 +58,40 @@ const bindingPlugin: BpmnPlugin = {
   validationRules: [callActivityBindingRule(demoProcessRegistry)],
 };
 
-const PLUGINS = [domainExamplePlugin, dmnPlugin, observabilityPlugin, soundnessPlugin, bindingPlugin];
+// BPMN ⇄ DMN link (Handoff 5 §4.3): in the BPMN sample the linked decision
+// lives in the DRD demo diagram, so the peek and the DECISÃO · DMN inspector
+// resolve it through this registry-like summary; "abrir →"/"editar tabela →"
+// navigate to the decision's own surface (?drd=1).
+const DEMO_DECISIONS: DecisionSummary[] = [
+  {
+    ref: 'demo-decision-risk',
+    label: 'Aprovar crédito?',
+    semanticVersion: '0.1.0',
+    status: 'draft',
+    table: DEMO_DECISION_TABLE,
+  },
+];
+
+const searchDemoDecisions = (query: string) =>
+  DEMO_DECISIONS.filter(
+    (decision) =>
+      query.trim() === '' ||
+      decision.label.toLowerCase().includes(query.toLowerCase()) ||
+      decision.ref.toLowerCase().includes(query.toLowerCase()),
+  );
+
+const openDecisionSurface = (ref: string) => {
+  window.location.search = `?drd=1&decision=${encodeURIComponent(ref)}`;
+};
+
+const dmnDemoPlugin: BpmnPlugin = {
+  ...dmnPlugin,
+  inspectorSections: [
+    decisionInspectorSection({ searchDecisions: searchDemoDecisions, onOpen: openDecisionSurface }),
+  ],
+};
+
+const PLUGINS = [domainExamplePlugin, dmnDemoPlugin, observabilityPlugin, soundnessPlugin, bindingPlugin];
 
 export function App() {
   const [diagram, setDiagram] = useState<BpmnDiagram>(() => {
@@ -53,6 +106,11 @@ export function App() {
   });
   const [editorKey, setEditorKey] = useState(0);
   const latestRef = useRef(diagram);
+  // `?drd=1` shows the decision's own surface; `?decision=<ref>` opens its
+  // table straight away (deep link used by "abrir →"/"editar tabela →").
+  const params = new URLSearchParams(window.location.search);
+  const drdMode = params.get('drd') !== null;
+  const decisionParam = params.get('decision');
 
   const replaceFromOutside = (next: BpmnDiagram) => {
     latestRef.current = next;
@@ -115,8 +173,64 @@ export function App() {
           }}
         >
           <SidePanels />
+          {!drdMode && (
+            <DecisionPeek
+              resolveDecision={(ref) => DEMO_DECISIONS.find((d) => d.ref === ref)}
+              onOpen={openDecisionSurface}
+            />
+          )}
+          {drdMode && <DrdTableSurface initialDecisionId={decisionParam} />}
         </BpmnEditor>
       </main>
+    </div>
+  );
+}
+
+/**
+ * The decision's own editing surface (DRD mode, Handoff 5 §4.2): opens on
+ * the selection of a dmn:decision (or the ?decision deep link) with the
+ * governance breadcrumb `fluxo vX ▸ nó ▸ tabela vY [SELO]`. Esc rides the
+ * single dismissal stack — table popovers close first, then this surface,
+ * then the canvas selection (§11.1).
+ */
+function DrdTableSurface({ initialDecisionId }: { initialDecisionId: string | null }) {
+  const { diagram } = useDiagram();
+  const selectedIds = useCanvasState((s) => s.selectedIds);
+  const selected = selectedIds.length === 1 ? diagram.nodes[selectedIds[0]] : undefined;
+  const fromSelection = selected?.type === 'dmn:decision' ? selected.id : null;
+
+  const [manual, setManual] = useState<string | null>(initialDecisionId);
+  const [dismissedFor, setDismissedFor] = useState<string | null>(null);
+  // Selection change re-arms the surface (dismissal is per stay-selected).
+  const [lastSelection, setLastSelection] = useState(fromSelection);
+  if (fromSelection !== lastSelection) {
+    setLastSelection(fromSelection);
+    if (fromSelection) setDismissedFor(null);
+  }
+
+  const decisionId = fromSelection ?? manual;
+  const decision = decisionId ? diagram.nodes[decisionId] : undefined;
+  const open = Boolean(decision) && dismissedFor !== decisionId;
+  const close = () => {
+    setDismissedFor(decisionId);
+    setManual(null);
+  };
+  useDismissal('drd-table-surface', open, close);
+
+  if (!open || !decision || !decisionId) return null;
+  const { semanticVersion, status } = diagram.version;
+  const levels: GovernanceBreadcrumbLevel[] = [
+    { id: null, label: diagram.name, semanticVersion, status },
+    { id: decisionId, label: decision.label },
+    { id: 'table', label: 'tabela', semanticVersion, status },
+  ];
+  return (
+    <div className="demo-table-surface">
+      <DecisionTableEditor
+        decisionId={decisionId}
+        breadcrumbLevels={levels}
+        onNavigate={() => close()}
+      />
     </div>
   );
 }
