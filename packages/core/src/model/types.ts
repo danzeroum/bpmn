@@ -213,6 +213,48 @@ export function attachedBoundaryEventIds(diagram: BpmnDiagram, hostIds: Iterable
     .map((n) => n.id);
 }
 
+/**
+ * Sub-process containment (F7): a node nested inside a sub-process stores its
+ * container id under `properties.parentId` — the child holds the reference,
+ * same side as boundary `attachedToRef`. The XML converter encodes it
+ * structurally (children nest inside `<bpmn:subProcess>`), so it never
+ * appears as a `bpmnr:property`. Returns the container id, if any.
+ */
+export function nodeParentId(node: BpmnNode): string | undefined {
+  return typeof node.properties.parentId === 'string' ? node.properties.parentId : undefined;
+}
+
+/** Direct children of a sub-process, in diagram insertion order. */
+export function childrenOf(diagram: BpmnDiagram, nodeId: string): BpmnNode[] {
+  return Object.values(diagram.nodes).filter((n) => nodeParentId(n) === nodeId);
+}
+
+/** All transitive descendant ids of a node (children, grandchildren, …). */
+export function descendantIdsOf(diagram: BpmnDiagram, nodeId: string): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>([nodeId]);
+  const stack = [nodeId];
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    for (const child of childrenOf(diagram, current)) {
+      if (seen.has(child.id)) continue; // defensive: cycles are a validation error
+      seen.add(child.id);
+      out.push(child.id);
+      stack.push(child.id);
+    }
+  }
+  return out;
+}
+
+/**
+ * Expanded sub-processes render their children on the canvas; collapsed ones
+ * (the default) hide them behind the `[+]` marker. Round-trips as the BPMN DI
+ * `isExpanded` attribute on the sub-process shape.
+ */
+export function isSubProcessExpanded(node: BpmnNode): boolean {
+  return node.type === 'subProcess' && node.properties.isExpanded === true;
+}
+
 /** Returns the event-definition kind stored on a node, if it is a valid kind. */
 export function eventDefinitionOf(node: BpmnNode): EventDefinitionKind | undefined {
   const kind = node.properties.eventDefinition;

@@ -1,5 +1,12 @@
-import { useEffect, useRef, type ReactNode, type WheelEvent } from 'react';
-import { activeEdges, activeNodes } from '@bpmn-react/core';
+import { useEffect, useMemo, useRef, type ReactNode, type WheelEvent } from 'react';
+import {
+  activeEdges,
+  activeNodes,
+  isSubProcessExpanded,
+  nodeParentId,
+  type BpmnDiagram,
+  type BpmnNode,
+} from '@bpmn-react/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
@@ -75,8 +82,18 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
     return () => svg.removeEventListener('wheel', onWheel);
   }, [store]);
 
-  const nodes = orderByZ(showClosed ? Object.values(diagram.nodes) : activeNodes(diagram));
-  const edges = showClosed ? Object.values(diagram.edges) : activeEdges(diagram);
+  // Children of a COLLAPSED sub-process stay off the canvas (they live behind
+  // the [+] marker); expanded rendering/drill-down lands with F7-2. Memoized
+  // by diagram identity — the canvas re-renders per viewport frame.
+  const hiddenIds = useMemo(() => collapsedDescendantIds(diagram), [diagram]);
+  const nodes = orderByZ(
+    (showClosed ? Object.values(diagram.nodes) : activeNodes(diagram)).filter(
+      (node) => !hiddenIds.has(node.id),
+    ),
+  );
+  const edges = (showClosed ? Object.values(diagram.edges) : activeEdges(diagram)).filter(
+    (edge) => !hiddenIds.has(edge.sourceId) && !hiddenIds.has(edge.targetId),
+  );
 
   return (
     <svg
@@ -135,4 +152,25 @@ function swallowReactWheel(event: WheelEvent) {
 function orderByZ<T extends { type: string }>(nodes: T[]): T[] {
   const rank = (type: string) => (type === 'pool' ? 0 : type === 'lane' ? 1 : 2);
   return [...nodes].sort((a, b) => rank(a.type) - rank(b.type));
+}
+
+/** Ids of every node whose ancestry contains a collapsed sub-process. */
+function collapsedDescendantIds(diagram: BpmnDiagram): Set<string> {
+  const hidden = new Set<string>();
+  const isHidden = (node: BpmnNode): boolean => {
+    const seen = new Set<string>();
+    let parentId = nodeParentId(node);
+    while (parentId !== undefined && !seen.has(parentId)) {
+      seen.add(parentId);
+      const container: BpmnNode | undefined = diagram.nodes[parentId];
+      if (!container) return false;
+      if (container.type === 'subProcess' && !isSubProcessExpanded(container)) return true;
+      parentId = nodeParentId(container);
+    }
+    return false;
+  };
+  for (const node of Object.values(diagram.nodes)) {
+    if (nodeParentId(node) !== undefined && isHidden(node)) hidden.add(node.id);
+  }
+  return hidden;
 }

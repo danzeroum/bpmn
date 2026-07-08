@@ -9,10 +9,13 @@ import type {
 import {
   activeNodes,
   activityMarkerOf,
+  boundaryAttachedTo,
+  childrenOf,
   eventDefinitionOf,
   EVENT_DEFINITION_KINDS,
   isContainerType,
   laneFlowNodeRefs,
+  nodeParentId,
 } from '../model/types.js';
 import { BpmnParseError } from '../model/errors.js';
 import { createDefaultRegistry, type NodeTypeRegistry } from '../model/registry.js';
@@ -95,14 +98,26 @@ export class BpmnXmlConverter {
     const nodes = Object.values(diagram.nodes);
     const pools = nodes.filter((n) => n.type === 'pool');
     const lanes = nodes.filter((n) => n.type === 'lane');
-    const flowNodes = nodes.filter((n) => !isContainerType(n.type));
+    // Children of a sub-process are written NESTED inside their container
+    // element (writeNode recursion); only top-level flow nodes appear here.
+    const flowNodes = nodes.filter(
+      (n) => !isContainerType(n.type) && nodeParentId(n) === undefined,
+    );
 
     // Message flows live in the collaboration — only expressible when one
     // exists (i.e. the diagram has pools). Without pools they fall back to
     // sequenceFlow + bpmnr:meta, which round-trips the type losslessly.
     const edges = Object.values(diagram.edges);
     const messageFlows = pools.length > 0 ? edges.filter((e) => e.type === 'messageFlow') : [];
-    const processEdges = pools.length > 0 ? edges.filter((e) => e.type !== 'messageFlow') : edges;
+    const scopedEdges = pools.length > 0 ? edges.filter((e) => e.type !== 'messageFlow') : edges;
+    // Sequence flows are scoped to their container: flows between children of
+    // a sub-process nest inside it, the rest stay at the process level.
+    const edgesByScope = new Map<string | undefined, BpmnEdge[]>();
+    for (const edge of scopedEdges) {
+      const scope = this.edgeScopeOf(diagram, edge);
+      edgesByScope.set(scope, [...(edgesByScope.get(scope) ?? []), edge]);
+    }
+    const processEdges = edgesByScope.get(undefined) ?? [];
 
     xml.open('bpmn:definitions', {
       'xmlns:bpmn': BPMN_NS,
@@ -153,7 +168,7 @@ export class BpmnXmlConverter {
     }
 
     for (const node of flowNodes) {
-      this.writeNode(xml, node);
+      this.writeNode(xml, node, diagram, edgesByScope);
     }
     for (const edge of processEdges) {
       this.writeEdge(xml, edge, edge.type === 'association' ? 'association' : 'sequenceFlow');
@@ -188,7 +203,23 @@ export class BpmnXmlConverter {
     xml.close();
   }
 
-  private writeNode(xml: XmlBuilder, node: BpmnNode): void {
+  /** Scope of a sequence flow: the sub-process both endpoints live in, or
+   * `undefined` for the top process level. A boundary event sits on its
+   * host's border, so its flows run in the host's container. */
+  private edgeScopeOf(diagram: BpmnDiagram, edge: BpmnEdge): string | undefined {
+    const source = diagram.nodes[edge.sourceId];
+    if (!source) return undefined;
+    const host = boundaryAttachedTo(source);
+    const anchor = host ? (diagram.nodes[host] ?? source) : source;
+    return nodeParentId(anchor);
+  }
+
+  private writeNode(
+    xml: XmlBuilder,
+    node: BpmnNode,
+    diagram: BpmnDiagram,
+    edgesByScope: Map<string | undefined, BpmnEdge[]>,
+  ): void {
     const def = this.registry.has(node.type) ? this.registry.get(node.type) : undefined;
     const tag = def?.xml.tag ?? 'task';
     const p = this.ext.prefix;
@@ -204,11 +235,17 @@ export class BpmnXmlConverter {
         ? node.properties.attachedToRef
         : undefined;
     const nonInterrupting = isBoundary && node.properties.cancelActivity === false;
-    const reserved = new Set<string>();
+    // Containment and expansion are encoded structurally (nesting below and
+    // the DI isExpanded attribute), never as bpmnr:property.
+    const isSubProcess = node.type === 'subProcess';
+    const nestedNodes = isSubProcess ? childrenOf(diagram, node.id) : [];
+    const nestedEdges = isSubProcess ? (edgesByScope.get(node.id) ?? []) : [];
+    const reserved = new Set<string>(['parentId']);
     if (eventDef) reserved.add('eventDefinition');
     if (marker) reserved.add('marker');
     if (attachedToRef !== undefined) reserved.add('attachedToRef');
     if (nonInterrupting) reserved.add('cancelActivity');
+    if (isSubProcess) reserved.add('isExpanded');
     const propEntries = Object.entries(node.properties).filter(([key]) => !reserved.has(key));
     const attrs = {
       id: node.id,
@@ -216,7 +253,11 @@ export class BpmnXmlConverter {
       attachedToRef,
       cancelActivity: nonInterrupting ? 'false' : undefined,
     };
-    const hasChildren = eventDef !== undefined || marker !== undefined;
+    const hasChildren =
+      eventDef !== undefined ||
+      marker !== undefined ||
+      nestedNodes.length > 0 ||
+      nestedEdges.length > 0;
     const needsMeta =
       node.type !== tag ||
       node.removedInVersion !== undefined ||
@@ -249,6 +290,13 @@ export class BpmnXmlConverter {
       xml.element('bpmn:multiInstanceLoopCharacteristics', {
         isSequential: marker === 'sequentialMultiInstance' ? 'true' : 'false',
       });
+    }
+    // Nested flow elements (F7): children first, then the flows between them.
+    for (const child of nestedNodes) {
+      this.writeNode(xml, child, diagram, edgesByScope);
+    }
+    for (const edge of nestedEdges) {
+      this.writeEdge(xml, edge, edge.type === 'association' ? 'association' : 'sequenceFlow');
     }
     xml.close();
   }
@@ -303,6 +351,11 @@ export class BpmnXmlConverter {
         bpmnElement: node.id,
         // Pools/lanes are rendered as horizontal swimlanes.
         isHorizontal: isContainerType(node.type) ? 'true' : undefined,
+        // Sub-process expansion is a DI concern (standard attribute).
+        isExpanded:
+          node.type === 'subProcess' && typeof node.properties.isExpanded === 'boolean'
+            ? String(node.properties.isExpanded)
+            : undefined,
       });
       xml.element('dc:Bounds', {
         x: node.x,
@@ -375,10 +428,51 @@ export class BpmnXmlConverter {
       }
     }
 
-    for (const child of processEl.children) {
+    this.readFlowElements(processEl, undefined, diagram, warnings);
+
+    // Validate edge references.
+    for (const edge of Object.values(diagram.edges)) {
+      if (!diagram.nodes[edge.sourceId] || !diagram.nodes[edge.targetId]) {
+        warnings.push(`Edge ${edge.id} references a node not present in the document`);
+      }
+    }
+
+    this.applyDi(root, diagram, warnings);
+    return { diagram, warnings };
+  }
+
+  /** Non-node children of a flow container, consumed elsewhere or ignorable. */
+  private static readonly STRUCTURAL_CHILD_TAGS = new Set([
+    'standardLoopCharacteristics',
+    'multiInstanceLoopCharacteristics',
+    'incoming',
+    'outgoing',
+    'documentation',
+  ]);
+
+  /**
+   * Reads the flow elements of a container (`<process>` or, recursively, a
+   * `<subProcess>`), stamping children with their container id
+   * (`properties.parentId`). Before F7 sub-process children were silently
+   * dropped; now they round-trip as first-class nodes.
+   */
+  private readFlowElements(
+    containerEl: XmlElement,
+    parentId: string | undefined,
+    diagram: BpmnDiagram,
+    warnings: string[],
+  ): void {
+    for (const child of containerEl.children) {
       const tag = localName(child.tag);
       if (tag === 'extensionElements') continue;
+      if (BpmnXmlConverter.STRUCTURAL_CHILD_TAGS.has(tag) || tag.endsWith('EventDefinition')) {
+        continue; // read via readActivityMarker/readEventDefinition on the container
+      }
       if (tag === 'laneSet') {
+        if (parentId !== undefined) {
+          warnings.push(`Ignored <laneSet> inside sub-process ${parentId} (not supported)`);
+          continue;
+        }
         for (const laneEl of childrenByLocalName(child, 'lane')) {
           const lane = this.readContainer(laneEl, 'lane');
           if (lane) diagram.nodes[lane.id] = lane;
@@ -391,18 +485,13 @@ export class BpmnXmlConverter {
         continue;
       }
       const node = this.readNode(child, warnings);
-      if (node) diagram.nodes[node.id] = node;
-    }
-
-    // Validate edge references.
-    for (const edge of Object.values(diagram.edges)) {
-      if (!diagram.nodes[edge.sourceId] || !diagram.nodes[edge.targetId]) {
-        warnings.push(`Edge ${edge.id} references a node not present in the document`);
+      if (!node) continue;
+      if (parentId !== undefined) node.properties.parentId = parentId;
+      diagram.nodes[node.id] = node;
+      if (node.type === 'subProcess') {
+        this.readFlowElements(child, node.id, diagram, warnings);
       }
     }
-
-    this.applyDi(root, diagram, warnings);
-    return { diagram, warnings };
   }
 
   private readVersion(versionMeta: XmlElement | undefined): BpmnDiagram['version'] {
@@ -564,7 +653,12 @@ export class BpmnXmlConverter {
         warnings.push(`Invalid bounds for shape ${elementId}`);
         continue;
       }
-      diagram.nodes[node.id] = { ...node, x, y, width, height };
+      // BPMN DI carries a sub-process' expansion on its shape.
+      const properties =
+        node.type === 'subProcess' && shape.attributes.isExpanded !== undefined
+          ? { ...node.properties, isExpanded: shape.attributes.isExpanded === 'true' }
+          : node.properties;
+      diagram.nodes[node.id] = { ...node, x, y, width, height, properties };
     }
 
     const diEdges = findByLocalName(root, 'BPMNEdge');

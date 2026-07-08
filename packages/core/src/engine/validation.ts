@@ -4,7 +4,9 @@ import {
   boundaryAttachedTo,
   isContainerType,
   laneFlowNodeRefs,
+  nodeParentId,
   type BpmnDiagram,
+  type BpmnNode,
 } from '../model/types.js';
 import type { NodeTypeRegistry } from '../model/registry.js';
 
@@ -53,11 +55,15 @@ export const selfConnectionRule: ValidationRule = (diagram) => {
     }));
 };
 
-/** A process should have at least one start event. */
+/**
+ * A process should have at least one TOP-LEVEL start event — a start event
+ * nested inside a sub-process belongs to that scope and must not satisfy the
+ * outer process.
+ */
 export const missingStartEventRule: ValidationRule = (diagram) => {
   const nodes = activeNodes(diagram);
   if (nodes.length === 0) return [];
-  if (nodes.some((n) => n.type === 'startEvent')) return [];
+  if (nodes.some((n) => n.type === 'startEvent' && nodeParentId(n) === undefined)) return [];
   return [
     {
       code: 'MISSING_START_EVENT',
@@ -158,6 +164,75 @@ export const boundaryEventHostRule: ValidationRule = (diagram) => {
   return issues;
 };
 
+/**
+ * Sub-process containment must be sound: a `parentId` has to point at an
+ * existing, non-removed sub-process, and parent chains must not cycle.
+ */
+export const subProcessParentRule: ValidationRule = (diagram) => {
+  const issues: ValidationIssue[] = [];
+  for (const node of activeNodes(diagram)) {
+    const parentId = nodeParentId(node);
+    if (parentId === undefined) continue;
+    const parent = diagram.nodes[parentId];
+    if (!parent || parent.removedInVersion || parent.type !== 'subProcess') {
+      issues.push({
+        code: 'INVALID_PARENT_REF',
+        severity: 'error',
+        message: `Node "${node.label}" declares parent ${parentId}, which is not a sub-process in the flow`,
+        nodeId: node.id,
+      });
+      continue;
+    }
+    // Walk up the chain; revisiting a node means a containment cycle.
+    const seen = new Set<string>([node.id]);
+    let current: string | undefined = parentId;
+    while (current !== undefined) {
+      if (seen.has(current)) {
+        issues.push({
+          code: 'PARENT_CYCLE',
+          severity: 'error',
+          message: `Node "${node.label}" is part of a sub-process containment cycle`,
+          nodeId: node.id,
+        });
+        break;
+      }
+      seen.add(current);
+      const ancestor: BpmnNode | undefined = diagram.nodes[current];
+      current = ancestor ? nodeParentId(ancestor) : undefined;
+    }
+  }
+  return issues;
+};
+
+/**
+ * Sequence flows must stay inside one scope: BPMN forbids a flow crossing a
+ * sub-process boundary. A boundary event's scope is its host's scope (it sits
+ * ON the border and its outgoing flows run in the host's container).
+ */
+export const crossScopeEdgeRule: ValidationRule = (diagram) => {
+  const scopeOf = (node: BpmnNode): string | undefined => {
+    const host = boundaryAttachedTo(node);
+    const anchor = host ? (diagram.nodes[host] ?? node) : node;
+    return nodeParentId(anchor);
+  };
+  const issues: ValidationIssue[] = [];
+  for (const edge of activeEdges(diagram)) {
+    if (edge.type === 'messageFlow' || edge.type === 'association') continue;
+    const source = diagram.nodes[edge.sourceId];
+    const target = diagram.nodes[edge.targetId];
+    if (!source || !target) continue; // orphanEdgeRule owns this
+    if (scopeOf(source) !== scopeOf(target)) {
+      issues.push({
+        code: 'CROSS_SCOPE_EDGE',
+        severity: 'error',
+        message: `Edge ${edge.id} crosses a sub-process boundary (sequence flows must stay inside one scope)`,
+        edgeId: edge.id,
+      });
+    }
+  }
+  return issues;
+};
+
 /** Every node type must exist in the given registry. */
 export function unknownTypeRule(registry: NodeTypeRegistry): ValidationRule {
   return (diagram) =>
@@ -179,6 +254,8 @@ export const BUILT_IN_VALIDATION_RULES: ValidationRule[] = [
   eventFlowDirectionRule,
   staleLaneRefRule,
   boundaryEventHostRule,
+  subProcessParentRule,
+  crossScopeEdgeRule,
 ];
 
 /**

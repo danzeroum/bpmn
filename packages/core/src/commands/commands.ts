@@ -1,4 +1,5 @@
 import type { BpmnDiagram, BpmnEdge, BpmnNode, Point, Size, UserContext } from '../model/types.js';
+import { descendantIdsOf } from '../model/types.js';
 import { generateId, nowIso } from '../model/factory.js';
 import type { Command } from './types.js';
 
@@ -180,8 +181,9 @@ export function addEdgeCommand(edge: BpmnEdge): Command {
  * preserving temporal immutability.
  */
 export function removeNodeCommand(nodeId: string, actor: UserContext = SYSTEM_USER): Command {
-  let deletedNode: BpmnNode | undefined;
+  let deletedNodes: BpmnNode[] = [];
   let deletedEdges: BpmnEdge[] = [];
+  let closedIds: string[] = [];
   let closed = false;
   return {
     id: generateId(),
@@ -190,23 +192,34 @@ export function removeNodeCommand(nodeId: string, actor: UserContext = SYSTEM_US
       const node = diagram.nodes[nodeId];
       if (!node) return diagram;
       const versionId = diagram.version.id;
+      // Removing a sub-process cascades over its descendants: a child without
+      // its container is meaningless (and would fail INVALID_PARENT_REF).
+      const ids = new Set([nodeId, ...descendantIdsOf(diagram, nodeId)]);
+      const touches = (edge: BpmnEdge) => ids.has(edge.sourceId) || ids.has(edge.targetId);
       if (diagram.version.status === 'draft') {
         closed = false;
-        deletedNode = node;
-        deletedEdges = Object.values(diagram.edges).filter(
-          (e) => e.sourceId === nodeId || e.targetId === nodeId,
-        );
-        let next = withoutNode(diagram, nodeId);
+        deletedNodes = [...ids]
+          .map((id) => diagram.nodes[id])
+          .filter((n): n is BpmnNode => n !== undefined);
+        deletedEdges = Object.values(diagram.edges).filter(touches);
+        let next = diagram;
+        for (const removed of deletedNodes) next = withoutNode(next, removed.id);
         for (const edge of deletedEdges) next = withoutEdge(next, edge.id);
         return next;
       }
       closed = true;
-      let next = withNode(
-        diagram,
-        appendHistory({ ...node, removedInVersion: versionId }, 'REMOVED', versionId, actor),
-      );
+      closedIds = [...ids];
+      let next = diagram;
+      for (const id of ids) {
+        const target = diagram.nodes[id];
+        if (!target || target.removedInVersion) continue;
+        next = withNode(
+          next,
+          appendHistory({ ...target, removedInVersion: versionId }, 'REMOVED', versionId, actor),
+        );
+      }
       for (const edge of Object.values(diagram.edges)) {
-        if ((edge.sourceId === nodeId || edge.targetId === nodeId) && !edge.removedInVersion) {
+        if (touches(edge) && !edge.removedInVersion) {
           next = withEdge(
             next,
             appendHistory({ ...edge, removedInVersion: versionId }, 'REMOVED', versionId, actor),
@@ -217,13 +230,17 @@ export function removeNodeCommand(nodeId: string, actor: UserContext = SYSTEM_US
     },
     undo: (diagram) => {
       if (closed) {
-        const node = diagram.nodes[nodeId];
-        if (!node) return diagram;
-        const { removedInVersion: _r, ...reopened } = node;
-        let next = withNode(diagram, reopened as BpmnNode);
+        const ids = new Set(closedIds);
+        let next = diagram;
+        for (const id of closedIds) {
+          const node = diagram.nodes[id];
+          if (!node || node.removedInVersion !== diagram.version.id) continue;
+          const { removedInVersion: _r, ...reopened } = node;
+          next = withNode(next, reopened as BpmnNode);
+        }
         for (const edge of Object.values(diagram.edges)) {
           if (
-            (edge.sourceId === nodeId || edge.targetId === nodeId) &&
+            (ids.has(edge.sourceId) || ids.has(edge.targetId)) &&
             edge.removedInVersion === diagram.version.id
           ) {
             const { removedInVersion: _e, ...reopenedEdge } = edge;
@@ -232,8 +249,9 @@ export function removeNodeCommand(nodeId: string, actor: UserContext = SYSTEM_US
         }
         return next;
       }
-      if (!deletedNode) return diagram;
-      let next = withNode(diagram, deletedNode);
+      if (deletedNodes.length === 0) return diagram;
+      let next = diagram;
+      for (const restored of deletedNodes) next = withNode(next, restored);
       for (const edge of deletedEdges) next = withEdge(next, edge);
       return next;
     },

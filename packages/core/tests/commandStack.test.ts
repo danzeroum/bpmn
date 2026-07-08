@@ -297,3 +297,57 @@ describe('restoreDiagramCommand', () => {
     expect(audit?.details.restoredVersionId).toBe(snapshot.version.id);
   });
 });
+
+describe('removeNodeCommand — sub-process cascade (F7)', () => {
+  function nested(status: 'draft' | 'candidate' = 'draft') {
+    const diagram = createDiagram({ name: 'Cascade' });
+    diagram.version.status = status;
+    diagram.nodes = {
+      sub: createNode({ type: 'subProcess', id: 'sub' }),
+      child: createNode({ type: 'task', id: 'child', properties: { parentId: 'sub' } }),
+      deep: createNode({
+        type: 'subProcess',
+        id: 'deep',
+        properties: { parentId: 'sub' },
+      }),
+      deepChild: createNode({ type: 'task', id: 'deepChild', properties: { parentId: 'deep' } }),
+      outside: createNode({ type: 'task', id: 'outside' }),
+    };
+    diagram.edges = {
+      inner: createEdge({ id: 'inner', sourceId: 'child', targetId: 'deep' }),
+      external: createEdge({ id: 'external', sourceId: 'outside', targetId: 'sub' }),
+    };
+    return new CommandStack(diagram);
+  }
+
+  it('hard-deletes descendants and their edges in draft, restoring all on undo', () => {
+    const stack = nested('draft');
+    stack.execute(removeNodeCommand('sub'));
+    expect(Object.keys(stack.current.nodes).sort()).toEqual(['outside']);
+    expect(Object.keys(stack.current.edges)).toEqual([]);
+
+    stack.undo();
+    expect(Object.keys(stack.current.nodes).sort()).toEqual([
+      'child', 'deep', 'deepChild', 'outside', 'sub',
+    ]);
+    expect(Object.keys(stack.current.edges).sort()).toEqual(['external', 'inner']);
+  });
+
+  it('closes descendants (removedInVersion) outside draft and reopens on undo', () => {
+    const stack = nested('candidate');
+    stack.execute(removeNodeCommand('sub'));
+    const v = stack.current.version.id;
+    for (const id of ['sub', 'child', 'deep', 'deepChild']) {
+      expect(stack.current.nodes[id].removedInVersion).toBe(v);
+    }
+    expect(stack.current.nodes.outside.removedInVersion).toBeUndefined();
+    expect(stack.current.edges.inner.removedInVersion).toBe(v);
+    expect(stack.current.edges.external.removedInVersion).toBe(v);
+
+    stack.undo();
+    for (const id of ['sub', 'child', 'deep', 'deepChild']) {
+      expect(stack.current.nodes[id].removedInVersion).toBeUndefined();
+    }
+    expect(stack.current.edges.inner.removedInVersion).toBeUndefined();
+  });
+});

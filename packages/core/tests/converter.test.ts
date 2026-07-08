@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   BpmnParseError,
   BpmnXmlConverter,
+  childrenOf,
   createDefaultRegistry,
   createDiagram,
   createEdge,
   createNode,
+  descendantIdsOf,
+  isSubProcessExpanded,
+  nodeParentId,
   normalizeForDiff,
   type BpmnDiagram,
 } from '../src/index.js';
@@ -655,5 +659,119 @@ describe('BpmnXmlConverter.fromXml — external documents', () => {
     expect(() =>
       converter.fromXml('<!DOCTYPE x><definitions><process/></definitions>'),
     ).toThrow(/DOCTYPE/);
+  });
+});
+
+describe('BpmnXmlConverter — nested sub-processes (F7)', () => {
+  // Structural mirror of a Camunda Modeler export: an expanded embedded
+  // sub-process with its own start/task/end, a boundary event on the inner
+  // task, and a second (collapsed) level of nesting.
+  const NESTED = `<?xml version="1.0" encoding="UTF-8"?>
+  <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Defs_nested"
+    targetNamespace="http://bpmn.io/schema/bpmn">
+    <bpmn:process id="Process_nested" isExecutable="true">
+      <bpmn:startEvent id="Start_1" />
+      <bpmn:subProcess id="Sub_outer" name="Handle order">
+        <bpmn:startEvent id="Sub_start" />
+        <bpmn:userTask id="Sub_task" name="Pick items" />
+        <bpmn:boundaryEvent id="Sub_bnd" attachedToRef="Sub_task" cancelActivity="false">
+          <bpmn:timerEventDefinition id="Td_1" />
+        </bpmn:boundaryEvent>
+        <bpmn:subProcess id="Sub_inner" name="Quality check">
+          <bpmn:task id="Deep_task" name="Inspect" />
+        </bpmn:subProcess>
+        <bpmn:endEvent id="Sub_end" />
+        <bpmn:sequenceFlow id="Sub_f1" sourceRef="Sub_start" targetRef="Sub_task" />
+        <bpmn:sequenceFlow id="Sub_f2" sourceRef="Sub_task" targetRef="Sub_inner" />
+        <bpmn:sequenceFlow id="Sub_f3" sourceRef="Sub_inner" targetRef="Sub_end" />
+      </bpmn:subProcess>
+      <bpmn:endEvent id="End_1" />
+      <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Sub_outer" />
+      <bpmn:sequenceFlow id="Flow_2" sourceRef="Sub_outer" targetRef="End_1" />
+    </bpmn:process>
+    <bpmndi:BPMNDiagram id="Diag_nested">
+      <bpmndi:BPMNPlane id="Plane_nested" bpmnElement="Process_nested">
+        <bpmndi:BPMNShape id="Sub_outer_di" bpmnElement="Sub_outer" isExpanded="true">
+          <dc:Bounds x="200" y="80" width="420" height="240" />
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="Sub_inner_di" bpmnElement="Sub_inner" isExpanded="false">
+          <dc:Bounds x="440" y="150" width="120" height="80" />
+        </bpmndi:BPMNShape>
+        <bpmndi:BPMNShape id="Sub_task_di" bpmnElement="Sub_task">
+          <dc:Bounds x="280" y="140" width="120" height="60" />
+        </bpmndi:BPMNShape>
+      </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+  </bpmn:definitions>`;
+
+  it('imports children as first-class nodes with parentId set', () => {
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(NESTED);
+    expect(warnings).toEqual([]);
+    expect(Object.keys(diagram.nodes).sort()).toEqual([
+      'Deep_task', 'End_1', 'Start_1', 'Sub_bnd', 'Sub_end', 'Sub_inner',
+      'Sub_outer', 'Sub_start', 'Sub_task',
+    ]);
+    expect(nodeParentId(diagram.nodes.Sub_task)).toBe('Sub_outer');
+    expect(nodeParentId(diagram.nodes.Sub_bnd)).toBe('Sub_outer');
+    expect(nodeParentId(diagram.nodes.Sub_inner)).toBe('Sub_outer');
+    expect(nodeParentId(diagram.nodes.Deep_task)).toBe('Sub_inner');
+    expect(nodeParentId(diagram.nodes.Start_1)).toBeUndefined();
+    // Inner edges import flat but keep endpoint scoping.
+    expect(Object.keys(diagram.edges).sort()).toEqual([
+      'Flow_1', 'Flow_2', 'Sub_f1', 'Sub_f2', 'Sub_f3',
+    ]);
+    // DI expansion round-trips into properties.
+    expect(isSubProcessExpanded(diagram.nodes.Sub_outer)).toBe(true);
+    expect(isSubProcessExpanded(diagram.nodes.Sub_inner)).toBe(false);
+    // Containment helpers see the hierarchy.
+    expect(childrenOf(diagram, 'Sub_outer').map((n) => n.id)).toEqual([
+      'Sub_start', 'Sub_task', 'Sub_bnd', 'Sub_inner', 'Sub_end',
+    ]);
+    expect(descendantIdsOf(diagram, 'Sub_outer')).toContain('Deep_task');
+  });
+
+  it('re-exports the hierarchy nested and round-trips losslessly', () => {
+    const converter = () => new BpmnXmlConverter();
+    const first = converter().fromXml(NESTED);
+    const xml = converter().toXml(first.diagram);
+
+    // Children and inner flows are nested inside their container element
+    // (the LAST closing tag belongs to Sub_outer — top-level flows follow it).
+    const outer = xml.slice(
+      xml.indexOf('<bpmn:subProcess id="Sub_outer"'),
+      xml.lastIndexOf('</bpmn:subProcess>'),
+    );
+    expect(outer).toContain('<bpmn:userTask id="Sub_task"');
+    expect(outer).toContain('<bpmn:sequenceFlow id="Sub_f1"');
+    expect(outer).toContain('<bpmn:subProcess id="Sub_inner"');
+    // parentId is encoded structurally, never as a bpmnr:property.
+    expect(xml).not.toContain('name="parentId"');
+    expect(xml).not.toContain('name="isExpanded"');
+    // DI carries expansion.
+    expect(xml).toContain('bpmnElement="Sub_outer" isExpanded="true"');
+    expect(xml).toContain('bpmnElement="Sub_inner" isExpanded="false"');
+
+    const second = converter().fromXml(xml);
+    expect(second.warnings).toEqual([]);
+    expect(normalizeForDiff(second.diagram)).toEqual(normalizeForDiff(first.diagram));
+    // Canonical form is stable.
+    expect(converter().toXml(second.diagram)).toBe(xml);
+  });
+
+  it('warns and skips a laneSet inside a sub-process', () => {
+    const xml = `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D">
+      <bpmn:process id="P">
+        <bpmn:subProcess id="Sub_1">
+          <bpmn:laneSet id="Ls"><bpmn:lane id="L1" /></bpmn:laneSet>
+          <bpmn:task id="T1" />
+        </bpmn:subProcess>
+      </bpmn:process>
+    </bpmn:definitions>`;
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
+    expect(warnings.some((w) => w.includes('laneSet') && w.includes('Sub_1'))).toBe(true);
+    expect(diagram.nodes.L1).toBeUndefined();
+    expect(nodeParentId(diagram.nodes.T1)).toBe('Sub_1');
   });
 });

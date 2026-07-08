@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: Camunda Modeler export with two nesting levels.
+  Pattern: collapsed inner subProcess inside an expanded outer one (variant 1).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_nest0" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_nest0" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:subProcess id="Outer_1" name="Fulfilment 0">
+      <bpmn:startEvent id="Outer_start" />
+      <bpmn:userTask id="Outer_task" name="Prepare" />
+      <bpmn:subProcess id="Inner_1" name="Quality check">
+        <bpmn:task id="Inner_task" name="Inspect" />
+      </bpmn:subProcess>
+      <bpmn:endEvent id="Outer_end" />
+      <bpmn:sequenceFlow id="Of_1" sourceRef="Outer_start" targetRef="Outer_task" />
+      <bpmn:sequenceFlow id="Of_2" sourceRef="Outer_task" targetRef="Inner_1" />
+      <bpmn:sequenceFlow id="Of_3" sourceRef="Inner_1" targetRef="Outer_end" />
+    </bpmn:subProcess>
+    <bpmn:endEvent id="End_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Outer_1" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Outer_1" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diag_nest0">
+    <bpmndi:BPMNPlane id="Plane_nest0" bpmnElement="Process_nest0">
+      <bpmndi:BPMNShape id="Outer_1_di" bpmnElement="Outer_1" isExpanded="true">
+        <dc:Bounds x="240" y="80" width="520" height="260" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Inner_1_di" bpmnElement="Inner_1" isExpanded="false">
+        <dc:Bounds x="520" y="170" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Outer_task_di" bpmnElement="Outer_task">
+        <dc:Bounds x="340" y="180" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="150" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="800" y="192" width="36" height="36" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
