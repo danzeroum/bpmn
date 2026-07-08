@@ -1,0 +1,322 @@
+/*
+ * @bpmn-react/studio — shell + Revisão do Aprovador (Handoff 6 §2/§5).
+ * Import AFTER @bpmn-react/react/styles.css (and library-react's, for the
+ * Biblioteca screen): seal colors come exclusively from the canonical
+ * --bpmnr-status-* tokens; brand colors from --btv-* (§10.6).
+ */
+
+.btv-studio {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  color: var(--btv-ink, #44403a);
+  background: var(--bpmnr-bg, #faf9f6);
+}
+
+/* ---- header 58px ---- */
+.btv-studio-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 58px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--bpmnr-border, #d8d2c6);
+  background: var(--bpmnr-surface, #fff);
+}
+.btv-studio-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--btv-gold, #9a7b1e);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.btv-studio-brand {
+  font-weight: 600;
+  font-size: 14px;
+}
+.btv-studio-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--bpmnr-border, #d8d2c6);
+}
+.btv-studio-nav {
+  display: flex;
+  gap: 4px;
+}
+.btv-studio-nav-item {
+  font: inherit;
+  font-size: 12.5px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.btv-studio-nav-item[aria-current='page'] {
+  background: var(--btv-gold-soft, #f6edd4);
+  color: var(--bpmnr-status-candidate-fg, #7a611e);
+  font-weight: 600;
+}
+.btv-studio-spacer {
+  flex: 1;
+}
+.btv-studio-user {
+  font-size: 11.5px;
+  opacity: 0.8;
+}
+
+.btv-studio-main {
+  flex: 1;
+  padding: 16px;
+}
+
+/* ---- footer 30px mono ---- */
+.btv-studio-footer {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-top: 1px solid var(--bpmnr-border, #d8d2c6);
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+/* ---- Revisão: fila 296px + área 820px ---- */
+.btv-studio-review {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.btv-studio-queue {
+  width: 296px;
+  flex-shrink: 0;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  border-radius: 12px;
+  background: var(--bpmnr-surface, #fff);
+  overflow: hidden;
+}
+.btv-studio-queue-header {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--bpmnr-border, #d8d2c6);
+  color: var(--btv-gold, #9a7b1e);
+}
+.btv-studio-queue-list {
+  display: flex;
+  flex-direction: column;
+}
+.btv-studio-queue-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 12px;
+  border: none;
+  border-left: 3px solid transparent;
+  border-bottom: 1px solid var(--bpmnr-border, #d8d2c6);
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.btv-studio-queue-item[data-selected] {
+  background: var(--btv-palette-item-bg, #fdfaf1);
+  border-left-color: var(--btv-gold, #9a7b1e);
+}
+.btv-studio-queue-name {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.btv-studio-queue-name code {
+  font-size: 11px;
+  font-weight: 400;
+}
+.btv-studio-queue-sla {
+  font-size: 10.5px;
+  opacity: 0.7;
+}
+.btv-studio-queue-sla[data-urgent] {
+  color: var(--bpmnr-status-candidate-fg, #7a611e);
+  font-weight: 600;
+  opacity: 1;
+}
+.btv-studio-queue-empty {
+  font-size: 12px;
+  opacity: 0.7;
+  padding: 12px;
+  margin: 0;
+}
+
+.btv-studio-review-area {
+  flex: 1;
+  max-width: 820px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---- generic blocks ---- */
+.btv-studio-block {
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  border-radius: 12px;
+  background: var(--bpmnr-surface, #fff);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.btv-studio-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.btv-studio-kicker {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--btv-gold, #9a7b1e);
+}
+.btv-studio-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+.btv-studio-title code {
+  font-size: 14px;
+  font-weight: 400;
+}
+.btv-studio-subtitle {
+  margin: 0;
+  font-size: 12px;
+  opacity: 0.75;
+}
+.btv-studio-quote {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 3px solid var(--bpmnr-warning-border, #e8d9ae);
+  font-size: 13px;
+  font-style: italic;
+}
+.btv-studio-muted {
+  font-size: 12px;
+  opacity: 0.7;
+  margin: 0;
+}
+.btv-studio-mono {
+  font-family: ui-monospace, monospace;
+  font-size: 10.5px;
+  word-break: break-all;
+}
+.btv-studio-link {
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--btv-gold, #9a7b1e);
+  cursor: pointer;
+  padding: 0;
+}
+
+/* ---- verificações 2×2 ---- */
+.btv-studio-checks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.btv-studio-check {
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--btv-check-ok-border, #bcdcc9);
+  background: var(--btv-check-ok-bg, #f2f9f4);
+}
+.btv-studio-check[data-ok='false'] {
+  border-color: var(--bpmnr-status-deprecated-fg, #b3372f);
+  background: var(--bpmnr-status-deprecated, #f7e6e0);
+}
+.btv-studio-check-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+.btv-studio-check-detail {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* ---- decisão ---- */
+.btv-studio-decision-context {
+  font-size: 12.5px;
+  margin: 0;
+}
+.btv-studio-decision-buttons {
+  display: flex;
+  gap: 10px;
+}
+.btv-studio-approve {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--btv-green, #1a6a54);
+  background: var(--btv-green, #1a6a54);
+  color: #fff;
+  cursor: pointer;
+}
+.btv-studio-reject,
+.btv-studio-reject-confirm {
+  font: inherit;
+  font-size: 12.5px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--bpmnr-status-deprecated-fg, #b3372f);
+  background: transparent;
+  color: var(--bpmnr-status-deprecated-fg, #b3372f);
+  cursor: pointer;
+}
+.btv-studio-reject-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btv-studio-reject-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.btv-studio-reject-form textarea {
+  font: inherit;
+  font-size: 12px;
+  padding: 8px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  border-radius: 10px;
+  resize: vertical;
+  background: transparent;
+  color: inherit;
+}
+.btv-studio-decision-done {
+  border: 1px solid var(--btv-check-ok-border, #bcdcc9);
+  background: var(--btv-check-ok-bg, #f2f9f4);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+}
+.btv-studio-decision-done[data-kind='rejected'] {
+  border-color: var(--bpmnr-status-deprecated-fg, #b3372f);
+  background: var(--bpmnr-status-deprecated, #f7e6e0);
+}

@@ -33,6 +33,7 @@ import {
 import { LifecyclePanel } from './LifecyclePanel.js';
 import { AuditPanel } from './AuditPanel.js';
 import { LibrarySurface } from './LibrarySurface.js';
+import { StudioSurface } from './StudioSurface.js';
 import './demo.css';
 
 // Observability sink (§2): the host decides what to do with editor events —
@@ -119,8 +120,11 @@ export function App() {
   const drdMode = params.get('drd') !== null;
   const decisionParam = params.get('decision');
   // `?library=1` renders the Biblioteca surface (Handoff 6 S-3) instead of
-  // the editor — a read-only catalog page, no canvas.
+  // the editor — a read-only catalog page, no canvas. `?studio=1` renders
+  // the full Studio shell (S-4: Biblioteca + Revisão do Aprovador).
   const libraryMode = params.get('library') !== null;
+  const studioMode = params.get('studio') !== null;
+  if (studioMode) return <StudioSurface />;
   if (libraryMode) return <LibrarySurface />;
 
   const replaceFromOutside = (next: BpmnDiagram) => {

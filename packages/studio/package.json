@@ -1,0 +1,63 @@
+{
+  "name": "@bpmn-react/studio",
+  "version": "1.0.0",
+  "description": "BuildToValue Studio (Handoff 6 S-4): the application layer for the no-screen personas — shell with hash navigation (no external router), the generic Biblioteca screen and the Revisão do Aprovador (engine-derived queue, real verification calls, immutable ledger decisions; approving never activates). Workspace-only — the publish scope awaits pendencias.md §1. Zero runtime dependencies beyond @bpmn-react/*.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./styles.css": "./styles.css"
+  },
+  "files": [
+    "dist",
+    "styles.css",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "dependencies": {
+    "@bpmn-react/audit": "workspace:*",
+    "@bpmn-react/conformance": "workspace:*",
+    "@bpmn-react/core": "workspace:*",
+    "@bpmn-react/library": "workspace:*",
+    "@bpmn-react/library-react": "workspace:*",
+    "@bpmn-react/react": "workspace:*",
+    "@bpmn-react/registry": "workspace:*",
+    "@bpmn-react/soundness": "workspace:*"
+  },
+  "devDependencies": {
+    "@bpmn-react/adapters-bpmn": "workspace:*"
+  },
+  "keywords": [
+    "governance",
+    "approval",
+    "studio",
+    "bpmn",
+    "buildtovalue"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/studio"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "private": true
+}

@@ -135,6 +135,11 @@ function localName(tag: string): string {
 
 function walk(el: XmlElement, parent: XmlElement | null, visit: (el: XmlElement, parent: XmlElement | null) => void): void {
   visit(el, parent);
+  // Vendor content inside <extensionElements> is opaque by spec (BPMN 2.0
+  // §8.2.3 ExtensionElements): it is NOT part of the process model and must
+  // not count against the conformance matrix — otherwise any tool's own
+  // export (bpmnr:*, camunda:*, …) would certify as 'none'.
+  if (localName(el.tag) === 'extensionElements') return;
   for (const child of el.children) walk(child, el, visit);
 }
 

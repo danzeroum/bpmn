@@ -157,6 +157,9 @@ importers:
       '@bpmn-react/soundness':
         specifier: workspace:*
         version: link:../soundness
+      '@bpmn-react/studio':
+        specifier: workspace:*
+        version: link:../studio
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -227,6 +230,40 @@ importers:
       '@bpmn-react/core':
         specifier: workspace:*
         version: link:../core
+
+  packages/studio:
+    dependencies:
+      '@bpmn-react/audit':
+        specifier: workspace:*
+        version: link:../audit
+      '@bpmn-react/conformance':
+        specifier: workspace:*
+        version: link:../conformance
+      '@bpmn-react/core':
+        specifier: workspace:*
+        version: link:../core
+      '@bpmn-react/library':
+        specifier: workspace:*
+        version: link:../library
+      '@bpmn-react/library-react':
+        specifier: workspace:*
+        version: link:../library-react
+      '@bpmn-react/react':
+        specifier: workspace:*
+        version: link:../react
+      '@bpmn-react/registry':
+        specifier: workspace:*
+        version: link:../registry
+      '@bpmn-react/soundness':
+        specifier: workspace:*
+        version: link:../soundness
+      react:
+        specifier: '>=18'
+        version: 18.3.1
+    devDependencies:
+      '@bpmn-react/adapters-bpmn':
+        specifier: workspace:*
+        version: link:../adapters-bpmn
 
 packages:
 

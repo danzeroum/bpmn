@@ -38,6 +38,19 @@ All notable changes to the `@bpmn-react/*` packages are documented here. The pro
 - UI half of the §10.1 acid test: the whole gallery exercised with the S-2 recipe adapter alone.
 - Workspace-only (`private: true`) until the npm-scope decision (pendências §1).
 
+### Studio (`@bpmn-react/studio`) — new package (Handoff 6, S-4)
+- `StudioShell`: header with the three-screen nav (Biblioteca | Revisão | Auditoria) and
+  hash-based navigation — state + URL hash, no external router (§11). Auditoria arrives in S-5.
+- `ReviewScreen` (Revisão do Aprovador, §5): queue derived from the lifecycle engine's gates
+  (never re-implemented in the UI), review blocks in spec order (header → change summary →
+  DiffView → 2×2 verificações from REAL calls: `analyzeSoundness`/`certifyXml`/`verifyLedger`/
+  `resolveCallActivities` → decision), keyboard-navigable queue.
+- Decisions as immutable ledger entries: `approvePromotion` (`APPROVAL_RECORDED`, via
+  `engine.approve`) and `rejectPromotion` (`PROMOTION_REJECTED`, justification min 10 chars).
+  Approving NEVER activates — separação solicitante/aprovador (§11).
+- Headless halves exported and DOM-free testable; workspace-only (`private: true`) until the
+  npm-scope decision (pendências §1).
+
 ### React (`@bpmn-react/react`)
 - `StatusBadge` standalone mode (Handoff 6 §10.6): a new optional `seal` prop renders the same
   canonical seal from explicit data outside the editor contexts (Biblioteca/Revisão/Ledger
@@ -47,6 +60,9 @@ All notable changes to the `@bpmn-react/*` packages are documented here. The pro
 - `?library=1` surface: LibraryView over a demo registry (flow + persona adapters) plus the
   recipe acid-test adapter, with query state round-tripping to the URL; e2e coverage for
   filter/selection/action (`e2e/library.spec.ts`).
+- `?studio=1` surface: the full Studio shell over a demo world (registry, ledger, one pending
+  promotion at 1/2 approvals); e2e for the approve and reject flows, real verification cards
+  and keyboard-only decision (`e2e/studio.spec.ts`).
 
 ## 1.0.0 — 2026-07-07
 
