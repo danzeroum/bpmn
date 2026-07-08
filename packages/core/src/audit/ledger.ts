@@ -37,7 +37,12 @@ export interface AuditSink {
   write(entry: AuditEntry): void | Promise<void>;
 }
 
-async function entryHash(entry: Omit<AuditEntry, 'hash'>): Promise<string> {
+/**
+ * The chain's hash recipe — exported so external verifiers (e.g.
+ * `@bpmn-react/audit`'s `verifyLedger`) recompute entries against the exact
+ * same bytes the ledger signed. Changing this breaks every existing chain.
+ */
+export async function computeEntryHash(entry: Omit<AuditEntry, 'hash'>): Promise<string> {
   return sha256Hex(
     [
       entry.previousHash,
@@ -51,6 +56,8 @@ async function entryHash(entry: Omit<AuditEntry, 'hash'>): Promise<string> {
     ].join('|'),
   );
 }
+
+const entryHash = computeEntryHash;
 
 /**
  * Append-only audit ledger with SHA-256 hash chaining: each entry's hash

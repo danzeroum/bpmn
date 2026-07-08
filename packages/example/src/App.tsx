@@ -117,10 +117,15 @@ function SidePanels() {
   // promotion toast (PromotionPanel) share the same hash chain.
   const ledgerRef = useRef<AuditLedger | null>(null);
   if (ledgerRef.current === null) ledgerRef.current = new AuditLedger();
+  // Bumped when governance appends outside the command stack (attestation).
+  const [ledgerTick, setLedgerTick] = useState(0);
   return (
     <div className="demo-side">
-      <LifecyclePanel ledger={ledgerRef.current} />
-      <AuditPanel ledger={ledgerRef.current} />
+      <LifecyclePanel
+        ledger={ledgerRef.current}
+        onLedgerAppend={() => setLedgerTick((tick) => tick + 1)}
+      />
+      <AuditPanel ledger={ledgerRef.current} refreshToken={ledgerTick} />
     </div>
   );
 }

@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
+import { verifyLedger } from '@bpmn-react/audit';
 import { AuditLedger, type AuditEntry } from '@bpmn-react/core';
-import { useDiagram } from '@bpmn-react/react';
+import { LedgerStatus, useDiagram } from '@bpmn-react/react';
 
 /**
  * Live audit trail: every command on the stack is appended to a hash-chained
  * ledger; the verify button re-walks the whole chain. Pass a shared `ledger`
  * so other panels (e.g. the promotion flow) write into the same chain.
  */
-export function AuditPanel({ ledger: sharedLedger }: { ledger?: AuditLedger } = {}) {
+export function AuditPanel({
+  ledger: sharedLedger,
+  refreshToken = 0,
+}: { ledger?: AuditLedger; refreshToken?: number } = {}) {
   const { stack } = useDiagram();
   const ledgerRef = useRef<AuditLedger | null>(null);
   if (ledgerRef.current === null) ledgerRef.current = sharedLedger ?? new AuditLedger();
@@ -28,6 +32,18 @@ export function AuditPanel({ ledger: sharedLedger }: { ledger?: AuditLedger } = 
     };
   }, [ledger, stack]);
 
+  // Entries appended OUTSIDE the command stack (promotion, attestation)
+  // arrive via the refresh token bumped by the governance panel.
+  useEffect(() => {
+    let stale = false;
+    void ledger.flush().then(() => {
+      if (!stale) setEntries([...ledger.getEntries()]);
+    });
+    return () => {
+      stale = true;
+    };
+  }, [ledger, refreshToken]);
+
   const verify = async () => {
     const result = await ledger.verify();
     setVerified(result.valid ? '✓ chain intact' : `✗ broken at entry ${result.brokenAt}`);
@@ -39,7 +55,8 @@ export function AuditPanel({ ledger: sharedLedger }: { ledger?: AuditLedger } = 
         Audit ledger{' '}
         <button type="button" onClick={verify}>
           verify
-        </button>
+        </button>{' '}
+        <LedgerStatus verify={() => verifyLedger(ledger)} />
       </h3>
       {verified && <p className="demo-muted">{verified}</p>}
       <ol reversed>

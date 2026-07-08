@@ -51,8 +51,20 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.0)(jsdom@25.0.1)
 
+  packages/audit:
+    dependencies:
+      '@bpmn-react/core':
+        specifier: workspace:*
+        version: link:../core
+      '@bpmn-react/registry':
+        specifier: workspace:*
+        version: link:../registry
+
   packages/cli:
     dependencies:
+      '@bpmn-react/audit':
+        specifier: workspace:*
+        version: link:../audit
       '@bpmn-react/conformance':
         specifier: workspace:*
         version: link:../conformance
@@ -88,6 +100,9 @@ importers:
 
   packages/example:
     dependencies:
+      '@bpmn-react/audit':
+        specifier: workspace:*
+        version: link:../audit
       '@bpmn-react/core':
         specifier: workspace:*
         version: link:../core
@@ -97,6 +112,9 @@ importers:
       '@bpmn-react/react':
         specifier: workspace:*
         version: link:../react
+      '@bpmn-react/registry':
+        specifier: workspace:*
+        version: link:../registry
       '@bpmn-react/soundness':
         specifier: workspace:*
         version: link:../soundness
