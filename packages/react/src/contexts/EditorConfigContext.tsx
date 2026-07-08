@@ -14,6 +14,7 @@ import type {
   BpmnPlugin,
   EdgeRouterFn,
   EdgeStyle,
+  EditorEventHandler,
   PaletteGroup,
   PaletteItem,
   ShapeComponent,
@@ -37,6 +38,12 @@ export interface EditorConfig {
   plugins: BpmnPlugin[];
   /** Custom types (from plugins) preferred when importing XML. */
   preferredTypes: string[];
+  /**
+   * Emits an observability event to every plugin `onEditorEvent` handler
+   * (no-op when none is registered). The timestamp is stamped here so all
+   * handlers see the same event object.
+   */
+  emitEditorEvent: (type: string, meta?: Record<string, unknown>) => void;
 }
 
 const EditorConfigContext = createContext<EditorConfig | null>(null);
@@ -59,6 +66,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
   const ruleEngine = createDefaultRuleEngine();
   const validationRules = [...BUILT_IN_VALIDATION_RULES];
   const preferredTypes: string[] = [];
+  const eventHandlers: EditorEventHandler[] = [];
   let lifecycleEngine = new LifecycleEngine();
   let edgeRouter: EdgeRouterFn = cubicBezierConnection;
 
@@ -77,6 +85,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
     }
     validationRules.push(...(plugin.validationRules ?? []));
     plugin.registerRules?.(ruleEngine);
+    if (plugin.onEditorEvent) eventHandlers.push(plugin.onEditorEvent);
     if (plugin.lifecycleConfig) lifecycleEngine = new LifecycleEngine(plugin.lifecycleConfig);
     if (plugin.edgeRouter) {
       edgeRouter =
@@ -100,6 +109,13 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
     edgeRouter,
     plugins: resolved,
     preferredTypes,
+    emitEditorEvent:
+      eventHandlers.length === 0
+        ? () => {}
+        : (type, meta) => {
+            const event = { type, ts: Date.now(), ...(meta ? { meta } : {}) };
+            for (const handler of eventHandlers) handler(event);
+          },
   };
 }
 

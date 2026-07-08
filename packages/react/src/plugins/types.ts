@@ -52,6 +52,21 @@ export interface PaletteGroup {
 export type EdgeRouterFn = (source: Rect, target: Rect) => EdgeGeometry;
 
 /**
+ * Editor observability event (Handoff 2 §2). The library emits a minimal
+ * vocabulary — `node.created`, `edge.connected`, `promotion.completed`,
+ * `import.warning`, `render.slow` — and the host decides what to do with it
+ * (log, measure lead time, count import warnings). No telemetry, no deps.
+ */
+export interface EditorEvent {
+  type: string;
+  /** Epoch milliseconds. */
+  ts: number;
+  meta?: Record<string, unknown>;
+}
+
+export type EditorEventHandler = (event: EditorEvent) => void;
+
+/**
  * Declarative styling for a domain edge type (keyed by `edge.type`). The
  * EdgeRenderer applies it in the resting state and composes it with the two
  * states that always win: `closed` (retired) and `selected`. Colors should be
@@ -100,4 +115,6 @@ export interface BpmnPlugin {
   onBeforeSave?: (diagram: BpmnDiagram) => BpmnDiagram;
   /** Transforms the diagram right after an import/load. */
   onAfterLoad?: (diagram: BpmnDiagram) => BpmnDiagram;
+  /** Observability sink — receives editor events (all providers are called). */
+  onEditorEvent?: EditorEventHandler;
 }

@@ -372,6 +372,11 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
             });
             execute(addEdgeCommand(edge));
             store.setState({ selectedIds: [edge.id] });
+            config.emitEditorEvent('edge.connected', {
+              edgeType: edge.type,
+              sourceId,
+              targetId: target.id,
+            });
           }
         }
         return;
