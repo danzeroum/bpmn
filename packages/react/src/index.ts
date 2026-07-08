@@ -10,10 +10,12 @@ export * from './contexts/EditorConfigContext.js';
 // State
 export * from './state/createStore.js';
 export * from './state/canvasStore.js';
+export * from './state/autosave.js';
 
 // Canvas building blocks
 export * from './canvas/Canvas.js';
 export * from './canvas/NodeRenderer.js';
+export * from './canvas/ShapeErrorBoundary.js';
 export * from './canvas/NodeLabelEditor.js';
 export * from './canvas/EdgeRenderer.js';
 export * from './canvas/Defs.js';

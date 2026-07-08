@@ -317,6 +317,41 @@
   }
 }
 
+/* ------------------------------------------------------------ recovery */
+
+.bpmnr-recovery {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bpmnr-warning-bg, #fdf6e8);
+  border: 1px solid var(--bpmnr-warning-border, #e8d9ae);
+  color: var(--bpmnr-warning-fg, #7a611e);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+}
+
+.bpmnr-recovery button {
+  border: 1px solid var(--bpmnr-warning-border, #e8d9ae);
+  background: var(--bpmnr-panel-bg, #fff);
+  color: inherit;
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 120ms ease-out;
+}
+
+.bpmnr-recovery button:hover {
+  background: var(--bpmnr-warning-bg, #fdf6e8);
+}
+
 /* ----------------------------------------------------------- promotion */
 
 .bpmnr-promotion-overlay {

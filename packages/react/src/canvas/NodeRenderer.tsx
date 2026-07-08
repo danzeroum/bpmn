@@ -7,6 +7,7 @@ import { theme } from '../shapes/common.js';
 import type { Interactions } from './useInteractions.js';
 import { NodeLabelEditor } from './NodeLabelEditor.js';
 import { SHADOW_FILTER_ID } from './Defs.js';
+import { ShapeErrorBoundary } from './ShapeErrorBoundary.js';
 
 /** Below this zoom node shadows are dropped — SVG filters get expensive at scale. */
 const SHADOW_MIN_ZOOM = 0.5;
@@ -77,13 +78,18 @@ function NodeRendererInner({
         }
       >
         {/* The filter wraps only the shape so halo/ports/handles stay crisp. */}
-        {hasShadow && shadowsVisible ? (
-          <g data-node-shadow filter={`url(#${SHADOW_FILTER_ID})`}>
+        <ShapeErrorBoundary
+          node={rendered}
+          onError={(meta) => config.emitEditorEvent('shape.render.error', meta)}
+        >
+          {hasShadow && shadowsVisible ? (
+            <g data-node-shadow filter={`url(#${SHADOW_FILTER_ID})`}>
+              <Shape node={rendered} selected={selected} />
+            </g>
+          ) : (
             <Shape node={rendered} selected={selected} />
-          </g>
-        ) : (
-          <Shape node={rendered} selected={selected} />
-        )}
+          )}
+        </ShapeErrorBoundary>
       </g>
       {editing && <NodeLabelEditor node={rendered} />}
 

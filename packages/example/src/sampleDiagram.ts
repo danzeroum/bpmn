@@ -12,7 +12,8 @@ export function buildSampleDiagram(): BpmnDiagram {
   const registry = createDefaultRegistry();
   for (const def of DOMAIN_NODE_TYPES) registry.register(def);
 
-  const diagram = createDiagram({ name: 'Content production', createdBy: 'demo' });
+  // Stable id: the autosave/recovery key must survive reloads.
+  const diagram = createDiagram({ id: 'demo-content-production', name: 'Content production', createdBy: 'demo' });
   diagram.description = 'Squad produces content, a gate approves, a connector publishes.';
   const v = diagram.version.id;
 
@@ -93,7 +94,7 @@ export function buildStressDiagram(count = 350): BpmnDiagram {
   const registry = createDefaultRegistry();
   for (const def of DOMAIN_NODE_TYPES) registry.register(def);
 
-  const diagram = createDiagram({ name: `Stress ${count}`, createdBy: 'perf' });
+  const diagram = createDiagram({ id: `demo-stress-${count}`, name: `Stress ${count}`, createdBy: 'perf' });
   diagram.description = `${count}-node synthetic grid for the 60fps NFR.`;
   const v = diagram.version.id;
 
