@@ -53,6 +53,9 @@ importers:
 
   packages/cli:
     dependencies:
+      '@bpmn-react/conformance':
+        specifier: workspace:*
+        version: link:../conformance
       '@bpmn-react/core':
         specifier: workspace:*
         version: link:../core

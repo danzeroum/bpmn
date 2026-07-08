@@ -123,6 +123,20 @@ Foram enviados protótipos de design em `docs/design_handoff_btv_prototypes/` (s
 sessão. Em incorporação: craft pack (PR4) → selo de vigência (PR5) → fluxo de promoção (PR6),
 antes de retomar a F7 (subProcess) em sessão dedicada.
 
+## 8.1 Trust Layer (Handoff 4) — decisões registradas
+
+- **XSD vs manifesto (PR-A2):** implementado o **manifesto estrutural** (opção B do handoff):
+  `STRUCTURAL_MANIFEST` em `packages/conformance/src/manifest.ts` é um digest hand-derived do
+  BPMN20.xsd/Semantic.xsd (atributos obrigatórios + pais legais por elemento do perfil), zero
+  deps. Um validador XSD completo continua possível como evolução (os XSDs da OMG são
+  redistribuíveis), mas o custo não se justificou frente ao ganho — o manifesto pega os erros
+  estruturais que quebram interoperabilidade (flow sem endpoints, boundary sem attachedToRef,
+  lane fora de laneSet). Se a validação XSD integral virar requisito (ex.: certificação formal
+  OMG), tratar como PR própria.
+- **Corpus gerado (PR-A1):** os 51 arquivos são equivalentes estruturais gerados
+  (`gen-corpus.mjs`), como o handoff permite; incluir exports reais de terceiros exige revisão
+  de licença arquivo a arquivo — fazer quando houver fonte com licença clara.
+
 ## 8. Protótipos (Handoff 3) — decisões de escopo em aberto
 
 - **Handoff 2 recebido e reconciliado** (chegou via mensagem após as PRs 4–6; a pasta

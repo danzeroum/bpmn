@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Structural">
+  <bpmn:process id="P1">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:task id="Task_1" name="Work" />
+    <bpmn:boundaryEvent id="Bnd_orphan" />
+    <bpmn:sequenceFlow id="Flow_half" sourceRef="Start_1" />
+    <bpmn:sequenceFlow id="Flow_ok" sourceRef="Start_1" targetRef="Task_1" />
+  </bpmn:process>
+  <bpmn:lane id="Lane_stray" />
+</bpmn:definitions>

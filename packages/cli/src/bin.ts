@@ -2,8 +2,10 @@
 import { BpmnLifecycleError, type VersionStatus } from '@bpmn-react/core';
 import {
   approveCommand,
+  certifyCommand,
   diffCommand,
   exportCommand,
+  formatCertify,
   formatDiff,
   formatEntry,
   formatHistory,
@@ -22,6 +24,7 @@ const USAGE = `bpmn-react — headless BPMN diagram tooling
 
 Usage:
   bpmn-react validate <file.(json|xml|bpmn)>
+  bpmn-react certify <file.bpmn> [--json] [--require <descriptive|analytic>] [--report <path.json>]
   bpmn-react export <input> --to <xml|json> [-o <output>]
   bpmn-react diff <fileA> <fileB>
 
@@ -169,6 +172,23 @@ async function main(argv: string[]): Promise<number> {
           }
           throw error;
         }
+      }
+      case 'certify': {
+        const file = rest.find((a) => !a.startsWith('-'));
+        const require = valueOf(rest, '--require');
+        if (!file) return usage();
+        if (require !== undefined && require !== 'descriptive' && require !== 'analytic') {
+          return usage();
+        }
+        const reportPath = valueOf(rest, '--report');
+        const report = await certifyCommand(file, {
+          ...(require ? { require } : {}),
+          ...(reportPath ? { report: reportPath } : {}),
+        });
+        if (rest.includes('--json')) console.log(JSON.stringify(report, null, 2));
+        else console.log(formatCertify(report, reportPath));
+        if (!report.wellFormed) return 2;
+        return report.requirementMet === false ? 1 : 0;
       }
       case 'registry':
         return await runRegistry(rest);

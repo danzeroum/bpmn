@@ -1,6 +1,7 @@
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   BpmnXmlConverter,
@@ -10,7 +11,9 @@ import {
   JsonSerializer,
 } from '@bpmn-react/core';
 import {
+  certifyCommand,
   diffCommand,
+  formatCertify,
   exportCommand,
   formatDiff,
   formatValidation,
@@ -90,5 +93,60 @@ describe('diffCommand', () => {
 
     const diff = await diffCommand(jsonPath, otherPath);
     expect(formatDiff(diff)).toContain('~ node task: label');
+  });
+});
+
+describe('certifyCommand / formatCertify (Handoff 4 §A2)', () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const corpus = join(here, '../../conformance/corpus');
+  const fixtures = join(here, '../../conformance/tests/fixtures');
+
+  it('certifies a descriptive file and formats the human certificate', async () => {
+    const report = await certifyCommand(join(corpus, '01-linear-approval-v1.bpmn'));
+    expect(report.achievedClass).toBe('descriptive');
+    const text = formatCertify(report, 'certify-report.json');
+    expect(text).toContain('XML bem-formado · XXE-safe');
+    expect(text).toContain('Round-trip lossless');
+    expect(text).toContain('Perfil: Descriptive');
+    expect(text).toContain('Classe certificável: DESCRIPTIVE');
+    expect(text).toContain('relatório: certify-report.json');
+  });
+
+  it('formats requirement success and failure marks', async () => {
+    const analytic = join(corpus, '16-boundary-events-v1.bpmn');
+    const ok = formatCertify(await certifyCommand(analytic, { require: 'analytic' }));
+    expect(ok).toContain('Classe certificável: ANALYTIC ✔');
+    const fail = formatCertify(await certifyCommand(analytic, { require: 'descriptive' }));
+    expect(fail).toContain('Classe certificável: ANALYTIC ✖');
+  });
+
+  it('formats warnings, unsupported elements and structural issues', async () => {
+    const degraded = formatCertify(await certifyCommand(join(corpus, '37-degraded-elements-v1.bpmn')));
+    expect(degraded).toContain('Elementos fora do perfil');
+    expect(degraded).toContain('warning(s):');
+    expect(degraded).toContain('Classe certificável: NENHUMA');
+
+    const structural = formatCertify(
+      await certifyCommand(join(fixtures, 'invalid-structure.bpmn')),
+    );
+    expect(structural).toContain('problema(s) estruturais');
+    expect(structural).toContain('STRUCT_MISSING_ATTR');
+  });
+
+  it('formats malformed and XXE rejections', async () => {
+    const malformed = formatCertify(await certifyCommand(join(fixtures, 'invalid-malformed.bpmn')));
+    expect(malformed).toContain('✖ XML mal-formado');
+    const xxe = formatCertify(await certifyCommand(join(fixtures, 'invalid-doctype.bpmn')));
+    expect(xxe).toContain('Rejeitado');
+    expect(xxe).toContain('XXE-safe');
+  });
+
+  it('writes the JSON report when asked', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bpmnr-certify-'));
+    const out = join(dir, 'certify-report.json');
+    const report = await certifyCommand(join(corpus, '01-linear-approval-v1.bpmn'), { report: out });
+    expect(report.roundTripLossless).toBe(true);
+    const { readFile } = await import('node:fs/promises');
+    expect(JSON.parse(await readFile(out, 'utf8')).achievedClass).toBe('descriptive');
   });
 });

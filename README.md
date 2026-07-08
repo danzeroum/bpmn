@@ -33,7 +33,8 @@ What makes it different from generic BPMN editors:
 | [`@bpmn-react/react`](packages/react) | React layer: SVG canvas, shapes, gestures (drag/connect/zoom/pan), palette, inspector, minimap, diff view. Peer deps: `react`, `react-dom`. |
 | [`@bpmn-react/registry`](packages/registry) | Headless version governance: queryable registry with temporal validity (`activeAt`), publication channels/environments, diff/lineage, dual changelog and execution pinning (`bindRun`). |
 | [`@bpmn-react/domain-example`](packages/domain-example) | Example domain plugin (squads, personas, gates, prompts, connectors, deliverables) showing how to extend the core. |
-| [`@bpmn-react/cli`](packages/cli) | Headless CLI: `validate`, `export`, `diff`. |
+| [`@bpmn-react/conformance`](packages/conformance) | OMG conformance tooling: interoperability corpus (50+ files), element-by-element matrix, `certifyXml`. |
+| [`@bpmn-react/cli`](packages/cli) | Headless CLI: `validate`, `certify`, `export`, `diff`, registry/governance commands. |
 | [`@bpmn-react/example`](packages/example) | Demo app (Vite) with the full designer. |
 
 ## Quick start
@@ -96,6 +97,14 @@ All packages are released in lockstep and follow **semantic versioning** from `1
   future 1.x releases.
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.
+
+## BPMN 2.0 conformance
+
+The import/export profile currently covers the OMG **Descriptive** class at 94% (100% lands
+with F7's `callActivity`) and the **Analytic** class at 88% — the full element-by-element
+matrix lives in [CONFORMANCE.md](CONFORMANCE.md) (generated; freshness enforced in CI) and is
+exercised by a 50+ file interoperability corpus. Third parties can verify their own documents
+with `bpmn-react certify <file.bpmn> [--require descriptive|analytic]`.
 
 ## Known limitations (summary)
 
