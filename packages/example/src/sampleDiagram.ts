@@ -6,6 +6,7 @@ import {
   type BpmnDiagram,
 } from '@bpmn-react/core';
 import { DOMAIN_NODE_TYPES } from '@bpmn-react/domain-example';
+import { DMN_NODE_TYPES } from '@bpmn-react/dmn';
 
 /** Content-production flow using the example domain vocabulary. */
 export function buildSampleDiagram(): BpmnDiagram {
@@ -281,5 +282,40 @@ export function buildDeadlockDiagram(): BpmnDiagram {
     f6: edge('f6', 'join', 'end'),
   };
 
+  return diagram;
+}
+
+/**
+ * Minimum viable DRD (Handoff 5 §4.1): the 4 DMN nodes + the 3 requirement
+ * edges, family step 185°. Loaded via `?drd=1`.
+ */
+export function buildDrdDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  for (const def of DMN_NODE_TYPES) registry.register(def);
+  const diagram = createDiagram({ id: 'demo-drd-credito', name: 'Decisão de crédito (DRD)', createdBy: 'demo' });
+  diagram.description = 'DRD mínimo viável: decisão + dado + autoridade + conhecimento.';
+  const v = diagram.version.id;
+
+  const make = (type: string, id: string, label: string, x: number, y: number, properties = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+
+  diagram.nodes = {
+    decision: make('dmn:decision', 'decision', 'Aprovar crédito?', 340, 80, {
+      decisionTable: { hitPolicy: 'F' },
+    }),
+    income: make('dmn:inputData', 'income', 'Renda mensal', 100, 260),
+    history: make('dmn:inputData', 'history', 'Histórico', 320, 300),
+    policy: make('dmn:knowledgeSource', 'policy', 'Política de crédito', 620, 240),
+    scorecard: make('dmn:businessKnowledgeModel', 'scorecard', 'Scorecard', 560, 100),
+  };
+
+  const req = (id: string, sourceId: string, targetId: string, type: string) =>
+    createEdge({ id, sourceId, targetId, type, versionId: v });
+  diagram.edges = {
+    r1: req('r1', 'income', 'decision', 'dmn:informationRequirement'),
+    r2: req('r2', 'history', 'decision', 'dmn:informationRequirement'),
+    r3: req('r3', 'scorecard', 'decision', 'dmn:knowledgeRequirement'),
+    r4: req('r4', 'policy', 'decision', 'dmn:authorityRequirement'),
+  };
   return diagram;
 }

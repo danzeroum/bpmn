@@ -79,8 +79,12 @@ export interface EdgeStyle {
   strokeWidth?: number;
   /** SVG dash array, e.g. '5,4'. Solid when omitted. */
   dash?: string;
-  /** Arrowhead at the target end. Default 'filled'. */
-  marker?: 'filled' | 'open' | 'double-chevron';
+  /** Arrowhead at the target end. Default 'filled'. 'disc' is the DMN
+   * authority-requirement tip (filled circle r 3.5). */
+  marker?: 'filled' | 'open' | 'double-chevron' | 'disc';
+  /** Routing override for this edge type: 'straight' draws a border-anchored
+   * line (DMN DRD requirement edges). Default: the editor's router. */
+  routing?: 'straight';
   /** Optional decoration drawn at the edge midpoint. */
   midDecoration?: 'purpose-chip' | 'check-disc';
 }
@@ -93,6 +97,19 @@ export interface EdgeStyle {
 export interface BpmnPlugin {
   id: string;
   name?: string;
+  /**
+   * The 40°-step of the 9-hue BTV wheel this domain/notation family claims
+   * (Handoff 5 §7.3-7.4, e.g. DMN = 185, Healthcare = 305; free: 65, 105).
+   * Two registered plugins on the same step trigger a build warning in
+   * `resolveEditorConfig`.
+   */
+  colorWheelDegree?: number;
+  /**
+   * Declared body color of the domain (a `var(--…, #hex)` expression). The
+   * plugin lint rejects gold and green as body colors — they are reserved
+   * for governance/value and approval/selection (§10.3).
+   */
+  bodyColor?: string;
   /** Domain node types registered into the editor's NodeTypeRegistry. */
   nodeTypes?: NodeTypeDefinition[];
   /** Shape components keyed by node type. */
