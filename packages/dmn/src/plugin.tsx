@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { BpmnPlugin } from '@bpmn-react/react';
 import { DMN_NODE_TYPES } from './model.js';
+import { decisionInspectorSection } from './decisionInspector.js';
 import {
   DmnBusinessKnowledgeModelShape,
   DmnDecisionShape,
@@ -65,6 +66,10 @@ export const dmnPlugin: BpmnPlugin = {
       routing: 'straight',
     },
   },
+  // Default DECISÃO · DMN section (diagram-scoped search/link/create). Hosts
+  // needing registry search or abrir→/diff wire their own:
+  // `{ ...dmnPlugin, inspectorSections: [decisionInspectorSection({...})] }`.
+  inspectorSections: [decisionInspectorSection()],
   paletteGroups: [{ id: 'dmn', label: 'DMN', badge: '185°' }],
   paletteItems: [
     {

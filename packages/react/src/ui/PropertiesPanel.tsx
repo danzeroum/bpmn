@@ -7,6 +7,7 @@ import {
 } from '@bpmn-react/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState } from '../contexts/CanvasContext.js';
+import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 
 /**
  * Inspector for the selected element: label, purpose (edges) and free-form
@@ -14,6 +15,7 @@ import { useCanvasState } from '../contexts/CanvasContext.js';
  */
 export function PropertiesPanel() {
   const { diagram } = useDiagram();
+  const { inspectorSections } = useEditorConfig();
   const selectedIds = useCanvasState((s) => s.selectedIds);
   const readOnly = useCanvasState((s) => s.readOnly);
 
@@ -33,6 +35,11 @@ export function PropertiesPanel() {
   return (
     <aside className="bpmnr-inspector" aria-label="Properties">
       {node && <NodeInspector node={node} readOnly={readOnly} />}
+      {/* Plugin sections (Handoff 5, wireframe 2d) — e.g. DMN "Decisão". */}
+      {node &&
+        inspectorSections
+          .filter((section) => section.appliesTo(node))
+          .map((section) => <section.component key={section.id} node={node} />)}
       {edge && <EdgeInspector edge={edge} readOnly={readOnly} />}
       {!node && !edge && <p className="bpmnr-inspector-empty">Element not found</p>}
     </aside>

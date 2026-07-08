@@ -6,7 +6,32 @@ import {
   type BpmnDiagram,
 } from '@bpmn-react/core';
 import { DOMAIN_NODE_TYPES } from '@bpmn-react/domain-example';
-import { DMN_NODE_TYPES } from '@bpmn-react/dmn';
+import { DMN_NODE_TYPES, type DecisionTable } from '@bpmn-react/dmn';
+
+/**
+ * The demo credit decision ("First · 4 regras · 2→1"), owned by the DRD
+ * diagram and advertised to the BPMN sample through the peek/inspector
+ * resolvers in App.tsx — one source of truth for both surfaces.
+ */
+export const DEMO_DECISION_TABLE: DecisionTable = {
+  hitPolicy: 'F',
+  inputs: [
+    { id: 'in_renda', label: 'Renda mensal', expression: 'renda', typeRef: 'number' },
+    { id: 'in_hist', label: 'Histórico', expression: 'historico', typeRef: 'string' },
+  ],
+  outputs: [{ id: 'out_res', label: 'Resultado', expression: 'resultado', typeRef: 'string' }],
+  rules: [
+    { id: 'r1', inputEntries: ['>= 8000', '"limpo"'], outputEntries: ['"aprovado"'] },
+    {
+      id: 'r2',
+      inputEntries: ['>= 4000', '"limpo"'],
+      outputEntries: ['"análise manual"'],
+      annotation: 'mesa de crédito',
+    },
+    { id: 'r3', inputEntries: ['-', '"negativado"'], outputEntries: ['"negado"'] },
+    { id: 'r4', inputEntries: ['-', '-'], outputEntries: ['"negado"'] },
+  ],
+};
 
 /** Content-production flow using the example domain vocabulary. */
 export function buildSampleDiagram(): BpmnDiagram {
@@ -299,9 +324,11 @@ export function buildDrdDiagram(): BpmnDiagram {
   const make = (type: string, id: string, label: string, x: number, y: number, properties = {}) =>
     createNode({ type, id, label, x, y, properties, versionId: v }, registry);
 
+  // Same id the sample's businessRuleTask points at (decisionRef): the DRD
+  // diagram IS the decision's own editing surface (F-B2).
   diagram.nodes = {
-    decision: make('dmn:decision', 'decision', 'Aprovar crédito?', 340, 80, {
-      decisionTable: { hitPolicy: 'F' },
+    'demo-decision-risk': make('dmn:decision', 'demo-decision-risk', 'Aprovar crédito?', 340, 80, {
+      decisionTable: DEMO_DECISION_TABLE,
     }),
     income: make('dmn:inputData', 'income', 'Renda mensal', 100, 260),
     history: make('dmn:inputData', 'history', 'Histórico', 320, 300),
@@ -312,10 +339,10 @@ export function buildDrdDiagram(): BpmnDiagram {
   const req = (id: string, sourceId: string, targetId: string, type: string) =>
     createEdge({ id, sourceId, targetId, type, versionId: v });
   diagram.edges = {
-    r1: req('r1', 'income', 'decision', 'dmn:informationRequirement'),
-    r2: req('r2', 'history', 'decision', 'dmn:informationRequirement'),
-    r3: req('r3', 'scorecard', 'decision', 'dmn:knowledgeRequirement'),
-    r4: req('r4', 'policy', 'decision', 'dmn:authorityRequirement'),
+    r1: req('r1', 'income', 'demo-decision-risk', 'dmn:informationRequirement'),
+    r2: req('r2', 'history', 'demo-decision-risk', 'dmn:informationRequirement'),
+    r3: req('r3', 'scorecard', 'demo-decision-risk', 'dmn:knowledgeRequirement'),
+    r4: req('r4', 'policy', 'demo-decision-risk', 'dmn:authorityRequirement'),
   };
   return diagram;
 }

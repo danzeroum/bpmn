@@ -96,6 +96,7 @@ const EXPECTED_EXPORTS = [
   'svgToString',
   'theme',
   'useCanvasState',
+  'useDismissal',
   'useCanvasStore',
   'useDiagram',
   'useEditorConfig',

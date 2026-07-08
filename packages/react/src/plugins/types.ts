@@ -17,6 +17,18 @@ export interface ShapeProps {
 
 export type ShapeComponent = ComponentType<ShapeProps>;
 
+/**
+ * A plugin-contributed inspector section (Handoff 5 wireframe 2d): rendered
+ * inside the PropertiesPanel under the built-in fields whenever the selected
+ * node matches `appliesTo` — e.g. the DMN "Decisão" section on
+ * businessRuleTask.
+ */
+export interface InspectorSection {
+  id: string;
+  appliesTo: (node: BpmnNode) => boolean;
+  component: ComponentType<{ node: BpmnNode }>;
+}
+
 export interface PaletteItem {
   id: string;
   label: string;
@@ -116,6 +128,8 @@ export interface BpmnPlugin {
   shapes?: Record<string, ShapeComponent>;
   /** Extra palette entries. */
   paletteItems?: PaletteItem[];
+  /** Inspector sections rendered for matching selected nodes. */
+  inspectorSections?: InspectorSection[];
   /** Palette section headers for this plugin's items. */
   paletteGroups?: PaletteGroup[];
   /** Visual styles for domain edge types, keyed by `edge.type`. */

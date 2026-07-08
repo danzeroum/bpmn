@@ -1,5 +1,14 @@
 import { useEffect } from 'react';
-import { compositeCommand, moveNodeCommand, removeEdgeCommand, removeNodeCommand } from '@bpmn-react/core';
+import {
+  childrenOf,
+  compositeCommand,
+  getBoundingBox,
+  moveNodeCommand,
+  nodeParentId,
+  removeEdgeCommand,
+  removeNodeCommand,
+} from '@bpmn-react/core';
+import { fitViewport } from '../canvas/viewport.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import type { Interactions } from '../canvas/useInteractions.js';
@@ -54,8 +63,47 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
       }
 
       if (event.key === 'Escape') {
-        interactions.cancelGestures();
-        store.setState({ selectedIds: [] });
+        // Single dismissal stack (Handoff 5 §11.1): overlay on top first,
+        // then selection/gestures, and only then one breadcrumb level up
+        // (selection preserved on the way up — aceite 10.5.3).
+        const { dismissals, selectedIds, drillId } = store.getState();
+        const top = dismissals[dismissals.length - 1];
+        if (top) {
+          store.setState({ dismissals: dismissals.slice(0, -1) });
+          top.close();
+          return;
+        }
+        if (
+          selectedIds.length > 0 ||
+          state.dragState ||
+          state.connectState ||
+          state.selectionBox ||
+          state.resizeState
+        ) {
+          interactions.cancelGestures();
+          store.setState({ selectedIds: [] });
+          return;
+        }
+        if (drillId !== null) {
+          const current = diagram.nodes[drillId];
+          const parentId = current ? nodeParentId(current) : undefined;
+          const nextDrill = parentId ?? null;
+          const scope =
+            nextDrill === null
+              ? Object.values(diagram.nodes).filter((n) => nodeParentId(n) === undefined)
+              : childrenOf(diagram, nextDrill);
+          store.setState({
+            drillId: nextDrill,
+            ...(scope.length > 0
+              ? {
+                  viewport: fitViewport(
+                    getBoundingBox(scope),
+                    state.viewport.width / state.viewport.height,
+                  ),
+                }
+              : {}),
+          });
+        }
         return;
       }
 
