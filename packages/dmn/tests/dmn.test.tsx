@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import {
   createDiagram,
   createEdge,
@@ -8,7 +8,7 @@ import {
   normalizeForDiff,
   type BpmnDiagram,
 } from '@bpmn-react/core';
-import { BpmnViewer, resolveEditorConfig } from '@bpmn-react/react';
+import { BpmnDesigner, BpmnViewer, Palette, resolveEditorConfig } from '@bpmn-react/react';
 import { DMN_NODE_TYPES, DmnXmlConverter, dmnPlugin } from '../src/index.js';
 
 /** Reference DRD: the 4 §4.1 nodes + the 3 requirement edges. */
@@ -158,5 +158,85 @@ describe('color wheel contract (aceite 10.5.10)', () => {
     resolveEditorConfig([dmnPlugin]);
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
+  });
+});
+
+describe('coverage of edge cases', () => {
+  it('renders the palette icons and the selected state of every DRD shape', () => {
+    const { container } = render(
+      <BpmnDesigner diagram={drdDiagram()} plugins={[dmnPlugin]}>
+        <Palette />
+      </BpmnDesigner>,
+    );
+    // Palette icons (plugin.tsx Icon) are in the DOM.
+    expect(container.querySelectorAll('.bpmnr-palette svg').length).toBeGreaterThanOrEqual(4);
+    // Selecting each node exercises the selected stroke branch.
+    for (const id of ['decision', 'income', 'policy', 'scorecard']) {
+      const node = container.querySelector(`[data-node-id="${id}"]`)!;
+      fireEvent.pointerDown(node, { button: 0 });
+      fireEvent.pointerUp(container.querySelector('svg.bpmnr-canvas')!, { button: 0 });
+      expect(container.querySelector(`[data-node-id="${id}"][data-selected]`)).not.toBeNull();
+    }
+  });
+
+  it('round-trips closed nodes, custom properties and explicit waypoints', () => {
+    const converter = () => new DmnXmlConverter();
+    const diagram = drdDiagram();
+    diagram.id = 'id with spaces!';
+    diagram.nodes.policy = {
+      ...diagram.nodes.policy,
+      createdInVersion: 'v2',
+      removedInVersion: 'v3',
+      properties: { note: 'legacy', weight: 3 },
+    };
+    diagram.edges.info = {
+      ...diagram.edges.info,
+      waypoints: [
+        { x: 150, y: 222 },
+        { x: 300, y: 90 },
+      ],
+    };
+    const xml = converter().toXml(diagram);
+    expect(xml).toContain('id="Definitions_id_with_spaces_"');
+    const { diagram: imported, warnings } = converter().fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(imported.nodes.policy.removedInVersion).toBe('v3');
+    expect(imported.nodes.policy.createdInVersion).toBe('v2');
+    expect(imported.nodes.policy.properties).toEqual({ note: 'legacy', weight: 3 });
+    expect(imported.edges.info.waypoints).toEqual(diagram.edges.info.waypoints);
+    expect(normalizeForDiff(imported)).toEqual(normalizeForDiff(diagram));
+    expect(converter().toXml(imported)).toBe(xml);
+  });
+
+  it('warns on unsupported elements, hrefless requirements, bad bounds and dangling refs', () => {
+    const NS = 'https://www.omg.org/spec/DMN/20191111/MODEL/';
+    const xml = `<dmn:definitions xmlns:dmn="${NS}" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" id="D" name="Messy">
+      <dmn:itemDefinition id="unsupported" />
+      <dmn:decision id="d1" name="Decide">
+        <dmn:informationRequirement id="bad" />
+        <dmn:informationRequirement id="dangling"><dmn:requiredInput href="#ghost" /></dmn:informationRequirement>
+      </dmn:decision>
+      <dmndi:DMNDI><dmndi:DMNDiagram id="Dg">
+        <dmndi:DMNShape id="d1_di" dmnElementRef="d1"><dc:Bounds x="oops" y="1" width="2" height="3" /></dmndi:DMNShape>
+      </dmndi:DMNDiagram></dmndi:DMNDI>
+    </dmn:definitions>`;
+    const { diagram, warnings } = new DmnXmlConverter().fromXml(xml);
+    expect(warnings.some((w) => w.includes('itemDefinition'))).toBe(true);
+    expect(warnings.some((w) => w.includes('without a valid href'))).toBe(true);
+    expect(warnings.some((w) => w.includes('Invalid bounds'))).toBe(true);
+    expect(warnings.some((w) => w.includes('not present in the document'))).toBe(true);
+    expect(diagram.edges.dangling.sourceId).toBe('ghost');
+    // Non-JSON property values fall back to the raw string.
+    const raw = `<dmn:definitions xmlns:dmn="${NS}" id="D2" name="Raw">
+      <dmn:decision id="d2" name="X"><dmn:extensionElements><bpmnr:property xmlns:bpmnr="http://bpmn-react.io/schema/1.0" name="note" value="not-json{" /></dmn:extensionElements></dmn:decision>
+    </dmn:definitions>`;
+    const { diagram: rawImport } = new DmnXmlConverter().fromXml(raw);
+    expect(rawImport.nodes.d2.properties.note).toBe('not-json{');
+  });
+
+  it('rejects a non-definitions root', () => {
+    expect(() => new DmnXmlConverter().fromXml('<dmn:decision id="x" />')).toThrow(
+      'Expected <definitions>',
+    );
   });
 });
