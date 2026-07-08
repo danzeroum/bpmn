@@ -30,6 +30,7 @@ export default defineConfig({
         'packages/domain-example/src/**': { statements: 90, branches: 75, functions: 90, lines: 90 },
         'packages/cli/src/**': { statements: 85, branches: 65, functions: 95, lines: 85 },
         'packages/conformance/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
+        'packages/soundness/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
         'packages/react/src/**': { statements: 65, branches: 60, functions: 65, lines: 65 },
       },
     },

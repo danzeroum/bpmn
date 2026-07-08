@@ -38,6 +38,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'soundness',
+      include: ['packages/soundness/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'react',
       include: ['packages/react/tests/**/*.test.{ts,tsx}'],
       environment: 'jsdom',
