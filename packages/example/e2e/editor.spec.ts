@@ -212,9 +212,12 @@ test('records audit entries with a verifiable hash chain', async ({ page }) => {
 test('validates the diagram from the toolbar', async ({ page }) => {
   await page.getByRole('button', { name: 'Validate diagram' }).click();
   const panel = page.getByRole('status', { name: 'Validation result' });
-  // Sample flow has no start event (domain diagram) → warning listed, no errors
+  // Sample flow has no start event (domain diagram) → warnings listed. The
+  // ONLY error is intentional (F-A): the shared-billing call activity is not
+  // registered in the demo registry (CALL_REF_MISSING).
   await expect(panel).toContainText('warning');
-  await expect(panel).not.toContainText('error');
+  await expect(panel).toContainText('no version in effect');
+  expect(await panel.locator('li[data-severity="error"]').count()).toBe(1);
 });
 
 test('exports BPMN XML with DI', async ({ page }) => {
@@ -277,4 +280,21 @@ test('rejects invalid XML imports with a readable error', async ({ page }) => {
   expect(await dialogMessage).toContain('Import failed');
   // The sample diagram is still intact
   await expect(page.locator('[data-node-type="btv:squad"]')).toBeVisible();
+});
+
+test('businessRuleTask shows the decision-link badge; broken call ref shows its code (F-A)', async ({
+  page,
+}) => {
+  // The sample's 'Score risk' carries decisionRef → gold badge (visual only).
+  const badge = page.locator('[data-node-id="score"] [data-decision-link]');
+  await expect(badge).toBeVisible();
+
+  // Validate: the demo registry is empty, so 'Billing (shared)' resolves to
+  // CALL_REF_MISSING — error badge + stable code below the shape.
+  await page.getByRole('button', { name: 'Validate diagram' }).click();
+  const call = page.locator('[data-node-id="billing"]');
+  await expect(call).toHaveAttribute('data-node-issue-state', 'error');
+  await expect(call.locator('[data-node-issue-code]')).toHaveText('CALL_REF_MISSING');
+  await page.getByRole('button', { name: 'Close validation' }).click();
+  await expect(page.locator('[data-node-issue]')).toHaveCount(0);
 });

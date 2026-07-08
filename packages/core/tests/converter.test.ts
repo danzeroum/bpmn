@@ -889,3 +889,28 @@ describe('BpmnXmlConverter — call activities & data elements (F7-3)', () => {
     expect(diagram.edges.Din_bad).toBeUndefined();
   });
 });
+
+describe('BpmnXmlConverter — businessRuleTask (Handoff 5 F-A)', () => {
+  it('imports natively and round-trips the decisionRef losslessly', () => {
+    const converter = () => new BpmnXmlConverter();
+    const diagram = createDiagram({ name: 'Rules', id: 'rules' });
+    diagram.nodes = {
+      score: createNode({
+        type: 'businessRuleTask',
+        id: 'score',
+        label: 'Score risk',
+        x: 10,
+        y: 10,
+        properties: { decisionRef: 'decision-risk' },
+      }),
+    };
+    const xml = converter().toXml(diagram);
+    expect(xml).toContain('<bpmn:businessRuleTask id="score"');
+    const { diagram: imported, warnings } = converter().fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(imported.nodes.score.type).toBe('businessRuleTask');
+    expect(imported.nodes.score.properties.decisionRef).toBe('decision-risk');
+    expect(normalizeForDiff(imported)).toEqual(normalizeForDiff(diagram));
+    expect(converter().toXml(imported)).toBe(xml);
+  });
+});

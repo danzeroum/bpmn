@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { AuditLedger, BpmnXmlConverter, type BpmnDiagram } from '@bpmn-react/core';
 import { BpmnEditor, resolveEditorConfig, useDiagram, type BpmnPlugin } from '@bpmn-react/react';
 import { domainExamplePlugin } from '@bpmn-react/domain-example';
+import { callActivityBindingRule, VersionRegistry } from '@bpmn-react/registry';
 import { soundnessPromotionRule, soundnessRules } from '@bpmn-react/soundness';
 import { buildDeadlockDiagram, buildSampleDiagram, buildStressDiagram } from './sampleDiagram.js';
 import { LifecyclePanel } from './LifecyclePanel.js';
@@ -27,7 +28,16 @@ const soundnessPlugin: BpmnPlugin = {
   lifecycleConfig: { promotionRules: [soundnessPromotionRule({ locale: 'pt' })] },
 };
 
-const PLUGINS = [domainExamplePlugin, observabilityPlugin, soundnessPlugin];
+// Call-activity binding (Handoff 5 §3.2): the demo registry starts empty, so
+// the sample's 'Billing (shared)' reference resolves to CALL_REF_MISSING on
+// Validate — red stroke + badge + code on the node.
+const demoProcessRegistry = new VersionRegistry();
+const bindingPlugin: BpmnPlugin = {
+  id: 'demo/call-binding',
+  validationRules: [callActivityBindingRule(demoProcessRegistry)],
+};
+
+const PLUGINS = [domainExamplePlugin, observabilityPlugin, soundnessPlugin, bindingPlugin];
 
 export function App() {
   const [diagram, setDiagram] = useState<BpmnDiagram>(() => {

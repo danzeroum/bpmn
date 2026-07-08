@@ -15,6 +15,7 @@ import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { fitViewport, zoomViewportAt } from '../canvas/viewport.js';
 import { downloadFile, exportPng, exportSvg } from './exporters.js';
 import { clearAutosave } from '../state/autosave.js';
+import { GovernanceBreadcrumb, type GovernanceBreadcrumbLevel } from './GovernanceBreadcrumb.js';
 
 export interface ToolbarProps {
   /** Extra buttons rendered at the end of the toolbar. */
@@ -54,12 +55,12 @@ export function Toolbar({ extra }: ToolbarProps) {
     setIssues(found);
     // Shape-state badges (pendência §5): mark offending nodes on the canvas
     // while the issues panel is open; errors win over warnings, info stays
-    // panel-only.
-    const badges: Record<string, 'error' | 'warning'> = {};
+    // panel-only. The issue code rides along (Handoff 5 §3.2).
+    const badges: Record<string, { severity: 'error' | 'warning'; code?: string }> = {};
     for (const issue of found) {
       if (!issue.nodeId || issue.severity === 'info') continue;
       if (issue.severity === 'error' || badges[issue.nodeId] === undefined) {
-        badges[issue.nodeId] = issue.severity;
+        badges[issue.nodeId] = { severity: issue.severity, code: issue.code };
       }
     }
     store.setState({ issueBadges: badges });
@@ -104,9 +105,25 @@ export function Toolbar({ extra }: ToolbarProps) {
 
   const findSvg = () => document.querySelector<SVGSVGElement>('svg.bpmnr-canvas');
 
-  // Drill-down breadcrumb (F7-2): the chain of sub-processes from the root to
-  // the current view. Empty when looking at the whole process.
+  // Governance breadcrumb (F7-2 → Handoff 5 §10.3): the chain of
+  // sub-processes from the root to the current view, each level carrying the
+  // diagram's semver + vigência seal. Empty when looking at the whole
+  // process. Navigating UP preserves the selection (aceite 10.5.3).
   const trail = drillId !== null ? breadcrumbTrail(diagram, drillId) : [];
+  const breadcrumbLevels: GovernanceBreadcrumbLevel[] = [
+    {
+      id: null,
+      label: diagram.name,
+      semanticVersion: diagram.version.semanticVersion,
+      status: diagram.version.status,
+    },
+    ...trail.map((node) => ({
+      id: node.id,
+      label: node.label,
+      semanticVersion: diagram.version.semanticVersion,
+      status: diagram.version.status,
+    })),
+  ];
 
   const drillTo = (targetId: string | null) => {
     const scope =
@@ -117,7 +134,6 @@ export function Toolbar({ extra }: ToolbarProps) {
     const aspect = svg && svg.clientHeight > 0 ? svg.clientWidth / svg.clientHeight : 1.5;
     store.setState({
       drillId: targetId,
-      selectedIds: [],
       ...(scope.length > 0 ? { viewport: fitViewport(getBoundingBox(scope), aspect) } : {}),
     });
   };
@@ -154,27 +170,11 @@ export function Toolbar({ extra }: ToolbarProps) {
       {trail.length > 0 && (
         <>
           <span className="bpmnr-toolbar-sep" />
-          <nav className="bpmnr-breadcrumb" aria-label="Sub-process navigation">
-            <button type="button" onClick={() => drillTo(null)} aria-label="Back to process">
-              {diagram.name}
-            </button>
-            {trail.map((node, index) => (
-              <span key={node.id} className="bpmnr-breadcrumb-item">
-                <span className="bpmnr-breadcrumb-sep" aria-hidden="true">
-                  ›
-                </span>
-                {index === trail.length - 1 ? (
-                  <span className="bpmnr-breadcrumb-current" aria-current="page">
-                    {node.label}
-                  </span>
-                ) : (
-                  <button type="button" onClick={() => drillTo(node.id)}>
-                    {node.label}
-                  </button>
-                )}
-              </span>
-            ))}
-          </nav>
+          <GovernanceBreadcrumb
+            levels={breadcrumbLevels}
+            onNavigate={(id) => drillTo(id)}
+            ariaLabel="Sub-process navigation"
+          />
         </>
       )}
       <span className="bpmnr-toolbar-sep" />

@@ -4,7 +4,7 @@ import { createDiagram, createNode } from '@bpmn-react/core';
 import { BpmnViewer } from '../src/index.js';
 
 /**
- * Renders every one of the 24 built-in BPMN shapes at least once and checks
+ * Renders every one of the 25 built-in BPMN shapes at least once and checks
  * a couple of type-specific visual properties, so a rendering refactor that
  * silently breaks an untouched shape is caught.
  */
@@ -147,6 +147,15 @@ const EXPECTATIONS: Expectation[] = [
     },
   },
   {
+    type: 'businessRuleTask',
+    label: 'Decide',
+    check: (root) => {
+      // Body + table-glyph frame + header band; no badge without decisionRef.
+      expect(root.querySelectorAll('rect')).toHaveLength(3);
+      expect(root.querySelector('[data-decision-link]')).toBeNull();
+    },
+  },
+  {
     type: 'callActivity',
     label: 'Invoke',
     check: (root) => {
@@ -229,10 +238,11 @@ describe('built-in shapes render correctly', () => {
     expect(msg.querySelectorAll('rect').length).toBeGreaterThan(0);
   });
 
-  it('covers exactly the 24 registered built-in types (fails loudly if one is added without a fixture)', () => {
+  it('covers exactly the 25 registered built-in types (fails loudly if one is added without a fixture)', () => {
     expect(EXPECTATIONS.map((e) => e.type).sort()).toEqual(
       [
         'boundaryEvent',
+        'businessRuleTask',
         'callActivity',
         'dataObject',
         'dataStore',

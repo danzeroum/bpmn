@@ -56,6 +56,11 @@ export function buildSampleDiagram(): BpmnDiagram {
   });
   // Data store fed by the refund step (dotted data association).
   const returnsDb = make('dataStore', 'returnsDb', 'Returns DB', 1270, 355);
+  // Business rule task (Handoff 5 F-A): the gold badge marks the bound DMN
+  // decision (visual until F-B2 wires navigation).
+  const score = make('businessRuleTask', 'score', 'Score risk', 60, 420, {
+    decisionRef: 'demo-decision-risk',
+  });
 
   diagram.nodes = {
     squad,
@@ -71,6 +76,7 @@ export function buildSampleDiagram(): BpmnDiagram {
     returnsRefund: refund,
     billing,
     returnsDb,
+    score,
   };
 
   const edge = (
@@ -110,6 +116,7 @@ export function buildSampleDiagram(): BpmnDiagram {
     e9: edge('e9', 'gate', 'billing', 'sequenceFlow', 'Approved work triggers shared billing'),
     // The timeout handler leads somewhere (soundness: SND_BOUNDARY_NO_OUTFLOW).
     e10: edge('e10', 'publishTimeout', 'reviewer', 'feedback', 'Timeout notifies the reviewer'),
+    e11: edge('e11', 'squad', 'score', 'sequenceFlow', 'Squad scores the request risk'),
     // Inner flow — same scope (both children of the returns sub-process).
     r1: edge('r1', 'returnsInspect', 'returnsRefund', 'sequenceFlow', 'Approved return is refunded'),
     // Data association: refund step writes to the returns store (may cross

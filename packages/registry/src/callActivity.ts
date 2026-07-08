@@ -1,4 +1,4 @@
-import { calledElementOf, type BpmnDiagram } from '@bpmn-react/core';
+import { calledElementOf, type BpmnDiagram, type ValidationRule } from '@bpmn-react/core';
 import type { VersionRegistry } from './VersionRegistry.js';
 import type { DateInput, PublicationTarget, RegistryEntry } from './types.js';
 
@@ -87,4 +87,31 @@ function coversWindow(
   if (!effectiveFrom) return false;
   if (atMs < toMillis(effectiveFrom)) return false;
   return effectiveUntil === undefined || atMs < toMillis(effectiveUntil);
+}
+
+/**
+ * Validation rule for broken call-activity references (Handoff 5 §3.2):
+ * a callActivity whose `calledElement` is missing, unregistered, or has no
+ * version in effect at `at` gets the stable code `CALL_REF_MISSING`
+ * (error). Plug it into the editor as a plugin `validationRules` entry —
+ * the canvas issue overlay paints the red stroke + badge + code.
+ */
+export function callActivityBindingRule(
+  registry: VersionRegistry,
+  at?: DateInput,
+  target?: PublicationTarget,
+): ValidationRule {
+  return (diagram) => {
+    const when = at ?? new Date().toISOString();
+    return resolveCallActivities(diagram, registry, when, target)
+      .filter((resolution) => resolution.entry === undefined)
+      .map((resolution) => ({
+        code: 'CALL_REF_MISSING',
+        severity: 'error' as const,
+        message: resolution.calledElement
+          ? `Call activity ${resolution.nodeId} references "${resolution.calledElement}", which has no version in effect`
+          : `Call activity ${resolution.nodeId} has no calledElement`,
+        nodeId: resolution.nodeId,
+      }));
+  };
 }

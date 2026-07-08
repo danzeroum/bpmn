@@ -23,10 +23,7 @@ describe('certifyXml over the corpus (aceite A3)', () => {
       expect(report.structuralIssues, name).toEqual([]);
       expect(report.roundTripLossless, name).toBe(true);
       if (name.includes('degraded-elements')) {
-        expect(report.unsupportedElements, name).toEqual([
-          'businessRuleTask',
-          'complexGateway',
-        ]);
+        expect(report.unsupportedElements, name).toEqual(['complexGateway']);
         expect(report.achievedClass, name).toBe('none');
       } else if (name.includes('dangling-reference')) {
         // Imports with warnings but stays certifiable — the ghost edge is

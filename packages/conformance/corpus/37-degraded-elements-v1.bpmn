@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Interoperability corpus (bpmn-react). Structural equivalent of: Signavio-style export with elements outside the profile.
-  Pattern: complexGateway + businessRuleTask degrade with warnings; callActivity imports natively (F7-3) (variant 1).
+  Pattern: complexGateway degrades with a warning; businessRuleTask (F-A) and callActivity (F7-3) import natively (variant 1).
   Generated content (scripts/gen-corpus.mjs) - no proprietary material.
   License: Apache-2.0.
 -->

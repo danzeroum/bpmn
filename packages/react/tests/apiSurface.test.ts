@@ -23,6 +23,7 @@ const EXPECTED_EXPORTS = [
   'BpmnDesigner',
   'BpmnEditor',
   'BpmnViewer',
+  'BusinessRuleTaskShape',
   'CanvasProvider',
   'ConnectedEdge',
   'ConnectedNode',
@@ -43,6 +44,7 @@ const EXPECTED_EXPORTS = [
   'EndEventShape',
   'EventBasedGatewayShape',
   'ExclusiveGatewayShape',
+  'GovernanceBreadcrumb',
   'GridLayer',
   'GroupShape',
   'InclusiveGatewayShape',
@@ -73,6 +75,7 @@ const EXPECTED_EXPORTS = [
   'ShapeLabel',
   'StartEventShape',
   'StatusBadge',
+  'SUBPROCESS_TITLE_HEIGHT',
   'SubProcessShape',
   'TaskShape',
   'TextAnnotationShape',
@@ -107,10 +110,11 @@ describe('@bpmn-react/react public API surface', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });
 
-  it('every one of the 24 built-in shapes is registered in BUILT_IN_SHAPES', () => {
+  it('every one of the 25 built-in shapes is registered in BUILT_IN_SHAPES', () => {
     expect(Object.keys(api.BUILT_IN_SHAPES).sort()).toEqual(
       [
         'boundaryEvent',
+        'businessRuleTask',
         'callActivity',
         'dataObject',
         'dataStore',

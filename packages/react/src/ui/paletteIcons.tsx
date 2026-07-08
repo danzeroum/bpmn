@@ -129,6 +129,12 @@ export const CORE_PALETTE_ICONS: Record<string, ReactNode> = {
       <path d="M 9 11.3 V 13.2 M 8.3 12.25 H 9.7" strokeWidth={1.1} />
     </Icon>
   ),
+  businessRuleTask: (
+    <Icon>
+      <rect x={2.5} y={4.75} width={13} height={8.5} rx={2} />
+      <path d="M 2.5 8 H 15.5 M 7 8 V 13.25" strokeWidth={1.2} />
+    </Icon>
+  ),
   callActivity: (
     <Icon strokeWidth={2.2}>
       <rect x={2.5} y={4} width={13} height={10} rx={2} />

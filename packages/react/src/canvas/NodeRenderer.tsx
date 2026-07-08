@@ -72,6 +72,7 @@ function NodeRendererInner({
       data-node-id={node.id}
       data-node-type={node.type}
       data-selected={selected || undefined}
+      data-node-issue-state={issueBadge?.severity}
       role="button"
       aria-label={`${node.type}: ${node.label}`}
       opacity={closed ? 0.45 : 1}
@@ -139,7 +140,14 @@ function NodeRendererInner({
       {node.type === 'subProcess' && (
         <SubProcessControls node={rendered} editable={editable} />
       )}
-      {issueBadge && <IssueBadge width={rendered.width} severity={issueBadge} />}
+      {issueBadge && (
+        <IssueBadge
+          width={rendered.width}
+          height={rendered.height}
+          severity={issueBadge.severity}
+          code={issueBadge.code}
+        />
+      )}
       {/* Ports live in the DOM whenever the node is editable; CSS fades them
           in on hover/selection (craft pack A2 — no per-node hover state). */}
       {editable && <ConnectionPorts node={rendered} interactions={interactions} />}
@@ -224,24 +232,51 @@ function ResizeHandles({
 
 /**
  * Validation/soundness badge (shape-state pendência §5): a `!` disc pinned
- * to the node's top-right corner while `canvasStore.issueBadges` marks it.
- * Stripped from SVG/PNG exports like the other editor chrome.
+ * to the node's top-right corner while `canvasStore.issueBadges` marks it,
+ * plus the stable issue code mono 9px below the shape when the badge
+ * carries one (Handoff 5 §3.2, e.g. CALL_REF_MISSING). Stripped from
+ * SVG/PNG exports like the other editor chrome.
  */
-function IssueBadge({ width, severity }: { width: number; severity: 'error' | 'warning' }) {
+function IssueBadge({
+  width,
+  height,
+  severity,
+  code,
+}: {
+  width: number;
+  height: number;
+  severity: 'error' | 'warning';
+  code?: string;
+}) {
   const fill =
     severity === 'error' ? 'var(--bpmnr-danger, #b3372f)' : 'var(--bpmnr-warning, #7a611e)';
   return (
-    <g data-node-issue={severity} transform={`translate(${width - 2}, 2)`} pointerEvents="none">
-      <circle r={9} fill={fill} stroke="var(--bpmnr-canvas-bg, #faf9f6)" strokeWidth={1.5} />
-      <text
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontSize={12}
-        fontWeight={700}
-        fill="#ffffff"
-      >
-        !
-      </text>
+    <g data-node-issue={severity} pointerEvents="none">
+      <g transform={`translate(${width - 2}, 2)`}>
+        <circle r={9} fill={fill} stroke="var(--bpmnr-canvas-bg, #faf9f6)" strokeWidth={1.5} />
+        <text
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={12}
+          fontWeight={700}
+          fill="#ffffff"
+        >
+          !
+        </text>
+      </g>
+      {code && (
+        <text
+          data-node-issue-code
+          x={width / 2}
+          y={height + 14}
+          textAnchor="middle"
+          fontSize={9}
+          fontFamily="ui-monospace, monospace"
+          fill={fill}
+        >
+          {code}
+        </text>
+      )}
     </g>
   );
 }
