@@ -34,6 +34,7 @@ What makes it different from generic BPMN editors:
 | [`@bpmn-react/registry`](packages/registry) | Headless version governance: queryable registry with temporal validity (`activeAt`), publication channels/environments, diff/lineage, dual changelog and execution pinning (`bindRun`). |
 | [`@bpmn-react/domain-example`](packages/domain-example) | Example domain plugin (squads, personas, gates, prompts, connectors, deliverables) showing how to extend the core. |
 | [`@bpmn-react/conformance`](packages/conformance) | OMG conformance tooling: interoperability corpus (50+ files), element-by-element matrix, `certifyXml`. |
+| [`@bpmn-react/soundness`](packages/soundness) | Structural soundness analysis: deadlock/livelock/dead-branch rules over the process graph (O(V+E), scope-aware), plugin-compatible. |
 | [`@bpmn-react/cli`](packages/cli) | Headless CLI: `validate`, `certify`, `export`, `diff`, registry/governance commands. |
 | [`@bpmn-react/example`](packages/example) | Demo app (Vite) with the full designer. |
 

@@ -10,7 +10,8 @@ import {
 } from '../model/types.js';
 import type { NodeTypeRegistry } from '../model/registry.js';
 
-export type IssueSeverity = 'error' | 'warning';
+/** `info` never affects validity — it flags readability/model-hygiene noise. */
+export type IssueSeverity = 'error' | 'warning' | 'info';
 
 export interface ValidationIssue {
   code: string;

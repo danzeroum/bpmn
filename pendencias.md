@@ -141,6 +141,14 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   origem/URL/licença, no `corpus.test.ts` e no snapshot de warnings; onde houver original
   genuíno do mesmo padrão, ele substitui o equivalente gerado.
 
+- **Soundness — heurísticas estruturais (PR-C1):** `SND_DEADLOCK_JOIN` usa o *split mais
+  próximo* por ramo de entrada do AND-join (backward BFS até o primeiro nó com 2+ saídas) em
+  vez de análise de dominância completa; `SND_UNMATCHED_SPLIT` procura qualquer join do mesmo
+  tipo alcançável a jusante. Ambas O(V+E), conforme o §3 do handoff (sem state space). Casos
+  patológicos de gateways aninhados podem escapar da heurística — se um falso negativo real
+  aparecer no uso, promover a análise de dominadores (ainda O(V+E) com Lengauer-Tarjan) em PR
+  própria.
+
 ## 8. Protótipos (Handoff 3) — decisões de escopo em aberto
 
 - **Handoff 2 recebido e reconciliado** (chegou via mensagem após as PRs 4–6; a pasta

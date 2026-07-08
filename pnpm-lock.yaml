@@ -129,6 +129,12 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/soundness:
+    dependencies:
+      '@bpmn-react/core':
+        specifier: workspace:*
+        version: link:../core
+
 packages:
 
   '@adobe/css-tools@4.5.0':
