@@ -29,7 +29,7 @@ test('renders the sample diagram with domain shapes', async ({ page }) => {
     'd',
     / Q /,
   );
-  await expect(page.getByRole('status', { name: /Version/ })).toContainText('Draft');
+  await expect(page.getByRole('status', { name: /Version/ })).toContainText('RASCUNHO');
 });
 
 test('creates a node from the palette and undoes/redoes it', async ({ page }) => {
@@ -152,9 +152,11 @@ test('promotes through the lifecycle with multi-role approval and locks active d
 
   // draft → test → candidate
   await page.getByRole('button', { name: '→ test' }).click();
-  await expect(badge).toContainText('Test');
+  await expect(badge).toContainText('TESTE INTERNO');
   await page.getByRole('button', { name: '→ candidate' }).click();
-  await expect(badge).toContainText('Candidate');
+  await expect(badge).toContainText('CANDIDATA');
+  // The candidate meta reflects the engine's quorum (2 roles by default).
+  await expect(badge).toContainText('aguarda 2 aprovações');
 
   // Promotion to active without approvals must fail
   await page.getByRole('button', { name: '→ active' }).click();
@@ -166,7 +168,8 @@ test('promotes through the lifecycle with multi-role approval and locks active d
   await page.getByRole('button', { name: 'Approve as compliance' }).click();
 
   await page.getByRole('button', { name: '→ active' }).click();
-  await expect(badge).toContainText('Active');
+  await expect(badge).toContainText('ATIVA');
+  await expect(badge).toContainText('vigente desde');
 
   // Editing an active diagram is vetoed
   await page.getByRole('button', { name: 'Add Task' }).click();
@@ -174,7 +177,7 @@ test('promotes through the lifecycle with multi-role approval and locks active d
 
   // Cloning restores editability with a bumped version
   await page.getByRole('button', { name: 'New draft from this version' }).click();
-  await expect(badge).toContainText('Draft');
+  await expect(badge).toContainText('RASCUNHO');
   await expect(badge).toContainText('v0.2.0');
 });
 

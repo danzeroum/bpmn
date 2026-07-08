@@ -28,13 +28,14 @@ export interface VersionTimelineProps {
   order?: 'desc' | 'asc';
 }
 
+/** Canonical seal colors (Handoff 3 §5) — same tokens as the StatusBadge. */
 const STATUS_COLOR: Record<VersionStatus, { bg: string; fg: string }> = {
-  draft: { bg: 'var(--bpmnr-status-draft, #ece9e2)', fg: '#5b544a' },
-  test: { bg: 'var(--bpmnr-status-test, #e3ecf7)', fg: '#33567e' },
-  candidate: { bg: 'var(--bpmnr-status-candidate, #f7f0dc)', fg: '#7a611e' },
-  active: { bg: 'var(--bpmnr-status-active, #dff0e6)', fg: '#1a6a54' },
-  deprecated: { bg: 'var(--bpmnr-status-deprecated, #f7e6e0)', fg: '#9a4a2e' },
-  retired: { bg: 'var(--bpmnr-status-retired, #e8e6e4)', fg: '#75706b' },
+  draft: { bg: 'var(--bpmnr-status-draft, #faf9f6)', fg: 'var(--bpmnr-status-draft-fg, #44403a)' },
+  test: { bg: 'var(--bpmnr-status-test, #e3ecf7)', fg: 'var(--bpmnr-status-test-fg, #33567e)' },
+  candidate: { bg: 'var(--bpmnr-status-candidate, #f6edd4)', fg: 'var(--bpmnr-status-candidate-fg, #7a611e)' },
+  active: { bg: 'var(--bpmnr-status-active, #dff0e6)', fg: 'var(--bpmnr-status-active-fg, #1a6a54)' },
+  deprecated: { bg: 'var(--bpmnr-status-deprecated, #f7e6e0)', fg: 'var(--bpmnr-status-deprecated-fg, #b3372f)' },
+  retired: { bg: 'var(--bpmnr-status-retired, #efece6)', fg: 'var(--bpmnr-status-retired-fg, #6f675a)' },
 };
 
 function formatDate(iso?: string): string | undefined {

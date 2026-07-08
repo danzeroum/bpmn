@@ -20,6 +20,22 @@
   --bpmnr-minimap-bg: rgba(250, 249, 246, 0.92);
   --bpmnr-shadow: #44403a;
   --bpmnr-hover: #f2efe8;
+
+  /* Vigência seals — canonical table (Handoff 3 §5), shared by the status
+     badge, version timeline chips and any host UI. */
+  --bpmnr-status-draft: #faf9f6;
+  --bpmnr-status-draft-fg: #44403a;
+  --bpmnr-status-draft-border: #a49c8f;
+  --bpmnr-status-test: #e3ecf7;
+  --bpmnr-status-test-fg: #33567e;
+  --bpmnr-status-candidate: #f6edd4;
+  --bpmnr-status-candidate-fg: #7a611e;
+  --bpmnr-status-active: #dff0e6;
+  --bpmnr-status-active-fg: #1a6a54;
+  --bpmnr-status-deprecated: #f7e6e0;
+  --bpmnr-status-deprecated-fg: #b3372f;
+  --bpmnr-status-retired: #efece6;
+  --bpmnr-status-retired-fg: #6f675a;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -358,17 +374,105 @@
   word-break: break-all;
 }
 
-/* -------------------------------------------------------------- badge */
+/* -------------------------------------------------------------- badge
+   Vigência seal (canonical table, Handoff 3 §5): container pill > status
+   pill + mono semver + muted meta. Colors keyed by [data-status] via
+   --bpmnr-status-* tokens (defined in :root) so themes can override. */
 
 .bpmnr-status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
+  gap: 8px;
+  padding: 3px 12px 3px 4px;
   border-radius: 999px;
-  font-size: 12px;
+  border: 1px solid var(--bpmnr-panel-border);
+  background: var(--bpmnr-panel-bg);
+  font-size: 11px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
   white-space: nowrap;
+}
+
+.bpmnr-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.bpmnr-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.bpmnr-status-semver {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--bpmnr-text);
+}
+
+.bpmnr-status-meta {
+  font-size: 11px;
+  color: var(--bpmnr-text-muted);
+}
+
+.bpmnr-status-badge[data-status='draft'] {
+  border-style: dashed;
+  border-color: var(--bpmnr-status-draft-border, #a49c8f);
+}
+.bpmnr-status-badge[data-status='draft'] .bpmnr-status-pill {
+  background: var(--bpmnr-status-draft, #faf9f6);
+  color: var(--bpmnr-status-draft-fg, #44403a);
+}
+
+.bpmnr-status-badge[data-status='test'] {
+  border-color: var(--bpmnr-status-test-border, #c5d5ea);
+  background: var(--bpmnr-status-test-bg, #f4f8fc);
+}
+.bpmnr-status-badge[data-status='test'] .bpmnr-status-pill {
+  background: var(--bpmnr-status-test, #e3ecf7);
+  color: var(--bpmnr-status-test-fg, #33567e);
+}
+
+.bpmnr-status-badge[data-status='candidate'] {
+  border-color: var(--bpmnr-status-candidate-border, #e8d9ae);
+  background: var(--bpmnr-status-candidate-bg, #fdfaf1);
+}
+.bpmnr-status-badge[data-status='candidate'] .bpmnr-status-pill {
+  background: var(--bpmnr-status-candidate, #f6edd4);
+  color: var(--bpmnr-status-candidate-fg, #7a611e);
+}
+
+.bpmnr-status-badge[data-status='active'] {
+  border-color: var(--bpmnr-status-active-border, #bcdcc9);
+  background: var(--bpmnr-status-active-bg, #f2f9f4);
+}
+.bpmnr-status-badge[data-status='active'] .bpmnr-status-pill {
+  background: var(--bpmnr-status-active, #dff0e6);
+  color: var(--bpmnr-status-active-fg, #1a6a54);
+}
+
+.bpmnr-status-badge[data-status='deprecated'] {
+  border-color: var(--bpmnr-status-deprecated-border, #ebc7bf);
+  background: var(--bpmnr-status-deprecated-bg, #fcf4f2);
+}
+.bpmnr-status-badge[data-status='deprecated'] .bpmnr-status-pill {
+  background: var(--bpmnr-status-deprecated, #f7e6e0);
+  color: var(--bpmnr-status-deprecated-fg, #b3372f);
+}
+
+.bpmnr-status-badge[data-status='retired'] {
+  border-color: var(--bpmnr-status-retired-border, #ddd8ce);
+  background: var(--bpmnr-status-retired-bg, #f7f5f1);
+}
+.bpmnr-status-badge[data-status='retired'] .bpmnr-status-pill {
+  background: var(--bpmnr-status-retired, #efece6);
+  color: var(--bpmnr-status-retired-fg, #6f675a);
 }
 
 /* ------------------------------------------------------------ minimap */
