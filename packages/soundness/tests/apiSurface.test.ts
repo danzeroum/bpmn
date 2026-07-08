@@ -18,6 +18,7 @@ const EXPECTED_EXPORTS = [
   'isFlowEdge',
   'isFlowNode',
   'reachableFrom',
+  'soundnessPromotionRule',
   'soundnessRules',
 ].sort();
 

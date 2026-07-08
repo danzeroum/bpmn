@@ -53,6 +53,8 @@ function NodeRendererInner({
   const shadowsVisible = useCanvasState((s) => 1200 / s.viewport.width >= SHADOW_MIN_ZOOM);
   // Freshly created node plays the 120ms enter animation (craft pack A3).
   const entering = useCanvasState((s) => s.lastCreatedNodeId === node.id);
+  // Validation/soundness badge (shape-state pendência §5).
+  const issueBadge = useCanvasState((s) => s.issueBadges[node.id] ?? null);
   const Shape = config.shapes[node.type] ?? DefaultShape;
   const closed = node.removedInVersion !== undefined;
   const rendered = resizeRect
@@ -137,6 +139,7 @@ function NodeRendererInner({
       {node.type === 'subProcess' && (
         <SubProcessControls node={rendered} editable={editable} />
       )}
+      {issueBadge && <IssueBadge width={rendered.width} severity={issueBadge} />}
       {/* Ports live in the DOM whenever the node is editable; CSS fades them
           in on hover/selection (craft pack A2 — no per-node hover state). */}
       {editable && <ConnectionPorts node={rendered} interactions={interactions} />}
@@ -215,6 +218,30 @@ function ResizeHandles({
           onPointerDown={(e) => interactions.onResizePointerDown(e, nodeId, corner)}
         />
       ))}
+    </g>
+  );
+}
+
+/**
+ * Validation/soundness badge (shape-state pendência §5): a `!` disc pinned
+ * to the node's top-right corner while `canvasStore.issueBadges` marks it.
+ * Stripped from SVG/PNG exports like the other editor chrome.
+ */
+function IssueBadge({ width, severity }: { width: number; severity: 'error' | 'warning' }) {
+  const fill =
+    severity === 'error' ? 'var(--bpmnr-danger, #b3372f)' : 'var(--bpmnr-warning, #7a611e)';
+  return (
+    <g data-node-issue={severity} transform={`translate(${width - 2}, 2)`} pointerEvents="none">
+      <circle r={9} fill={fill} stroke="var(--bpmnr-canvas-bg, #faf9f6)" strokeWidth={1.5} />
+      <text
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={12}
+        fontWeight={700}
+        fill="#ffffff"
+      >
+        !
+      </text>
     </g>
   );
 }

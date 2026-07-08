@@ -50,7 +50,24 @@ export function Toolbar({ extra }: ToolbarProps) {
   };
 
   const validate = () => {
-    setIssues(config.validationEngine.validate(applyBeforeSave()).issues);
+    const found = config.validationEngine.validate(applyBeforeSave()).issues;
+    setIssues(found);
+    // Shape-state badges (pendência §5): mark offending nodes on the canvas
+    // while the issues panel is open; errors win over warnings, info stays
+    // panel-only.
+    const badges: Record<string, 'error' | 'warning'> = {};
+    for (const issue of found) {
+      if (!issue.nodeId || issue.severity === 'info') continue;
+      if (issue.severity === 'error' || badges[issue.nodeId] === undefined) {
+        badges[issue.nodeId] = issue.severity;
+      }
+    }
+    store.setState({ issueBadges: badges });
+  };
+
+  const closeIssues = () => {
+    setIssues(null);
+    store.setState({ issueBadges: {} });
   };
 
   const applyBeforeSave = () => {
@@ -210,7 +227,7 @@ export function Toolbar({ extra }: ToolbarProps) {
               ))}
             </ul>
           )}
-          <button type="button" onClick={() => setIssues(null)} aria-label="Close validation">
+          <button type="button" onClick={closeIssues} aria-label="Close validation">
             ×
           </button>
         </div>

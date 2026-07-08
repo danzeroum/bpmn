@@ -62,6 +62,9 @@ importers:
       '@bpmn-react/registry':
         specifier: workspace:*
         version: link:../registry
+      '@bpmn-react/soundness':
+        specifier: workspace:*
+        version: link:../soundness
 
   packages/conformance:
     dependencies:
@@ -94,6 +97,9 @@ importers:
       '@bpmn-react/react':
         specifier: workspace:*
         version: link:../react
+      '@bpmn-react/soundness':
+        specifier: workspace:*
+        version: link:../soundness
       react:
         specifier: ^18.3.1
         version: 18.3.1

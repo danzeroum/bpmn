@@ -1,12 +1,14 @@
 import { writeFile } from 'node:fs/promises';
 import {
   BpmnXmlConverter,
+  BUILT_IN_VALIDATION_RULES,
   computeDiff,
   JsonSerializer,
   ValidationEngine,
   type BpmnDiff,
   type ValidationResult,
 } from '@bpmn-react/core';
+import { soundnessRules } from '@bpmn-react/soundness';
 import { loadDiagram } from './io.js';
 
 export * from './io.js';
@@ -19,7 +21,10 @@ export async function validateCommand(path: string): Promise<{
   warnings: string[];
 }> {
   const { diagram, warnings } = await loadDiagram(path);
-  return { result: new ValidationEngine().validate(diagram), warnings };
+  // Structural validation + soundness (§C1): the SND_* rules ship in the
+  // plugin format, so headless consumption is just more rules in the engine.
+  const engine = new ValidationEngine([...BUILT_IN_VALIDATION_RULES, ...soundnessRules()]);
+  return { result: engine.validate(diagram), warnings };
 }
 
 export async function exportCommand(

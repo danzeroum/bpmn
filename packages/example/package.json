@@ -16,6 +16,7 @@
     "@bpmn-react/core": "workspace:*",
     "@bpmn-react/domain-example": "workspace:*",
     "@bpmn-react/react": "workspace:*",
+    "@bpmn-react/soundness": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

@@ -9,6 +9,7 @@ export {
   type FlowEdge,
   type ScopeGraph,
 } from './graph.js';
+export { soundnessPromotionRule } from './promotion.js';
 export {
   analyzeSoundness,
   soundnessRules,

@@ -68,6 +68,12 @@ export interface CanvasState {
   dirtySinceExport: boolean;
   /** Sub-process being viewed in drill-down mode (null = whole process). */
   drillId: string | null;
+  /**
+   * Validation/soundness badges by node id (shape-state pendência §5): the
+   * node renders a `!` disc until the map is cleared. Populated by Validate
+   * and by the PromotionPanel's "ver no canvas".
+   */
+  issueBadges: Record<string, 'error' | 'warning'>;
 }
 
 export type CanvasStore = Store<CanvasState>;
@@ -92,6 +98,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     lastCreatedNodeId: null,
     dirtySinceExport: false,
     drillId: null,
+    issueBadges: {},
     ...partial,
   });
 }

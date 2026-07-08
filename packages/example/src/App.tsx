@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { AuditLedger, BpmnXmlConverter, type BpmnDiagram } from '@bpmn-react/core';
 import { BpmnEditor, resolveEditorConfig, useDiagram, type BpmnPlugin } from '@bpmn-react/react';
 import { domainExamplePlugin } from '@bpmn-react/domain-example';
-import { buildSampleDiagram, buildStressDiagram } from './sampleDiagram.js';
+import { soundnessPromotionRule, soundnessRules } from '@bpmn-react/soundness';
+import { buildDeadlockDiagram, buildSampleDiagram, buildStressDiagram } from './sampleDiagram.js';
 import { LifecyclePanel } from './LifecyclePanel.js';
 import { AuditPanel } from './AuditPanel.js';
 import './demo.css';
@@ -17,13 +18,26 @@ const observabilityPlugin: BpmnPlugin = {
   },
 };
 
-const PLUGINS = [domainExamplePlugin, observabilityPlugin];
+// Soundness (Handoff 4 §C2): the SND_* rules feed Validate, the Soundness
+// section of the PromotionPanel and the node badges; structural ERRORS block
+// promotion to active through the lifecycle engine — the UI only reflects it.
+const soundnessPlugin: BpmnPlugin = {
+  id: 'demo/soundness',
+  validationRules: soundnessRules({ locale: 'pt' }),
+  lifecycleConfig: { promotionRules: [soundnessPromotionRule({ locale: 'pt' })] },
+};
+
+const PLUGINS = [domainExamplePlugin, observabilityPlugin, soundnessPlugin];
 
 export function App() {
   const [diagram, setDiagram] = useState<BpmnDiagram>(() => {
-    // `?stress=350` loads the synthetic perf grid (see perf.spec.ts / NFR).
-    const stress = new URLSearchParams(window.location.search).get('stress');
-    return stress ? buildStressDiagram(Number(stress) || 350) : buildSampleDiagram();
+    // `?stress=350` loads the synthetic perf grid (see perf.spec.ts / NFR);
+    // `?deadlock=1` loads the XOR-split → AND-join trap (soundness e2e).
+    const params = new URLSearchParams(window.location.search);
+    const stress = params.get('stress');
+    if (stress) return buildStressDiagram(Number(stress) || 350);
+    if (params.get('deadlock')) return buildDeadlockDiagram();
+    return buildSampleDiagram();
   });
   const [editorKey, setEditorKey] = useState(0);
   const latestRef = useRef(diagram);
