@@ -199,6 +199,26 @@ describe('LibraryView — generic behavior', () => {
     await screen.findByText('Alpha');
   });
 
+  it('restores initialSelection and reports selection changes (§10.7)', async () => {
+    const onSelectionChange = vi.fn();
+    const adapter = minimalAdapter([summary('a', 'Alpha'), summary('b', 'Beta')]);
+    render(
+      <LibraryView
+        adapters={[adapter]}
+        onAction={() => {}}
+        initialSelection={{ adapterId: 'mini', artifactId: 'b' }}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+    // the drawer opens straight away for the restored selection
+    expect(await screen.findByText('DETALHE · MINI')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Beta/ })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: /Alpha/ }));
+    expect(onSelectionChange).toHaveBeenCalledWith({ adapterId: 'mini', artifactId: 'a' });
+    fireEvent.click(await screen.findByRole('button', { name: 'Fechar detalhe' }));
+    expect(onSelectionChange).toHaveBeenLastCalledWith(undefined);
+  });
+
   it('surfaces adapter warnings through onWarning', async () => {
     const onWarning = vi.fn();
     const bad = { ...minimalAdapter([]), id: '' };

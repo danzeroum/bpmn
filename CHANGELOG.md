@@ -36,6 +36,8 @@ All notable changes to the `@bpmn-react/*` packages are documented here. The pro
 - `useLibrary` hook wiring the headless catalog to React state, including adapter invalidation
   (`subscribe`) and the `initialQuery`/`onQueryChange` URL-state seam (§10.7).
 - UI half of the §10.1 acid test: the whole gallery exercised with the S-2 recipe adapter alone.
+- **S-6**: `initialSelection`/`onSelectionChange` on `LibraryView`/`useLibrary` — selection joins
+  the URL-state seam so back-navigation restores filters AND selection (§10.7).
 - Workspace-only (`private: true`) until the npm-scope decision (pendências §1).
 
 ### Studio (`@bpmn-react/studio`) — new package (Handoff 6, S-4)
@@ -69,6 +71,13 @@ All notable changes to the `@bpmn-react/*` packages are documented here. The pro
 - `?studio=1` surface: the full Studio shell over a demo world (registry, ledger, one pending
   promotion at 1/2 approvals); e2e for the approve and reject flows, real verification cards
   and keyboard-only decision (`e2e/studio.spec.ts`).
+- **S-6 — integração fim-a-fim**: the demo world registers every artifact kind (flow, persona,
+  prompt, connector, política, a DMN decision inside the flow, plus the recipe fixture — 7 type
+  chips), the user role is switchable (Bruna/Carla — the queue follows the engine), Biblioteca
+  filters+selection round-trip to the URL, and "Abrir no Designer" opens the real editor with
+  back-navigation restoring the gallery state (§10.7). `e2e/integration.spec.ts` covers the
+  whole cycle: Biblioteca → abrir → Revisão → aprovar → Auditoria shows the new entry and the
+  chain verifies n+1/n+1.
 
 ## 1.0.0 — 2026-07-07
 

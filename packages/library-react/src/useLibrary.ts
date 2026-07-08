@@ -13,6 +13,10 @@ export interface UseLibraryOptions {
   adapters: ArtifactAdapter[];
   initialQuery?: LibraryQuery;
   onQueryChange?: (query: LibraryQuery) => void;
+  /** Restores a selection (deep link / back navigation — §10.7). */
+  initialSelection?: ArtifactRef;
+  /** Fired on every selection change so the host can sync URL state (§10.7). */
+  onSelectionChange?: (ref: ArtifactRef | undefined) => void;
   onWarning?: (warning: AdapterWarning) => void;
 }
 
@@ -32,7 +36,7 @@ export interface UseLibraryState {
  * All catalog logic lives in @bpmn-react/library; this hook only wires state.
  */
 export function useLibrary(options: UseLibraryOptions): UseLibraryState {
-  const { adapters, initialQuery, onQueryChange, onWarning } = options;
+  const { adapters, initialQuery, onQueryChange, initialSelection, onSelectionChange, onWarning } = options;
   // Adapters are wiring, not state: hosts pass a stable array.
   const catalog = useMemo(
     () => createLibraryCatalog(adapters, onWarning ? { onWarning } : {}),
@@ -41,7 +45,7 @@ export function useLibrary(options: UseLibraryOptions): UseLibraryState {
   const [query, setQueryState] = useState<LibraryQuery>(initialQuery ?? {});
   const [generation, setGeneration] = useState(0);
   const [result, setResult] = useState<LibraryResult>();
-  const [selected, setSelected] = useState<ArtifactRef>();
+  const [selected, setSelected] = useState<ArtifactRef | undefined>(initialSelection);
   const [detail, setDetail] = useState<ArtifactDetail>();
 
   useEffect(() => catalog.subscribe(() => setGeneration((g) => g + 1)), [catalog]);
@@ -80,12 +84,17 @@ export function useLibrary(options: UseLibraryOptions): UseLibraryState {
     onQueryChange?.(next);
   };
 
+  const select = (ref: ArtifactRef | undefined) => {
+    setSelected(ref);
+    onSelectionChange?.(ref);
+  };
+
   return {
     query,
     setQuery,
     result,
     selected,
-    select: setSelected,
+    select,
     detail,
     adapters: catalog.adapters,
   };

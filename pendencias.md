@@ -36,6 +36,16 @@ Approval Gate (`btv:gate`) do domain-example — e a classificação aceita over
 validação e vocabulário), é uma extensão de domínio a especificar; o adapter atual troca de
 predicado em uma linha quando isso existir.
 
+## 1.2 Handoff 6 — deep-link do "Abrir no Designer" (decisão de produto)
+
+O Studio está entregue (S-1…S-6) e "Abrir no Designer" abre o editor real; **voltar** restaura
+filtros e seleção da Biblioteca via URL (§10.7 ✅). O que ficou aberto: o Designer do `example`
+não tem API de carregamento por `versionId`/`artifactId` via URL, então o deep-link abre o
+editor com o diagrama demo padrão, não a versão exata do artefato clicado. Dar essa API ao host
+(ex.: `?load=<versionId>` resolvendo no registry, com modo leitura para versões fechadas) é uma
+extensão do Designer, fora do escopo do Handoff 6 — o descritor da ação já carrega
+`artifactId`/`versionId`/`nodeId`, então o host só precisa resolvê-los quando essa API existir.
+
 ## 2. Roteador de arestas com desvio de obstáculos (mantido pós-1.0)
 
 Continua fora, de propósito. Um roteador correto (visibility graph + A\*, ancoragem estável,

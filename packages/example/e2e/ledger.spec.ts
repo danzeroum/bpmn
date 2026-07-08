@@ -12,7 +12,7 @@ test('trail renders with category chips and counts; detail shows the chaining', 
   await expect(page.getByRole('button', { name: 'Comandos 2' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Aprovações 1' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Promoções 1' })).toBeVisible();
-  await expect(page.getByRole('option')).toHaveCount(4);
+  await expect(page.getByRole('listbox').getByRole('option')).toHaveCount(4);
   // detail block: index/hash/prev of the first (genesis) entry
   await expect(page.getByText('index: 0')).toBeVisible();
   await expect(page.getByText('prev: (gênese)')).toBeVisible();
@@ -51,7 +51,7 @@ test('attestation block on the activation entry with its own download', async ({
 test('XES export respects the current filters (§10.5)', async ({ page }) => {
   await page.goto('/?studio=1#/auditoria');
   await page.getByRole('button', { name: 'Aprovações 1' }).click();
-  await expect(page.getByRole('option')).toHaveCount(1);
+  await expect(page.getByRole('listbox').getByRole('option')).toHaveCount(1);
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Exportar XES' }).click();
   const download = await downloadPromise;
