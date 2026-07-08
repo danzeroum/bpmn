@@ -136,11 +136,13 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
 - **Hover de nó no canvas:** o craft pack aplica hover 120ms no chrome (paleta/toolbar/timeline).
   Hover visual em nós SVG exigiria estado por nó (re-render em mousemove com 350 nós) ou filtro CSS
   caro — fora do aceite §8.5; incluir só se o custo/benefício for aprovado.
-- **NFR 60fps@350:** o e2e `perf.spec.ts` mede FPS real (pan+zoom, 350 nós) e impõe piso de 30fps
-  no CI headless (software rendering, sem GPU — medição neste ambiente: ~41fps). O alvo de 60fps
-  vale para hardware real: rodar `pnpm --filter @bpmn-react/example dev` + `/?stress=350` numa
-  máquina local com GPU para a verificação final; o gate de zoom desliga sombras (<50%) e chips
-  (<60%) para proteger a taxa em diagramas densos.
+- **NFR 60fps@350:** o e2e `perf.spec.ts` mede FPS real (pan+zoom, 350 nós) e imprime o valor.
+  Medições em software rendering (sem GPU): ~41fps em container dedicado, ~26fps no runner
+  compartilhado do GitHub — por isso o piso no CI é 15fps, um canário de regressão (um re-render
+  por frame de 350 nós cai abaixo de 10fps), não o NFR. O alvo de 60fps vale para hardware real:
+  rodar `pnpm --filter @bpmn-react/example dev` + `/?stress=350` numa máquina local com GPU para a
+  verificação final; o gate de zoom desliga sombras (<50%) e chips (<60%) para proteger a taxa em
+  diagramas densos.
 
 ## Resolvidas (para histórico)
 
