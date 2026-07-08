@@ -134,30 +134,52 @@ export function collapseWaypoints(points: Point[]): Point[] {
 }
 
 /**
+ * Default length of the perpendicular "port stub" the orthogonal route leaves
+ * on each node before it is allowed to bend. It guarantees the edge — and the
+ * animated token that rides it (Handoff 7) — departs and arrives perpendicular
+ * to the node face, clearing the node body and its rounded corner instead of
+ * grazing across it. This is the cheap variant of `pendencias.md §2`.
+ */
+export const DEFAULT_PORT_OFFSET = 16;
+
+/**
  * Orthogonal (Manhattan) route between two rectangles: an L / Z path routed
  * through a midpoint, with redundant waypoints collapsed.
+ *
+ * A `portOffset` (default {@link DEFAULT_PORT_OFFSET}) pushes the source/target
+ * anchors outward along their side normals before the midpoint bends are
+ * computed, so the first and last segments always leave/enter the node
+ * perpendicular for at least that distance. On collinear (straight) routes the
+ * stub collapses away, so straight edges are unchanged. The offset is clamped
+ * to half the anchor-to-anchor distance so it never overshoots the far node on
+ * tightly packed layouts.
  */
-export function routeOrthogonal(source: Rect, target: Rect): Point[] {
+export function routeOrthogonal(source: Rect, target: Rect, portOffset = DEFAULT_PORT_OFFSET): Point[] {
   const sourceAnchor = getAnchorPoint(source, rectCenter(target));
   const targetAnchor = getAnchorPoint(target, rectCenter(source));
   const start = sourceAnchor.point;
   const end = targetAnchor.point;
+  const offset = clamp(portOffset, 0, distance(start, end) / 2);
+  const n1 = sideNormal(sourceAnchor.side);
+  const n2 = sideNormal(targetAnchor.side);
+  const portOut = { x: start.x + n1.x * offset, y: start.y + n1.y * offset };
+  const portIn = { x: end.x + n2.x * offset, y: end.y + n2.y * offset };
   const horizontalFirst = sourceAnchor.side === 'left' || sourceAnchor.side === 'right';
   let bends: Point[];
   if (horizontalFirst) {
-    const midX = (start.x + end.x) / 2;
+    const midX = (portOut.x + portIn.x) / 2;
     bends = [
-      { x: midX, y: start.y },
-      { x: midX, y: end.y },
+      { x: midX, y: portOut.y },
+      { x: midX, y: portIn.y },
     ];
   } else {
-    const midY = (start.y + end.y) / 2;
+    const midY = (portOut.y + portIn.y) / 2;
     bends = [
-      { x: start.x, y: midY },
-      { x: end.x, y: midY },
+      { x: portOut.x, y: midY },
+      { x: portIn.x, y: midY },
     ];
   }
-  return collapseWaypoints([start, ...bends, end]);
+  return collapseWaypoints([start, portOut, ...bends, portIn, end]);
 }
 
 /** Rounds to 2 decimals so corner tangent points don't emit float noise. */
@@ -208,9 +230,9 @@ export function waypointsToPath(points: Point[], cornerRadius = 0): string {
 export function orthogonalConnection(
   source: Rect,
   target: Rect,
-  options: { cornerRadius?: number } = {},
+  options: { cornerRadius?: number; portOffset?: number } = {},
 ): EdgeGeometry {
-  const waypoints = routeOrthogonal(source, target);
+  const waypoints = routeOrthogonal(source, target, options.portOffset);
   const start = waypoints[0];
   const end = waypoints[waypoints.length - 1];
   const mid = waypoints[Math.floor(waypoints.length / 2)];

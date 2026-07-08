@@ -3,6 +3,7 @@ import {
   clamp,
   collapseWaypoints,
   cubicBezierConnection,
+  DEFAULT_PORT_OFFSET,
   distance,
   getAnchorPoint,
   getBoundingBox,
@@ -85,9 +86,70 @@ describe('connections', () => {
 
   it('collapses straight-line routes to two points', () => {
     const points = routeOrthogonal(rect(0, 0), rect(300, 0));
+    // Even with the port offset, a purely collinear route collapses back to
+    // its two anchors — straight edges are unchanged.
     expect(points).toEqual([
       { x: 100, y: 30 },
       { x: 300, y: 30 },
+    ]);
+  });
+
+  it('leaves and enters nodes perpendicular via a port stub (pendencias §2)', () => {
+    // Source anchors on its bottom (n=+y); target anchors on its top (−y).
+    const points = routeOrthogonal(rect(0, 0), rect(300, 200));
+    expect(points.length).toBeGreaterThanOrEqual(3);
+    const [p0, p1] = points;
+    const last = points[points.length - 1];
+    const beforeLast = points[points.length - 2];
+    // First segment departs straight down the source normal; last segment
+    // arrives straight down into the target — both vertical, no lateral turn
+    // riding the node face.
+    expect(p0.x).toBe(p1.x);
+    expect(p1.y).toBeGreaterThan(p0.y);
+    expect(last.x).toBe(beforeLast.x);
+    expect(last.y).toBeGreaterThan(beforeLast.y);
+    // The perpendicular stub clears at least DEFAULT_PORT_OFFSET before bending.
+    expect(p1.y - p0.y).toBeGreaterThanOrEqual(DEFAULT_PORT_OFFSET);
+    expect(last.y - beforeLast.y).toBeGreaterThanOrEqual(DEFAULT_PORT_OFFSET);
+  });
+
+  it('no route segment cuts through the source or target node interior', () => {
+    const source = rect(0, 0);
+    const target = rect(300, 200);
+    const points = routeOrthogonal(source, target);
+    const interiorHit = (a: { x: number; y: number }, b: { x: number; y: number }, r: typeof source) => {
+      // Sample the (axis-aligned) segment and check no sample lands strictly
+      // inside the rect (borders — where the anchors live — are allowed).
+      for (let t = 0; t <= 1; t += 0.05) {
+        const x = a.x + (b.x - a.x) * t;
+        const y = a.y + (b.y - a.y) * t;
+        if (x > r.x && x < r.x + r.width && y > r.y && y < r.y + r.height) return true;
+      }
+      return false;
+    };
+    for (let i = 1; i < points.length; i++) {
+      expect(interiorHit(points[i - 1], points[i], source)).toBe(false);
+      expect(interiorHit(points[i - 1], points[i], target)).toBe(false);
+    }
+  });
+
+  it('clamps the port offset so it never overshoots on tight layouts', () => {
+    // Anchors 4px apart: offset clamps to 2, the route stays monotonic and
+    // never jumps past the far node.
+    const points = routeOrthogonal(rect(0, 0), rect(0, 64), 16);
+    expect(points).toEqual([
+      { x: 50, y: 60 },
+      { x: 50, y: 64 },
+    ]);
+  });
+
+  it('accepts an explicit port offset of 0 (legacy anchor-to-anchor route)', () => {
+    const points = routeOrthogonal(rect(0, 0), rect(300, 200), 0);
+    expect(points).toEqual([
+      { x: 50, y: 60 },
+      { x: 50, y: 130 },
+      { x: 350, y: 130 },
+      { x: 350, y: 200 },
     ]);
   });
 

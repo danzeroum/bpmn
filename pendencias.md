@@ -48,12 +48,19 @@ extensão do Designer, fora do escopo do Handoff 6 — o descritor da ação já
 
 ## 2. Roteador de arestas com desvio de obstáculos (mantido pós-1.0)
 
-Continua fora, de propósito. Um roteador correto (visibility graph + A\*, ancoragem estável,
-recálculo incremental durante drag) é um subsistema com orçamento de performance próprio; um
-meia-boca degradaria a UX atual. O core já registra routers plugáveis, então dá para entregar
-como minor release (`1.x`) sem quebrar nada. Se quiser algo imediato e barato: melhorar o
-ortogonal para desviar dos nós de origem/destino (offset nas portas) — consigo fazer com
-segurança, me diga se prioriza.
+**Atualização (Handoff 7 — PR 0 ✅):** a variante barata ("offset nas portas na origem/destino")
+foi implementada em `routeOrthogonal` (`packages/core/src/geometry/index.ts`, const
+`DEFAULT_PORT_OFFSET = 16`): a rota ganha um "toco" perpendicular garantido saindo da origem e
+entrando no destino antes de dobrar, então a aresta — e o token animado que a percorre no
+Handoff 7 — deixa/entra o nó perpendicular, limpando o corpo e o canto arredondado r8 em vez de
+raspar a borda. Rotas retas continuam colapsando (inalteradas); o offset é clampeado a metade da
+distância âncora-a-âncora para não passar do nó vizinho em layouts apertados. Testes de
+invariante em `geometry.test.ts`.
+
+O **roteador A\* completo continua fora, de propósito** (esta era a parte cara). Um roteador
+correto (visibility graph + A\*, ancoragem estável, recálculo incremental durante drag) é um
+subsistema com orçamento de performance próprio; um meia-boca degradaria a UX atual. O core já
+registra routers plugáveis, então dá para entregar como minor release (`1.x`) sem quebrar nada.
 
 ## 3. Multi-pool / colaboração real (decisão de escopo de produto)
 
