@@ -4,6 +4,7 @@ import { EditorConfigProvider, resolveEditorConfig, useEditorConfig } from './co
 import { DiagramProvider } from './contexts/DiagramContext.js';
 import { CanvasProvider } from './contexts/CanvasContext.js';
 import { BpmnCanvas } from './canvas/Canvas.js';
+import { ResilienceLayer } from './canvas/ResilienceLayer.js';
 import type { BpmnPlugin } from './plugins/types.js';
 
 export interface BpmnDesignerProps {
@@ -38,6 +39,7 @@ function DesignerBody({
       <CanvasProvider initial={{ readOnly: readOnly ?? false }}>
         <div className="bpmnr-designer" style={{ position: 'relative', width: '100%', height: '100%' }}>
           <BpmnCanvas overlay={overlay} showClosed={showClosed} />
+          {!(readOnly ?? false) && <ResilienceLayer />}
           {children}
         </div>
       </CanvasProvider>

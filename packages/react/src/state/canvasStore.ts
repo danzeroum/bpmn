@@ -64,6 +64,8 @@ export interface CanvasState {
   readOnly: boolean;
   /** Node created by the last palette insert — plays the enter animation once. */
   lastCreatedNodeId: string | null;
+  /** True when commands ran since the last explicit export (beforeunload guard). */
+  dirtySinceExport: boolean;
 }
 
 export type CanvasStore = Store<CanvasState>;
@@ -86,6 +88,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     snapEnabled: true,
     readOnly: false,
     lastCreatedNodeId: null,
+    dirtySinceExport: false,
     ...partial,
   });
 }

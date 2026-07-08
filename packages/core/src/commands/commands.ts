@@ -340,3 +340,28 @@ export function compositeCommand(description: string, commands: Command[]): Comm
     }),
   };
 }
+
+/**
+ * Replaces the whole diagram with a snapshot — the undoable path for
+ * restoring an autosaved draft (editor resilience). `undo` returns the
+ * diagram as it was at execution time, captured on `execute`.
+ */
+export function restoreDiagramCommand(
+  snapshot: BpmnDiagram,
+  description = 'Restore autosaved draft',
+): Command {
+  let before: BpmnDiagram | null = null;
+  return {
+    id: generateId(),
+    description,
+    execute: (diagram) => {
+      before = diagram;
+      return snapshot;
+    },
+    undo: (diagram) => before ?? diagram,
+    toAuditEvent: () => ({
+      type: 'DIAGRAM_RESTORED',
+      details: { description, restoredVersionId: snapshot.version.id },
+    }),
+  };
+}

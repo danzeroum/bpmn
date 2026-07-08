@@ -11,6 +11,7 @@ import {
   removeEdgeCommand,
   removeNodeCommand,
   resizeNodeCommand,
+  restoreDiagramCommand,
   supersedeEdgeCommand,
   updateEdgeCommand,
   updateNodeCommand,
@@ -272,5 +273,27 @@ describe('commands', () => {
     expect(
       compositeCommand('c', [addNodeCommand(node)]).toAuditEvent?.().type,
     ).toBe('COMPOSITE');
+  });
+});
+
+describe('restoreDiagramCommand', () => {
+  it('replaces the diagram, undoes to the pre-restore state and audits', () => {
+    const { diagram, stack, node } = setup();
+    stack.execute(addNodeCommand(node));
+    const withNode = stack.current;
+
+    const snapshot = createDiagram({ name: 'Recovered', id: diagram.id });
+    const command = restoreDiagramCommand(snapshot);
+    stack.execute(command);
+    expect(stack.current).toBe(snapshot);
+
+    stack.undo();
+    expect(stack.current).toBe(withNode);
+    stack.redo();
+    expect(stack.current).toBe(snapshot);
+
+    const audit = command.toAuditEvent?.();
+    expect(audit?.type).toBe('DIAGRAM_RESTORED');
+    expect(audit?.details.restoredVersionId).toBe(snapshot.version.id);
   });
 });

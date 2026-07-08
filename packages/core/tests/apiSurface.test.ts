@@ -102,6 +102,7 @@ const EXPECTED_EXPORTS = [
   'removeEdgeCommand',
   'removeNodeCommand',
   'resizeNodeCommand',
+  'restoreDiagramCommand',
   'roundCoord',
   'routeOrthogonal',
   'selfConnectionRule',

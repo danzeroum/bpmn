@@ -117,4 +117,9 @@ export interface BpmnPlugin {
   onAfterLoad?: (diagram: BpmnDiagram) => BpmnDiagram;
   /** Observability sink — receives editor events (all providers are called). */
   onEditorEvent?: EditorEventHandler;
+  /**
+   * Editor resilience opt-out: `false` disables autosave, the recovery
+   * banner and the beforeunload guard. Default true; last plugin wins.
+   */
+  autosave?: boolean;
 }

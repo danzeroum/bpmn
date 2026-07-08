@@ -10,6 +10,7 @@ import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { fitViewport, zoomViewportAt } from '../canvas/viewport.js';
 import { downloadFile, exportPng, exportSvg } from './exporters.js';
+import { clearAutosave } from '../state/autosave.js';
 
 export interface ToolbarProps {
   /** Extra buttons rendered at the end of the toolbar. */
@@ -55,12 +56,19 @@ export function Toolbar({ extra }: ToolbarProps) {
     return result;
   };
 
+  // An explicit export counts as a save: drop the autosave and the dirty flag.
+  const markSaved = () => {
+    clearAutosave(diagram.id);
+    store.setState({ dirtySinceExport: false });
+  };
+
   const exportXml = () => {
     const converter = new BpmnXmlConverter({
       registry: config.registry,
       preferredTypes: config.preferredTypes,
     });
     downloadFile(`${slug(diagram.name)}.bpmn.xml`, converter.toXml(applyBeforeSave()), 'application/xml');
+    markSaved();
   };
 
   const exportJson = () => {
@@ -69,6 +77,7 @@ export function Toolbar({ extra }: ToolbarProps) {
       new JsonSerializer().serialize(applyBeforeSave()),
       'application/json',
     );
+    markSaved();
   };
 
   const findSvg = () => document.querySelector<SVGSVGElement>('svg.bpmnr-canvas');

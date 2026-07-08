@@ -44,6 +44,8 @@ export interface EditorConfig {
    * handlers see the same event object.
    */
   emitEditorEvent: (type: string, meta?: Record<string, unknown>) => void;
+  /** Autosave + recovery banner + beforeunload guard toggle. Default true. */
+  autosave: boolean;
 }
 
 const EditorConfigContext = createContext<EditorConfig | null>(null);
@@ -69,6 +71,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
   const eventHandlers: EditorEventHandler[] = [];
   let lifecycleEngine = new LifecycleEngine();
   let edgeRouter: EdgeRouterFn = cubicBezierConnection;
+  let autosave = true;
 
   for (const plugin of resolved) {
     for (const def of plugin.nodeTypes ?? []) {
@@ -86,6 +89,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
     validationRules.push(...(plugin.validationRules ?? []));
     plugin.registerRules?.(ruleEngine);
     if (plugin.onEditorEvent) eventHandlers.push(plugin.onEditorEvent);
+    if (plugin.autosave !== undefined) autosave = plugin.autosave;
     if (plugin.lifecycleConfig) lifecycleEngine = new LifecycleEngine(plugin.lifecycleConfig);
     if (plugin.edgeRouter) {
       edgeRouter =
@@ -116,6 +120,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
             const event = { type, ts: Date.now(), ...(meta ? { meta } : {}) };
             for (const handler of eventHandlers) handler(event);
           },
+    autosave,
   };
 }
 
