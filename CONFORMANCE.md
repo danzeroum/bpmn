@@ -23,7 +23,7 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:receiveTask` | ✅ supported | analytic | `receiveTask` |  |
 | `bpmn:manualTask` | ✅ supported | analytic | `manualTask` |  |
 | `bpmn:businessRuleTask` | ⛔ unsupported | analytic | — | Roadmap F9 (DMN) — ignored with a warning today. |
-| `bpmn:subProcess` | 🟡 partial | descriptive | `subProcess` | Nested model + lossless round-trip (children as first-class nodes, DI isExpanded); expanded rendering/drill-down lands with F7-2. |
+| `bpmn:subProcess` | ✅ supported | descriptive | `subProcess` | Nested children as first-class nodes (lossless round-trip, DI isExpanded); expand/collapse and drill-down in the editor. |
 | `bpmn:callActivity` | ⛔ unsupported | descriptive | — | Roadmap F7 — registry synergy (activeAt). |
 | `bpmn:transaction` | ⛔ unsupported | extended | — | Deliberately out of scope before v2.x. |
 | `bpmn:adHocSubProcess` | ⛔ unsupported | extended | — |  |

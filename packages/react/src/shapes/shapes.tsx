@@ -1,5 +1,5 @@
 import type { EventDefinitionKind } from '@bpmn-react/core';
-import { eventDefinitionOf, isNonInterrupting } from '@bpmn-react/core';
+import { eventDefinitionOf, isNonInterrupting, isSubProcessExpanded } from '@bpmn-react/core';
 import type { ShapeProps } from '../plugins/types.js';
 import { ActivityBox, ShapeLabel, strokeFor, strokeWidthFor, theme } from './common.js';
 
@@ -341,7 +341,10 @@ export function EventBasedGatewayShape(props: ShapeProps) {
 }
 
 export function SubProcessShape({ node, selected }: ShapeProps) {
-  const boxSize = 14;
+  // Expanded sub-processes are light containers whose children render on top
+  // (the interactive expand/collapse marker lives in the NodeRenderer, so the
+  // shape stays pure). Collapsed ones look like a regular activity card.
+  const expanded = isSubProcessExpanded(node);
   return (
     <g>
       <rect
@@ -349,20 +352,11 @@ export function SubProcessShape({ node, selected }: ShapeProps) {
         height={node.height}
         rx={10}
         ry={10}
-        fill={theme.fillActivity}
+        fill={expanded ? theme.fill : theme.fillActivity}
         stroke={strokeFor(selected)}
         strokeWidth={strokeWidthFor(selected)}
       />
       <ShapeLabel label={node.label} width={node.width} y={20} />
-      <g
-        transform={`translate(${node.width / 2 - boxSize / 2}, ${node.height - boxSize - 5})`}
-        stroke={theme.textMuted}
-        fill="none"
-        strokeWidth={1.4}
-      >
-        <rect width={boxSize} height={boxSize} rx={2} />
-        <path d={`M ${boxSize / 2} 3 V ${boxSize - 3} M 3 ${boxSize / 2} H ${boxSize - 3}`} />
-      </g>
     </g>
   );
 }

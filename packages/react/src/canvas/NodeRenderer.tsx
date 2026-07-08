@@ -1,6 +1,13 @@
 import { memo } from 'react';
-import type { BpmnNode } from '@bpmn-react/core';
+import {
+  childrenOf,
+  getBoundingBox,
+  isSubProcessExpanded,
+  updateNodeCommand,
+  type BpmnNode,
+} from '@bpmn-react/core';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
+import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { DefaultShape } from '../shapes/index.js';
 import { theme } from '../shapes/common.js';
@@ -8,6 +15,7 @@ import type { Interactions } from './useInteractions.js';
 import { NodeLabelEditor } from './NodeLabelEditor.js';
 import { SHADOW_FILTER_ID } from './Defs.js';
 import { ShapeErrorBoundary } from './ShapeErrorBoundary.js';
+import { fitViewport } from './viewport.js';
 
 /** Below this zoom node shadows are dropped — SVG filters get expensive at scale. */
 const SHADOW_MIN_ZOOM = 0.5;
@@ -126,6 +134,9 @@ function NodeRendererInner({
         />
       )}
 
+      {node.type === 'subProcess' && (
+        <SubProcessControls node={rendered} editable={editable} />
+      )}
       {/* Ports live in the DOM whenever the node is editable; CSS fades them
           in on hover/selection (craft pack A2 — no per-node hover state). */}
       {editable && <ConnectionPorts node={rendered} interactions={interactions} />}
@@ -204,6 +215,86 @@ function ResizeHandles({
           onPointerDown={(e) => interactions.onResizePointerDown(e, nodeId, corner)}
         />
       ))}
+    </g>
+  );
+}
+
+/**
+ * Interactive controls for sub-processes (F7-2): the BPMN [+]/[−] marker
+ * toggles `isExpanded` through the command stack (undoable, DI round-trips),
+ * and a drill-down affordance opens the sub-process as its own view — the
+ * Toolbar breadcrumb navigates back. Lives here instead of the shape so
+ * shapes stay pure.
+ */
+function SubProcessControls({ node, editable }: { node: BpmnNode; editable: boolean }) {
+  const store = useCanvasStore();
+  const { diagram, execute } = useDiagram();
+  const expanded = isSubProcessExpanded(node);
+  const hasChildren = childrenOf(diagram, node.id).length > 0;
+  const boxSize = 14;
+  const markerX = node.width / 2 - boxSize / 2;
+  const markerY = node.height - boxSize - 5;
+
+  const swallow = (event: { stopPropagation: () => void }) => event.stopPropagation();
+
+  const toggle = () => {
+    execute(updateNodeCommand(node.id, { properties: { isExpanded: !expanded } }));
+  };
+
+  const drill = () => {
+    const children = childrenOf(diagram, node.id);
+    if (children.length === 0) return;
+    const { viewport } = store.getState();
+    store.setState({
+      drillId: node.id,
+      selectedIds: [],
+      viewport: fitViewport(getBoundingBox(children), viewport.width / viewport.height),
+    });
+  };
+
+  return (
+    <g data-subprocess-controls>
+      <g
+        transform={`translate(${markerX}, ${markerY})`}
+        data-subprocess-toggle
+        data-expanded={expanded || undefined}
+        role="button"
+        aria-label={expanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
+        style={{ cursor: editable ? 'pointer' : 'default' }}
+        onPointerDown={editable ? swallow : undefined}
+        onDoubleClick={editable ? swallow : undefined}
+        onClick={editable ? toggle : undefined}
+      >
+        {/* Invisible hit pad — the 14px marker alone is a fiddly target. */}
+        <rect x={-4} y={-4} width={boxSize + 8} height={boxSize + 8} fill="transparent" />
+        <g stroke={theme.textMuted} fill="none" strokeWidth={1.4}>
+          <rect width={boxSize} height={boxSize} rx={2} fill={theme.fill} />
+          {expanded ? (
+            <path d={`M 3 ${boxSize / 2} H ${boxSize - 3}`} />
+          ) : (
+            <path d={`M ${boxSize / 2} 3 V ${boxSize - 3} M 3 ${boxSize / 2} H ${boxSize - 3}`} />
+          )}
+        </g>
+      </g>
+      {hasChildren && (
+        <g
+          transform={`translate(${node.width - boxSize - 5}, ${markerY})`}
+          data-subprocess-drill
+          role="button"
+          aria-label={`Open ${node.label}`}
+          style={{ cursor: 'pointer' }}
+          onPointerDown={swallow}
+          onDoubleClick={swallow}
+          onClick={drill}
+        >
+          <rect x={-4} y={-4} width={boxSize + 8} height={boxSize + 8} fill="transparent" />
+          <g stroke={theme.textMuted} fill="none" strokeWidth={1.4}>
+            <rect width={boxSize} height={boxSize} rx={2} fill={theme.fill} />
+            {/* Diagonal "open" arrow pointing into the container. */}
+            <path d={`M 4 ${boxSize - 4} L ${boxSize - 4} 4 M ${boxSize - 4} 4 H 6.5 M ${boxSize - 4} 4 V ${boxSize - 6.5}`} />
+          </g>
+        </g>
+      )}
     </g>
   );
 }

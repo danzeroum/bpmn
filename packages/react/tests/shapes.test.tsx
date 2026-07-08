@@ -140,7 +140,11 @@ const EXPECTATIONS: Expectation[] = [
   {
     type: 'subProcess',
     label: 'Sub',
-    check: (root) => expect(root.querySelectorAll('rect')).toHaveLength(2), // body + expand icon
+    check: (root) => {
+      // Body + the interactive [+] marker (hit pad + box) from the renderer.
+      expect(root.querySelectorAll('rect')).toHaveLength(3);
+      expect(root.querySelector('[data-subprocess-toggle]')).not.toBeNull();
+    },
   },
   {
     type: 'dataObject',

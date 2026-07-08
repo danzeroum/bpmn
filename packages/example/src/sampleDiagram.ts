@@ -34,6 +34,20 @@ export function buildSampleDiagram(): BpmnDiagram {
     eventDefinition: 'timer',
     cancelActivity: false,
   });
+  // Collapsed sub-process (F7-2): the [+] marker expands it in place, the
+  // corner arrow drills into it (breadcrumb in the toolbar navigates back).
+  // Children hold absolute coordinates inside the container's rect.
+  const returns = make('subProcess', 'returns', 'Handle returns', 890, 290);
+  returns.width = 340;
+  returns.height = 150;
+  const inspect = make('userTask', 'returnsInspect', 'Inspect return', 910, 340, {
+    parentId: 'returns',
+  });
+  // Slight vertical offset keeps the inner edge from degenerating into a
+  // zero-height line (visible bounding box for tools and tests).
+  const refund = make('serviceTask', 'returnsRefund', 'Issue refund', 1080, 350, {
+    parentId: 'returns',
+  });
 
   diagram.nodes = {
     squad,
@@ -44,6 +58,9 @@ export function buildSampleDiagram(): BpmnDiagram {
     publish,
     post: deliverable,
     publishTimeout: timeout,
+    returns,
+    returnsInspect: inspect,
+    returnsRefund: refund,
   };
 
   const edge = (
@@ -79,6 +96,9 @@ export function buildSampleDiagram(): BpmnDiagram {
       ],
     }),
     e7: edge('e7', 'publish', 'post', 'sequenceFlow', 'CMS emits the deliverable'),
+    e8: edge('e8', 'publish', 'returns', 'sequenceFlow', 'Returned items enter the returns flow'),
+    // Inner flow — same scope (both children of the returns sub-process).
+    r1: edge('r1', 'returnsInspect', 'returnsRefund', 'sequenceFlow', 'Approved return is refunded'),
   };
 
   return diagram;
@@ -127,7 +147,58 @@ export function buildStressDiagram(count = 350): BpmnDiagram {
   }
   diagram.nodes = nodes;
 
+  // Hierarchy band (F7-2 canary): a row of EXPANDED sub-processes below the
+  // grid, each with 4 children and an inner chain — depth-aware z-ordering
+  // and containment filtering are part of the measured frame.
+  const subCount = Math.max(2, Math.floor(count / 100));
+  const bandY = 40 + Math.ceil(count / COLS) * STEP_Y + 60;
   const edges: BpmnDiagram['edges'] = {};
+  for (let s = 0; s < subCount; s++) {
+    const spId = `sp${s}`;
+    const spX = 40 + s * 580;
+    const sp = createNode(
+      {
+        type: 'subProcess',
+        id: spId,
+        label: `Sub-process ${s}`,
+        x: spX,
+        y: bandY,
+        properties: { isExpanded: true },
+        versionId: v,
+      },
+      registry,
+    );
+    sp.width = 540;
+    sp.height = 180;
+    nodes[spId] = sp;
+    for (let c = 0; c < 4; c++) {
+      const childId = `sp${s}c${c}`;
+      nodes[childId] = createNode(
+        {
+          type: c % 2 === 0 ? 'userTask' : 'serviceTask',
+          id: childId,
+          label: `Step ${s}.${c}`,
+          x: spX + 20 + c * 128,
+          y: bandY + 70,
+          properties: { parentId: spId },
+          versionId: v,
+        },
+        registry,
+      );
+      if (c > 0) {
+        const edgeId = `sp${s}e${c}`;
+        edges[edgeId] = createEdge({
+          id: edgeId,
+          sourceId: `sp${s}c${c - 1}`,
+          targetId: childId,
+          type: 'sequenceFlow',
+          purpose: `inner step ${s}.${c}`,
+          versionId: v,
+        });
+      }
+    }
+  }
+
   for (let i = 1; i < count; i++) {
     const sourceId = `n${i - 1}`;
     const targetId = `n${i}`;

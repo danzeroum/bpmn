@@ -66,6 +66,8 @@ export interface CanvasState {
   lastCreatedNodeId: string | null;
   /** True when commands ran since the last explicit export (beforeunload guard). */
   dirtySinceExport: boolean;
+  /** Sub-process being viewed in drill-down mode (null = whole process). */
+  drillId: string | null;
 }
 
 export type CanvasStore = Store<CanvasState>;
@@ -89,6 +91,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     readOnly: false,
     lastCreatedNodeId: null,
     dirtySinceExport: false,
+    drillId: null,
     ...partial,
   });
 }

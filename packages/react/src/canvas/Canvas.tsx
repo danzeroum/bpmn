@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, type ReactNode, type WheelEvent } from 'rea
 import {
   activeEdges,
   activeNodes,
-  isSubProcessExpanded,
   nodeParentId,
   type BpmnDiagram,
   type BpmnNode,
@@ -16,6 +15,7 @@ import { Defs, GridLayer } from './Defs.js';
 import { ConnectedNode } from './NodeRenderer.js';
 import { ConnectedEdge } from './EdgeRenderer.js';
 import { ConnectionPreview, SelectionBoxOverlay } from './overlays.js';
+import { hiddenNodeIds } from './visibility.js';
 import { useKeyboardShortcuts } from '../gestures/useKeyboardShortcuts.js';
 
 export interface CanvasProps {
@@ -45,6 +45,7 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
   const viewport = useCanvasState((s) => s.viewport);
   const gridSize = useCanvasState((s) => s.gridSize);
   const isPanning = useCanvasState((s) => s.isPanning);
+  const drillId = useCanvasState((s) => s.drillId);
   const interactions = useInteractions(svgRef);
 
   useKeyboardShortcuts(interactions);
@@ -83,13 +84,15 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
   }, [store]);
 
   // Children of a COLLAPSED sub-process stay off the canvas (they live behind
-  // the [+] marker); expanded rendering/drill-down lands with F7-2. Memoized
-  // by diagram identity — the canvas re-renders per viewport frame.
-  const hiddenIds = useMemo(() => collapsedDescendantIds(diagram), [diagram]);
+  // the [+] marker). In drill-down mode only the drilled sub-process' contents
+  // show — the container itself and everything outside it hide. Memoized by
+  // diagram identity — the canvas re-renders per viewport frame.
+  const hiddenIds = useMemo(() => hiddenNodeIds(diagram, drillId), [diagram, drillId]);
   const nodes = orderByZ(
     (showClosed ? Object.values(diagram.nodes) : activeNodes(diagram)).filter(
       (node) => !hiddenIds.has(node.id),
     ),
+    diagram,
   );
   const edges = (showClosed ? Object.values(diagram.edges) : activeEdges(diagram)).filter(
     (edge) => !hiddenIds.has(edge.sourceId) && !hiddenIds.has(edge.targetId),
@@ -145,32 +148,27 @@ function swallowReactWheel(event: WheelEvent) {
 }
 
 /**
- * Draws swimlane containers (pools, then lanes) behind flow nodes so the flow
- * always paints — and stays clickable — on top. Order within each group is
- * preserved (JS sort is stable).
+ * Draws containers behind their contents so the flow always paints — and
+ * stays clickable — on top: pools, then lanes, then flow nodes by containment
+ * depth (an expanded sub-process paints before its children). Order within
+ * each group is preserved (JS sort is stable).
  */
-function orderByZ<T extends { type: string }>(nodes: T[]): T[] {
-  const rank = (type: string) => (type === 'pool' ? 0 : type === 'lane' ? 1 : 2);
-  return [...nodes].sort((a, b) => rank(a.type) - rank(b.type));
-}
-
-/** Ids of every node whose ancestry contains a collapsed sub-process. */
-function collapsedDescendantIds(diagram: BpmnDiagram): Set<string> {
-  const hidden = new Set<string>();
-  const isHidden = (node: BpmnNode): boolean => {
+function orderByZ(nodes: BpmnNode[], diagram: BpmnDiagram): BpmnNode[] {
+  const rank = (node: BpmnNode): number => {
+    if (node.type === 'pool') return 0;
+    if (node.type === 'lane') return 1;
+    let depth = 2;
     const seen = new Set<string>();
     let parentId = nodeParentId(node);
     while (parentId !== undefined && !seen.has(parentId)) {
       seen.add(parentId);
-      const container: BpmnNode | undefined = diagram.nodes[parentId];
-      if (!container) return false;
-      if (container.type === 'subProcess' && !isSubProcessExpanded(container)) return true;
-      parentId = nodeParentId(container);
+      depth += 1;
+      const parent: BpmnNode | undefined = diagram.nodes[parentId];
+      parentId = parent ? nodeParentId(parent) : undefined;
     }
-    return false;
+    return depth;
   };
-  for (const node of Object.values(diagram.nodes)) {
-    if (nodeParentId(node) !== undefined && isHidden(node)) hidden.add(node.id);
-  }
-  return hidden;
+  const ranks = new Map(nodes.map((node) => [node.id, rank(node)]));
+  return [...nodes].sort((a, b) => (ranks.get(a.id) ?? 2) - (ranks.get(b.id) ?? 2));
 }
+

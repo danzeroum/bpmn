@@ -3,6 +3,7 @@ import {
   activeNodes,
   addEdgeCommand,
   attachedBoundaryEventIds,
+  descendantIdsOf,
   compositeCommand,
   createEdge,
   getAnchorPoint,
@@ -25,6 +26,7 @@ import { useCanvasStore } from '../contexts/CanvasContext.js';
 import type { ResizeCorner } from '../state/canvasStore.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { panViewport, screenToWorld } from './viewport.js';
+import { isNodeVisible } from './visibility.js';
 
 const DRAG_THRESHOLD = 4;
 
@@ -90,11 +92,16 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
         selectedIds = state.selectedIds.includes(nodeId) ? state.selectedIds : [nodeId];
       }
       const origin = world(event);
-      // A boundary event travels with its host: fold attached boundary events
-      // into the drag set so they move (and commit) together.
+      // A boundary event travels with its host, and an (expanded) sub-process
+      // carries its whole subtree: fold both into the drag set so they move
+      // (and commit) together.
       const base = selectedIds.includes(nodeId) ? selectedIds : [nodeId];
-      const attached = attachedBoundaryEventIds(diagramRef.current, base);
-      const nodeIds = attached.length ? [...new Set([...base, ...attached])] : base;
+      const withDescendants = [
+        ...base,
+        ...base.flatMap((id) => descendantIdsOf(diagramRef.current, id)),
+      ];
+      const attached = attachedBoundaryEventIds(diagramRef.current, withDescendants);
+      const nodeIds = [...new Set([...withDescendants, ...attached])];
       store.setState({
         selectedIds,
         dragState: {
@@ -284,22 +291,28 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
     [config.ruleEngine, schedule, store, svgRef, world],
   );
 
-  const findNodeAt = useCallback((point: Point) => {
-    const nodes = activeNodes(diagramRef.current);
-    // Iterate in reverse so topmost (later-rendered) nodes win.
-    for (let i = nodes.length - 1; i >= 0; i--) {
-      const node = nodes[i];
-      if (
-        point.x >= node.x &&
-        point.x <= node.x + node.width &&
-        point.y >= node.y &&
-        point.y <= node.y + node.height
-      ) {
-        return node;
+  const findNodeAt = useCallback(
+    (point: Point) => {
+      const { drillId } = store.getState();
+      const nodes = activeNodes(diagramRef.current).filter((node) =>
+        isNodeVisible(diagramRef.current, node, drillId),
+      );
+      // Iterate in reverse so topmost (later-rendered) nodes win.
+      for (let i = nodes.length - 1; i >= 0; i--) {
+        const node = nodes[i];
+        if (
+          point.x >= node.x &&
+          point.x <= node.x + node.width &&
+          point.y >= node.y &&
+          point.y <= node.y + node.height
+        ) {
+          return node;
+        }
       }
-    }
-    return undefined;
-  }, []);
+      return undefined;
+    },
+    [store],
+  );
 
   const onPointerUp = useCallback(
     (event: ReactPointerEvent) => {
@@ -390,10 +403,16 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
           width: Math.abs(current.x - start.x),
           height: Math.abs(current.y - start.y),
         };
+        // Only nodes actually on screen are lassoable — never the contents of
+        // a collapsed sub-process or, in drill-down, the outer process.
         const picked =
           box.width > 2 || box.height > 2
             ? activeNodes(diagramRef.current)
-                .filter((node) => rectsIntersect(box, node))
+                .filter(
+                  (node) =>
+                    rectsIntersect(box, node) &&
+                    isNodeVisible(diagramRef.current, node, state.drillId),
+                )
                 .map((node) => node.id)
             : [];
         store.setState({
