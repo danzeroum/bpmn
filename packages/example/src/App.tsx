@@ -32,6 +32,7 @@ import {
 } from './sampleDiagram.js';
 import { LifecyclePanel } from './LifecyclePanel.js';
 import { AuditPanel } from './AuditPanel.js';
+import { LibrarySurface } from './LibrarySurface.js';
 import './demo.css';
 
 // Observability sink (§2): the host decides what to do with editor events —
@@ -117,6 +118,10 @@ export function App() {
   const params = new URLSearchParams(window.location.search);
   const drdMode = params.get('drd') !== null;
   const decisionParam = params.get('decision');
+  // `?library=1` renders the Biblioteca surface (Handoff 6 S-3) instead of
+  // the editor — a read-only catalog page, no canvas.
+  const libraryMode = params.get('library') !== null;
+  if (libraryMode) return <LibrarySurface />;
 
   const replaceFromOutside = (next: BpmnDiagram) => {
     latestRef.current = next;

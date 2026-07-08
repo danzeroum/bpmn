@@ -17,6 +17,19 @@ export const SEAL_LABELS: Record<VersionStatus, string> = {
   retired: 'ARQUIVADA',
 };
 
+/**
+ * Standalone seal data (Handoff 6 §10.6): screens outside the editor
+ * (Biblioteca, Revisão, Ledger Explorer) render the SAME component from
+ * explicit data instead of the editor contexts. `meta` is precomputed by the
+ * host — engine-derived lines ("aguarda N aprovações") only exist where a
+ * lifecycle engine does.
+ */
+export interface StatusBadgeSeal {
+  status: VersionStatus;
+  semanticVersion: string;
+  meta?: string;
+}
+
 export interface StatusBadgeProps {
   /**
    * Publication channel shown in the candidate meta line ("canal: piloto").
@@ -24,6 +37,11 @@ export interface StatusBadgeProps {
    * omitted, the segment is dropped.
    */
   channel?: string;
+  /**
+   * Standalone mode: render this seal directly, requiring no editor context.
+   * Omitted, the badge reads the surrounding <BpmnDesigner>/<BpmnViewer>.
+   */
+  seal?: StatusBadgeSeal;
 }
 
 /**
@@ -31,11 +49,18 @@ export interface StatusBadgeProps {
  * meta line derived from the version record and the lifecycle engine —
  * "aguarda N aprovações" always reflects the engine config, never a constant.
  */
-export function StatusBadge({ channel }: StatusBadgeProps) {
+export function StatusBadge({ channel, seal }: StatusBadgeProps) {
+  if (seal) {
+    const meta = seal.meta ?? (channel ? `canal: ${channel}` : undefined);
+    return <SealMarkup status={seal.status} semanticVersion={seal.semanticVersion} meta={meta} />;
+  }
+  return <EditorStatusBadge channel={channel} />;
+}
+
+function EditorStatusBadge({ channel }: { channel?: string }) {
   const { diagram } = useDiagram();
   const { lifecycleEngine } = useEditorConfig();
   const { status, semanticVersion, approvedBy, effectiveFrom, effectiveUntil } = diagram.version;
-  const label = SEAL_LABELS[status] ?? SEAL_LABELS.draft;
 
   const distinctRoles = [...new Set(approvedBy.map((a) => a.role))];
   let meta: string | undefined;
@@ -55,6 +80,20 @@ export function StatusBadge({ channel }: StatusBadgeProps) {
     meta = `vigente até ${formatDate(effectiveUntil)}`;
   }
 
+  return <SealMarkup status={status} semanticVersion={semanticVersion} meta={meta} />;
+}
+
+/** The single seal markup both modes share — one component, one table (§10.6). */
+function SealMarkup({
+  status,
+  semanticVersion,
+  meta,
+}: {
+  status: VersionStatus;
+  semanticVersion: string;
+  meta?: string;
+}) {
+  const label = SEAL_LABELS[status] ?? SEAL_LABELS.draft;
   return (
     <span
       className="bpmnr-status-badge"

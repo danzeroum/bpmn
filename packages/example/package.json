@@ -13,8 +13,11 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@bpmn-react/adapters-bpmn": "workspace:*",
     "@bpmn-react/audit": "workspace:*",
     "@bpmn-react/core": "workspace:*",
+    "@bpmn-react/library": "workspace:*",
+    "@bpmn-react/library-react": "workspace:*",
     "@bpmn-react/dmn": "workspace:*",
     "@bpmn-react/domain-example": "workspace:*",
     "@bpmn-react/healthcare": "workspace:*",
