@@ -6,6 +6,10 @@ import { DefaultShape } from '../shapes/index.js';
 import { theme } from '../shapes/common.js';
 import type { Interactions } from './useInteractions.js';
 import { NodeLabelEditor } from './NodeLabelEditor.js';
+import { SHADOW_FILTER_ID } from './Defs.js';
+
+/** Below this zoom node shadows are dropped — SVG filters get expensive at scale. */
+const SHADOW_MIN_ZOOM = 0.5;
 
 export interface NodeRendererProps {
   node: BpmnNode;
@@ -34,11 +38,16 @@ function NodeRendererInner({
   editing,
 }: NodeRendererProps) {
   const config = useEditorConfig();
+  // Boolean selector: nodes re-render only when crossing the zoom threshold
+  // (same pattern as the purpose chip in EdgeRenderer).
+  const shadowsVisible = useCanvasState((s) => 1200 / s.viewport.width >= SHADOW_MIN_ZOOM);
   const Shape = config.shapes[node.type] ?? DefaultShape;
   const closed = node.removedInVersion !== undefined;
   const rendered = resizeRect
     ? { ...node, x: resizeRect.x, y: resizeRect.y, width: resizeRect.width, height: resizeRect.height }
     : node;
+  const typeDef = config.registry.has(node.type) ? config.registry.get(node.type) : undefined;
+  const hasShadow = typeDef ? (typeDef.visual?.shadow ?? typeDef.category === 'activity') : false;
 
   return (
     <g
@@ -52,7 +61,14 @@ function NodeRendererInner({
       onPointerDown={editable ? (e) => interactions.onNodePointerDown(e, node.id) : undefined}
       onDoubleClick={editable ? (e) => interactions.onNodeDoubleClick(e, node.id) : undefined}
     >
-      <Shape node={rendered} selected={selected} />
+      {/* The filter wraps only the shape so halo/ports/handles stay crisp. */}
+      {hasShadow && shadowsVisible ? (
+        <g filter={`url(#${SHADOW_FILTER_ID})`}>
+          <Shape node={rendered} selected={selected} />
+        </g>
+      ) : (
+        <Shape node={rendered} selected={selected} />
+      )}
       {editing && <NodeLabelEditor node={rendered} />}
 
       {connectHover && (
@@ -70,17 +86,20 @@ function NodeRendererInner({
         />
       )}
 
+      {/* Selection halo (craft spec): the shape's own 2.5 stroke is the solid
+          outline; this soft offset ring replaces the old dashed marquee. */}
       {selected && !connectHover && (
         <rect
-          x={-4}
-          y={-4}
-          width={rendered.width + 8}
-          height={rendered.height + 8}
-          rx={8}
+          x={-3}
+          y={-3}
+          width={rendered.width + 6}
+          height={rendered.height + 6}
+          rx={11}
           fill="none"
           stroke={theme.strokeSelected}
-          strokeWidth={1}
-          strokeDasharray="3,3"
+          strokeWidth={2}
+          opacity={0.35}
+          data-selection-halo
           pointerEvents="none"
         />
       )}
@@ -115,7 +134,7 @@ function ConnectionPorts({
           key={index}
           cx={port.x}
           cy={port.y}
-          r={5}
+          r={4}
           fill="var(--bpmnr-port, #ffffff)"
           stroke={theme.strokeSelected}
           strokeWidth={1.5}

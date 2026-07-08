@@ -143,18 +143,61 @@ export function routeOrthogonal(source: Rect, target: Rect): Point[] {
   return collapseWaypoints([start, ...bends, end]);
 }
 
-export function waypointsToPath(points: Point[]): string {
-  if (points.length === 0) return '';
-  const [first, ...rest] = points;
-  return `M ${first.x} ${first.y} ` + rest.map((p) => `L ${p.x} ${p.y}`).join(' ');
+/** Rounds to 2 decimals so corner tangent points don't emit float noise. */
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
-export function orthogonalConnection(source: Rect, target: Rect): EdgeGeometry {
+/**
+ * Converts waypoints to an SVG path. With `cornerRadius > 0` each interior
+ * bend is rounded with a quadratic curve; the radius is clamped to half of
+ * the shorter adjacent segment so short segments never overlap. Radius 0
+ * (the default) emits the plain polyline unchanged.
+ */
+export function waypointsToPath(points: Point[], cornerRadius = 0): string {
+  if (points.length === 0) return '';
+  const rounded = cornerRadius > 0 ? collapseWaypoints(points) : points;
+  if (cornerRadius <= 0 || rounded.length < 3) {
+    const [first, ...rest] = rounded;
+    return `M ${first.x} ${first.y} ` + rest.map((p) => `L ${p.x} ${p.y}`).join(' ');
+  }
+  const segments = [`M ${rounded[0].x} ${rounded[0].y}`];
+  for (let index = 1; index < rounded.length - 1; index++) {
+    const [a, b, c] = [rounded[index - 1], rounded[index], rounded[index + 1]];
+    const abLength = distance(a, b);
+    const bcLength = distance(b, c);
+    const cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+    const radius = Math.min(cornerRadius, abLength / 2, bcLength / 2);
+    // Straight-through (collinear diagonals) or degenerate corners stay sharp.
+    if (radius < 0.5 || Math.abs(cross) < 1e-9) {
+      segments.push(`L ${b.x} ${b.y}`);
+      continue;
+    }
+    const entry = {
+      x: round2(b.x - ((b.x - a.x) / abLength) * radius),
+      y: round2(b.y - ((b.y - a.y) / abLength) * radius),
+    };
+    const exit = {
+      x: round2(b.x + ((c.x - b.x) / bcLength) * radius),
+      y: round2(b.y + ((c.y - b.y) / bcLength) * radius),
+    };
+    segments.push(`L ${entry.x} ${entry.y}`, `Q ${b.x} ${b.y} ${exit.x} ${exit.y}`);
+  }
+  const last = rounded[rounded.length - 1];
+  segments.push(`L ${last.x} ${last.y}`);
+  return segments.join(' ');
+}
+
+export function orthogonalConnection(
+  source: Rect,
+  target: Rect,
+  options: { cornerRadius?: number } = {},
+): EdgeGeometry {
   const waypoints = routeOrthogonal(source, target);
   const start = waypoints[0];
   const end = waypoints[waypoints.length - 1];
   const mid = waypoints[Math.floor(waypoints.length / 2)];
-  return { path: waypointsToPath(waypoints), start, end, midpoint: mid };
+  return { path: waypointsToPath(waypoints, options.cornerRadius ?? 0), start, end, midpoint: mid };
 }
 
 export function getBoundingBox(rects: Rect[]): Rect {

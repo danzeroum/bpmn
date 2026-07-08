@@ -24,6 +24,11 @@ test('renders the sample diagram with domain shapes', async ({ page }) => {
     'marker-end',
     'url(#bpmnr-edge-open)',
   );
+  // Craft pack: the fixed-waypoint handoff (e6) renders rounded (Q) corners.
+  await expect(page.locator('[data-edge-id="e6"] path[marker-end]').first()).toHaveAttribute(
+    'd',
+    / Q /,
+  );
   await expect(page.getByRole('status', { name: /Version/ })).toContainText('Draft');
 });
 

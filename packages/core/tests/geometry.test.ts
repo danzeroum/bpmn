@@ -101,10 +101,98 @@ describe('connections', () => {
     expect(waypointsToPath([])).toBe('');
   });
 
+  it('waypointsToPath with radius 0 matches the legacy polyline output', () => {
+    const z = [
+      { x: 0, y: 0 },
+      { x: 50, y: 0 },
+      { x: 50, y: 40 },
+      { x: 100, y: 40 },
+    ];
+    expect(waypointsToPath(z, 0)).toBe(waypointsToPath(z));
+    expect(waypointsToPath(z)).toBe('M 0 0 L 50 0 L 50 40 L 100 40');
+  });
+
+  it('waypointsToPath rounds interior corners with quadratic curves', () => {
+    const path = waypointsToPath(
+      [
+        { x: 0, y: 0 },
+        { x: 50, y: 0 },
+        { x: 50, y: 40 },
+        { x: 100, y: 40 },
+      ],
+      8,
+    );
+    // Tangent points sit 8px before/after each bend; the bend is the control point.
+    expect(path).toBe('M 0 0 L 42 0 Q 50 0 50 8 L 50 32 Q 50 40 58 40 L 100 40');
+  });
+
+  it('waypointsToPath clamps the radius to half the shorter adjacent segment', () => {
+    const path = waypointsToPath(
+      [
+        { x: 0, y: 0 },
+        { x: 6, y: 0 },
+        { x: 6, y: 60 },
+      ],
+      8,
+    );
+    // First segment is 6 long → radius clamps to 3.
+    expect(path).toBe('M 0 0 L 3 0 Q 6 0 6 3 L 6 60');
+  });
+
+  it('waypointsToPath keeps collinear and duplicate points safe under rounding', () => {
+    const path = waypointsToPath(
+      [
+        { x: 0, y: 0 },
+        { x: 0, y: 0 },
+        { x: 25, y: 0 },
+        { x: 50, y: 0 },
+        { x: 50, y: 40 },
+      ],
+      8,
+    );
+    expect(path).toBe('M 0 0 L 42 0 Q 50 0 50 8 L 50 40');
+    // Diagonal straight-through points stay sharp (no zero-angle curve).
+    expect(
+      waypointsToPath(
+        [
+          { x: 0, y: 0 },
+          { x: 10, y: 10 },
+          { x: 20, y: 20 },
+        ],
+        8,
+      ),
+    ).toBe('M 0 0 L 10 10 L 20 20');
+  });
+
+  it('waypointsToPath handles short inputs with any radius', () => {
+    expect(waypointsToPath([], 8)).toBe('');
+    expect(waypointsToPath([{ x: 5, y: 5 }], 8)).toBe('M 5 5 ');
+    expect(
+      waypointsToPath(
+        [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+        ],
+        8,
+      ),
+    ).toBe('M 0 0 L 10 0');
+  });
+
   it('orthogonalConnection exposes midpoint for labels', () => {
     const geometry = orthogonalConnection(rect(0, 0), rect(300, 200));
     expect(geometry.path.startsWith('M ')).toBe(true);
     expect(geometry.midpoint).toBeDefined();
+  });
+
+  it('orthogonalConnection accepts a corner radius', () => {
+    const sharp = orthogonalConnection(rect(0, 0), rect(300, 200));
+    const rounded = orthogonalConnection(rect(0, 0), rect(300, 200), { cornerRadius: 8 });
+    expect(sharp.path).not.toContain('Q');
+    expect(rounded.path).toContain('Q');
+    // Endpoints and midpoint are radius-independent.
+    expect(rounded.start).toEqual(sharp.start);
+    expect(rounded.end).toEqual(sharp.end);
+    expect(rounded.midpoint).toEqual(sharp.midpoint);
   });
 });
 

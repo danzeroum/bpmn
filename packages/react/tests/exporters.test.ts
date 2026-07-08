@@ -46,6 +46,7 @@ describe('svgToString', () => {
       'data-resize-handles',
       'data-selection-box',
       'data-connection-preview',
+      'data-selection-halo',
     ]) {
       const g = document.createElementNS(SVG_NS, 'g');
       g.setAttribute(attr, '');
@@ -60,6 +61,7 @@ describe('svgToString', () => {
     expect(xml).not.toContain('data-resize-handles');
     expect(xml).not.toContain('data-selection-box');
     expect(xml).not.toContain('data-connection-preview');
+    expect(xml).not.toContain('data-selection-halo');
     expect(xml).toContain('data-node-id="keep-me"');
   });
 

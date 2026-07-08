@@ -57,16 +57,18 @@ de propósito:
   fora do vértice direito). São overlays de canvas — vivem no `NodeRenderer`/`overlays.tsx`, não
   nos shapes puros (princípio §6.1), então são uma PR de canvas separada. O sinal de erro já
   existe de forma textual na validação; falta a camada visual sobre o nó.
-- **Ícones de linha da paleta core** (§5.5): a folha 07 desenha 16 ícones; as PRs 1–3 só trocaram
-  os 6 do domínio. Trocar os core (`start`/`task`/`gateway`/…) por SVG ReactNode é retrocompatível
-  (`PaletteItem.icon` já é `ReactNode`), mas mexe em `packages/react/src/ui/paletteItems.ts` e no
-  `apiSurface` — fazer quando priorizado.
+- ~~**Ícones de linha da paleta core** (§5.5)~~ → entregue na PR do craft pack
+  (`paletteIcons.tsx`, 18px stroke 1.5 `currentColor`).
 - **Regra de rotulação das tags (documentar):** só os *cards* levam a tag small-caps
   (SQUAD/PROMPT/CONNECTOR); formas geométricas auto-identificáveis (Persona pílula, Gate hexágono,
   Deliverable flâmula) não. Está comentado no topo de `shapes.tsx`; convém elevar ao handoff/futuro
   `CONFORMANCE.md` para o próximo shape não quebrar a consistência de arquitetura de informação.
-- **Agrupamento da paleta** (Core / BuildToValue) com cabeçalhos — hoje é lista plana. Prepara o
-  sub-menu de eventos da F6; é mudança de UI no `Palette.tsx`.
+- ~~**Agrupamento da paleta** (Core / BuildToValue) com cabeçalhos~~ → entregue na PR do craft
+  pack: `PaletteGroup` declarativo no plugin (`paletteGroups`), grupos Core BPMN / Events (badge
+  F6) / BuildToValue, itens sem grupo continuam em lista plana (retrocompatível). Nota de idioma:
+  os cabeçalhos core seguem o padrão EN da UI da biblioteca ("Core BPMN"/"Events"); o protótipo
+  usa PT ("EVENTOS"). i18n da UI core é decisão de produto em aberto — a camada de aplicação pode
+  registrar grupos com labels PT por cima se preferir.
 - **Export XES do ledger** (candidato pós-F8): o ledger hash-chained + o registry já são um event
   log. Exportar em XES habilitaria *process mining* do "processo real de design" vs. o documentado —
   diferencial que ferramentas de modelagem puras não têm. Sinergia: os critérios de aprovação do
@@ -112,13 +114,35 @@ Progresso desta rodada autônoma (todas as PRs com CI verde → merge):
 - **F10** VDML/BMM via `extensionElements`.
 
 ### Polimento pendente da F6
-- Sub-menu de eventos na paleta (hoje lista plana com alguns typed via `defaultProperties`) — junto
-  do agrupamento Core/BuildToValue (item da seção 5).
+- ~~Sub-menu de eventos na paleta~~ → entregue na PR do craft pack: grupo "Events" (badge F6)
+  com catch/throw/timer/message/boundary NI/event gateway.
 - Boundary: drag-to-attach e reflow por `t` no resize (seção 6).
 
 ### Nota
 Foram enviados protótipos de design em `docs/design_handoff_btv_prototypes/` (screenshots) durante a
-sessão. Ainda **não** foram incorporados — avaliar se pedem ajustes visuais antes de seguir a F7.
+sessão. Em incorporação: craft pack (PR4) → selo de vigência (PR5) → fluxo de promoção (PR6),
+antes de retomar a F7 (subProcess) em sessão dedicada.
+
+## 8. Protótipos (Handoff 3) — decisões de escopo em aberto
+
+- **Handoff 2 ausente do repositório:** o Handoff 3 referencia `docs/design_handoff_btv_craft_governance/`
+  (Craft Pack §A, specs §B1/§B2, priorização MoSCoW, specs A/B/C), mas a pasta não existe na main
+  nem em nenhuma branch. As PRs 4–6 usam o Handoff 3 (que duplica as specs essenciais) + protótipos
+  como fonte da verdade. Se o Handoff 2 tiver conteúdo além disso (MoSCoW completo, specs A/B/C),
+  subir a pasta ao repo para reconciliação.
+- **Glifo de supersede no diff:** o protótipo do modal de promoção usa `⤳`; o `DiffView` existente
+  usa `⇄`. Mantido o `⇄` do componente (o handoff §4 manda usar "as cores do DiffView existente";
+  trocar o glifo é decisão de design de 1 linha se preferir fidelidade total).
+- **Hover de nó no canvas:** o craft pack aplica hover 120ms no chrome (paleta/toolbar/timeline).
+  Hover visual em nós SVG exigiria estado por nó (re-render em mousemove com 350 nós) ou filtro CSS
+  caro — fora do aceite §8.5; incluir só se o custo/benefício for aprovado.
+- **NFR 60fps@350:** o e2e `perf.spec.ts` mede FPS real (pan+zoom, 350 nós) e imprime o valor.
+  Medições em software rendering (sem GPU): ~41fps em container dedicado, ~26fps no runner
+  compartilhado do GitHub — por isso o piso no CI é 15fps, um canário de regressão (um re-render
+  por frame de 350 nós cai abaixo de 10fps), não o NFR. O alvo de 60fps vale para hardware real:
+  rodar `pnpm --filter @bpmn-react/example dev` + `/?stress=350` numa máquina local com GPU para a
+  verificação final; o gate de zoom desliga sombras (<50%) e chips (<60%) para proteger a taxa em
+  diagramas densos.
 
 ## Resolvidas (para histórico)
 

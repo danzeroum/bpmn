@@ -62,13 +62,14 @@
 
 .demo-side {
   position: absolute;
-  left: 10px;
+  /* Clear of the (taller, grouped) palette on the left edge. */
+  left: 176px;
   bottom: 12px;
   z-index: 3;
   display: flex;
   gap: 10px;
   align-items: flex-end;
-  max-width: calc(100% - 220px);
+  max-width: calc(100% - 386px);
 }
 
 .demo-lifecycle,

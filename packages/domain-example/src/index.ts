@@ -59,12 +59,14 @@ export const DOMAIN_EDGE_STYLES: Record<string, EdgeStyle> = {
  * in any BPMN tool; the domain identity round-trips via extensionElements.
  */
 export const DOMAIN_NODE_TYPES: NodeTypeDefinition[] = [
-  { type: 'btv:squad', label: 'Squad', category: 'custom', defaultSize: { width: 180, height: 100 }, xml: { tag: 'subProcess' } },
-  { type: 'btv:persona', label: 'Persona', category: 'custom', defaultSize: { width: 150, height: 56 }, xml: { tag: 'userTask' } },
+  // Cards cast the canvas shadow (craft pack); the gate is the domain's
+  // "gateway" and stays flat like core gateways.
+  { type: 'btv:squad', label: 'Squad', category: 'custom', defaultSize: { width: 180, height: 100 }, xml: { tag: 'subProcess' }, visual: { shadow: true } },
+  { type: 'btv:persona', label: 'Persona', category: 'custom', defaultSize: { width: 150, height: 56 }, xml: { tag: 'userTask' }, visual: { shadow: true } },
   { type: 'btv:gate', label: 'Approval Gate', category: 'custom', defaultSize: { width: 72, height: 56 }, xml: { tag: 'inclusiveGateway' } },
-  { type: 'btv:prompt', label: 'Prompt', category: 'custom', defaultSize: { width: 130, height: 64 }, xml: { tag: 'scriptTask' } },
-  { type: 'btv:connector', label: 'Connector', category: 'custom', defaultSize: { width: 130, height: 60 }, xml: { tag: 'serviceTask' } },
-  { type: 'btv:deliverable', label: 'Deliverable', category: 'custom', defaultSize: { width: 120, height: 70 }, xml: { tag: 'endEvent' } },
+  { type: 'btv:prompt', label: 'Prompt', category: 'custom', defaultSize: { width: 130, height: 64 }, xml: { tag: 'scriptTask' }, visual: { shadow: true } },
+  { type: 'btv:connector', label: 'Connector', category: 'custom', defaultSize: { width: 130, height: 60 }, xml: { tag: 'serviceTask' }, visual: { shadow: true } },
+  { type: 'btv:deliverable', label: 'Deliverable', category: 'custom', defaultSize: { width: 120, height: 70 }, xml: { tag: 'endEvent' }, visual: { shadow: true } },
 ];
 
 /** Approval gates accept a single predecessor (single-funnel approvals). */
@@ -145,13 +147,22 @@ export const domainExamplePlugin: BpmnPlugin = {
     'btv:deliverable': DeliverableShape,
   },
   edgeStyles: DOMAIN_EDGE_STYLES,
+  paletteGroups: [
+    {
+      id: 'buildtovalue',
+      label: 'BuildToValue',
+      headerColor: 'var(--btv-gold, #9a7b1e)',
+      itemBackground: 'var(--btv-palette-item-bg, #fdfaf1)',
+      itemHoverBackground: 'var(--btv-gold-soft, #f6edd4)',
+    },
+  ],
   paletteItems: [
-    { id: 'btv-squad', label: 'Squad', nodeType: 'btv:squad', icon: BTV_PALETTE_ICONS['btv:squad'] },
-    { id: 'btv-persona', label: 'Persona', nodeType: 'btv:persona', icon: BTV_PALETTE_ICONS['btv:persona'], defaultProperties: { role: '' } },
-    { id: 'btv-gate', label: 'Approval Gate', nodeType: 'btv:gate', icon: BTV_PALETTE_ICONS['btv:gate'], defaultProperties: { approved: false } },
-    { id: 'btv-prompt', label: 'Prompt', nodeType: 'btv:prompt', icon: BTV_PALETTE_ICONS['btv:prompt'] },
-    { id: 'btv-connector', label: 'Connector', nodeType: 'btv:connector', icon: BTV_PALETTE_ICONS['btv:connector'] },
-    { id: 'btv-deliverable', label: 'Deliverable', nodeType: 'btv:deliverable', icon: BTV_PALETTE_ICONS['btv:deliverable'] },
+    { id: 'btv-squad', label: 'Squad', nodeType: 'btv:squad', icon: BTV_PALETTE_ICONS['btv:squad'], group: 'buildtovalue' },
+    { id: 'btv-persona', label: 'Persona', nodeType: 'btv:persona', icon: BTV_PALETTE_ICONS['btv:persona'], defaultProperties: { role: '' }, group: 'buildtovalue' },
+    { id: 'btv-gate', label: 'Approval Gate', nodeType: 'btv:gate', icon: BTV_PALETTE_ICONS['btv:gate'], defaultProperties: { approved: false }, group: 'buildtovalue' },
+    { id: 'btv-prompt', label: 'Prompt', nodeType: 'btv:prompt', icon: BTV_PALETTE_ICONS['btv:prompt'], group: 'buildtovalue' },
+    { id: 'btv-connector', label: 'Connector', nodeType: 'btv:connector', icon: BTV_PALETTE_ICONS['btv:connector'], group: 'buildtovalue' },
+    { id: 'btv-deliverable', label: 'Deliverable', nodeType: 'btv:deliverable', icon: BTV_PALETTE_ICONS['btv:deliverable'], group: 'buildtovalue' },
   ],
   validationRules: [gateSinglePredecessorRule, squadNeedsPersonaRule, handoffNeedsPurposeRule],
   registerRules: (engine) => {

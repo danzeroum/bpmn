@@ -14,16 +14,20 @@ import type {
   BpmnPlugin,
   EdgeRouterFn,
   EdgeStyle,
+  PaletteGroup,
   PaletteItem,
   ShapeComponent,
 } from '../plugins/types.js';
 import { BUILT_IN_SHAPES } from '../shapes/index.js';
-import { BUILT_IN_PALETTE } from '../ui/paletteItems.js';
+import { EDGE_CORNER_RADIUS } from '../shapes/common.js';
+import { BUILT_IN_PALETTE, BUILT_IN_PALETTE_GROUPS } from '../ui/paletteItems.js';
 
 export interface EditorConfig {
   registry: NodeTypeRegistry;
   shapes: Record<string, ShapeComponent>;
   paletteItems: PaletteItem[];
+  /** Palette section headers, in display order; merged across plugins. */
+  paletteGroups: PaletteGroup[];
   /** Domain edge styles keyed by `edge.type`, merged across plugins. */
   edgeStyles: Record<string, EdgeStyle>;
   ruleEngine: RuleEngine;
@@ -37,6 +41,10 @@ export interface EditorConfig {
 
 const EditorConfigContext = createContext<EditorConfig | null>(null);
 
+/** Built-in orthogonal router with the craft-pack rounded corners applied. */
+const roundedOrthogonalConnection: EdgeRouterFn = (source, target) =>
+  orthogonalConnection(source, target, { cornerRadius: EDGE_CORNER_RADIUS });
+
 export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
   // De-duplicate by id, last registration wins.
   const byId = new Map<string, BpmnPlugin>();
@@ -46,6 +54,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
   const registry = createDefaultRegistry();
   const shapes: Record<string, ShapeComponent> = { ...BUILT_IN_SHAPES };
   const paletteItems: PaletteItem[] = [...BUILT_IN_PALETTE];
+  const paletteGroups: PaletteGroup[] = [...BUILT_IN_PALETTE_GROUPS];
   const edgeStyles: Record<string, EdgeStyle> = {};
   const ruleEngine = createDefaultRuleEngine();
   const validationRules = [...BUILT_IN_VALIDATION_RULES];
@@ -61,6 +70,11 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
     Object.assign(shapes, plugin.shapes ?? {});
     Object.assign(edgeStyles, plugin.edgeStyles ?? {});
     paletteItems.push(...(plugin.paletteItems ?? []));
+    for (const group of plugin.paletteGroups ?? []) {
+      const existing = paletteGroups.findIndex((g) => g.id === group.id);
+      if (existing >= 0) paletteGroups[existing] = group;
+      else paletteGroups.push(group);
+    }
     validationRules.push(...(plugin.validationRules ?? []));
     plugin.registerRules?.(ruleEngine);
     if (plugin.lifecycleConfig) lifecycleEngine = new LifecycleEngine(plugin.lifecycleConfig);
@@ -69,7 +83,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
         plugin.edgeRouter === 'bezier'
           ? cubicBezierConnection
           : plugin.edgeRouter === 'orthogonal'
-            ? orthogonalConnection
+            ? roundedOrthogonalConnection
             : plugin.edgeRouter;
     }
   }
@@ -78,6 +92,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
     registry,
     shapes,
     paletteItems,
+    paletteGroups,
     edgeStyles,
     ruleEngine,
     validationEngine: new ValidationEngine(validationRules),

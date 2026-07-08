@@ -18,7 +18,7 @@ export function svgToString(svg: SVGSVGElement): string {
     clone.setAttribute('height', String(viewBox.height));
   }
   // Strip transient interaction artifacts.
-  for (const selector of ['[data-ports]', '[data-resize-handles]', '[data-selection-box]', '[data-connection-preview]']) {
+  for (const selector of ['[data-ports]', '[data-resize-handles]', '[data-selection-box]', '[data-connection-preview]', '[data-selection-halo]']) {
     clone.querySelectorAll(selector).forEach((el) => el.remove());
   }
   return new XMLSerializer().serializeToString(clone);

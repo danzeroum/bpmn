@@ -13,10 +13,22 @@ export const EDGE_MARKER_FILLED_ID = 'bpmnr-edge-filled';
 export const EDGE_MARKER_OPEN_ID = 'bpmnr-edge-open';
 export const EDGE_MARKER_CHEVRON_ID = 'bpmnr-edge-chevron';
 
-/** Shared SVG defs: arrowheads and the dot-grid pattern. */
+/** Craft-pack drop shadow, applied only to activity/card shapes. */
+export const SHADOW_FILTER_ID = 'bpmnr-shadow';
+
+/** Shared SVG defs: arrowheads, the node shadow and the dot-grid pattern. */
 export function Defs({ gridSize }: { gridSize: number }) {
   return (
     <defs>
+      {/* Single shared filter with a tight region keeps 350-node graphs cheap. */}
+      <filter id={SHADOW_FILTER_ID} x="-20%" y="-20%" width="140%" height="160%">
+        <feDropShadow
+          dx={0}
+          dy={1}
+          stdDeviation={2}
+          style={{ floodColor: 'var(--bpmnr-shadow, #44403a)', floodOpacity: 0.1 }}
+        />
+      </filter>
       <marker
         id={ARROW_MARKER_ID}
         viewBox="0 0 10 10"

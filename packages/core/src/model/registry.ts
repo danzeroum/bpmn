@@ -24,6 +24,12 @@ export interface NodeTypeDefinition {
    * is preserved via extensionElements.
    */
   xml: { tag: string };
+  /**
+   * Renderer hints. `shadow` opts a type in/out of the canvas drop shadow;
+   * when omitted, renderers default it to `category === 'activity'` (cards
+   * cast shadows, events/gateways/containers don't).
+   */
+  visual?: { shadow?: boolean };
 }
 
 /**

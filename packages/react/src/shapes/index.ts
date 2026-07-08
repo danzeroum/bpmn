@@ -26,7 +26,7 @@ import {
 } from './shapes.js';
 
 export * from './shapes.js';
-export { ShapeLabel, theme, wrapLabel } from './common.js';
+export { EDGE_CORNER_RADIUS, ShapeLabel, theme, wrapLabel } from './common.js';
 
 export const BUILT_IN_SHAPES: Record<string, ShapeComponent> = {
   startEvent: StartEventShape,

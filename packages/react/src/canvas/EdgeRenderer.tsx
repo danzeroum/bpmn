@@ -7,7 +7,7 @@ import {
 } from '@bpmn-react/core';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
-import { theme } from '../shapes/common.js';
+import { EDGE_CORNER_RADIUS, theme } from '../shapes/common.js';
 import {
   ARROW_MARKER_ID,
   ARROW_MARKER_MUTED_ID,
@@ -74,7 +74,7 @@ function EdgeRendererInner({
     const start = edge.waypoints[0];
     const end = edge.waypoints[edge.waypoints.length - 1];
     const mid = edge.waypoints[Math.floor(edge.waypoints.length / 2)];
-    geometry = { path: waypointsToPath(edge.waypoints), start, end, midpoint: mid };
+    geometry = { path: waypointsToPath(edge.waypoints, EDGE_CORNER_RADIUS), start, end, midpoint: mid };
   } else {
     geometry = config.edgeRouter(shiftedSource, shiftedTarget);
   }
@@ -141,6 +141,10 @@ function EdgeRendererInner({
           textAnchor="middle"
           fontSize={11}
           fill={theme.textMuted}
+          paintOrder="stroke"
+          stroke="var(--bpmnr-canvas-bg, #faf9f6)"
+          strokeWidth={3}
+          strokeLinejoin="round"
           pointerEvents="none"
         >
           {edge.label}
