@@ -9,12 +9,17 @@ import * as api from '../src/index.js';
  */
 const EXPECTED_EXPORTS = [
   'APPROVAL_RECORDED',
+  'LEDGER_CATEGORIES',
+  'LedgerExplorer',
   'MIN_REJECTION_REASON_LENGTH',
   'PROMOTION_REJECTED',
   'ReviewScreen',
   'StudioShell',
   'approvalsProgress',
   'approvePromotion',
+  'categorizeEntry',
+  'describeEntry',
+  'filterEntries',
   'pendingPromotions',
   'rejectPromotion',
   'runReviewChecks',

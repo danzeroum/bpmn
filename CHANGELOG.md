@@ -50,6 +50,12 @@ All notable changes to the `@bpmn-react/*` packages are documented here. The pro
   Approving NEVER activates — separação solicitante/aprovador (§11).
 - Headless halves exported and DOM-free testable; workspace-only (`private: true`) until the
   npm-scope decision (pendências §1).
+- **S-5 — Ledger Explorer (Auditoria, §6)**: pure event categorization + filters
+  (`categorizeEntry`/`filterEntries` — the same filter feeds the trail and the XES export),
+  vertical trail with per-category dots, detail column with visible chaining (seq/hash/prev)
+  and the gold ATTESTATION block, "Verificar cadeia" via `verifyLedger()` (green n/n banner +
+  head hash + `VerificationReport.json`; broken → exact `firstBreak` index with later entries
+  marked untrusted), "Exportar XES" honouring current filters, keyboard-navigable trail.
 
 ### React (`@bpmn-react/react`)
 - `StatusBadge` standalone mode (Handoff 6 §10.6): a new optional `seal` prop renders the same

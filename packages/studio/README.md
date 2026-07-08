@@ -1,8 +1,8 @@
 # @bpmn-react/studio
 
 BuildToValue Studio — the application layer for the three no-screen personas
-(Handoff 6, S-4): shell + the generic Biblioteca screen + the Revisão do
-Aprovador. The Ledger Explorer (Auditoria) arrives in S-5.
+(Handoff 6, S-4/S-5): shell + the generic Biblioteca screen + the Revisão do
+Aprovador + the Ledger Explorer (Auditoria).
 
 > Workspace-only until the npm-scope decision (pendencias.md §1). The final
 > published name will be `<scope>/studio`.
@@ -38,6 +38,26 @@ onDecided? onOpenInDesigner?>` — queue (296px) + review area (max 820px):
 The headless halves (`pendingPromotions`, `runReviewChecks`,
 `approvePromotion`, `rejectPromotion`) are exported and 100% testable
 without DOM.
+
+## Ledger Explorer (§6)
+
+`<LedgerExplorer ledger registry? onAction? onDownload? initialFilter?>` —
+filter bar + vertical trail (max 720px) + detail column (340px):
+
+- **categorization is a pure studio function** (`categorizeEntry` /
+  `filterEntries`): Promoções / Aprovações / Comandos / Verificações, chips
+  with live counts, removable artifact context chip;
+- **"Verificar cadeia"** runs `verifyLedger()`: green banner with n/n, head
+  hash, algorithm and `VerificationReport.json` download; broken → red
+  banner pointing at the exact `firstBreak` index, with that entry and every
+  later one marked untrusted;
+- **detail**: seq/hash/prev (visible chaining), author, payload, and a gold
+  **ATTESTATION** block on activation entries (xmlHash, ledgerHeadHash,
+  approvers, effectiveFrom + `attestation.json` download);
+- **"Exportar XES"** feeds the SAME filtered entries to `toXES` — the export
+  always matches what the trail shows (§10.5);
+- actions ("Ver diff desta mudança", "Abrir versão no Designer (leitura)")
+  are descriptors the host resolves; keyboard-navigable trail (§10.8).
 
 ## Styles
 

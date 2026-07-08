@@ -4,6 +4,15 @@ export { ReviewScreen } from './review/ReviewScreen.js';
 export type { ReviewScreenProps } from './review/ReviewScreen.js';
 export { approvalsProgress, pendingPromotions } from './review/queue.js';
 export type { PendingPromotionsInput, PromotionRequest } from './review/queue.js';
+export { LedgerExplorer } from './ledger/LedgerExplorer.js';
+export type { LedgerAction, LedgerExplorerProps } from './ledger/LedgerExplorer.js';
+export {
+  LEDGER_CATEGORIES,
+  categorizeEntry,
+  describeEntry,
+  filterEntries,
+} from './ledger/categorize.js';
+export type { FilteredLedger, LedgerCategory, LedgerFilter } from './ledger/categorize.js';
 export { runReviewChecks } from './review/checks.js';
 export type { ReviewCheck, ReviewChecksInput } from './review/checks.js';
 export {

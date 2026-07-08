@@ -70,6 +70,8 @@ interface StudioWorld {
   baseline: BpmnDiagram;
   registry: VersionRegistry;
   ledger: AuditLedger;
+  /** `?tamper=1`: a forged copy for the broken-chain demo/e2e (§10.5). */
+  auditLedger: AuditLedger | { entries: ReturnType<AuditLedger['export']>['entries'] };
 }
 
 async function buildWorld(): Promise<StudioWorld> {
@@ -107,8 +109,36 @@ async function buildWorld(): Promise<StudioWorld> {
   candidate.nodes['end'].x = 520;
 
   const ledger = new AuditLedger();
-  await ledger.append({ type: 'NODE_ADDED', userId: 'ana', versionId: 'onb-v2', details: { nodeId: 'auto' } });
-  await ledger.append({ type: 'NODE_UPDATED', userId: 'ana', versionId: 'onb-v2', details: { nodeId: 'work' } });
+  await ledger.append({ type: 'NODE_ADDED', userId: 'ana', versionId: 'onb-v2', details: { nodeId: 'auto', artifactId: 'onboarding' } });
+  await ledger.append({ type: 'NODE_UPDATED', userId: 'ana', versionId: 'onb-v2', details: { nodeId: 'work', artifactId: 'onboarding' } });
+  await ledger.append({
+    type: 'APPROVAL_RECORDED',
+    userId: 'carla',
+    versionId: 'onb-v2',
+    details: { role: 'compliance', artifactId: 'onboarding' },
+  });
+  await ledger.append({
+    type: 'VERSION_ATTESTED',
+    userId: 'ana',
+    versionId: 'onb-v1',
+    details: {
+      artifactId: 'onboarding',
+      xmlHash: baseline.version.snapshotHash,
+      ledgerHeadHash: ledger.getEntries()[2]?.hash ?? '',
+      effectiveFrom: '2026-03-01T00:00:00.000Z',
+      approvers: [{ userId: 'bruna' }, { userId: 'carla' }],
+    },
+  });
+
+  // `?tamper=1` flips one byte of an entry — the Explorer must point at the
+  // exact break and distrust everything after it (§10.5).
+  const tampered = new URLSearchParams(window.location.search).get('tamper') !== null;
+  let auditLedger: StudioWorld['auditLedger'] = ledger;
+  if (tampered) {
+    const forged = ledger.export();
+    forged.entries[1].details = { ...forged.entries[1].details, nodeId: 'work!' };
+    auditLedger = forged;
+  }
 
   return {
     adapters: [bpmnDiagramAdapter(registry), personaAdapter(registry), createRecipeAdapter()],
@@ -116,6 +146,7 @@ async function buildWorld(): Promise<StudioWorld> {
     baseline,
     registry,
     ledger,
+    auditLedger,
   };
 }
 
@@ -153,6 +184,11 @@ export function StudioSurface() {
           onAction: (ref, action) => setLastAction(`${action.id} → ${ref.adapterId}:${ref.artifactId}`),
         }}
         review={review}
+        audit={{
+          ledger: world.auditLedger,
+          registry: world.registry,
+          onAction: (action) => setLastAction(`${action.id} → seq ${action.entry.seq}`),
+        }}
       />
     </>
   );
