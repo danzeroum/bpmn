@@ -133,9 +133,13 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   estruturais que quebram interoperabilidade (flow sem endpoints, boundary sem attachedToRef,
   lane fora de laneSet). Se a validação XSD integral virar requisito (ex.: certificação formal
   OMG), tratar como PR própria.
-- **Corpus gerado (PR-A1):** os 51 arquivos são equivalentes estruturais gerados
-  (`gen-corpus.mjs`), como o handoff permite; incluir exports reais de terceiros exige revisão
-  de licença arquivo a arquivo — fazer quando houver fonte com licença clara.
+- **Corpus — TAREFA ABERTA (coleta de exports genuínos):** proporção atual **0 reais / 51
+  gerados** (equivalentes estruturais via `gen-corpus.mjs`, como o handoff permite). Validado
+  com a ressalva de que reais < 20 ⇒ coletar **≥ 20 arquivos externos genuínos** com licença
+  clara: `bpmn-io/bpmn-js-examples` (MIT), quick-starts Camunda (Apache-2.0), arquivos
+  machine-readable anexos à spec OMG BPMN 2.0. Cada arquivo entra com header de
+  origem/URL/licença, no `corpus.test.ts` e no snapshot de warnings; onde houver original
+  genuíno do mesmo padrão, ele substitui o equivalente gerado.
 
 ## 8. Protótipos (Handoff 3) — decisões de escopo em aberto
 
