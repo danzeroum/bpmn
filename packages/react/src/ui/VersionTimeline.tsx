@@ -1,4 +1,5 @@
 import type { VersionStatus } from '@bpmn-react/core';
+import { SEAL_LABELS } from './StatusBadge.js';
 
 /**
  * One entry on the timeline. Deliberately a plain, self-contained shape —
@@ -17,6 +18,14 @@ export interface VersionTimelineItem {
   channel?: string;
   /** ISO timestamp the version took effect. */
   effectiveFrom?: string;
+  /** ISO timestamp the version stopped being effective (deprecation/retire). */
+  effectiveUntil?: string;
+  /**
+   * Executions pinned to this version (`bindRun` in the registry) — shown as
+   * a read-only chip. The host supplies the count; the component never
+   * queries governance storage.
+   */
+  pinnedRuns?: number;
   /** Marks the currently-selected/active entry. */
   current?: boolean;
 }
@@ -58,7 +67,6 @@ export function VersionTimeline({ items, onSelect, order = 'desc' }: VersionTime
       {ordered.length === 0 && <li className="bpmnr-timeline-empty">No versions yet</li>}
       {ordered.map((item) => {
         const color = STATUS_COLOR[item.status] ?? STATUS_COLOR.draft;
-        const date = formatDate(item.effectiveFrom);
         const interactive = Boolean(onSelect);
         return (
           <li
@@ -79,17 +87,27 @@ export function VersionTimeline({ items, onSelect, order = 'desc' }: VersionTime
                 <strong>v{item.semanticVersion}</strong>
                 <span
                   className="bpmnr-timeline-status"
+                  data-status={item.status}
                   style={{ background: color.bg, color: color.fg }}
                 >
-                  {item.status}
+                  {SEAL_LABELS[item.status] ?? item.status}
                 </span>
                 {item.channel && <span className="bpmnr-timeline-channel">{item.channel}</span>}
-                {date && (
-                  <span className="bpmnr-timeline-date" title={item.effectiveFrom}>
-                    {date}
+                {typeof item.pinnedRuns === 'number' && item.pinnedRuns > 0 && (
+                  <span className="bpmnr-timeline-runs">
+                    {item.pinnedRuns === 1
+                      ? '1 execução presa'
+                      : `${item.pinnedRuns} execuções presas`}
                   </span>
                 )}
               </span>
+              {item.effectiveFrom && (
+                <span className="bpmnr-timeline-validity">
+                  {item.effectiveUntil
+                    ? `vigente ${formatDate(item.effectiveFrom)} → ${formatDate(item.effectiveUntil)}`
+                    : `vigente desde ${formatDate(item.effectiveFrom)}`}
+                </span>
+              )}
               {item.changeSummary && (
                 <span className="bpmnr-timeline-summary">{item.changeSummary}</span>
               )}

@@ -150,6 +150,27 @@ describe('craft pack: edges', () => {
   });
 });
 
+describe('craft pack: semantic zoom (A5)', () => {
+  it('stamps the zoom band on the canvas root', () => {
+    const { container } = render(<BpmnDesigner diagram={buildDiagram()} />);
+    expect(container.querySelector('svg.bpmnr-canvas')).toHaveAttribute('data-zoom-band', 'full');
+  });
+
+  it('switches to reduced below 60% zoom', () => {
+    const { container } = render(
+      <BpmnDesigner diagram={buildDiagram()}>
+        <ZoomOut width={2100} />
+      </BpmnDesigner>,
+    );
+    expect(container.querySelector('svg.bpmnr-canvas')).toHaveAttribute(
+      'data-zoom-band',
+      'reduced',
+    );
+    // Edge labels carry the class the reduced band fades out.
+    expect(container.querySelector('.bpmnr-edge-label')).toBeInTheDocument();
+  });
+});
+
 describe('craft pack: grouped palette', () => {
   const groupPlugin: BpmnPlugin = {
     id: 'test/palette-groups',

@@ -1,6 +1,13 @@
 /* bpmn-react default styling. All colors are exposed as --bpmnr-* variables. */
 
 :root {
+  /* Typography: hosts override --bpmnr-font (e.g. with Space Grotesk) after
+     loading the webfont themselves — the library ships no font assets. */
+  --bpmnr-font:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
   --bpmnr-stroke: #44403a;
   --bpmnr-selected: #1a6a54;
   --bpmnr-danger: #b3372f;
@@ -39,7 +46,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-bpmnr-theme]) {
     --bpmnr-stroke: #c9c4ba;
     --bpmnr-selected: #57b895;
     --bpmnr-fill: #26241f;
@@ -61,12 +68,32 @@
   }
 }
 
+/* Explicit theme: set data-bpmnr-theme="dark" (or "light") on the root
+   element to override the system preference. Keep in sync with the
+   media block above. */
+[data-bpmnr-theme='dark'] {
+  --bpmnr-stroke: #c9c4ba;
+  --bpmnr-selected: #57b895;
+  --bpmnr-fill: #26241f;
+  --bpmnr-fill-activity: #2d2a25;
+  --bpmnr-fill-event: #263029;
+  --bpmnr-fill-gateway: #332d20;
+  --bpmnr-fill-pool: #2a2822;
+  --bpmnr-fill-lane: transparent;
+  --bpmnr-text: #ece8e1;
+  --bpmnr-text-muted: #a49c8f;
+  --bpmnr-canvas-bg: #1d1b18;
+  --bpmnr-grid-dot: #3a362f;
+  --bpmnr-port: #1d1b18;
+  --bpmnr-panel-bg: #26241f;
+  --bpmnr-panel-border: #3a362f;
+  --bpmnr-minimap-bg: rgba(29, 27, 24, 0.92);
+  --bpmnr-shadow: #000000;
+  --bpmnr-hover: #2d2a25;
+}
+
 .bpmnr-designer {
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
+  font-family: var(--bpmnr-font, system-ui, sans-serif);
   color: var(--bpmnr-text);
 }
 
@@ -268,6 +295,17 @@
   to {
     stroke-dashoffset: -10;
   }
+}
+
+/* Semantic zoom (A5): secondary ink fades out below 60% zoom. */
+.bpmnr-edge-label,
+[data-shape-tag] {
+  transition: opacity 120ms ease-out;
+}
+
+.bpmnr-canvas[data-zoom-band='reduced'] .bpmnr-edge-label,
+.bpmnr-canvas[data-zoom-band='reduced'] [data-shape-tag] {
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -891,6 +929,21 @@
   padding: 1px 7px;
 }
 
+/* Vigência line: answers "which version was active on day X" (B3). */
+.bpmnr-timeline-validity {
+  font-size: 11px;
+  color: var(--bpmnr-text-muted);
+}
+
+/* Executions pinned to the version (bindRun) — read-only governance signal. */
+.bpmnr-timeline-runs {
+  font-size: 9.5px;
+  border-radius: 4px;
+  padding: 0 5px;
+  background: var(--bpmnr-status-active, #dff0e6);
+  color: var(--bpmnr-status-active-fg, #1a6a54);
+}
+
 .bpmnr-timeline-date {
   font-size: 10px;
   color: var(--bpmnr-text-muted);
@@ -951,7 +1004,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-bpmnr-theme]) {
     --btv-gold: #cba84b;
     --btv-gold-soft: #33301f;
     --btv-palette-item-bg: #2b2820;
@@ -973,4 +1026,30 @@
 
     --btv-error: #d96a5f;
   }
+}
+
+/* Explicit theme: set data-bpmnr-theme="dark" (or "light") on the root
+   element to override the system preference. Keep in sync with the
+   media block above. */
+[data-bpmnr-theme='dark'] {
+  --btv-gold: #cba84b;
+  --btv-gold-soft: #33301f;
+  --btv-palette-item-bg: #2b2820;
+  --btv-green: #57b895;
+
+  --btv-squad-fill: #262a36;      --btv-squad-stroke: #8d9cd6;
+  --btv-persona-fill: #332d20;    --btv-persona-stroke: #cba45c;
+  --btv-persona-avatar: #4a4028;
+  --btv-gate-pending: #33301f;    --btv-gate-pending-stroke: #cba84b;
+  --btv-gate-approved: #22312a;   --btv-gate-approved-stroke: #57b895;
+  --btv-prompt-fill: #322632;     --btv-prompt-stroke: #c583ac;
+  --btv-connector-fill: #23303a;  --btv-connector-stroke: #6fa9ce;
+  --btv-deliverable-fill: #24312a; --btv-deliverable-stroke: #6fb287;
+
+  --btv-edge-handoff: #c9c4ba;
+  --btv-edge-approval: #57b895;
+  --btv-edge-feedback: #c583ac;
+  --btv-edge-escalation: #d96a5f;
+
+  --btv-error: #d96a5f;
 }

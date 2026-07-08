@@ -185,6 +185,9 @@ test('promotes through the lifecycle with multi-role approval and locks active d
   await expect(badge).toContainText('vigente desde');
   // The activation toast records the hash-chained ledger entry.
   await expect(page.locator('.bpmnr-toast')).toContainText(/ledger #[0-9a-f]{7} gravado/);
+  // B3: the session history timeline answers vigência per version.
+  await expect(page.locator('.bpmnr-timeline')).toContainText('ATIVA');
+  await expect(page.locator('.bpmnr-timeline')).toContainText('vigente desde');
 
   // Editing an active diagram is vetoed
   await page.getByRole('button', { name: 'Add Task' }).click();

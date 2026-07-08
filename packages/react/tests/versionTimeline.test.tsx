@@ -24,7 +24,7 @@ const ITEMS: VersionTimelineItem[] = [
 ];
 
 describe('VersionTimeline', () => {
-  it('renders each version with status, date, channel and approvers', () => {
+  it('renders each version with canonical seal, vigência, channel and approvers', () => {
     render(<VersionTimeline items={ITEMS} />);
     const list = screen.getByRole('list', { name: 'Version history' });
     const entries = within(list).getAllByRole('listitem');
@@ -32,10 +32,45 @@ describe('VersionTimeline', () => {
 
     const v2 = list.querySelector('[data-version-id="v2"]')!;
     expect(v2).toHaveTextContent('v2.0.0');
-    expect(v2).toHaveTextContent('active');
+    // Canonical PT seal label (same table as the StatusBadge).
+    expect(v2).toHaveTextContent('ATIVA');
+    expect(v2.querySelector('.bpmnr-timeline-status')).toHaveAttribute('data-status', 'active');
     expect(v2).toHaveTextContent('general');
-    expect(v2).toHaveTextContent('2026-06-01'); // effectiveFrom formatted to a date
+    expect(v2).toHaveTextContent('vigente desde 2026-06-01');
     expect(within(v2 as HTMLElement).getByText('compliance')).toBeInTheDocument();
+  });
+
+  it('answers "which version was active on day X": vigência per version (B3)', () => {
+    // Three consecutive validity windows — v1 and v2 closed, v3 open.
+    const items: VersionTimelineItem[] = [
+      { id: 'v1', semanticVersion: '1.0.0', status: 'retired', effectiveFrom: '2026-01-01T00:00:00Z', effectiveUntil: '2026-03-01T00:00:00Z' },
+      { id: 'v2', semanticVersion: '2.0.0', status: 'deprecated', effectiveFrom: '2026-03-01T00:00:00Z', effectiveUntil: '2026-06-01T00:00:00Z' },
+      { id: 'v3', semanticVersion: '3.0.0', status: 'active', effectiveFrom: '2026-06-01T00:00:00Z', current: true },
+    ];
+    const { container } = render(<VersionTimeline items={items} />);
+    expect(container.querySelector('[data-version-id="v1"]')).toHaveTextContent(
+      'vigente 2026-01-01 → 2026-03-01',
+    );
+    expect(container.querySelector('[data-version-id="v2"]')).toHaveTextContent(
+      'vigente 2026-03-01 → 2026-06-01',
+    );
+    expect(container.querySelector('[data-version-id="v3"]')).toHaveTextContent(
+      'vigente desde 2026-06-01',
+    );
+  });
+
+  it('shows the pinned-runs chip only when the host reports runs (bindRun)', () => {
+    const items: VersionTimelineItem[] = [
+      { id: 'v1', semanticVersion: '1.0.0', status: 'deprecated', pinnedRuns: 1 },
+      { id: 'v2', semanticVersion: '2.0.0', status: 'active', pinnedRuns: 12 },
+      { id: 'v3', semanticVersion: '3.0.0', status: 'draft', pinnedRuns: 0 },
+    ];
+    const { container } = render(<VersionTimeline items={items} />);
+    expect(container.querySelector('[data-version-id="v1"]')).toHaveTextContent('1 execução presa');
+    expect(container.querySelector('[data-version-id="v2"]')).toHaveTextContent(
+      '12 execuções presas',
+    );
+    expect(container.querySelector('[data-version-id="v3"] .bpmnr-timeline-runs')).toBeNull();
   });
 
   it('defaults to newest-first and flips with order="asc"', () => {
