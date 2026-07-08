@@ -158,18 +158,33 @@ test('promotes through the lifecycle with multi-role approval and locks active d
   // The candidate meta reflects the engine's quorum (2 roles by default).
   await expect(badge).toContainText('aguarda 2 aprovações');
 
-  // Promotion to active without approvals must fail
-  await page.getByRole('button', { name: '→ active' }).click();
-  await expect(page.getByRole('alert')).toContainText('distinct roles');
+  // Activation goes through the formal promotion flow (gates from the core).
+  await page.getByRole('button', { name: 'Promover…' }).click();
+  const dialog = page.getByRole('dialog', { name: /Ativar v0\.1\.0/ });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('PROMOÇÃO FORMAL · STATE MACHINE DO CORE');
 
-  // Approve with two distinct roles
-  await page.getByRole('button', { name: 'Approve as owner' }).click();
-  await page.getByLabel('Acting as').selectOption({ label: 'Carlos (compliance)' });
-  await page.getByRole('button', { name: 'Approve as compliance' }).click();
+  // Blocked until the quorum is met: 0/2 and a disabled activate button.
+  const activate = dialog.getByRole('button', { name: 'Ativar v0.1.0' });
+  await expect(dialog).toContainText('(0/2)');
+  await expect(activate).toBeDisabled();
 
-  await page.getByRole('button', { name: '→ active' }).click();
+  // The side effects are announced before activation (ledger, pinned runs).
+  await expect(dialog).toContainText('ledger hash-chained');
+
+  // Approve as two distinct roles from inside the flow.
+  await dialog.getByRole('button', { name: 'Aprovar como Owner' }).click();
+  await expect(dialog).toContainText('(1/2)');
+  await dialog.getByRole('button', { name: 'Aprovar como Compliance' }).click();
+  await expect(dialog).toContainText('(2/2)');
+  await expect(activate).toBeEnabled();
+
+  await activate.click();
+  await expect(dialog).not.toBeVisible();
   await expect(badge).toContainText('ATIVA');
   await expect(badge).toContainText('vigente desde');
+  // The activation toast records the hash-chained ledger entry.
+  await expect(page.locator('.bpmnr-toast')).toContainText(/ledger #[0-9a-f]{7} gravado/);
 
   // Editing an active diagram is vetoed
   await page.getByRole('button', { name: 'Add Task' }).click();

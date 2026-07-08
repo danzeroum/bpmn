@@ -77,6 +77,83 @@ describe('LifecycleEngine transitions', () => {
   });
 });
 
+describe('evaluateGates (promotion introspection)', () => {
+  const engine = new LifecycleEngine();
+
+  it('reports an unsatisfied transition gate whose detail equals the promote error', async () => {
+    const input = { diagram: diagramIn('draft'), target: 'active' as const, actor: owner, reason: 'x' };
+    const gates = await engine.evaluateGates(input);
+    const transition = gates.find((g) => g.id === 'transition')!;
+    expect(transition.satisfied).toBe(false);
+    await expect(engine.promote(input)).rejects.toThrow(transition.detail);
+  });
+
+  it('exposes required/current on the approvals gate', async () => {
+    let diagram = diagramIn('candidate');
+    const input = () => ({ diagram, target: 'active' as const, actor: owner, reason: 'x' });
+    let gates = await engine.evaluateGates(input());
+    let approvals = gates.find((g) => g.id === 'approvals')!;
+    expect(approvals).toMatchObject({ satisfied: false, required: 2, current: 0 });
+    await expect(engine.promote(input())).rejects.toThrow(approvals.detail);
+
+    diagram = engine.approve(diagram, owner, 'ok');
+    diagram = engine.approve(diagram, compliance, 'ok');
+    gates = await engine.evaluateGates(input());
+    approvals = gates.find((g) => g.id === 'approvals')!;
+    expect(approvals).toMatchObject({ satisfied: true, required: 2, current: 2 });
+  });
+
+  it('gates on the change summary with the exact promote message', async () => {
+    let diagram = diagramIn('candidate');
+    diagram.version.changeSummary = 'too short';
+    diagram = engine.approve(diagram, owner, 'ok');
+    diagram = engine.approve(diagram, compliance, 'ok');
+    const input = { diagram, target: 'active' as const, actor: owner, reason: '' };
+    const gates = await engine.evaluateGates(input);
+    const summary = gates.find((g) => g.id === 'change-summary')!;
+    expect(summary.satisfied).toBe(false);
+    await expect(engine.promote(input)).rejects.toThrow(summary.detail);
+  });
+
+  it('adds a diff gate only when the config requires it', async () => {
+    const strict = new LifecycleEngine({ requireDiff: true });
+    let diagram = diagramIn('candidate');
+    diagram = strict.approve(diagram, owner, 'ok');
+    diagram = strict.approve(diagram, compliance, 'ok');
+    const noDiff = { diagram, target: 'active' as const, actor: owner, reason: '' };
+    const gates = await strict.evaluateGates(noDiff);
+    const diffGate = gates.find((g) => g.id === 'diff')!;
+    expect(diffGate.satisfied).toBe(false);
+    await expect(strict.promote(noDiff)).rejects.toThrow(diffGate.detail);
+    // Default engine has no diff gate at all.
+    const defaultGates = await engine.evaluateGates(noDiff);
+    expect(defaultGates.some((g) => g.id === 'diff')).toBe(false);
+  });
+
+  it('maps promotionRules onto rule gates carrying the veto reason', async () => {
+    const vetoing = new LifecycleEngine({
+      promotionRules: [() => ({ allowed: false, reason: 'frozen by change window' })],
+    });
+    let diagram = diagramIn('candidate');
+    diagram = vetoing.approve(diagram, owner, 'ok');
+    diagram = vetoing.approve(diagram, compliance, 'ok');
+    const input = { diagram, target: 'active' as const, actor: owner, reason: '' };
+    const gates = await vetoing.evaluateGates(input);
+    const rule = gates.find((g) => g.id === 'rule:0')!;
+    expect(rule.satisfied).toBe(false);
+    expect(rule.detail).toBe('frozen by change window');
+    await expect(vetoing.promote(input)).rejects.toThrow('frozen by change window');
+  });
+
+  it('returns all gates satisfied on a promotable candidate', async () => {
+    let diagram = diagramIn('candidate');
+    diagram = engine.approve(diagram, owner, 'ok');
+    diagram = engine.approve(diagram, ops, 'ok');
+    const gates = await engine.evaluateGates({ diagram, target: 'active', actor: owner, reason: '' });
+    expect(gates.every((g) => g.satisfied)).toBe(true);
+  });
+});
+
 describe('promotion to active', () => {
   const engine = new LifecycleEngine();
 

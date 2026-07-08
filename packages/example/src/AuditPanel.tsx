@@ -4,12 +4,13 @@ import { useDiagram } from '@bpmn-react/react';
 
 /**
  * Live audit trail: every command on the stack is appended to a hash-chained
- * ledger; the verify button re-walks the whole chain.
+ * ledger; the verify button re-walks the whole chain. Pass a shared `ledger`
+ * so other panels (e.g. the promotion flow) write into the same chain.
  */
-export function AuditPanel() {
+export function AuditPanel({ ledger: sharedLedger }: { ledger?: AuditLedger } = {}) {
   const { stack } = useDiagram();
   const ledgerRef = useRef<AuditLedger | null>(null);
-  if (ledgerRef.current === null) ledgerRef.current = new AuditLedger();
+  if (ledgerRef.current === null) ledgerRef.current = sharedLedger ?? new AuditLedger();
   const ledger = ledgerRef.current;
 
   const [entries, setEntries] = useState<readonly AuditEntry[]>([]);

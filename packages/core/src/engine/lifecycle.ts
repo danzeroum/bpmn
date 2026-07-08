@@ -35,6 +35,24 @@ export interface PromotionInput {
 
 export type PromotionRule = (input: PromotionInput) => RuleVerdict | Promise<RuleVerdict>;
 
+/**
+ * One requirement of a promotion, in evaluation order. UIs render these as a
+ * checklist; {@link LifecycleEngine.promote} throws the `detail` of the first
+ * unsatisfied gate — a single source of truth, never duplicated in the UI.
+ */
+export interface PromotionGate {
+  id: 'transition' | 'approvals' | 'change-summary' | 'diff' | `rule:${number}`;
+  /** Short human label for checklists. */
+  label: string;
+  satisfied: boolean;
+  /** Requirement/failure text; when unsatisfied, promote() throws exactly this. */
+  detail: string;
+  /** Approvals gate: distinct roles required. */
+  required?: number;
+  /** Approvals gate: distinct roles collected so far. */
+  current?: number;
+}
+
 export interface LifecycleConfig {
   transitions?: Record<VersionStatus, VersionStatus[]>;
   /** Distinct approval roles required to reach 'active'. Default 2. */
@@ -131,43 +149,86 @@ export class LifecycleEngine {
   }
 
   /**
+   * Evaluates every promotion gate for `input`, in the exact order `promote`
+   * enforces them. Introspection API for UIs (checklists, disabled buttons):
+   * the UI reflects the engine's verdicts instead of re-implementing them.
+   */
+  async evaluateGates(input: PromotionInput): Promise<PromotionGate[]> {
+    const { diagram, target } = input;
+    const version = diagram.version;
+    const gates: PromotionGate[] = [];
+
+    const transitionOk = this.canTransition(version.status, target);
+    gates.push({
+      id: 'transition',
+      label: `Transição ${version.status} → ${target}`,
+      satisfied: transitionOk,
+      detail: transitionOk
+        ? `Transition ${version.status} → ${target} is allowed`
+        : `Invalid transition: ${version.status} → ${target}. Allowed: ${
+            this.allowedTargets(version.status).join(', ') || '(none)'
+          }`,
+    });
+
+    if (target === 'active') {
+      const roles = new Set(version.approvedBy.map((a) => a.role));
+      gates.push({
+        id: 'approvals',
+        label: `Aprovações — mínimo ${this.minApprovalRoles} papéis distintos`,
+        satisfied: roles.size >= this.minApprovalRoles,
+        detail:
+          roles.size >= this.minApprovalRoles
+            ? `Approved by ${roles.size} distinct roles`
+            : `Promotion to active requires approvals from at least ${this.minApprovalRoles} distinct roles (got ${roles.size})`,
+        required: this.minApprovalRoles,
+        current: roles.size,
+      });
+      const summaryOk = version.changeSummary.trim().length >= this.minChangeSummaryLength;
+      gates.push({
+        id: 'change-summary',
+        label: 'change_summary preenchido',
+        satisfied: summaryOk,
+        detail: summaryOk
+          ? 'Change summary present'
+          : `Promotion to active requires a change summary of at least ${this.minChangeSummaryLength} characters`,
+      });
+      if (this.requireDiff) {
+        const diffOk = input.diff !== undefined;
+        gates.push({
+          id: 'diff',
+          label: 'Diff vs versão anterior anexado',
+          satisfied: diffOk,
+          detail: diffOk ? 'Diff attached' : 'Promotion to active requires an attached diff',
+        });
+      }
+    }
+
+    for (const [index, rule] of this.promotionRules.entries()) {
+      const verdict = await rule(input);
+      gates.push({
+        id: `rule:${index}`,
+        label: `Regra de promoção ${index + 1}`,
+        satisfied: verdict.allowed,
+        detail: verdict.allowed ? 'Rule passed' : (verdict.reason ?? 'Promotion vetoed by rule'),
+      });
+    }
+
+    return gates;
+  }
+
+  /**
    * Promotes the diagram's version to `target`. Throws {@link BpmnLifecycleError}
-   * on invalid transitions or unmet requirements.
+   * with the first unsatisfied gate's detail (see {@link evaluateGates} — the
+   * single source of truth for promotion requirements).
    */
   async promote(input: PromotionInput): Promise<BpmnDiagram> {
     const { diagram, target, actor, reason } = input;
     const version = diagram.version;
 
-    if (!this.canTransition(version.status, target)) {
-      throw new BpmnLifecycleError(
-        `Invalid transition: ${version.status} → ${target}. Allowed: ${
-          this.allowedTargets(version.status).join(', ') || '(none)'
-        }`,
-      );
-    }
-
-    if (target === 'active') {
-      const roles = new Set(version.approvedBy.map((a) => a.role));
-      if (roles.size < this.minApprovalRoles) {
-        throw new BpmnLifecycleError(
-          `Promotion to active requires approvals from at least ${this.minApprovalRoles} distinct roles (got ${roles.size})`,
-        );
-      }
-      if (version.changeSummary.trim().length < this.minChangeSummaryLength) {
-        throw new BpmnLifecycleError(
-          `Promotion to active requires a change summary of at least ${this.minChangeSummaryLength} characters`,
-        );
-      }
-      if (this.requireDiff && input.diff === undefined) {
-        throw new BpmnLifecycleError('Promotion to active requires an attached diff');
-      }
-    }
-
-    for (const rule of this.promotionRules) {
-      const verdict = await rule(input);
-      if (!verdict.allowed) {
-        throw new BpmnLifecycleError(verdict.reason ?? 'Promotion vetoed by rule');
-      }
+    const gates = await this.evaluateGates(input);
+    const failing = gates.find((gate) => !gate.satisfied);
+    if (failing) {
+      throw new BpmnLifecycleError(failing.detail);
     }
 
     const snapshotHash = await computeDiagramHash(diagram);

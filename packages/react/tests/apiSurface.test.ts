@@ -50,6 +50,7 @@ const EXPECTED_EXPORTS = [
   'Palette',
   'ParallelGatewayShape',
   'PoolShape',
+  'PromotionPanel',
   'PropertiesPanel',
   'ReceiveTaskShape',
   'ScriptTaskShape',

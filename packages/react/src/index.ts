@@ -38,5 +38,6 @@ export * from './ui/Toolbar.js';
 export * from './ui/MiniMap.js';
 export * from './ui/StatusBadge.js';
 export * from './ui/DiffView.js';
+export * from './ui/PromotionPanel.js';
 export * from './ui/VersionTimeline.js';
 export * from './ui/exporters.js';
