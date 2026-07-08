@@ -96,6 +96,14 @@ export class LifecycleEngine {
     this.promotionRules = config.promotionRules ?? [];
   }
 
+  /**
+   * Distinct approval roles required to reach 'active'. Config echo so UIs
+   * (status seal, promotion gates) reflect the engine instead of hardcoding.
+   */
+  get requiredApprovalRoles(): number {
+    return this.minApprovalRoles;
+  }
+
   canTransition(from: VersionStatus, to: VersionStatus): boolean {
     return this.transitions[from]?.includes(to) ?? false;
   }

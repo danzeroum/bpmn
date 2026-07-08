@@ -51,6 +51,11 @@ describe('LifecycleEngine transitions', () => {
     expect(engine.allowedTargets('retired')).toEqual([]);
   });
 
+  it('echoes the required approval roles from the config (default 2)', () => {
+    expect(engine.requiredApprovalRoles).toBe(2);
+    expect(new LifecycleEngine({ minApprovalRoles: 3 }).requiredApprovalRoles).toBe(3);
+  });
+
   it('throws BpmnLifecycleError on invalid promote', async () => {
     await expect(
       engine.promote({ diagram: diagramIn('draft'), target: 'active', actor: owner, reason: 'x' }),

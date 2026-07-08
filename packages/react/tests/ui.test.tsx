@@ -25,7 +25,7 @@ describe('BpmnEditor chrome', () => {
     expect(screen.getByLabelText('Element palette')).toBeInTheDocument();
     expect(screen.getByLabelText('Properties')).toBeInTheDocument();
     expect(screen.getByLabelText('Diagram overview')).toBeInTheDocument();
-    expect(screen.getByRole('status', { name: /Version 0\.1\.0/ })).toHaveTextContent('Draft');
+    expect(screen.getByRole('status', { name: /Version 0\.1\.0/ })).toHaveTextContent('RASCUNHO');
   });
 
   it('adds a node from the palette', () => {
@@ -88,19 +88,109 @@ describe('BpmnEditor chrome', () => {
   });
 });
 
-describe('StatusBadge', () => {
-  it('reflects each lifecycle status', () => {
+describe('StatusBadge (vigência seal v2)', () => {
+  const renderBadge = (
+    mutate: (d: BpmnDiagram) => void,
+    props: { channel?: string } = {},
+    plugins?: Parameters<typeof BpmnDesigner>[0]['plugins'],
+  ) => {
     const diagram = buildDiagram();
-    diagram.version.status = 'active';
-    diagram.version.semanticVersion = '2.1.0';
+    mutate(diagram);
     render(
-      <BpmnDesigner diagram={diagram}>
-        <StatusBadge />
+      <BpmnDesigner diagram={diagram} plugins={plugins}>
+        <StatusBadge {...props} />
       </BpmnDesigner>,
     );
-    const badge = screen.getByRole('status');
-    expect(badge).toHaveTextContent('Active');
-    expect(badge).toHaveTextContent('v2.1.0');
+    return screen.getByRole('status');
+  };
+
+  it('shows the canonical PT label, semver and data-status for each status', () => {
+    const labels: Record<string, string> = {
+      draft: 'RASCUNHO',
+      test: 'TESTE INTERNO',
+      candidate: 'CANDIDATA',
+      active: 'ATIVA',
+      deprecated: 'DESCONTINUADA',
+      retired: 'ARQUIVADA',
+    };
+    for (const [status, label] of Object.entries(labels)) {
+      const diagram = buildDiagram();
+      diagram.version.status = status as BpmnDiagram['version']['status'];
+      diagram.version.semanticVersion = '2.1.0';
+      const { unmount } = render(
+        <BpmnDesigner diagram={diagram}>
+          <StatusBadge />
+        </BpmnDesigner>,
+      );
+      const badge = screen.getByRole('status');
+      expect(badge).toHaveTextContent(label);
+      expect(badge).toHaveTextContent('v2.1.0');
+      expect(badge).toHaveAttribute('data-status', status);
+      unmount();
+    }
+  });
+
+  it('derives the candidate meta from the lifecycle engine (never hardcoded)', () => {
+    const badge = renderBadge((d) => {
+      d.version.status = 'candidate';
+    });
+    expect(badge).toHaveTextContent('aguarda 2 aprovações');
+  });
+
+  it('respects a plugin lifecycleConfig with a different approval quorum', () => {
+    const badge = renderBadge(
+      (d) => {
+        d.version.status = 'candidate';
+      },
+      {},
+      [{ id: 'test/quorum', lifecycleConfig: { minApprovalRoles: 3 } }],
+    );
+    expect(badge).toHaveTextContent('aguarda 3 aprovações');
+  });
+
+  it('counts distinct approved roles and prefixes the channel when given', () => {
+    const badge = renderBadge(
+      (d) => {
+        d.version.status = 'candidate';
+        d.version.approvedBy = [
+          { userId: 'u1', role: 'operação', approvedAt: '2026-07-07T10:00:00Z', reason: 'ok' },
+        ];
+      },
+      { channel: 'piloto' },
+    );
+    expect(badge).toHaveTextContent('canal: piloto · aguarda 1 aprovação');
+  });
+
+  it('reports a candidate with a full quorum as ready for activation', () => {
+    const badge = renderBadge((d) => {
+      d.version.status = 'candidate';
+      d.version.approvedBy = [
+        { userId: 'u1', role: 'operação', approvedAt: '2026-07-07T10:00:00Z', reason: 'ok' },
+        { userId: 'u2', role: 'compliance', approvedAt: '2026-07-07T11:00:00Z', reason: 'ok' },
+      ];
+    });
+    expect(badge).toHaveTextContent('pronta para ativação');
+  });
+
+  it('shows vigência and approver roles for the active status', () => {
+    const badge = renderBadge((d) => {
+      d.version.status = 'active';
+      d.version.effectiveFrom = '2026-07-07T12:00:00Z';
+      d.version.approvedBy = [
+        { userId: 'u1', role: 'operação', approvedAt: '2026-07-07T10:00:00Z', reason: 'ok' },
+        { userId: 'u2', role: 'compliance', approvedAt: '2026-07-07T11:00:00Z', reason: 'ok' },
+      ];
+    });
+    expect(badge).toHaveTextContent('vigente desde 07/07/2026');
+    expect(badge).toHaveTextContent('aprovada por operação, compliance');
+  });
+
+  it('shows the closing date for deprecated versions and no meta for drafts', () => {
+    const deprecated = renderBadge((d) => {
+      d.version.status = 'deprecated';
+      d.version.effectiveUntil = '2026-07-07T12:00:00Z';
+    });
+    expect(deprecated).toHaveTextContent('vigente até 07/07/2026');
   });
 });
 
