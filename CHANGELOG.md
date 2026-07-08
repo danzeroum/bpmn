@@ -4,6 +4,18 @@ All notable changes to the `@bpmn-react/*` packages are documented here. The pro
 [Semantic Versioning](https://semver.org): the public API surface — frozen by the
 `apiSurface.test.ts` contract tests in each package — only breaks on major versions.
 
+## Unreleased
+
+### Library (`@bpmn-react/library`) — new package (Handoff 6, S-1)
+- Generic, ecosystem-independent artifact catalog: the `ArtifactAdapter` contract
+  (`list`/`get`/optional `subscribe`), the shared six-state `LifecycleStatus` vocabulary,
+  thumbnails and actions as data (`ThumbnailSpec`, `ArtifactAction` descriptors).
+- Headless catalog logic (`createLibraryCatalog`): text search, status/type filters,
+  sorting (name/updated/status), chip counts — read-only by construction, no DOM.
+- Adapter validation with warnings (never crashes); independence enforced by a dependency-graph
+  test (no imports from `core`/`registry`/`react` — Handoff 6 §10.2).
+- Workspace-only (`private: true`) until the npm-scope decision (pendências §1).
+
 ## 1.0.0 — 2026-07-07
 
 First stable release. All packages (`core`, `react`, `registry`, `domain-example`, `cli`) move

@@ -66,6 +66,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'library',
+      include: ['packages/library/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'react',
       include: ['packages/react/tests/**/*.test.{ts,tsx}'],
       environment: 'jsdom',
