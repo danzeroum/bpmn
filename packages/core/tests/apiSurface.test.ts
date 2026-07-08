@@ -59,6 +59,7 @@ const EXPECTED_EXPORTS = [
   'compositeCommand',
   'computeDiagramHash',
   'computeDiff',
+  'edgeVersionDiff',
   'createDefaultRegistry',
   'createDefaultRuleEngine',
   'createDiagram',

@@ -122,6 +122,20 @@ export function computeDiff(before: BpmnDiagram, after: BpmnDiagram): BpmnDiff {
   return diff;
 }
 
+/**
+ * Diff between two ADJACENT versions of an edge in a supersession chain
+ * (Handoff 5 §5 — the pedigree strip's DiffView plug): the supersede op
+ * plus the field changes between the two edge objects, in the same BpmnDiff
+ * shape the DiffView already renders.
+ */
+export function edgeVersionDiff(before: BpmnEdge, after: BpmnEdge): BpmnDiff {
+  const diff: BpmnDiff = { nodes: [], edges: [], metadata: {} };
+  diff.edges.push({ op: 'supersede', edgeId: before.id, newEdgeId: after.id });
+  const changes = fieldChanges(before, after, EDGE_FIELDS);
+  if (changes) diff.edges.push({ op: 'update', edgeId: after.id, changes });
+  return diff;
+}
+
 export interface NormalizedDiagramContent {
   nodes: unknown[];
   edges: unknown[];

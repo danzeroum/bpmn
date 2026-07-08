@@ -1830,3 +1830,183 @@
   border: 1px solid var(--btv-pedigree-line, #a49c8f);
   box-shadow: 0 2px 8px rgba(68, 64, 58, 0.1);
 }
+
+/* Edge pedigree strip (Handoff 5 §5): bottom band over getEdgeChain. */
+.bpmnr-pedigree {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  height: 180px;
+  z-index: 20;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: var(--bpmnr-panel-bg, #ffffff);
+  border: 1px solid var(--bpmnr-border, #e5e1d8);
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(68, 64, 58, 0.12);
+  padding: 8px 14px 10px;
+  font-family: var(--bpmnr-font, system-ui, sans-serif);
+}
+
+.bpmnr-pedigree-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bpmnr-pedigree-kicker {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 1.8px;
+  color: var(--bpmnr-text-muted, #6f675a);
+}
+
+.bpmnr-pedigree-head button,
+.bpmnr-pedigree-diff header button {
+  all: unset;
+  cursor: pointer;
+  min-width: 24px;
+  min-height: 24px;
+  text-align: center;
+  border-radius: 5px;
+  color: var(--bpmnr-text-muted, #6f675a);
+}
+
+.bpmnr-pedigree-head button:hover,
+.bpmnr-pedigree-diff header button:hover {
+  background: var(--bpmnr-hover, #f2efe8);
+}
+
+.bpmnr-pedigree-band {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+}
+
+/* Time flows → along the 1.5px rail behind the cards. */
+.bpmnr-pedigree-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 44px;
+  height: 1.5px;
+  background: var(--btv-pedigree-line, #a49c8f);
+  pointer-events: none;
+}
+
+.bpmnr-pedigree-chain {
+  list-style: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 6px 4px;
+  position: relative;
+}
+
+.bpmnr-pedigree-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bpmnr-pedigree-supersede {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 9px;
+  letter-spacing: 0.6px;
+  color: var(--btv-gold, #9a7b1e);
+  white-space: nowrap;
+}
+
+.bpmnr-pedigree-card {
+  all: unset;
+  cursor: pointer;
+  position: relative;
+  display: block;
+  width: 70px;
+  height: 48px;
+  border: 1.5px solid var(--btv-pedigree-line, #a49c8f);
+  border-radius: 6px;
+  background: var(--bpmnr-canvas-bg, #faf9f6);
+  overflow: visible;
+}
+
+.bpmnr-pedigree-card:disabled {
+  cursor: default;
+}
+
+.bpmnr-pedigree-card[data-pedigree-closed] {
+  opacity: 0.85;
+}
+
+.bpmnr-pedigree-card[data-pedigree-current] {
+  border: 2.5px solid var(--btv-gold, #9a7b1e);
+  background: var(--btv-gold-bg, #fdfaf1);
+}
+
+.bpmnr-pedigree-badge {
+  position: absolute;
+  top: -9px;
+  right: -6px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 8px;
+  letter-spacing: 0.6px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: var(--bpmnr-status-active, #dff0e6);
+  color: var(--bpmnr-status-active-fg, #1a6a54);
+  border: 1px solid var(--bpmnr-border, #e5e1d8);
+}
+
+.bpmnr-pedigree-badge[data-status='draft'] {
+  background: var(--bpmnr-status-draft, #faf9f6);
+  color: var(--bpmnr-status-draft-fg, #44403a);
+}
+
+.bpmnr-pedigree-label {
+  display: block;
+  margin-top: 4px;
+  max-width: 86px;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 8.5px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--bpmnr-text-muted, #6f675a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Card above, mono label below — one entry per version. */
+.bpmnr-pedigree-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.bpmnr-pedigree-diff {
+  position: absolute;
+  right: 4px;
+  top: 0;
+  bottom: 4px;
+  width: 320px;
+  overflow: auto;
+  background: var(--bpmnr-panel-bg, #ffffff);
+  border: 1px solid var(--bpmnr-border, #e5e1d8);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(68, 64, 58, 0.12);
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.bpmnr-pedigree-diff header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}

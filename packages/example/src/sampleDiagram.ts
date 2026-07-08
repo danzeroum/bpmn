@@ -122,6 +122,18 @@ export function buildSampleDiagram(): BpmnDiagram {
     e5: edge('e5', 'gate', 'reviewer', 'feedback', 'Gate returns change requests to the reviewer'),
     // Fixed orthogonal waypoints so the demo shows the craft-pack rounded
     // corners (the default router is bezier, which has no bends).
+    // Supersession chain (Handoff 5 §5 — edge pedigree): the gate→publish
+    // handoff was renegotiated twice; e6a/e6b stay closed in the history and
+    // the strip renders the whole getEdgeChain when e6 is selected.
+    e6a: {
+      ...edge('e6a', 'gate', 'publish', 'handoff', 'Publish direto, sem canal definido', 'v1'),
+      removedInVersion: v,
+    },
+    e6b: {
+      ...edge('e6b', 'gate', 'publish', 'handoff', 'Publicação apenas no canal piloto', 'v2'),
+      supersedesEdgeId: 'e6a',
+      removedInVersion: v,
+    },
     e6: createEdge({
       id: 'e6',
       sourceId: 'gate',
@@ -130,6 +142,7 @@ export function buildSampleDiagram(): BpmnDiagram {
       purpose: 'Approved content is published',
       label: 'approved',
       versionId: v,
+      supersedesEdgeId: 'e6b',
       waypoints: [
         { x: 642, y: 278 },
         { x: 691, y: 278 },
