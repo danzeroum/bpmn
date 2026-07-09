@@ -15,6 +15,9 @@ import {
   resolveEdgeRouterName,
   edgeObstacles,
   routeEdge,
+  computeRoutedWaypoints,
+  deriveAstarRoutes,
+  rerouteConnectedEdges,
 } from '../src/index.js';
 import type { EdgeRouterFn } from '../src/plugins/types.js';
 
@@ -82,6 +85,90 @@ describe('router inheritance (§1.1) — presentation metadata in bpmnr:', () =>
     // path is not the single straight segment a direct router would emit.
     expect(geometry!.path).toContain('L');
     expect(geometry!.path.match(/L/g)?.length ?? 0).toBeGreaterThan(1);
+  });
+});
+
+describe('cached-waypoint routing (Handoff 10 R-2b)', () => {
+  function make() {
+    const registry = createDefaultRegistry();
+    const diagram = createDiagram({ name: 'R', id: 'r' });
+    diagram.nodes.a = createNode({ type: 'task', id: 'a', label: 'A', x: 0, y: 0 }, registry);
+    diagram.nodes.b = createNode({ type: 'task', id: 'b', label: 'B', x: 400, y: 0 }, registry);
+    diagram.nodes.mid = createNode({ type: 'task', id: 'mid', label: 'M', x: 200, y: -20 }, registry);
+    diagram.edges.e = createEdge({ id: 'e', sourceId: 'a', targetId: 'b' });
+    return diagram;
+  }
+
+  it('computeRoutedWaypoints only routes when the resolved router is astar', () => {
+    const d = make();
+    // Default editor router is not astar → nothing to cache.
+    expect(computeRoutedWaypoints(d, d.edges.e, straightRouter)).toBeUndefined();
+    d.metadata.router = 'astar';
+    const result = computeRoutedWaypoints(d, d.edges.e, straightRouter);
+    expect(result).toBeDefined();
+    expect(result!.waypoints.length).toBeGreaterThanOrEqual(2);
+    expect(typeof result!.routed).toBe('boolean');
+  });
+
+  it('deriveAstarRoutes caches waypoints + routeMode for astar edges without them', () => {
+    const d = make();
+    d.metadata.router = 'astar';
+    const out = deriveAstarRoutes(d, straightRouter);
+    expect(out).not.toBe(d);
+    expect(out.edges.e.waypoints?.length).toBeGreaterThanOrEqual(2);
+    expect(out.edges.e.properties.routeMode).toBe('auto');
+  });
+
+  it('deriveAstarRoutes is a no-op (same ref) when no astar edge needs routing', () => {
+    const d = make(); // non-astar default, no metadata override
+    expect(deriveAstarRoutes(d, straightRouter)).toBe(d);
+  });
+
+  it('deriveAstarRoutes leaves an already-routed edge untouched', () => {
+    const d = make();
+    d.metadata.router = 'astar';
+    d.edges.e.waypoints = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+    ];
+    expect(deriveAstarRoutes(d, straightRouter)).toBe(d);
+  });
+
+  it('rerouteConnectedEdges reroutes only the astar edges touching a moved node', () => {
+    const d = make();
+    d.metadata.router = 'astar';
+    const next = { ...d, nodes: { ...d.nodes, b: { ...d.nodes.b, x: 500 } } };
+    const routes = rerouteConnectedEdges(next, new Set(['b']), straightRouter);
+    expect(routes).toHaveLength(1);
+    expect(routes[0].edgeId).toBe('e');
+    expect(routes[0].waypoints.length).toBeGreaterThanOrEqual(2);
+    expect(typeof routes[0].previewPath).toBe('string');
+  });
+
+  it('rerouteConnectedEdges skips edges not touching any moved node', () => {
+    const d = make();
+    d.metadata.router = 'astar';
+    // 'mid' is an obstacle, not an endpoint of edge e.
+    expect(rerouteConnectedEdges(d, new Set(['mid']), straightRouter)).toHaveLength(0);
+  });
+
+  it('rerouteConnectedEdges never touches manual or external edges (zero-recalc)', () => {
+    const d = make();
+    d.metadata.router = 'astar';
+    d.edges.e.properties.routeMode = 'manual';
+    expect(rerouteConnectedEdges(d, new Set(['b']), straightRouter)).toHaveLength(0);
+    // External import: has waypoints but no auto marker → treated as manual.
+    delete d.edges.e.properties.routeMode;
+    d.edges.e.waypoints = [
+      { x: 0, y: 0 },
+      { x: 1, y: 1 },
+    ];
+    expect(rerouteConnectedEdges(d, new Set(['b']), straightRouter)).toHaveLength(0);
+  });
+
+  it('rerouteConnectedEdges skips non-astar edges even when connected', () => {
+    const d = make(); // no astar override → edge resolves to the default router
+    expect(rerouteConnectedEdges(d, new Set(['b']), straightRouter)).toHaveLength(0);
   });
 });
 

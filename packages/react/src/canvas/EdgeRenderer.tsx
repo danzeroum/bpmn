@@ -108,6 +108,16 @@ function EdgeRendererInner({
     marker = DOMAIN_MARKER[domainStyle.marker ?? 'filled'];
   }
 
+  // Fallback state (Handoff 10 R-2b): an A* edge whose route found no corridor
+  // is cached anyway but flagged — dashed error stroke + a ⚠ chip — so the
+  // author knows the line may cross a shape until the graph opens up. Never
+  // shown mid-drag (the live preview isn't the settled route yet).
+  const fallback = Boolean(edge.properties.routeFallback) && !closed && !dragging;
+  if (fallback) {
+    stroke = selected ? theme.strokeSelected : 'var(--btv-error, #b3372f)';
+    dash = '5,4';
+  }
+
   // Mid-segment decoration is tied to the edge type (not selection); hidden
   // only on retired edges.
   const decoration = closed ? undefined : domainStyle?.midDecoration;
@@ -123,7 +133,7 @@ function EdgeRendererInner({
         event.stopPropagation();
         onSelect(edge.id, event.shiftKey);
       }}
-      style={{ cursor: 'pointer' }}
+      style={{ cursor: 'pointer', opacity: dragging ? 0.7 : undefined }}
     >
       {/* Invisible hit-area under the visible line. Must stay in the render
           tree (transparent stroke, not display:none) to receive events. */}
@@ -142,6 +152,9 @@ function EdgeRendererInner({
       )}
       {decoration === 'purpose-chip' && chipsVisible && (
         <PurposeChip x={geometry.midpoint.x} y={geometry.midpoint.y} purpose={edge.purpose} />
+      )}
+      {fallback && chipsVisible && (
+        <FallbackChip x={geometry.midpoint.x} y={geometry.midpoint.y} />
       )}
       {edge.label && (
         <text
@@ -226,6 +239,30 @@ function PurposeChip({ x, y, purpose }: { x: number; y: number; purpose?: string
         fill={stroke}
       >
         {text}
+      </text>
+    </g>
+  );
+}
+
+/**
+ * Fallback marker (Handoff 10 R-2b): a small ⚠ disc over the mid-segment of an
+ * A* edge that found no obstacle-free corridor. Purely informational — the edge
+ * still carries its best-effort cached route.
+ */
+function FallbackChip({ x, y }: { x: number; y: number }) {
+  return (
+    <g pointerEvents="none" aria-hidden="true">
+      <title>No obstacle-free route — the line may cross a shape.</title>
+      <circle cx={x} cy={y} r={7.5} fill="var(--btv-error, #b3372f)" />
+      <text
+        x={x}
+        y={y + 3.6}
+        textAnchor="middle"
+        fontSize={10}
+        fontWeight={700}
+        fill="#ffffff"
+      >
+        !
       </text>
     </g>
   );

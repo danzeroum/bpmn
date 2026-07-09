@@ -16,6 +16,8 @@ import {
   type RuleEngine,
   type RuleVerdict,
 } from '@bpmn-react/core';
+import { deriveAstarRoutes } from '../canvas/routeEdge.js';
+import type { EdgeRouterFn } from '../plugins/types.js';
 
 export interface DiagramContextValue {
   diagram: BpmnDiagram;
@@ -36,14 +38,34 @@ const DiagramContext = createContext<DiagramContextValue | null>(null);
 export interface DiagramProviderProps {
   diagram: BpmnDiagram;
   ruleEngine?: RuleEngine;
+  /**
+   * The editor's default router (Handoff 10 R-2b). When present, A* routes for
+   * `astar` edges without waypoints are DERIVED — not committed — into the
+   * initial diagram (and on every `replaceDiagram`), so cached waypoints exist
+   * before the first render without an undo entry or ledger record. Omitted →
+   * no derivation (non-astar editors pay nothing).
+   */
+  edgeRouter?: EdgeRouterFn;
   onChange?: (diagram: BpmnDiagram) => void;
   children: ReactNode;
 }
 
-export function DiagramProvider({ diagram, ruleEngine, onChange, children }: DiagramProviderProps) {
+export function DiagramProvider({
+  diagram,
+  ruleEngine,
+  edgeRouter,
+  onChange,
+  children,
+}: DiagramProviderProps) {
+  // Presentation derivation, NOT an edit: seed the stack with cached A* routes
+  // so it never enters undo history or the audit ledger (Handoff 10 R-2b).
+  const edgeRouterRef = useRef(edgeRouter);
+  edgeRouterRef.current = edgeRouter;
+
   const stackRef = useRef<CommandStack | null>(null);
   if (stackRef.current === null) {
-    stackRef.current = new CommandStack(diagram, { interceptor: ruleEngine });
+    const seeded = edgeRouter ? deriveAstarRoutes(diagram, edgeRouter) : diagram;
+    stackRef.current = new CommandStack(seeded, { interceptor: ruleEngine });
   }
   const stack = stackRef.current;
 
@@ -72,7 +94,8 @@ export function DiagramProvider({ diagram, ruleEngine, onChange, children }: Dia
 
   const replaceDiagram = useCallback(
     (next: BpmnDiagram) => {
-      stack.reset(next);
+      const router = edgeRouterRef.current;
+      stack.reset(router ? deriveAstarRoutes(next, router) : next);
       setLastVeto(null);
     },
     [stack],

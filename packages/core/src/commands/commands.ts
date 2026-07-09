@@ -128,6 +128,8 @@ export interface EdgePatch {
   label?: string;
   purpose?: string;
   properties?: Record<string, unknown>;
+  /** Routed waypoints (Handoff 10 R-2b). `null` clears them back to auto. */
+  waypoints?: Point[] | null;
 }
 
 export function updateEdgeCommand(edgeId: string, patch: EdgePatch): Command {
@@ -138,15 +140,23 @@ export function updateEdgeCommand(edgeId: string, patch: EdgePatch): Command {
     execute: (diagram) => {
       const edge = diagram.edges[edgeId];
       if (!edge) return diagram;
-      previous = { label: edge.label, purpose: edge.purpose, properties: edge.properties };
-      return withEdge(diagram, {
+      previous = {
+        label: edge.label,
+        purpose: edge.purpose,
+        properties: edge.properties,
+        waypoints: edge.waypoints ?? null,
+      };
+      const next: BpmnEdge = {
         ...edge,
         ...(patch.label !== undefined ? { label: patch.label } : {}),
         ...(patch.purpose !== undefined ? { purpose: patch.purpose } : {}),
         ...(patch.properties !== undefined
           ? { properties: { ...edge.properties, ...patch.properties } }
           : {}),
-      });
+      };
+      if (patch.waypoints === null) delete next.waypoints;
+      else if (patch.waypoints !== undefined) next.waypoints = patch.waypoints;
+      return withEdge(diagram, next);
     },
     undo: (diagram) => {
       const edge = diagram.edges[edgeId];
@@ -156,6 +166,8 @@ export function updateEdgeCommand(edgeId: string, patch: EdgePatch): Command {
       else restored.label = previous.label;
       if (previous.purpose === undefined) delete restored.purpose;
       else restored.purpose = previous.purpose;
+      if (previous.waypoints == null) delete restored.waypoints;
+      else restored.waypoints = previous.waypoints;
       return withEdge(diagram, restored);
     },
     toAuditEvent: () => ({ type: 'EDGE_UPDATED', details: { edgeId, patch } }),

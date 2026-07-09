@@ -184,6 +184,60 @@ describe('commands', () => {
     expect(stack.current.edges[edge.id].label).toBeUndefined();
   });
 
+  it('updateEdgeCommand caches waypoints and restores the prior route on undo', () => {
+    const { stack, node } = setup();
+    const target = createNode({ type: 'task', label: 'B' });
+    const edge = createEdge({ sourceId: node.id, targetId: target.id });
+    stack.execute(addNodeCommand(node));
+    stack.execute(addNodeCommand(target));
+    stack.execute(addEdgeCommand(edge));
+
+    const waypoints = [
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 40, y: 40 },
+    ];
+    stack.execute(updateEdgeCommand(edge.id, { waypoints }));
+    expect(stack.current.edges[edge.id].waypoints).toEqual(waypoints);
+    stack.undo();
+    // No route existed before → undo clears the field entirely (back to auto).
+    expect(stack.current.edges[edge.id].waypoints).toBeUndefined();
+
+    // Re-routing over an existing route restores the previous one on undo.
+    stack.execute(updateEdgeCommand(edge.id, { waypoints }));
+    const next = [
+      { x: 0, y: 0 },
+      { x: 80, y: 0 },
+    ];
+    stack.execute(updateEdgeCommand(edge.id, { waypoints: next }));
+    expect(stack.current.edges[edge.id].waypoints).toEqual(next);
+    stack.undo();
+    expect(stack.current.edges[edge.id].waypoints).toEqual(waypoints);
+  });
+
+  it('updateEdgeCommand waypoints:null clears a cached route back to auto', () => {
+    const { stack, node } = setup();
+    const target = createNode({ type: 'task', label: 'B' });
+    const edge = createEdge({
+      sourceId: node.id,
+      targetId: target.id,
+      waypoints: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+      ],
+    });
+    stack.execute(addNodeCommand(node));
+    stack.execute(addNodeCommand(target));
+    stack.execute(addEdgeCommand(edge));
+    stack.execute(updateEdgeCommand(edge.id, { waypoints: null }));
+    expect(stack.current.edges[edge.id].waypoints).toBeUndefined();
+    stack.undo();
+    expect(stack.current.edges[edge.id].waypoints).toEqual([
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+    ]);
+  });
+
   it('removeNodeCommand hard-deletes in draft, including connected edges', () => {
     const { stack, node } = setup();
     const target = createNode({ type: 'task', label: 'B' });

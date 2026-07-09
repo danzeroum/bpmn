@@ -141,6 +141,12 @@ const EXPECTED_EXPORTS = [
   'edgeObstacles',
   'routedEdgeWaypoints',
   'routeEdge',
+  // Handoff 10 R-2b — cached-waypoint routing + settle crossfade.
+  'computeRoutedWaypoints',
+  'deriveAstarRoutes',
+  'rerouteConnectedEdges',
+  'SettlingOverlay',
+  'SETTLE_MS',
 ].sort();
 
 describe('@bpmn-react/react public API surface', () => {

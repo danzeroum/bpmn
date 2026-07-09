@@ -335,6 +335,41 @@ export function buildDeadlockDiagram(): BpmnDiagram {
 }
 
 /**
+ * A* routing demo (`?astar=1`, Handoff 10 R-2b): the diagram default router is
+ * `astar`, so every edge caches an obstacle-avoiding route on load. One edge
+ * (e01) threads past an obstacle between its endpoints; a second, unrelated
+ * edge (e23) sits far below. The e2e drags an endpoint of e01 and asserts the
+ * settled route updates while e23 is never re-routed (zero-recalc).
+ */
+export function buildAstarDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-astar', name: 'A* routing', createdBy: 'demo' });
+  diagram.metadata.router = 'astar';
+  const v = diagram.version.id;
+
+  const make = (type: string, id: string, label: string, x: number, y: number) =>
+    createNode({ type, id, label, x, y, properties: {}, versionId: v }, registry);
+
+  diagram.nodes = {
+    n0: make('task', 'n0', 'Origem', 80, 80),
+    obs: make('task', 'obs', 'Obstáculo', 320, 60),
+    n1: make('task', 'n1', 'Destino', 560, 80),
+    // Unrelated pair, well below the drag zone.
+    n2: make('task', 'n2', 'C', 80, 460),
+    n3: make('task', 'n3', 'D', 560, 460),
+  };
+
+  const edge = (id: string, sourceId: string, targetId: string) =>
+    createEdge({ id, sourceId, targetId, type: 'sequenceFlow', versionId: v });
+  diagram.edges = {
+    e01: edge('e01', 'n0', 'n1'),
+    e23: edge('e23', 'n2', 'n3'),
+  };
+
+  return diagram;
+}
+
+/**
  * The three-path simulation demo (`?simulate=1`, Handoff 7A): a task with an
  * interrupting 48h timeout boundary, then an XOR (approve / reject). The three
  * structural paths — happy, rejection, timeout — close the coverage checklist
