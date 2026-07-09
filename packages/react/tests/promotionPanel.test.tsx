@@ -178,3 +178,33 @@ describe('PromotionPanel — gates reflect the core state machine', () => {
     await waitFor(() => expect(screen.queryByText(/ledger #/)).toBeNull());
   });
 });
+
+describe('PromotionPanel — optional coverage card (Handoff 7A-3, OFF by default)', () => {
+  it('shows no coverage card unless the coverage prop is provided', async () => {
+    const { container } = renderPanel(candidateDiagram());
+    await screen.findByRole('dialog', { name: 'Ativar v2.1.0' });
+    expect(container.querySelector('[data-sim-coverage-gate]')).toBeNull();
+  });
+
+  it('renders a below-threshold coverage card when the gate is enabled', async () => {
+    const { container } = renderPanel(candidateDiagram(), {
+      coverage: { covered: 1, total: 3, minCoverage: 0.8 },
+    });
+    await screen.findByRole('dialog', { name: 'Ativar v2.1.0' });
+    const card = container.querySelector('[data-sim-coverage-gate]');
+    expect(card).toBeTruthy();
+    expect(card).toHaveTextContent('Cobertura de caminhos · 1/3 · mín 80%');
+    expect(card).toHaveTextContent('33% exercitado');
+    expect(card?.getAttribute('data-satisfied')).toBe('false');
+  });
+
+  it('marks the coverage card satisfied at/above the threshold', async () => {
+    const { container } = renderPanel(candidateDiagram(), {
+      coverage: { covered: 3, total: 3, minCoverage: 0.8 },
+    });
+    await screen.findByRole('dialog', { name: 'Ativar v2.1.0' });
+    expect(container.querySelector('[data-sim-coverage-gate]')?.getAttribute('data-satisfied')).toBe(
+      'true',
+    );
+  });
+});

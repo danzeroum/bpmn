@@ -454,6 +454,10 @@
   background: var(--bpmnr-status-test-fg, #33567e);
   border-radius: 2px;
 }
+.btv-studio-ledger-dot-simulation {
+  background: var(--bpmnr-status-test-fg, #33567e);
+  border-radius: 50%;
+}
 .btv-studio-ledger-line {
   display: flex;
   flex-direction: column;
@@ -468,6 +472,7 @@
 .btv-studio-ledger-type-approval { color: var(--btv-green, #1a6a54); }
 .btv-studio-ledger-type-command { color: var(--btv-ink, #44403a); }
 .btv-studio-ledger-type-verification { color: var(--bpmnr-status-test-fg, #33567e); }
+.btv-studio-ledger-type-simulation { color: var(--bpmnr-status-test-fg, #33567e); }
 .btv-studio-ledger-title {
   font-size: 12.5px;
   font-weight: 600;

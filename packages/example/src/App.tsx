@@ -22,6 +22,7 @@ import { domainExamplePlugin } from '@bpmn-react/domain-example';
 import { healthcarePlugin } from '@bpmn-react/healthcare';
 import { callActivityBindingRule, VersionRegistry } from '@bpmn-react/registry';
 import { soundnessPromotionRule, soundnessRules } from '@bpmn-react/soundness';
+import { simulationSessionEntry } from '@bpmn-react/adapters-bpmn';
 import {
   buildClosedDiagram,
   buildDeadlockDiagram,
@@ -101,6 +102,9 @@ const dmnDemoPlugin: BpmnPlugin = {
 
 const PLUGINS = [domainExamplePlugin, dmnDemoPlugin, healthcarePlugin, observabilityPlugin, soundnessPlugin, bindingPlugin];
 
+/** In-memory ledger the `?simulate` demo registers sessions into (Handoff 7A-3). */
+const simulationDemoLedger = new AuditLedger();
+
 export function App() {
   const [diagram, setDiagram] = useState<BpmnDiagram>(() => {
     // `?stress=350` loads the synthetic perf grid (see perf.spec.ts / NFR);
@@ -135,6 +139,13 @@ export function App() {
       <BpmnSimulator
         diagram={buildSimulationDiagram()}
         plugins={PLUGINS}
+        author="demo"
+        // Handoff 7A-3: register the session as an auditable ledger entry (host
+        // injection). The mapper lives in adapters-bpmn; the demo appends to an
+        // in-memory ledger, which certify would turn into SACM evidence.
+        onRecord={(session) => {
+          void simulationDemoLedger.append(simulationSessionEntry(session, { id: 'demo' }));
+        }}
         onExit={() => {
           window.location.search = '';
         }}

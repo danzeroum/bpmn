@@ -6,13 +6,14 @@ import type { AuditEntry } from '@bpmn-react/core';
  * ledger's `type` is a free string; there is no central enum in core, so the
  * studio owns this mapping.
  */
-export type LedgerCategory = 'promotion' | 'approval' | 'command' | 'verification';
+export type LedgerCategory = 'promotion' | 'approval' | 'command' | 'verification' | 'simulation';
 
 export const LEDGER_CATEGORIES: ReadonlyArray<{ id: LedgerCategory; label: string }> = [
   { id: 'promotion', label: 'Promoções' },
   { id: 'approval', label: 'Aprovações' },
   { id: 'command', label: 'Comandos' },
   { id: 'verification', label: 'Verificações' },
+  { id: 'simulation', label: 'Simulações' },
 ];
 
 const PROMOTION_TYPES = new Set([
@@ -22,11 +23,14 @@ const PROMOTION_TYPES = new Set([
   'VERSION_PUBLISHED',
 ]);
 const APPROVAL_TYPES = new Set(['APPROVAL_RECORDED', 'PROMOTION_REJECTED']);
+// Registered simulation sessions (Handoff 7A-3) — their own chip/kind.
+const SIMULATION_TYPES = new Set(['SIMULATION_SESSION']);
 
 export function categorizeEntry(entry: Pick<AuditEntry, 'type'>): LedgerCategory {
   const base = entry.type.replace(/_(UNDONE|REDONE)$/, '');
   if (PROMOTION_TYPES.has(base)) return 'promotion';
   if (APPROVAL_TYPES.has(base)) return 'approval';
+  if (SIMULATION_TYPES.has(base)) return 'simulation';
   if (base.startsWith('VERIFICATION') || base.startsWith('CHAIN_')) return 'verification';
   // NODE_*/EDGE_*/COMPOSITE/DIAGRAM_*/COMMAND and any unknown domain event:
   // editor commands are the ledger's default population.
@@ -61,7 +65,7 @@ export interface FilteredLedger {
 
 /** Pure filter used by the trail AND by the XES export (§6/§10.5). */
 export function filterEntries(entries: readonly AuditEntry[], filter: LedgerFilter = {}): FilteredLedger {
-  const counts = { promotion: 0, approval: 0, command: 0, verification: 0, total: 0 };
+  const counts = { promotion: 0, approval: 0, command: 0, verification: 0, simulation: 0, total: 0 };
   const inContext = entries.filter((entry) => matchesContext(entry, filter));
   for (const entry of inContext) {
     counts[categorizeEntry(entry)] += 1;

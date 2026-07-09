@@ -20,6 +20,7 @@ describe('categorizeEntry — função pura de categorização (§6/§8)', () =>
     expect(categorizeEntry({ type: 'PROMOTION_REJECTED' })).toBe('approval');
     expect(categorizeEntry({ type: 'NODE_ADDED' })).toBe('command');
     expect(categorizeEntry({ type: 'CHAIN_VERIFIED' })).toBe('verification');
+    expect(categorizeEntry({ type: 'SIMULATION_SESSION' })).toBe('simulation');
     // undo/redo suffixes keep the base category; unknown falls to command
     expect(categorizeEntry({ type: 'VERSION_ACTIVATED_UNDONE' })).toBe('promotion');
     expect(categorizeEntry({ type: 'ALGO_EXOTICO' })).toBe('command');
@@ -31,7 +32,7 @@ describe('filterEntries — o MESMO filtro alimenta trilha e export XES (§10.5)
     const ledger = await seeded();
     const { entries, counts } = filterEntries(ledger.getEntries(), { categories: ['approval'] });
     expect(entries.map((e) => e.type)).toEqual(['APPROVAL_RECORDED']);
-    expect(counts).toEqual({ promotion: 2, approval: 1, command: 2, verification: 0, total: 5 });
+    expect(counts).toEqual({ promotion: 2, approval: 1, command: 2, verification: 0, simulation: 0, total: 5 });
   });
 
   it('filters by artifact (versionId OU details.artifactId) and by period', async () => {

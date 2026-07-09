@@ -12,16 +12,21 @@ const EXPECTED_EXPORTS = [
   'bpmnDiagramAdapter',
   'classifyDiagram',
   'connectorAdapter',
+  'coveragePromotionRule',
   'createRecipeAdapter',
   'createRegistryAdapter',
+  'createRoteiroAdapter',
   'decisionThumbnail',
   'diagramThumbnail',
   'dmnDecisionAdapter',
+  'latestSessionCoverage',
   'logicalArtifacts',
   'personaAdapter',
   'policyAdapter',
   'promptAdapter',
   'relevantEntry',
+  'SIMULATION_SESSION_TYPE',
+  'simulationSessionEntry',
 ].sort();
 
 describe('@bpmn-react/adapters-bpmn public API surface', () => {

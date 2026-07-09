@@ -51,6 +51,27 @@ test('closes 3/3 across happy, rejection and timeout sessions', async ({ page })
   await expect(page.locator('[data-sim-exercised-edge]').first()).toBeVisible();
 });
 
+test('registers the session in the ledger and shows the SACM evidence line (7A-3)', async ({ page }) => {
+  await page.goto('/?simulate=1');
+  await expect(page.locator('svg.bpmnr-canvas')).toBeVisible();
+
+  // Close one path so coverage > 0 and the record button appears.
+  await advanceToStop(page);
+  await page.locator('[data-sim-choice-option="s3"]').click();
+  await advanceToStop(page);
+
+  const record = page.locator('[data-sim-record]');
+  await expect(record).toBeVisible();
+  await record.click();
+
+  const recorded = page.locator('[data-sim-recorded]');
+  await expect(recorded).toContainText('Sessão registrada');
+  await expect(recorded).toContainText('roteiro #');
+  await expect(recorded).toContainText('comportamento validado');
+  // The button hides after a successful registration.
+  await expect(page.locator('[data-sim-record]')).toHaveCount(0);
+});
+
 test.describe('touch-first gateway choice', () => {
   test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
 
