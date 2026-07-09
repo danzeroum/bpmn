@@ -19,7 +19,12 @@ test('pans and zooms a 350-node diagram above the fps floor', async ({ page }) =
   test.slow();
   await page.goto(`/?stress=${NODES}`);
   await expect(page.locator('svg.bpmnr-canvas')).toBeVisible();
-  await expect(page.locator('[data-node-id]')).toHaveCount(withHierarchy(NODES));
+  // Viewport culling: at this scale only the on-screen subset of the model is
+  // mounted, not all withHierarchy(NODES) nodes.
+  await expect(page.locator('[data-node-id]').first()).toBeVisible();
+  const rendered = await page.locator('[data-node-id]').count();
+  expect(rendered).toBeGreaterThan(0);
+  expect(rendered).toBeLessThan(withHierarchy(NODES));
   // Shadows are on at 100% zoom (activities/cards cast them).
   expect(await page.locator('svg.bpmnr-canvas g[filter]').count()).toBeGreaterThan(0);
 
