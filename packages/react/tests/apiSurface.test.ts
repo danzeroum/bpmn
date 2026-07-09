@@ -147,6 +147,13 @@ const EXPECTED_EXPORTS = [
   'rerouteConnectedEdges',
   'SettlingOverlay',
   'SETTLE_MS',
+  // Handoff 10 R-3 — manual routes.
+  'isManualEdge',
+  'segmentIntersectsRect',
+  'edgeRouteCollides',
+  'translateManualWaypoints',
+  'translateManualEdges',
+  'backToAutoPatch',
 ].sort();
 
 describe('@bpmn-react/react public API surface', () => {

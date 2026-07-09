@@ -18,6 +18,12 @@ import {
   computeRoutedWaypoints,
   deriveAstarRoutes,
   rerouteConnectedEdges,
+  isManualEdge,
+  segmentIntersectsRect,
+  edgeRouteCollides,
+  translateManualWaypoints,
+  translateManualEdges,
+  backToAutoPatch,
 } from '../src/index.js';
 import type { EdgeRouterFn } from '../src/plugins/types.js';
 
@@ -169,6 +175,125 @@ describe('cached-waypoint routing (Handoff 10 R-2b)', () => {
   it('rerouteConnectedEdges skips non-astar edges even when connected', () => {
     const d = make(); // no astar override → edge resolves to the default router
     expect(rerouteConnectedEdges(d, new Set(['b']), straightRouter)).toHaveLength(0);
+  });
+});
+
+describe('manual routes (Handoff 10 R-3)', () => {
+  function make() {
+    const registry = createDefaultRegistry();
+    const diagram = createDiagram({ name: 'M', id: 'm' });
+    diagram.nodes.a = createNode({ type: 'task', id: 'a', label: 'A', x: 0, y: 0 }, registry);
+    diagram.nodes.b = createNode({ type: 'task', id: 'b', label: 'B', x: 400, y: 0 }, registry);
+    diagram.nodes.mid = createNode({ type: 'task', id: 'mid', label: 'M', x: 200, y: 200 }, registry);
+    diagram.edges.e = createEdge({ id: 'e', sourceId: 'a', targetId: 'b' });
+    return diagram;
+  }
+
+  it('isManualEdge: explicit manual, external waypoints, auto and unrouted', () => {
+    const d = make();
+    expect(isManualEdge(d.edges.e)).toBe(false); // no waypoints
+    d.edges.e.waypoints = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+    ];
+    expect(isManualEdge(d.edges.e)).toBe(true); // external import = manual
+    d.edges.e.properties.routeMode = 'auto';
+    expect(isManualEdge(d.edges.e)).toBe(false);
+    d.edges.e.properties.routeMode = 'manual';
+    expect(isManualEdge(d.edges.e)).toBe(true);
+  });
+
+  it('segmentIntersectsRect / edgeRouteCollides detect crossings, not grazes', () => {
+    const rect = { x: 100, y: 100, width: 100, height: 100 };
+    expect(segmentIntersectsRect({ x: 0, y: 150 }, { x: 300, y: 150 }, rect)).toBe(true);
+    expect(segmentIntersectsRect({ x: 0, y: 400 }, { x: 300, y: 400 }, rect)).toBe(false);
+    // A segment running exactly along the top edge only grazes (inset guard).
+    expect(segmentIntersectsRect({ x: 0, y: 100 }, { x: 300, y: 100 }, rect)).toBe(false);
+    expect(
+      edgeRouteCollides(
+        [
+          { x: 0, y: 150 },
+          { x: 300, y: 150 },
+        ],
+        [rect],
+      ),
+    ).toBe(true);
+  });
+
+  it('translateManualWaypoints: rigid when both anchors move, endpoint-only otherwise', () => {
+    const wp = [
+      { x: 0, y: 0 },
+      { x: 50, y: 50 },
+      { x: 100, y: 0 },
+    ];
+    expect(translateManualWaypoints(wp, true, true, 10, 20)).toEqual([
+      { x: 10, y: 20 },
+      { x: 60, y: 70 },
+      { x: 110, y: 20 },
+    ]);
+    // Only the source moved → only waypoint[0] follows; interior bend stays.
+    expect(translateManualWaypoints(wp, true, false, 10, 20)).toEqual([
+      { x: 10, y: 20 },
+      { x: 50, y: 50 },
+      { x: 100, y: 0 },
+    ]);
+    // Only the target moved → only the last waypoint follows.
+    expect(translateManualWaypoints(wp, false, true, 10, 20)).toEqual([
+      { x: 0, y: 0 },
+      { x: 50, y: 50 },
+      { x: 110, y: 20 },
+    ]);
+  });
+
+  it('translateManualEdges translates only connected manual edges + flags collision', () => {
+    const d = make();
+    // A manual route that will be pushed onto `mid` when its source moves down.
+    d.edges.e.properties.routeMode = 'manual';
+    d.edges.e.waypoints = [
+      { x: 40, y: 30 },
+      { x: 240, y: 30 },
+      { x: 440, y: 30 },
+    ];
+    // Move source `a` down so waypoint[0] lands inside `mid` (200..280, 200..260).
+    const next = { ...d, nodes: { ...d.nodes, a: { ...d.nodes.a, y: 200 } } };
+    const out = translateManualEdges(next, new Set(['a']), 0, 200);
+    expect(out).toHaveLength(1);
+    expect(out[0].edgeId).toBe('e');
+    // waypoint[0] followed the source; the interior/last stayed put.
+    expect(out[0].waypoints[0]).toEqual({ x: 40, y: 230 });
+    expect(out[0].waypoints[2]).toEqual({ x: 440, y: 30 });
+    // An unrelated moved node touches nothing.
+    expect(translateManualEdges(next, new Set(['mid']), 0, 200)).toHaveLength(0);
+  });
+
+  it('translateManualEdges never touches an auto edge', () => {
+    const d = make();
+    d.edges.e.properties.routeMode = 'auto';
+    d.edges.e.waypoints = [
+      { x: 40, y: 30 },
+      { x: 440, y: 30 },
+    ];
+    expect(translateManualEdges(d, new Set(['a']), 0, 100)).toHaveLength(0);
+  });
+
+  it('backToAutoPatch recomputes an astar route, else clears to the diagram router', () => {
+    const d = make();
+    d.edges.e.properties.routeMode = 'manual';
+    d.edges.e.waypoints = [
+      { x: 40, y: 30 },
+      { x: 200, y: 300 },
+      { x: 440, y: 30 },
+    ];
+    // Non-astar default → back to auto clears the waypoints.
+    const cleared = backToAutoPatch(d, d.edges.e, straightRouter);
+    expect(cleared.waypoints).toBeNull();
+    expect(cleared.properties.routeMode).toBe('auto');
+    // Astar default → back to auto caches a fresh A* route.
+    d.metadata.router = 'astar';
+    const routed = backToAutoPatch(d, d.edges.e, straightRouter);
+    expect(routed.waypoints).not.toBeNull();
+    expect(routed.waypoints!.length).toBeGreaterThanOrEqual(2);
+    expect(routed.properties.routeMode).toBe('auto');
   });
 });
 

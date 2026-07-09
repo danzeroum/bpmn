@@ -454,6 +454,43 @@ Escopo R-2b (entregue): `EdgePatch.waypoints` (core); `computeRoutedWaypoints`/`
 `useInteractions.onPointerUp`; derivação de load no `DiagramProvider`; `SettlingOverlay` (crossfade)
 + estado de fallback no `EdgeRenderer`; e2e-spy de zero-recalc e de reduced-motion (`?astar=1`).
 
+### 11.2 R-3 — rotas manuais (decisões registradas)
+
+Decisões tomadas ao iniciar a R-3 (handles, badge, translação rígida, voltar ao automático):
+
+1. **Transição auto→manual = UM comando.** O primeiro arrasto de segmento ou waypoint de uma aresta
+   `auto` grava waypoints **e** `routeMode:'manual'` juntos, num único `updateEdgeCommand` — undo
+   volta à rota anterior (auto) atomicamente. Gestos (`useInteractions`): arrastar segmento insere um
+   bend; arrastar waypoint move; duplo-clique em waypoint interior remove. Um clique sem arrasto só
+   seleciona (limiar de drag), nunca autora bend.
+2. **Translação rígida no move do host (caso de borda 6) — DENTRO do comando de move.**
+   `translateManualEdges` roda no mesmo composto `Move nodes` (mesma atomicidade da R-2b). Regra:
+   ambos os âncoras movidos ⇒ rota inteira translada; só um âncora ⇒ só o waypoint daquela ponta
+   segue, bends interiores intactos. Se a translação **colidir** com uma forma, a rota manual é
+   **mantida** e ganha `routeCollision` ⇒ chip ⚠ — **nunca** re-roteia silenciosamente. Coberto por
+   unit + e2e (`?manual=1`).
+3. **"Voltar ao automático" = comando atômico.** `backToAutoPatch` recomputa o A\* agora e cacheia
+   (`routeMode:'auto'`), ou — router não-`astar` — limpa os waypoints (segue o router do diagrama);
+   um `updateEdgeCommand`, undo restaura a rota manual. Exposto no **inspector** (`PropertiesPanel`);
+   menu de contexto de aresta fica para a R-3b (não há infra de context-menu no editor ainda).
+4. **Estados sem poluição.** Badge `📍 rota manual` e handles aparecem **só em hover/seleção**;
+   handles preenchidos dourados para manual, vazados (branco) para auto — affordance "arraste para
+   fixar". Edição ao vivo requer seleção; hit-area invisível de 44px (r=22) por handle interior para
+   touch. Fora de hover/seleção a manual é idêntica à automática.
+5. **Import externo = manual (§1.4).** `isManualEdge` trata waypoints sem marcador `auto` como
+   manual: nunca são re-roteados automaticamente, transladam rígido e podem ser resetados via
+   "voltar ao automático".
+
+Escopo R-3 (entregue): helpers `isManualEdge`/`segmentIntersectsRect`/`edgeRouteCollides`/
+`translateManualWaypoints`/`translateManualEdges`/`backToAutoPatch` (`routeEdge.ts`); gestos de
+edição + translação rígida no `useInteractions`; `RouteEditLayer` + `ManualBadge` + estado de
+colisão no `EdgeRenderer`; botão "Voltar ao automático" no `PropertiesPanel`; `EdgeDragState`/
+`hoveredEdgeId` no store; unit + integração + e2e (`?manual=1`, caso de borda 6 + §8.3).
+
+**R-3b (adiado, próximo):** menu de contexto de aresta ("voltar ao automático" fora do inspector);
+histerese de porta (só troca de lado se custo melhora >20%); polimento de label no maior segmento
+livre. Nenhum bloqueia o ciclo manual entregue.
+
 ## Resolvidas (para histórico)
 
 - ~~Lane membership manual/data-only~~ → interativa na Fase 5a.

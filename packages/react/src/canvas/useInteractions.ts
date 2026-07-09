@@ -29,7 +29,13 @@ import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import type { ResizeCorner, SettlingEntry } from '../state/canvasStore.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
-import { rerouteConnectedEdges, type RouteMode } from './routeEdge.js';
+import {
+  edgeObstacles,
+  edgeRouteCollides,
+  rerouteConnectedEdges,
+  translateManualEdges,
+  type RouteMode,
+} from './routeEdge.js';
 import type { EdgeRouterFn } from '../plugins/types.js';
 import { fitViewport, panViewport, screenToWorld } from './viewport.js';
 import { isNodeVisible } from './visibility.js';
@@ -203,6 +209,78 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
     [store, world],
   );
 
+  /** Route-handle pointerdown → begin dragging an existing waypoint (R-3). */
+  const onEdgeHandlePointerDown = useCallback(
+    (event: ReactPointerEvent, edgeId: string, index: number, base: Point[]) => {
+      if (store.getState().readOnly || !isPrimaryButton(event)) return;
+      event.stopPropagation();
+      const origin = world(event);
+      store.setState({
+        selectedIds: [edgeId],
+        edgeDrag: {
+          edgeId,
+          index,
+          waypoints: base.map((p) => ({ ...p })),
+          origin,
+          grabbed: { ...base[index] },
+          active: false,
+        },
+      });
+      (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
+    },
+    [store, world],
+  );
+
+  /** Segment pointerdown → insert a bend at the pointer and drag it (R-3). The
+   * gesture only authors a manual route once the drag threshold is crossed. */
+  const onEdgeSegmentPointerDown = useCallback(
+    (event: ReactPointerEvent, edgeId: string, segIndex: number, base: Point[]) => {
+      if (store.getState().readOnly || !isPrimaryButton(event)) return;
+      event.stopPropagation();
+      const point = world(event);
+      const waypoints = [
+        ...base.slice(0, segIndex + 1).map((p) => ({ ...p })),
+        { ...point },
+        ...base.slice(segIndex + 1).map((p) => ({ ...p })),
+      ];
+      store.setState({
+        selectedIds: [edgeId],
+        edgeDrag: {
+          edgeId,
+          index: segIndex + 1,
+          waypoints,
+          origin: point,
+          grabbed: { ...point },
+          active: false,
+        },
+      });
+      (event.currentTarget as Element).setPointerCapture?.(event.pointerId);
+    },
+    [store, world],
+  );
+
+  /** Double-click an interior waypoint → remove it (stays manual, undoable). */
+  const onEdgeWaypointDoubleClick = useCallback(
+    (event: { stopPropagation: () => void }, edgeId: string, index: number, base: Point[]) => {
+      if (store.getState().readOnly) return;
+      event.stopPropagation();
+      if (index <= 0 || index >= base.length - 1) return; // endpoints are anchored
+      const waypoints = base.filter((_, i) => i !== index);
+      if (waypoints.length < 2) return;
+      const edge = diagramRef.current.edges[edgeId];
+      const collides = edge
+        ? edgeRouteCollides(waypoints, edgeObstacles(diagramRef.current, edge))
+        : false;
+      execute(
+        updateEdgeCommand(edgeId, {
+          waypoints,
+          properties: { routeMode: 'manual', routeCollision: collides ? true : undefined },
+        }),
+      );
+    },
+    [execute, store],
+  );
+
   /** Empty-canvas pointerdown → pan (middle button / space) or lasso (left). */
   const onCanvasPointerDown = useCallback(
     (event: ReactPointerEvent) => {
@@ -248,6 +326,24 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
           const dy = (clientY - session.startClient.y) * session.scale;
           session.startClient = { x: clientX, y: clientY };
           store.setState({ viewport: panViewport(state.viewport, dx, dy) });
+          return;
+        }
+
+        if (state.edgeDrag) {
+          const point = world({ clientX, clientY });
+          const rawX = state.edgeDrag.grabbed.x + (point.x - state.edgeDrag.origin.x);
+          const rawY = state.edgeDrag.grabbed.y + (point.y - state.edgeDrag.origin.y);
+          const active =
+            state.edgeDrag.active ||
+            Math.hypot(point.x - state.edgeDrag.origin.x, point.y - state.edgeDrag.origin.y) *
+              (svgScale(svgRef.current, state.viewport) || 1) >
+              DRAG_THRESHOLD;
+          const x = state.snapEnabled && active ? snapToGrid(rawX, state.gridSize) : rawX;
+          const y = state.snapEnabled && active ? snapToGrid(rawY, state.gridSize) : rawY;
+          const waypoints = state.edgeDrag.waypoints.map((p, i) =>
+            i === state.edgeDrag!.index ? { x, y } : p,
+          );
+          store.setState({ edgeDrag: { ...state.edgeDrag, waypoints, active } });
           return;
         }
 
@@ -365,6 +461,31 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
       if (panSession.current) {
         panSession.current = null;
         store.setState({ isPanning: false });
+        return;
+      }
+
+      if (state.edgeDrag) {
+        const { edgeId, waypoints, active } = state.edgeDrag;
+        store.setState({ edgeDrag: null });
+        // A click (no drag past threshold) authors nothing — the edge is just
+        // selected. A real drag commits ONE command that turns the edge manual
+        // (waypoints + routeMode together), undoable back to its prior route.
+        if (active) {
+          const edge = diagramRef.current.edges[edgeId];
+          const collides = edge
+            ? edgeRouteCollides(waypoints, edgeObstacles(diagramRef.current, edge))
+            : false;
+          execute(
+            updateEdgeCommand(edgeId, {
+              waypoints,
+              properties: {
+                routeMode: 'manual' satisfies RouteMode,
+                routeFallback: undefined,
+                routeCollision: collides ? true : undefined,
+              },
+            }),
+          );
+        }
         return;
       }
 
@@ -495,7 +616,14 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
 
   const cancelGestures = useCallback(() => {
     panSession.current = null;
-    store.setState({ dragState: null, connectState: null, selectionBox: null, resizeState: null, isPanning: false });
+    store.setState({
+      dragState: null,
+      connectState: null,
+      selectionBox: null,
+      resizeState: null,
+      edgeDrag: null,
+      isPanning: false,
+    });
   }, [store]);
 
   /** Space key toggles pan mode for left-button drags. */
@@ -510,6 +638,9 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
       onPortPointerDown,
       onNodeDoubleClick,
       onResizePointerDown,
+      onEdgeHandlePointerDown,
+      onEdgeSegmentPointerDown,
+      onEdgeWaypointDoubleClick,
       onCanvasPointerDown,
       onPointerMove,
       onPointerUp,
@@ -525,6 +656,9 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
       onPortPointerDown,
       onNodeDoubleClick,
       onResizePointerDown,
+      onEdgeHandlePointerDown,
+      onEdgeSegmentPointerDown,
+      onEdgeWaypointDoubleClick,
       onCanvasPointerDown,
       onPointerMove,
       onPointerUp,
@@ -565,6 +699,16 @@ function appendRerouteCommands(
       updateEdgeCommand(reroute.edgeId, { waypoints: reroute.waypoints, properties }),
     );
     settling.push({ edgeId: reroute.edgeId, path: reroute.previewPath });
+  }
+  // Manual routes translate RIGIDLY with their moved anchor — never re-routed
+  // (edge case 6). A translation onto a shape keeps the route and flags ⚠.
+  for (const t of translateManualEdges(nextDiagram, movedIds, dx, dy)) {
+    commands.push(
+      updateEdgeCommand(t.edgeId, {
+        waypoints: t.waypoints,
+        properties: { routeCollision: t.collides ? true : undefined },
+      }),
+    );
   }
   return settling;
 }

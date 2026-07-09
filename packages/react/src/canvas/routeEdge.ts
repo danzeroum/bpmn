@@ -181,3 +181,156 @@ export function deriveAstarRoutes(diagram: BpmnDiagram, defaultRouter: EdgeRoute
   }
   return changed ? { ...diagram, edges } : diagram;
 }
+
+/* ------------------------------------------------------------------ *
+ *  Manual routes (Handoff 10 R-3)
+ * ------------------------------------------------------------------ */
+
+/**
+ * An edge is **manual** when the user authored its route (R-3) — explicit
+ * `routeMode: 'manual'`, OR waypoints carried in from an external import with
+ * no `auto` marker (§1.4: imported waypoints are respected as manual). An
+ * `'auto'` edge (cached A* route) is never manual, and an edge with no
+ * waypoints is not manual. Manual routes are never rewritten by automatic
+ * re-routing (§8.3).
+ */
+export function isManualEdge(edge: BpmnEdge): boolean {
+  if (edge.properties.routeMode === 'manual') return true;
+  if (edge.properties.routeMode === 'auto') return false;
+  return Boolean(edge.waypoints && edge.waypoints.length >= 2);
+}
+
+/** True if segment `a→b` crosses the interior of `rect` (Liang–Barsky, with a
+ * small inset so an endpoint grazing the border is not a crossing). */
+export function segmentIntersectsRect(a: Point, b: Point, rect: Rect): boolean {
+  const inset = 0.5;
+  const xmin = rect.x + inset;
+  const ymin = rect.y + inset;
+  const xmax = rect.x + rect.width - inset;
+  const ymax = rect.y + rect.height - inset;
+  if (xmax <= xmin || ymax <= ymin) return false;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  let t0 = 0;
+  let t1 = 1;
+  const clip = (p: number, q: number): boolean => {
+    if (p === 0) return q >= 0; // parallel: inside iff not left of the edge
+    const r = q / p;
+    if (p < 0) {
+      if (r > t1) return false;
+      if (r > t0) t0 = r;
+    } else {
+      if (r < t0) return false;
+      if (r < t1) t1 = r;
+    }
+    return true;
+  };
+  if (
+    clip(-dx, a.x - xmin) &&
+    clip(dx, xmax - a.x) &&
+    clip(-dy, a.y - ymin) &&
+    clip(dy, ymax - a.y)
+  ) {
+    return t0 < t1;
+  }
+  return false;
+}
+
+/** True if any segment of `waypoints` crosses any obstacle rect. */
+export function edgeRouteCollides(waypoints: Point[], obstacles: Rect[]): boolean {
+  for (let i = 0; i + 1 < waypoints.length; i++) {
+    for (const rect of obstacles) {
+      if (segmentIntersectsRect(waypoints[i], waypoints[i + 1], rect)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Rigid translation of a manual route when its anchor node(s) move (edge case
+ * 6). If both endpoints move (same drag delta), the whole route shifts
+ * rigidly; if only one endpoint moves, only that endpoint's waypoint follows —
+ * the interior bends the user authored stay put. The route is NEVER re-routed.
+ */
+export function translateManualWaypoints(
+  waypoints: Point[],
+  sourceMoved: boolean,
+  targetMoved: boolean,
+  dx: number,
+  dy: number,
+): Point[] {
+  const shift = (p: Point): Point => ({ x: p.x + dx, y: p.y + dy });
+  if (sourceMoved && targetMoved) return waypoints.map(shift);
+  return waypoints.map((p, i) => {
+    if (sourceMoved && i === 0) return shift(p);
+    if (targetMoved && i === waypoints.length - 1) return shift(p);
+    return p;
+  });
+}
+
+/** One manual edge translated by a host-node move (Handoff 10 R-3). */
+export interface ManualTranslation {
+  edgeId: string;
+  waypoints: Point[];
+  /** The translated route now crosses a shape — flag ⚠, never re-route. */
+  collides: boolean;
+}
+
+/**
+ * Rigidly translates the manual edges connected to the moved nodes against a
+ * POST-move diagram snapshot (edge case 6). Manual routes are never re-routed;
+ * a translation that lands on a shape keeps its route and is flagged
+ * (`collides`) so the ⚠ chip appears. Auto edges are handled separately by
+ * {@link rerouteConnectedEdges}.
+ */
+export function translateManualEdges(
+  nextDiagram: BpmnDiagram,
+  movedNodeIds: ReadonlySet<string>,
+  dx: number,
+  dy: number,
+): ManualTranslation[] {
+  const out: ManualTranslation[] = [];
+  for (const edge of Object.values(nextDiagram.edges)) {
+    if (!edge.waypoints || edge.waypoints.length < 2) continue;
+    if (!isManualEdge(edge)) continue;
+    const sourceMoved = movedNodeIds.has(edge.sourceId);
+    const targetMoved = movedNodeIds.has(edge.targetId);
+    if (!sourceMoved && !targetMoved) continue;
+    const waypoints = translateManualWaypoints(edge.waypoints, sourceMoved, targetMoved, dx, dy);
+    out.push({
+      edgeId: edge.id,
+      waypoints,
+      collides: edgeRouteCollides(waypoints, edgeObstacles(nextDiagram, edge)),
+    });
+  }
+  return out;
+}
+
+/**
+ * Patch that returns a manual edge to automatic routing (§6): recompute the A*
+ * route now and cache it (`routeMode: 'auto'`), or — when the resolved router
+ * is not `astar` — clear the waypoints so the edge follows the diagram's router
+ * per render. Applied as ONE `updateEdgeCommand`, so undo restores the manual
+ * route atomically.
+ */
+export function backToAutoPatch(
+  diagram: BpmnDiagram,
+  edge: BpmnEdge,
+  defaultRouter: EdgeRouterFn,
+): { waypoints: Point[] | null; properties: Record<string, unknown> } {
+  const result = computeRoutedWaypoints(diagram, edge, defaultRouter);
+  if (result) {
+    return {
+      waypoints: result.waypoints,
+      properties: {
+        routeMode: 'auto' satisfies RouteMode,
+        routeFallback: result.routed ? undefined : true,
+        routeCollision: undefined,
+      },
+    };
+  }
+  return {
+    waypoints: null,
+    properties: { routeMode: 'auto' satisfies RouteMode, routeCollision: undefined },
+  };
+}

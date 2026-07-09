@@ -132,7 +132,7 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
       <GridLayer viewport={viewport} />
       <g data-layer="edges">
         {edges.map((edge) => (
-          <ConnectedEdge key={edge.id} edge={edge} nodes={diagram.nodes} />
+          <ConnectedEdge key={edge.id} edge={edge} nodes={diagram.nodes} interactions={interactions} />
         ))}
       </g>
       <g data-layer="nodes">

@@ -8,6 +8,7 @@ import {
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
+import { backToAutoPatch, isManualEdge } from '../canvas/routeEdge.js';
 
 /**
  * Inspector for the selected element: label, purpose (edges) and free-form
@@ -77,7 +78,9 @@ function NodeInspector({ node, readOnly }: { node: BpmnNode; readOnly: boolean }
 }
 
 function EdgeInspector({ edge, readOnly }: { edge: BpmnEdge; readOnly: boolean }) {
-  const { execute } = useDiagram();
+  const { diagram, execute } = useDiagram();
+  const { edgeRouter } = useEditorConfig();
+  const manual = isManualEdge(edge);
   return (
     <div data-inspector-edge={edge.id}>
       <h3 className="bpmnr-inspector-title">{edge.type}</h3>
@@ -94,6 +97,21 @@ function EdgeInspector({ edge, readOnly }: { edge: BpmnEdge; readOnly: boolean }
         placeholder="Why does this handoff exist?"
         onCommit={(purpose) => execute(updateEdgeCommand(edge.id, { purpose }))}
       />
+      {/* Manual routes (Handoff 10 R-3): reset to automatic in one undoable
+          command — recompute + cache the A* route (or clear to the diagram
+          router). */}
+      {manual && !readOnly && (
+        <button
+          type="button"
+          className="bpmnr-inspector-action"
+          data-action="route-back-to-auto"
+          onClick={() =>
+            execute(updateEdgeCommand(edge.id, backToAutoPatch(diagram, edge, edgeRouter)))
+          }
+        >
+          Voltar ao automático
+        </button>
+      )}
       <dl className="bpmnr-inspector-meta">
         <dt>Created in version</dt>
         <dd>{edge.createdInVersion}</dd>

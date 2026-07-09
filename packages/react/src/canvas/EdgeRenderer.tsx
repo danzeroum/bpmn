@@ -5,9 +5,12 @@ import {
   type BpmnEdge,
   type BpmnNode,
   type EdgeGeometry,
+  type Point,
 } from '@bpmn-react/core';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
+import { isManualEdge } from './routeEdge.js';
+import type { Interactions } from './useInteractions.js';
 import { EDGE_CORNER_RADIUS, theme } from '../shapes/common.js';
 import {
   ARROW_MARKER_ID,
@@ -37,10 +40,17 @@ export interface EdgeRendererProps {
   source: BpmnNode | undefined;
   target: BpmnNode | undefined;
   selected: boolean;
+  /** Route handles + manual badge show on hover as well as selection (R-3). */
+  hovered?: boolean;
+  /** Live route while its own waypoint/segment is being dragged (R-3). */
+  liveWaypoints?: Point[] | null;
+  readOnly?: boolean;
+  interactions?: Interactions;
   /** Drag offsets applied to endpoints while their node is being dragged. */
   sourceOffset: { dx: number; dy: number };
   targetOffset: { dx: number; dy: number };
   onSelect: (edgeId: string, additive: boolean) => void;
+  onHoverChange?: (edgeId: string, hovered: boolean) => void;
 }
 
 function EdgeRendererInner({
@@ -48,9 +58,14 @@ function EdgeRendererInner({
   source,
   target,
   selected,
+  hovered = false,
+  liveWaypoints = null,
+  readOnly = false,
+  interactions,
   sourceOffset,
   targetOffset,
   onSelect,
+  onHoverChange,
 }: EdgeRendererProps) {
   const config = useEditorConfig();
   // Boolean selector: an edge re-renders only when crossing the zoom threshold,
@@ -72,8 +87,15 @@ function EdgeRendererInner({
   };
 
   const dragging = sourceOffset.dx !== 0 || sourceOffset.dy !== 0 || targetOffset.dx !== 0 || targetOffset.dy !== 0;
+  const manual = isManualEdge(edge);
   let geometry: EdgeGeometry;
-  if (edge.waypoints && edge.waypoints.length >= 2 && !dragging) {
+  if (liveWaypoints && liveWaypoints.length >= 2) {
+    // A manual-route edit in progress — follow the live waypoints exactly.
+    const start = liveWaypoints[0];
+    const end = liveWaypoints[liveWaypoints.length - 1];
+    const mid = liveWaypoints[Math.floor(liveWaypoints.length / 2)];
+    geometry = { path: waypointsToPath(liveWaypoints, EDGE_CORNER_RADIUS), start, end, midpoint: mid };
+  } else if (edge.waypoints && edge.waypoints.length >= 2 && !dragging) {
     const start = edge.waypoints[0];
     const end = edge.waypoints[edge.waypoints.length - 1];
     const mid = edge.waypoints[Math.floor(edge.waypoints.length / 2)];
@@ -118,6 +140,31 @@ function EdgeRendererInner({
     dash = '5,4';
   }
 
+  // Manual route (Handoff 10 R-3): identical to an auto edge at rest, but on
+  // hover/selection it wears the gold stroke that pairs with its handles + 📍
+  // badge — the affordance that its route is pinned.
+  const manualActive = manual && (hovered || selected) && !closed && !dragging;
+  if (manualActive) {
+    stroke = 'var(--btv-gold, #9a7b1e)';
+    strokeWidth = 2.5;
+    dash = undefined;
+  }
+
+  // A manual route translated onto a shape (edge case 6) keeps its route but
+  // flags ⚠ — never re-routed. Shares the chip with the auto no-corridor state.
+  const collision = Boolean(edge.properties.routeCollision) && !closed && !dragging;
+
+  // Route handles + 📍 badge reveal on hover/selection; editing is live once
+  // selected (drag a handle or segment to author a manual bend).
+  const editWaypoints: Point[] =
+    liveWaypoints && liveWaypoints.length >= 2
+      ? liveWaypoints
+      : edge.waypoints && edge.waypoints.length >= 2
+        ? edge.waypoints
+        : [geometry.start, geometry.end];
+  const showHandles = (hovered || selected) && !closed && !dragging;
+  const editable = showHandles && selected && !readOnly && Boolean(interactions);
+
   // Mid-segment decoration is tied to the edge type (not selection); hidden
   // only on retired edges.
   const decoration = closed ? undefined : domainStyle?.midDecoration;
@@ -133,6 +180,8 @@ function EdgeRendererInner({
         event.stopPropagation();
         onSelect(edge.id, event.shiftKey);
       }}
+      onPointerEnter={onHoverChange ? () => onHoverChange(edge.id, true) : undefined}
+      onPointerLeave={onHoverChange ? () => onHoverChange(edge.id, false) : undefined}
       style={{ cursor: 'pointer', opacity: dragging ? 0.7 : undefined }}
     >
       {/* Invisible hit-area under the visible line. Must stay in the render
@@ -153,8 +202,20 @@ function EdgeRendererInner({
       {decoration === 'purpose-chip' && chipsVisible && (
         <PurposeChip x={geometry.midpoint.x} y={geometry.midpoint.y} purpose={edge.purpose} />
       )}
-      {fallback && chipsVisible && (
+      {(fallback || collision) && chipsVisible && (
         <FallbackChip x={geometry.midpoint.x} y={geometry.midpoint.y} />
+      )}
+      {showHandles && (
+        <RouteEditLayer
+          edgeId={edge.id}
+          waypoints={editWaypoints}
+          manual={manual}
+          editable={editable}
+          interactions={interactions}
+        />
+      )}
+      {manual && (hovered || selected) && chipsVisible && (
+        <ManualBadge x={geometry.midpoint.x} y={geometry.midpoint.y} />
       )}
       {edge.label && (
         <text
@@ -268,18 +329,139 @@ function FallbackChip({ x, y }: { x: number; y: number }) {
   );
 }
 
+/**
+ * Manual-route affordance layer (Handoff 10 R-3): draggable segment hit-areas
+ * (grab a segment, drag → author a bend → manual) and interior waypoint handles
+ * (drag to move, double-click to remove). Handles are filled gold when the
+ * route is already manual, hollow (white) when auto — the "drag to pin"
+ * affordance. Each interactive handle carries an invisible 44px hit target for
+ * touch (§6). When `editable` is false the layer is a pure hover preview.
+ */
+function RouteEditLayer({
+  edgeId,
+  waypoints,
+  manual,
+  editable,
+  interactions,
+}: {
+  edgeId: string;
+  waypoints: Point[];
+  manual: boolean;
+  editable: boolean;
+  interactions?: Interactions;
+}) {
+  const fill = manual ? 'var(--btv-gold, #9a7b1e)' : '#ffffff';
+  const stroke = manual ? 'var(--btv-gold, #9a7b1e)' : theme.strokeSelected;
+  return (
+    <g aria-hidden="true">
+      {editable &&
+        interactions &&
+        waypoints.slice(0, -1).map((p, i) => {
+          const q = waypoints[i + 1];
+          return (
+            <line
+              key={`seg-${i}`}
+              x1={p.x}
+              y1={p.y}
+              x2={q.x}
+              y2={q.y}
+              stroke="transparent"
+              strokeWidth={14}
+              strokeLinecap="round"
+              style={{ cursor: 'crosshair' }}
+              onPointerDown={(event) =>
+                interactions.onEdgeSegmentPointerDown(event, edgeId, i, waypoints)
+              }
+            />
+          );
+        })}
+      {waypoints.map((p, i) => {
+        const interior = i > 0 && i < waypoints.length - 1;
+        return (
+          <g key={`wp-${i}`}>
+            {editable && interior && interactions && (
+              <circle
+                cx={p.x}
+                cy={p.y}
+                r={22}
+                fill="transparent"
+                style={{ cursor: 'grab' }}
+                onPointerDown={(event) =>
+                  interactions.onEdgeHandlePointerDown(event, edgeId, i, waypoints)
+                }
+                onDoubleClick={(event) =>
+                  interactions.onEdgeWaypointDoubleClick(event, edgeId, i, waypoints)
+                }
+              />
+            )}
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r={interior ? 5 : 3.5}
+              fill={interior ? fill : '#ffffff'}
+              stroke={stroke}
+              strokeWidth={1.5}
+              pointerEvents="none"
+            />
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+/**
+ * Manual-route badge (Handoff 10 R-3): `📍 rota manual` pill over the
+ * mid-segment, shown only on hover/selection — no permanent canvas ink.
+ */
+function ManualBadge({ x, y }: { x: number; y: number }) {
+  const text = '📍 rota manual';
+  const width = text.length * 6 + 12;
+  return (
+    <g pointerEvents="none" aria-hidden="true">
+      <rect
+        x={x - width / 2}
+        y={y - 22}
+        width={width}
+        height={14}
+        rx={7}
+        fill="var(--btv-gold-soft, #FDFAF1)"
+        stroke="var(--btv-gold, #9a7b1e)"
+        strokeWidth={1}
+      />
+      <text
+        x={x}
+        y={y - 12}
+        textAnchor="middle"
+        fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+        fontSize={9}
+        fill="var(--btv-gold, #9a7b1e)"
+      >
+        {text}
+      </text>
+    </g>
+  );
+}
+
 export const EdgeRenderer = memo(EdgeRendererInner);
 
 /** Granular store binding for one edge. */
 export function ConnectedEdge({
   edge,
   nodes,
+  interactions,
 }: {
   edge: BpmnEdge;
   nodes: Record<string, BpmnNode>;
+  interactions?: Interactions;
 }) {
   const store = useCanvasStore();
   const selected = useCanvasState((s) => s.selectedIds.includes(edge.id));
+  const hovered = useCanvasState((s) => s.hoveredEdgeId === edge.id);
+  const readOnly = useCanvasState((s) => s.readOnly);
+  const liveWaypoints = useCanvasState((s) =>
+    s.edgeDrag?.edgeId === edge.id && s.edgeDrag.active ? s.edgeDrag.waypoints : null,
+  );
   const sourceOffset = useCanvasState((s) =>
     s.dragState?.active && s.dragState.nodeIds.includes(edge.sourceId)
       ? { dx: s.dragState.dx, dy: s.dragState.dy }
@@ -297,8 +479,17 @@ export function ConnectedEdge({
       source={nodes[edge.sourceId]}
       target={nodes[edge.targetId]}
       selected={selected}
+      hovered={hovered}
+      liveWaypoints={liveWaypoints}
+      readOnly={readOnly}
+      interactions={interactions}
       sourceOffset={sourceOffset}
       targetOffset={targetOffset}
+      onHoverChange={(edgeId, next) => {
+        const current = store.getState().hoveredEdgeId;
+        if (next) store.setState({ hoveredEdgeId: edgeId });
+        else if (current === edgeId) store.setState({ hoveredEdgeId: null });
+      }}
       onSelect={(edgeId, additive) => {
         const current = store.getState().selectedIds;
         store.setState({

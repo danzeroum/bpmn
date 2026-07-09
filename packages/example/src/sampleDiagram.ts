@@ -370,6 +370,51 @@ export function buildAstarDiagram(): BpmnDiagram {
 }
 
 /**
+ * Manual-route demo (`?manual=1`, Handoff 10 R-3). A pre-authored manual route
+ * `m` (n0→n1 with a bend) and an obstacle `obs` parked directly below n0's
+ * exit. The e2e drags n0 down onto `obs`: the manual route must translate
+ * rigidly (keeping its bend) and flag ⚠ — never silently re-route (edge case
+ * 6). A second, unrelated node checks the §8.3 no-touch guarantee.
+ */
+export function buildManualRouteDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-manual', name: 'Manual route', createdBy: 'demo' });
+  const v = diagram.version.id;
+
+  const make = (type: string, id: string, label: string, x: number, y: number) =>
+    createNode({ type, id, label, x, y, properties: {}, versionId: v }, registry);
+
+  diagram.nodes = {
+    n0: make('task', 'n0', 'Origem', 80, 60),
+    n1: make('task', 'n1', 'Destino', 560, 60),
+    // Wide/tall so dragging n0's exit down reliably lands the endpoint inside it.
+    obs: make('task', 'obs', 'Obstáculo', 100, 220),
+    far: make('task', 'far', 'Longe', 560, 520),
+  };
+  diagram.nodes.obs.width = 160;
+  diagram.nodes.obs.height = 200;
+
+  diagram.edges = {
+    m: createEdge({
+      id: 'm',
+      sourceId: 'n0',
+      targetId: 'n1',
+      type: 'sequenceFlow',
+      versionId: v,
+      // Endpoints on the node borders, one authored bend at x=360.
+      waypoints: [
+        { x: 160, y: 90 },
+        { x: 360, y: 90 },
+        { x: 560, y: 90 },
+      ],
+      properties: { routeMode: 'manual' },
+    }),
+  };
+
+  return diagram;
+}
+
+/**
  * The three-path simulation demo (`?simulate=1`, Handoff 7A): a task with an
  * interrupting 48h timeout boundary, then an XOR (approve / reject). The three
  * structural paths — happy, rejection, timeout — close the coverage checklist
