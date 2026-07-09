@@ -335,6 +335,48 @@ export function buildDeadlockDiagram(): BpmnDiagram {
 }
 
 /**
+ * The three-path simulation demo (`?simulate=1`, Handoff 7A): a task with an
+ * interrupting 48h timeout boundary, then an XOR (approve / reject). The three
+ * structural paths — happy, rejection, timeout — close the coverage checklist
+ * 3/3, matching the prototype.
+ */
+export function buildSimulationDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-simulation', name: 'Onboarding de Cliente', createdBy: 'demo' });
+  diagram.description = 'Simulação de tokens: caminho feliz, rejeição e timeout de 48h.';
+  const v = diagram.version.id;
+
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Novo cliente', 60, 150),
+    brief: make('task', 'brief', 'Coletar briefing', 160, 125),
+    gate: make('exclusiveGateway', 'gate', 'Aprovar briefing', 340, 145),
+    plan: make('task', 'plan', 'Gerar plano', 460, 60),
+    revise: make('task', 'revise', 'Revisar briefing', 460, 235),
+    timeout: make('boundaryEvent', 'timeout', '48h timeout', 240, 175, { attachedToRef: 'brief' }),
+    published: make('endEvent', 'published', 'Plano publicado', 640, 70),
+    rejected: make('endEvent', 'rejected', 'Rejeitado', 640, 245),
+    escalated: make('endEvent', 'escalated', 'Escalation', 300, 300),
+  };
+
+  const edge = (id: string, sourceId: string, targetId: string, label?: string) =>
+    createEdge({ id, sourceId, targetId, type: 'sequenceFlow', versionId: v, ...(label ? { label } : {}) });
+  diagram.edges = {
+    s1: edge('s1', 'start', 'brief'),
+    s2: edge('s2', 'brief', 'gate'),
+    s3: edge('s3', 'gate', 'plan', 'aprovado'),
+    s4: edge('s4', 'gate', 'revise', 'rejeitado'),
+    s5: edge('s5', 'plan', 'published'),
+    s6: edge('s6', 'revise', 'rejected'),
+    s7: edge('s7', 'timeout', 'escalated'),
+  };
+
+  return diagram;
+}
+
+/**
  * A superseded snapshot of the sample (Handoff 5 §5, `?closed=1`): several
  * elements closed in this version, status deprecated — the canvas shows the
  * always-on hatch + desaturation, the hover/selection-gated "FECHADO" seal

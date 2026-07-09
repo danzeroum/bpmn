@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { AuditLedger, BpmnXmlConverter, getEdgeChain, type BpmnDiagram } from '@bpmn-react/core';
 import {
   BpmnEditor,
+  BpmnSimulator,
   EdgePedigreeStrip,
   resolveEditorConfig,
   useCanvasState,
@@ -27,6 +28,7 @@ import {
   buildHealthcareDiagram,
   buildDrdDiagram,
   buildSampleDiagram,
+  buildSimulationDiagram,
   buildStressDiagram,
   DEMO_DECISION_TABLE,
 } from './sampleDiagram.js';
@@ -124,8 +126,21 @@ export function App() {
   // the full Studio shell (S-4: Biblioteca + Revisão do Aprovador).
   const libraryMode = params.get('library') !== null;
   const studioMode = params.get('studio') !== null;
+  // `?simulate=1` enters token-simulation mode (Handoff 7A) over the 3-path demo.
+  const simulateMode = params.get('simulate') !== null;
   if (studioMode) return <StudioSurface />;
   if (libraryMode) return <LibrarySurface />;
+  if (simulateMode) {
+    return (
+      <BpmnSimulator
+        diagram={buildSimulationDiagram()}
+        plugins={PLUGINS}
+        onExit={() => {
+          window.location.search = '';
+        }}
+      />
+    );
+  }
 
   const replaceFromOutside = (next: BpmnDiagram) => {
     latestRef.current = next;
