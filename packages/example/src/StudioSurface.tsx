@@ -81,6 +81,9 @@ interface StudioWorld {
   baseline: BpmnDiagram;
   registry: VersionRegistry;
   ledger: AuditLedger;
+  /** Separate ledger for the attached replay analysis (7B-3), so the audit
+   * trail fixtures stay untouched. In production this is the same ledger. */
+  replayLedger: AuditLedger;
   /** `?tamper=1`: a forged copy for the broken-chain demo/e2e (§10.5). */
   auditLedger: AuditLedger | { entries: ReturnType<AuditLedger['export']>['entries'] };
 }
@@ -187,7 +190,9 @@ async function buildWorld(): Promise<StudioWorld> {
   // Handoff 7B-3: a replay analysis of the active version's runs, attached to
   // the candidate's promotion — surfaces as the "ANÁLISE DE REPLAY" block in
   // the Approver Review (host injection, read back with latestReplayAnalysis).
-  await ledger.append(
+  // Kept in its own ledger so the audit-trail demo/e2e counts stay untouched.
+  const replayLedger = new AuditLedger();
+  await replayLedger.append(
     replayAnalysisEntry(
       {
         diagramId: 'onboarding',
@@ -232,6 +237,7 @@ async function buildWorld(): Promise<StudioWorld> {
     baseline,
     registry,
     ledger,
+    replayLedger,
     auditLedger,
   };
 }
@@ -291,7 +297,7 @@ export function StudioSurface() {
       baselineOf: () => world.baseline,
       // Handoff 7B-3: surface the attached replay analysis for the candidate.
       replayAnalysisFor: (diagram: BpmnDiagram) =>
-        latestReplayAnalysis(world.ledger.getEntries(), diagram.version.id),
+        latestReplayAnalysis(world.replayLedger.getEntries(), diagram.version.id),
     };
   }, [world]);
 
