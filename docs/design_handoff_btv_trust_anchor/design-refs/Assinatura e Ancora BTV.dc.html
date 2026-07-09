@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #faf9f6; }
+  a { color: #9a7b1e; } a:hover { color: #7a611e; }
+</style>
+</helmet>
+<div style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; height: 100vh; display: flex; flex-direction: column; background: #faf9f6; overflow: hidden;">
+
+  <!-- ============ HEADER ============ -->
+  <header data-screen-label="Header" style="height: 58px; flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2ddd3; display: flex; align-items: center; gap: 14px; padding: 0 20px; z-index: 6;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 26px; height: 26px; border-radius: 7px; background: #9a7b1e; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">B</div>
+      <div style="font-weight: 600; font-size: 14px;">BuildToValue <span style="color: #6f675a; font-weight: 400;">Studio</span></div>
+    </div>
+    <div style="width: 1px; height: 22px; background: #e2ddd3;"></div>
+    <nav style="display: flex; gap: 4px; font-size: 12.5px;">
+      <button onClick="{{ tabSign }}" style="border: none; padding: 6px 12px; border-radius: 8px; background: {{ signTabBg }}; color: {{ signTabFg }}; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;">Assinar promoção</button>
+      <button onClick="{{ tabStates }}" style="border: none; padding: 6px 12px; border-radius: 8px; background: {{ statesTabBg }}; color: {{ statesTabFg }}; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;">Estados de verificação</button>
+    </nav>
+    <div style="flex: 1;"></div>
+    <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6f675a;">
+      <div style="width: 26px; height: 26px; border-radius: 50%; background: #dff0e6; color: #1a6a54; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px;">MC</div>
+      Marta Costa · <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;">chave: SSO corporativo ✓</span>
+    </div>
+  </header>
+
+  <main style="flex: 1; overflow-y: auto; padding: 22px 28px;">
+
+    <!-- ============ TAB 1: FLUXO DE ASSINATURA ============ -->
+    <sc-if value="{{ onSign }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Fluxo de assinatura" style="max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px;">
+      <div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 2px; color: #9a7b1e; margin-bottom: 4px;">APROVAÇÃO ASSINADA · CANDIDATE → ACTIVE</div>
+        <h1 style="margin: 0; font-size: 21px; font-weight: 700;">Onboarding de Cliente <span style="font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 500; color: #44403a;">v2.1.0</span></h1>
+      </div>
+
+      <!-- identidade -->
+      <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 12px; padding: 16px 18px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 10px;">SUA IDENTIDADE DE ASSINATURA</div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 40px; height: 40px; border-radius: 50%; background: #dff0e6; color: #1a6a54; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px;">MC</div>
+          <div style="flex: 1;">
+            <div style="font-size: 13.5px; font-weight: 600;">marta.costa@empresa.com.br · papel: compliance</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a; margin-top: 2px;">Ed25519 · ed25519:SHA256:kX9v…3mQt · origem: SSO corporativo (a chave nunca toca a biblioteca)</div>
+          </div>
+          <span style="background: #dff0e6; color: #1a6a54; font-size: 9.5px; font-weight: 700; letter-spacing: 0.6px; border-radius: 999px; padding: 3px 10px; flex-shrink: 0;">✓ VERIFICADA</span>
+        </div>
+      </section>
+
+      <!-- o que será assinado -->
+      <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 12px; padding: 16px 18px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 8px;">O QUE VOCÊ ESTÁ ASSINANDO (PAYLOAD CANÔNICO)</div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.9; color: #44403a; background: #faf9f6; border: 1px solid #efece6; border-radius: 8px; padding: 10px 12px;">
+          diagrama: onboarding-cliente · versão: 2.1.0<br>
+          xmlHash: #77b2…4c · ledgerHead: #a3f9…e1<br>
+          decisão: APROVAR (papel compliance) · 2ª de 2
+        </div>
+        <div style="font-size: 11.5px; color: #6f675a; margin-top: 8px; line-height: 1.55;">A assinatura cobre o hash do XML + o head da cadeia — qualquer mudança posterior invalida a verificação, detectável por qualquer terceiro.</div>
+      </section>
+
+      <!-- ação / estados -->
+      <sc-if value="{{ notSigned }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ sign }}" style="border: none; background: #1a6a54; color: #ffffff; border-radius: 10px; height: 44px; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer;" style-hover="background: #14523f;">🔏 Assinar aprovação com minha chave</button>
+      </sc-if>
+
+      <sc-if value="{{ signed }}" hint-placeholder-val="{{ false }}">
+        <section style="background: #f2f9f4; border: 1px solid #bcdcc9; border-radius: 12px; padding: 14px 18px; display: flex; align-items: flex-start; gap: 10px;">
+          <span style="color: #1a6a54; font-weight: 700; font-size: 16px;">✓</span>
+          <div style="font-size: 12.5px; line-height: 1.65;"><strong>Aprovação assinada</strong> · assinatura <span style="font-family: 'IBM Plex Mono', monospace; color: #7a611e;">ed25519:#0b9a…f21c</span> gravada no ledger · verificável offline por qualquer terceiro com a chave pública.</div>
+        </section>
+
+        <!-- âncora: o terceiro estado -->
+        <section style="background: #ffffff; border: 1px solid {{ anchorBorder }}; border-radius: 12px; padding: 16px 18px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e;">ÂNCORA EXTERNA · anchor-rfc3161 (ICP-Brasil)</div>
+            <span style="background: {{ anchorPillBg }}; color: {{ anchorPillFg }}; font-size: 9.5px; font-weight: 700; letter-spacing: 0.6px; border-radius: 999px; padding: 3px 10px;">{{ anchorPill }}</span>
+          </div>
+          <sc-if value="{{ anchorPending }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size: 12px; line-height: 1.65; color: #44403a;"><strong>Assinada · ancoragem pendente.</strong> A decisão humana ocorreu e está assinada; a prova externa de tempo ainda não foi obtida (servidor de timestamp indisponível). A promoção NÃO regride — o anchor será retentado. Sem âncora, a garantia é assinatura + hash-chain local.</div>
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+              <button onClick="{{ anchorRetryOk }}" style="border: none; background: #9a7b1e; color: #ffffff; border-radius: 8px; height: 34px; padding: 0 16px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;">↻ Retentar ancoragem</button>
+              <button onClick="{{ anchorRetryFail }}" style="border: 1px solid #e2ddd3; background: transparent; border-radius: 8px; height: 34px; padding: 0 14px; font-family: inherit; font-size: 12px; color: #6f675a; cursor: pointer;">simular nova falha</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ anchored }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size: 12px; line-height: 1.65; color: #44403a;"><strong style="color: #1a6a54;">Ancorada.</strong> Head <span style="font-family: 'IBM Plex Mono', monospace;">#a3f9…e1</span> com timestamp RFC 3161 · 08/07/2026 14:32:07 UTC · TSA ICP-Brasil. A partir deste ponto, "quando" é provável a terceiros.</div>
+          </sc-if>
+        </section>
+
+        <!-- rodapé SACM resultante -->
+        <section style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 12px; overflow: hidden;">
+          <div style="height: 4px; background: #9a7b1e;"></div>
+          <div style="padding: 12px 18px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 6px;">COMO FICA NO RODAPÉ DO RELATÓRIO SACM</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #44403a; line-height: 1.8;">
+              cadeia sha-256 ✓ íntegra · 48 entradas · aprovações: 2/2 <strong>assinadas ed25519</strong><br>
+              {{ sacmAnchorLine }}
+            </div>
+          </div>
+        </section>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ============ TAB 2: ESTADOS ============ -->
+    <sc-if value="{{ onStates }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Estados de verificação" style="max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px;">
+      <div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 2px; color: #9a7b1e; margin-bottom: 4px;">CATÁLOGO DE ESTADOS · IDENTIDADE E ÂNCORA</div>
+        <h1 style="margin: 0 0 4px; font-size: 21px; font-weight: 700;">Pouco pixel, muito peso — sem teatro de segurança</h1>
+        <p style="margin: 0; font-size: 12.5px; color: #6f675a;">Estados nunca só por cor: ícone + label sempre. Caminho negativo em --btv-error.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <!-- verificada -->
+        <div style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 12px; padding: 14px 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span style="background: #dff0e6; color: #1a6a54; font-size: 9.5px; font-weight: 700; letter-spacing: 0.6px; border-radius: 999px; padding: 3px 10px;">✓ ASSINADA · VERIFICADA</span>
+          </div>
+          <div style="font-size: 12px; line-height: 1.6;">Marta Costa · compliance<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a;">ed25519:#0b9a…f21c ✓ · chave do SSO corporativo</span></div>
+          <div style="font-size: 10.5px; color: #6f675a; margin-top: 6px;">Substitui o nome digitado. Verificável offline.</div>
+        </div>
+
+        <!-- não-verificada (legado) -->
+        <div style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 12px; padding: 14px 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span style="background: #f7f0dc; color: #7a611e; font-size: 9.5px; font-weight: 700; letter-spacing: 0.6px; border-radius: 999px; padding: 3px 10px;">◌ NÃO ASSINADA (LEGADO)</span>
+          </div>
+          <div style="font-size: 12px; line-height: 1.6;">J. Reis · operação<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a;">aprovação anterior ao Handoff 8 · só hash de entrada</span></div>
+          <div style="font-size: 10.5px; color: #6f675a; margin-top: 6px;">Histórico nunca é reescrito — o estado declara a garantia menor.</div>
+        </div>
+
+        <!-- assinatura inválida -->
+        <div style="background: #fffbfa; border: 1.5px solid #b3372f; border-radius: 12px; padding: 14px 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span style="background: #b3372f; color: #ffffff; font-size: 9.5px; font-weight: 700; letter-spacing: 0.6px; border-radius: 999px; padding: 3px 10px;">✕ ASSINATURA INVÁLIDA</span>
+          </div>
+          <div style="font-size: 12px; line-height: 1.6;">A assinatura não confere com o payload — conteúdo alterado após assinar, ou chave incorreta.<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #b3372f;">esperado #0b9a…f21c · payload atual produz #8811…3e</span></div>
+          <div style="font-size: 10.5px; color: #6f675a; margin-top: 6px;">Bloqueia: relatório SACM marca a claim como "não sustentada".</div>
+        </div>
+
+        <!-- cadeia ancorada rompida -->
+        <div style="background: #fffbfa; border: 1.5px solid #b3372f; border-radius: 12px; padding: 14px 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span style="background: #b3372f; color: #ffffff; font-size: 9.5px; font-weight: 700; letter-spacing: 0.6px; border-radius: 999px; padding: 3px 10px;">✕ CADEIA ≠ ÂNCORA</span>
+          </div>
+          <div style="font-size: 12px; line-height: 1.6;">O head local diverge do head ancorado externamente — a cadeia foi regenerada após a ancoragem.<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #b3372f;">local #77aa…02 ≠ ancorado #a3f9…e1 (git anchor, 07/07)</span></div>
+          <div style="font-size: 10.5px; color: #6f675a; margin-top: 6px;">O estado que o hash-chain sozinho nunca detectaria.</div>
+        </div>
+
+        <!-- ancoragem pendente -->
+        <div style="background: #ffffff; border: 1px solid #e8d9ae; border-radius: 12px; padding: 14px 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span style="background: #f6edd4; color: #7a611e; font-size: 9.5px; font-weight: 700; letter-spacing: 0.6px; border-radius: 999px; padding: 3px 10px;">⏳ ASSINADA · ANCORAGEM PENDENTE</span>
+          </div>
+          <div style="font-size: 12px; line-height: 1.6;">O terceiro estado: decisão assinada, prova externa ainda não obtida (falha de rede/TSA). Retry automático; não regride a promoção.</div>
+          <div style="font-size: 10.5px; color: #6f675a; margin-top: 6px;">Garantia vigente: assinatura + hash-chain local (declarado).</div>
+        </div>
+
+        <!-- sem âncora configurada -->
+        <div style="background: #ffffff; border: 1px solid #e2ddd3; border-radius: 12px; padding: 14px 16px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+            <span style="background: #efece6; color: #6f675a; font-size: 9.5px; font-weight: 700; letter-spacing: 0.6px; border-radius: 999px; padding: 3px 10px;">— SEM ÂNCORA CONFIGURADA</span>
+          </div>
+          <div style="font-size: 12px; line-height: 1.6;">Instalação sem anchor adapter: garantia = assinaturas + hash-chain local. Nunca exibir como se houvesse prova externa.</div>
+          <div style="font-size: 10.5px; color: #6f675a; margin-top: 6px;">limitations.md, primeira linha — honestidade antes de venda.</div>
+        </div>
+      </div>
+
+      <!-- RBAC advisory -->
+      <section style="background: #fdfaf1; border: 1px solid #e8d9ae; border-radius: 12px; padding: 14px 18px; font-size: 12px; line-height: 1.7;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 6px;">RBAC = VERIFICAÇÃO, NÃO ENFORCEMENT</div>
+        O cliente <strong>verifica</strong>: "esta promoção exige assinatura de papel compliance — a assinatura #0b9a satisfaz? ✓". Ele <strong>não impede</strong> ações — quem controla o cliente ignora regras locais. Enforcement é responsabilidade da âncora e de quem a hospeda. Declarado na primeira linha de limitations.md.
+      </section>
+    </div>
+    </sc-if>
+  </main>
+
+  <footer style="height: 30px; flex-shrink: 0; background: #ffffff; border-top: 1px solid #e2ddd3; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a;">
+    <span>ed25519 via WebCrypto · chaves externas (SSO/YubiKey/git) · a biblioteca só verifica e registra</span>
+    <span>anchor-git · anchor-rfc3161 · anchor-s3 (adapters opcionais)</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { tab: 'sign', signed: false, anchor: 'none' }; // anchor: none|pending|ok
+
+  renderVals() {
+    const s = this.state;
+    const pending = s.anchor === 'pending';
+    const ok = s.anchor === 'ok';
+    return {
+      onSign: s.tab === 'sign',
+      onStates: s.tab === 'states',
+      tabSign: () => this.setState({ tab: 'sign' }),
+      tabStates: () => this.setState({ tab: 'states' }),
+      signTabBg: s.tab === 'sign' ? '#f6edd4' : 'transparent',
+      signTabFg: s.tab === 'sign' ? '#7a611e' : '#6f675a',
+      statesTabBg: s.tab === 'states' ? '#f6edd4' : 'transparent',
+      statesTabFg: s.tab === 'states' ? '#7a611e' : '#6f675a',
+      notSigned: !s.signed,
+      signed: s.signed,
+      sign: () => this.setState({ signed: true, anchor: 'pending' }),
+      anchorPending: pending,
+      anchored: ok,
+      anchorRetryOk: () => this.setState({ anchor: 'ok' }),
+      anchorRetryFail: () => this.setState({ anchor: 'pending' }),
+      anchorBorder: ok ? '#bcdcc9' : '#e8d9ae',
+      anchorPill: ok ? '✓ ANCORADA' : '⏳ PENDENTE',
+      anchorPillBg: ok ? '#dff0e6' : '#f6edd4',
+      anchorPillFg: ok ? '#1a6a54' : '#7a611e',
+      sacmAnchorLine: ok
+        ? 'ancorado: RFC 3161 · TSA ICP-Brasil · 08/07/2026 14:32:07 UTC · head #a3f9…e1'
+        : 'ancoragem: PENDENTE — garantia vigente: assinaturas + hash-chain local',
+    };
+  }
+}
+</script>
+</body>
+</html>
