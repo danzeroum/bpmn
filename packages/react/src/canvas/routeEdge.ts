@@ -1,5 +1,6 @@
 import {
   isContainerType,
+  routeAStar,
   type BpmnDiagram,
   type BpmnEdge,
   type EdgeGeometry,
@@ -7,7 +8,7 @@ import {
   type Rect,
 } from '@bpmn-react/core';
 import type { EdgeRouterContext, EdgeRouterFn } from '../plugins/types.js';
-import { resolveRouter } from './routers.js';
+import { astarConnection, resolveRouter } from './routers.js';
 
 /**
  * Router preference is **presentation metadata** (Handoff 10 §1.3), stored in
@@ -74,4 +75,109 @@ export function routeEdge(
     routedEdges: routedEdgeWaypoints(diagram, edge),
   };
   return router(asRect(source), asRect(target), context);
+}
+
+/**
+ * Computes the cached A* waypoints for an edge — only when its resolved router
+ * is the obstacle-avoiding `astar` (the cheap routers route per-render and are
+ * not cached). Returns the waypoints plus `routed` (false = no corridor, the
+ * fallback state). `undefined` for a non-astar edge or a missing endpoint.
+ */
+export function computeRoutedWaypoints(
+  diagram: BpmnDiagram,
+  edge: BpmnEdge,
+  defaultRouter: EdgeRouterFn,
+): { waypoints: Point[]; routed: boolean } | undefined {
+  const source = diagram.nodes[edge.sourceId];
+  const target = diagram.nodes[edge.targetId];
+  if (!source || !target) return undefined;
+  const router = resolveRouter(resolveEdgeRouterName(diagram, edge), defaultRouter);
+  if (router !== astarConnection) return undefined;
+  return routeAStar(asRect(source), asRect(target), {
+    obstacles: edgeObstacles(diagram, edge),
+    routedEdges: routedEdgeWaypoints(diagram, edge),
+  });
+}
+
+/** Route mode marker (Handoff 10 §11): `'auto'` = derived/cached A* route,
+ * `'manual'` = user-authored (R-3). Absent + has waypoints = external import,
+ * treated as manual by R-3. */
+export type RouteMode = 'auto' | 'manual';
+
+/** One rerouted edge produced by a host-node move (Handoff 10 R-2b). */
+export interface EdgeReroute {
+  edgeId: string;
+  /** Fresh A* waypoints, cached back onto the edge inside the move command. */
+  waypoints: Point[];
+  /** `false` = no corridor found (fallback state). */
+  routed: boolean;
+  /** Default-router path at the final positions — the fading crossfade layer. */
+  previewPath: string;
+}
+
+/**
+ * Reroutes the auto A* edges connected to the moved nodes, against a POST-move
+ * diagram snapshot. This is the central zero-recalc guarantee (Handoff 10
+ * R-2b): only edges that (a) touch a moved node, (b) resolve to `astar`, and
+ * (c) are not manual/external are re-routed — every unrelated or non-astar edge
+ * is left exactly as it was. Each entry carries the fresh waypoints (cached
+ * inside the same atomic move command by the caller) and the default-router
+ * preview path used for the settle crossfade.
+ */
+export function rerouteConnectedEdges(
+  nextDiagram: BpmnDiagram,
+  movedNodeIds: ReadonlySet<string>,
+  defaultRouter: EdgeRouterFn,
+): EdgeReroute[] {
+  const out: EdgeReroute[] = [];
+  for (const edge of Object.values(nextDiagram.edges)) {
+    if (!movedNodeIds.has(edge.sourceId) && !movedNodeIds.has(edge.targetId)) continue;
+    if (edge.properties.routeMode === 'manual') continue;
+    // An external import (waypoints without our `auto` marker) is manual too.
+    if (edge.waypoints && edge.waypoints.length >= 2 && edge.properties.routeMode !== 'auto') {
+      continue;
+    }
+    const result = computeRoutedWaypoints(nextDiagram, edge, defaultRouter);
+    if (!result) continue;
+    const source = nextDiagram.nodes[edge.sourceId];
+    const target = nextDiagram.nodes[edge.targetId];
+    if (!source || !target) continue;
+    out.push({
+      edgeId: edge.id,
+      waypoints: result.waypoints,
+      routed: result.routed,
+      previewPath: defaultRouter(asRect(source), asRect(target)).path,
+    });
+  }
+  return out;
+}
+
+/**
+ * Derives A* routes for `astar` edges that have no waypoints yet, returning a
+ * new diagram with them cached (`routeMode: 'auto'`, plus `routeFallback` when
+ * no corridor was found). Presentation derivation, NOT an edit — the caller
+ * applies it outside the command stack (no undo entry, no ledger) at load /
+ * import time. Edges that already carry waypoints are left untouched (a cached
+ * auto route, or an external/manual one). Returns the same diagram reference
+ * when nothing changed, so callers can cheaply skip.
+ */
+export function deriveAstarRoutes(diagram: BpmnDiagram, defaultRouter: EdgeRouterFn): BpmnDiagram {
+  let changed = false;
+  const edges = { ...diagram.edges };
+  for (const edge of Object.values(diagram.edges)) {
+    if (edge.waypoints && edge.waypoints.length >= 2) continue;
+    const result = computeRoutedWaypoints(diagram, edge, defaultRouter);
+    if (!result) continue;
+    changed = true;
+    edges[edge.id] = {
+      ...edge,
+      waypoints: result.waypoints,
+      properties: {
+        ...edge.properties,
+        routeMode: 'auto' satisfies RouteMode,
+        ...(result.routed ? {} : { routeFallback: true }),
+      },
+    };
+  }
+  return changed ? { ...diagram, edges } : diagram;
 }

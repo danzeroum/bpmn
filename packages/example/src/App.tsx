@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { AuditLedger, BpmnXmlConverter, getEdgeChain, type BpmnDiagram } from '@bpmn-react/core';
 import {
+  astarConnection,
   BpmnEditor,
   BpmnReplay,
   BpmnSimulator,
@@ -10,6 +11,7 @@ import {
   useDiagram,
   useDismissal,
   type BpmnPlugin,
+  type EdgeRouterContext,
   type GovernanceBreadcrumbLevel,
 } from '@bpmn-react/react';
 import {
@@ -29,6 +31,7 @@ import {
   buildDeadlockDiagram,
   buildHealthcareDiagram,
   buildDrdDiagram,
+  buildAstarDiagram,
   buildSampleDiagram,
   buildReplayTraces,
   buildSimulationDiagram,
@@ -104,6 +107,24 @@ const dmnDemoPlugin: BpmnPlugin = {
 
 const PLUGINS = [domainExamplePlugin, dmnDemoPlugin, healthcarePlugin, observabilityPlugin, soundnessPlugin, bindingPlugin];
 
+// A* zero-recalc probe (`?astar=1`, Handoff 10 R-2b): a router that delegates to
+// the real astar connection but bumps a global counter on every PER-RENDER
+// call. Cached edges bypass this (they paint from stored waypoints), so a pan
+// with no drag must leave the counter untouched — the e2e's central assertion.
+declare global {
+  interface Window {
+    __routerCalls?: number;
+  }
+}
+const astarSpyPlugin: BpmnPlugin = {
+  id: 'demo/astar-spy',
+  edgeRouter: (source, target, context?: EdgeRouterContext) => {
+    if (typeof window !== 'undefined') window.__routerCalls = (window.__routerCalls ?? 0) + 1;
+    return astarConnection(source, target, context);
+  },
+};
+const ASTAR_PLUGINS = [...PLUGINS, astarSpyPlugin];
+
 /** In-memory ledger the `?simulate` demo registers sessions into (Handoff 7A-3). */
 const simulationDemoLedger = new AuditLedger();
 
@@ -122,6 +143,7 @@ export function App() {
     const params = new URLSearchParams(window.location.search);
     const stress = params.get('stress');
     if (stress) return buildStressDiagram(Number(stress) || 350, Number(params.get('closed')) || 0);
+    if (params.get('astar')) return buildAstarDiagram();
     if (params.get('deadlock')) return buildDeadlockDiagram();
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
@@ -142,6 +164,8 @@ export function App() {
   const studioMode = params.get('studio') !== null;
   // `?simulate=1` enters token-simulation mode (Handoff 7A) over the 3-path demo.
   const simulateMode = params.get('simulate') !== null;
+  // `?astar=1` swaps in the router-spy plugin over the A* routing demo.
+  const astarMode = params.get('astar') !== null;
   // `?replay=1` enters replay mode (Handoff 7B) over the same model + a synthetic log.
   const replayMode = params.get('replay') !== null;
   if (studioMode) return <StudioSurface />;
@@ -240,7 +264,7 @@ export function App() {
         <BpmnEditor
           key={editorKey}
           diagram={diagram}
-          plugins={PLUGINS}
+          plugins={astarMode ? ASTAR_PLUGINS : PLUGINS}
           onChange={(next) => {
             latestRef.current = next;
           }}

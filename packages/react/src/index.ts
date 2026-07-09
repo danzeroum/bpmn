@@ -18,6 +18,7 @@ export * from './canvas/NodeRenderer.js';
 export * from './canvas/ShapeErrorBoundary.js';
 export * from './canvas/NodeLabelEditor.js';
 export * from './canvas/EdgeRenderer.js';
+export * from './canvas/SettlingOverlay.js';
 export * from './canvas/Defs.js';
 export * from './canvas/overlays.js';
 export * from './canvas/viewport.js';

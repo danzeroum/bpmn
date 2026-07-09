@@ -418,6 +418,42 @@ menor custo, fallback honesto (`routed:false`). Orçamento: rota típica < 5ms e
 **reuso de grid no frame** para o "Limpar roteamento" de 200 arestas fica para a R-4. Data
 associations ficam fora do §8.6 (lacuna de idempotência de DI pré-existente, anotada no teste).
 
+### 11.1 R-2b — waypoints cacheados + assentamento (decisões registradas)
+
+Decisões tomadas ao iniciar a R-2b (assentamento no drop + estados visuais), aprovadas:
+
+1. **Vocabulário `routeMode` (gravado JÁ, na R-2b).** `edge.properties.routeMode` é metadado de
+   apresentação (`bpmnr:`, §1.3) com dois valores:
+   - `'auto'` — rota A\* **derivada e cacheada** pela biblioteca (no load e a cada assentamento de
+     drop). Pode ser recomputada livremente.
+   - `'manual'` — rota **autorada pelo usuário** (materializa-se na R-3).
+   - **Ausência de `routeMode` + presença de `waypoints`** = import externo ⇒ tratado como **manual**
+     (nunca recomputado automaticamente). É a regra que protege waypoints de terceiros: só rotas
+     marcadas `'auto'` (ou sem waypoints, resolvidas a `astar`) entram no re-roteamento.
+2. **Atomicidade do assentamento.** Os waypoints das arestas afetadas por um move são gravados
+   **DENTRO do mesmo comando** (o composto `Move nodes`), via `updateEdgeCommand({ waypoints })`
+   estendido — um único passo de undo restaura posição **e** rota. `EdgePatch.waypoints` aceita
+   `Point[]` (grava/substitui) ou `null` (limpa de volta para auto).
+3. **Roteamento de load = derivação, NÃO edição.** `deriveAstarRoutes` roda na **construção** do
+   `CommandStack` e em cada `replaceDiagram` (import), **fora** da pilha de comandos: sem entrada de
+   undo, sem registro no ledger. Escolha registrada: *compute-e-grave-sem-comando* (a alternativa
+   "não-auditável dentro de comando" foi descartada para não poluir o histórico no load).
+4. **Garantia central de zero-recalc.** `rerouteConnectedEdges` só toca arestas que (a) tocam um nó
+   movido, (b) resolvem a `astar` e (c) não são manual/externas. Aresta cacheada pinta de
+   `waypointsToPath` sem chamar o router por render. Coberto pelo e2e-spy (`?astar=1`,
+   `window.__routerCalls`): um pan não dispara **nenhuma** rechamada de router.
+5. **Assentamento crossfade (nunca morph de waypoints).** No drop, a prévia ortogonal do arrasto é
+   pintada por cima nas posições finais e desvanece (160ms) revelando a rota A\* já assentada por
+   baixo — puro cruzamento de opacidade de dois traçados sobrepostos. `prefers-reduced-motion`
+   suprime o overlay a montante (o handler nunca seta `settling`): snap instantâneo, waypoints
+   cacheados na mesma. Estado de fallback (`routeFallback`, sem corredor): traço tracejado
+   `--btv-error` + chip ⚠ informativo — a rota melhor-esforço é mantida.
+
+Escopo R-2b (entregue): `EdgePatch.waypoints` (core); `computeRoutedWaypoints`/`deriveAstarRoutes`/
+`rerouteConnectedEdges` + tipo `RouteMode` (`react/canvas/routeEdge.ts`); assentamento atômico no
+`useInteractions.onPointerUp`; derivação de load no `DiagramProvider`; `SettlingOverlay` (crossfade)
++ estado de fallback no `EdgeRenderer`; e2e-spy de zero-recalc e de reduced-motion (`?astar=1`).
+
 ## Resolvidas (para histórico)
 
 - ~~Lane membership manual/data-only~~ → interativa na Fase 5a.

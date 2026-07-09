@@ -36,7 +36,12 @@ function DesignerBody({
 }: Omit<BpmnDesignerProps, 'plugins'>) {
   const config = useEditorConfig();
   return (
-    <DiagramProvider diagram={diagram} ruleEngine={config.ruleEngine} onChange={onChange}>
+    <DiagramProvider
+      diagram={diagram}
+      ruleEngine={config.ruleEngine}
+      edgeRouter={config.edgeRouter}
+      onChange={onChange}
+    >
       <CanvasProvider initial={{ readOnly: readOnly ?? false }}>
         <div className="bpmnr-designer" style={{ position: 'relative', width: '100%', height: '100%' }}>
           <BpmnCanvas overlay={overlay} showClosed={showClosed} />

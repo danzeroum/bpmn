@@ -17,6 +17,7 @@ import {
   rectCenter,
   rectsIntersect,
   snapToGrid,
+  updateEdgeCommand,
   updateNodeCommand,
   type BpmnDiagram,
   type BpmnNode,
@@ -26,8 +27,10 @@ import {
 } from '@bpmn-react/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
-import type { ResizeCorner } from '../state/canvasStore.js';
+import type { ResizeCorner, SettlingEntry } from '../state/canvasStore.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
+import { rerouteConnectedEdges, type RouteMode } from './routeEdge.js';
+import type { EdgeRouterFn } from '../plugins/types.js';
 import { fitViewport, panViewport, screenToWorld } from './viewport.js';
 import { isNodeVisible } from './visibility.js';
 import { SUBPROCESS_TITLE_HEIGHT } from '../shapes/shapes.js';
@@ -380,8 +383,24 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
             ),
           );
           commands.push(...laneMembershipCommands(diagramRef.current, moved, dx, dy));
+          // Re-route the auto A* edges touching the moved nodes and cache their
+          // fresh waypoints INSIDE this same move (one atomic, undoable unit —
+          // Handoff 10 R-2b). Unrelated / non-astar edges are never recomputed.
+          const settling = appendRerouteCommands(
+            commands,
+            diagramRef.current,
+            moved,
+            dx,
+            dy,
+            config.edgeRouter,
+          );
           if (commands.length === 1) execute(commands[0]);
           else if (commands.length > 1) execute(compositeCommand('Move nodes', commands));
+          // The waypoints are cached regardless; the crossfade is a pure visual
+          // affordance, suppressed under prefers-reduced-motion (instant snap).
+          store.setState({
+            settling: settling.length > 0 && !prefersReducedMotion() ? settling : null,
+          });
         }
         return;
       }
@@ -513,6 +532,49 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
       setPanKey,
     ],
   );
+}
+
+/**
+ * Appends the edge-reroute commands for a completed move to `commands` (so the
+ * whole gesture stays one atomic, undoable unit) and returns the settle
+ * crossfade entries. Routing runs against a POST-move snapshot of the diagram;
+ * only the auto A* edges touching a moved node are recomputed (Handoff 10
+ * R-2b's zero-recalc guarantee lives in `rerouteConnectedEdges`).
+ */
+function appendRerouteCommands(
+  commands: Command[],
+  diagram: BpmnDiagram,
+  moved: BpmnNode[],
+  dx: number,
+  dy: number,
+  defaultRouter: EdgeRouterFn,
+): SettlingEntry[] {
+  const movedIds = new Set(moved.map((node) => node.id));
+  const nextNodes = { ...diagram.nodes };
+  for (const node of moved) {
+    nextNodes[node.id] = { ...node, x: node.x + dx, y: node.y + dy };
+  }
+  const nextDiagram: BpmnDiagram = { ...diagram, nodes: nextNodes };
+  const settling: SettlingEntry[] = [];
+  for (const reroute of rerouteConnectedEdges(nextDiagram, movedIds, defaultRouter)) {
+    const properties: Record<string, unknown> = { routeMode: 'auto' satisfies RouteMode };
+    // Carry the fallback flag only while there's no corridor; clear it once a
+    // route is found again so a stale ⚠ never sticks after the graph opens up.
+    properties.routeFallback = reroute.routed ? undefined : true;
+    commands.push(
+      updateEdgeCommand(reroute.edgeId, { waypoints: reroute.waypoints, properties }),
+    );
+    settling.push({ edgeId: reroute.edgeId, path: reroute.previewPath });
+  }
+  return settling;
+}
+
+/** Reduced-motion preference (SSR/jsdom-safe): the settle crossfade is skipped
+ * when true, snapping straight to the cached A* route. */
+function prefersReducedMotion(): boolean {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    : false;
 }
 
 function svgScale(

@@ -15,6 +15,7 @@ import { Defs, GridLayer } from './Defs.js';
 import { ConnectedNode } from './NodeRenderer.js';
 import { ConnectedEdge } from './EdgeRenderer.js';
 import { ConnectionPreview, SelectionBoxOverlay } from './overlays.js';
+import { SettlingOverlay } from './SettlingOverlay.js';
 import { hiddenNodeIds } from './visibility.js';
 import { cullToViewport } from './culling.js';
 import { useKeyboardShortcuts } from '../gestures/useKeyboardShortcuts.js';
@@ -140,6 +141,7 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
         ))}
       </g>
       <g data-layer="overlay">
+        <SettlingOverlay />
         <ConnectionPreview />
         <SelectionBoxOverlay />
         {overlay}

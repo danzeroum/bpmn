@@ -77,6 +77,19 @@ export interface CanvasState {
   issueBadges: Record<string, NodeIssueBadge>;
   /** Open overlays, bottom→top. Esc pops the top (Handoff 5 §11.1). */
   dismissals: DismissalEntry[];
+  /**
+   * Edges that just re-routed (Handoff 10 R-2b): their pre-A* orthogonal
+   * preview paths, rendered on top and faded out (160ms) so the settled A*
+   * route crossfades in underneath — never a waypoint morph. `null` (or under
+   * `prefers-reduced-motion`) means no crossfade is playing.
+   */
+  settling: SettlingEntry[] | null;
+}
+
+export interface SettlingEntry {
+  edgeId: string;
+  /** SVG path of the orthogonal preview at the final positions. */
+  path: string;
 }
 
 export interface NodeIssueBadge {
@@ -120,6 +133,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     drillId: null,
     issueBadges: {},
     dismissals: [],
+    settling: null,
     ...partial,
   });
 }
