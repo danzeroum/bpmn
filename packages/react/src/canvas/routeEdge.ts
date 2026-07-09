@@ -1,14 +1,37 @@
 import {
+  DEFAULT_PORT_OFFSET,
   isContainerType,
+  rectCenter,
   routeAStar,
+  updateEdgeCommand,
   type BpmnDiagram,
   type BpmnEdge,
+  type Command,
   type EdgeGeometry,
   type Point,
   type Rect,
+  type Side,
 } from '@bpmn-react/core';
 import type { EdgeRouterContext, EdgeRouterFn } from '../plugins/types.js';
 import { astarConnection, resolveRouter } from './routers.js';
+
+/** Perpendicular spacing between sibling edges sharing a corridor (§4, R-4). */
+const CORRIDOR_GAP = 8;
+/** Fractional cost win required to switch port sides on re-route (§6 hysteresis). */
+const PORT_HYSTERESIS = 0.2;
+
+/** Which border of `rect` the anchor point sits on (nearest side). */
+export function sideOfAnchor(p: Point, rect: Rect): Side {
+  const dl = Math.abs(p.x - rect.x);
+  const dr = Math.abs(p.x - (rect.x + rect.width));
+  const dt = Math.abs(p.y - rect.y);
+  const db = Math.abs(p.y - (rect.y + rect.height));
+  const min = Math.min(dl, dr, dt, db);
+  if (min === dl) return 'left';
+  if (min === dr) return 'right';
+  if (min === dt) return 'top';
+  return 'bottom';
+}
 
 /**
  * Router preference is **presentation metadata** (Handoff 10 §1.3), stored in
@@ -93,9 +116,22 @@ export function computeRoutedWaypoints(
   if (!source || !target) return undefined;
   const router = resolveRouter(resolveEdgeRouterName(diagram, edge), defaultRouter);
   if (router !== astarConnection) return undefined;
-  return routeAStar(asRect(source), asRect(target), {
+  const sourceRect = asRect(source);
+  const targetRect = asRect(target);
+  // Port hysteresis (§6, R-4): if a previous route exists, prefer its side pair
+  // so a small host move doesn't flip the anchor from one face to another.
+  let preferredSourceSide: Side | undefined;
+  let preferredTargetSide: Side | undefined;
+  if (edge.waypoints && edge.waypoints.length >= 2) {
+    preferredSourceSide = sideOfAnchor(edge.waypoints[0], sourceRect);
+    preferredTargetSide = sideOfAnchor(edge.waypoints[edge.waypoints.length - 1], targetRect);
+  }
+  return routeAStar(sourceRect, targetRect, {
     obstacles: edgeObstacles(diagram, edge),
     routedEdges: routedEdgeWaypoints(diagram, edge),
+    preferredSourceSide,
+    preferredTargetSide,
+    hysteresis: PORT_HYSTERESIS,
   });
 }
 
@@ -162,24 +198,192 @@ export function rerouteConnectedEdges(
  * when nothing changed, so callers can cheaply skip.
  */
 export function deriveAstarRoutes(diagram: BpmnDiagram, defaultRouter: EdgeRouterFn): BpmnDiagram {
+  const ids = astarAutoEdgeIds(diagram, defaultRouter, { includeManual: false }).filter(
+    (id) => !(diagram.edges[id].waypoints && diagram.edges[id].waypoints!.length >= 2),
+  );
+  if (ids.length === 0) return diagram;
+  const routes = routeAndSpread(diagram, ids);
   let changed = false;
   const edges = { ...diagram.edges };
-  for (const edge of Object.values(diagram.edges)) {
-    if (edge.waypoints && edge.waypoints.length >= 2) continue;
-    const result = computeRoutedWaypoints(diagram, edge, defaultRouter);
-    if (!result) continue;
+  for (const route of routes) {
+    const edge = diagram.edges[route.edgeId];
     changed = true;
-    edges[edge.id] = {
+    edges[route.edgeId] = {
       ...edge,
-      waypoints: result.waypoints,
+      waypoints: route.waypoints,
       properties: {
         ...edge.properties,
         routeMode: 'auto' satisfies RouteMode,
-        ...(result.routed ? {} : { routeFallback: true }),
+        ...(route.routed ? {} : { routeFallback: true }),
       },
     };
   }
   return changed ? { ...diagram, edges } : diagram;
+}
+
+/** Ids of edges that resolve to the `astar` router (Handoff 10 R-4). With
+ * `includeManual: false` (the default for re-optimization) manual routes are
+ * excluded so they are preserved. */
+export function astarAutoEdgeIds(
+  diagram: BpmnDiagram,
+  defaultRouter: EdgeRouterFn,
+  { includeManual }: { includeManual: boolean },
+): string[] {
+  const out: string[] = [];
+  for (const edge of Object.values(diagram.edges)) {
+    const source = diagram.nodes[edge.sourceId];
+    const target = diagram.nodes[edge.targetId];
+    if (!source || !target) continue;
+    if (resolveRouter(resolveEdgeRouterName(diagram, edge), defaultRouter) !== astarConnection) continue;
+    if (!includeManual && isManualEdge(edge)) continue;
+    out.push(edge.id);
+  }
+  return out;
+}
+
+/** A fresh auto route produced by the batch router (Handoff 10 R-4). */
+export interface AutoRoute {
+  edgeId: string;
+  waypoints: Point[];
+  routed: boolean;
+}
+
+/** Source-side port spread `along` px from the border centre (parallel
+ * corridors, §4). */
+function spreadPort(rect: Rect, side: Side, along: number): { anchor: Point; port: Point; side: Side } {
+  const c = rectCenter(rect);
+  const off = DEFAULT_PORT_OFFSET;
+  switch (side) {
+    case 'left':
+      return { side, anchor: { x: rect.x, y: c.y + along }, port: { x: rect.x - off, y: c.y + along } };
+    case 'right':
+      return {
+        side,
+        anchor: { x: rect.x + rect.width, y: c.y + along },
+        port: { x: rect.x + rect.width + off, y: c.y + along },
+      };
+    case 'top':
+      return { side, anchor: { x: c.x + along, y: rect.y }, port: { x: c.x + along, y: rect.y - off } };
+    case 'bottom':
+      return {
+        side,
+        anchor: { x: c.x + along, y: rect.y + rect.height },
+        port: { x: c.x + along, y: rect.y + rect.height + off },
+      };
+  }
+}
+
+/**
+ * Routes each of `edgeIds` and spreads fan-out siblings into parallel 8px
+ * corridors (§4, edge case 5). Two deterministic passes: (1) route every edge
+ * to learn its chosen source side; (2) for each group of ≥2 edges sharing a
+ * source AND that side, order the siblings by target position and re-route each
+ * from a source port shifted `±8px` along the border — so the lanes are ordered
+ * the same as the targets and never cross. A fan-out group falls back to its
+ * pass-1 route for any sibling the forced port fails to route.
+ */
+export function routeAndSpread(diagram: BpmnDiagram, edgeIds: string[]): AutoRoute[] {
+  const routed = new Map<string, { waypoints: Point[]; routed: boolean; sourceSide?: Side }>();
+  for (const id of edgeIds) {
+    const edge = diagram.edges[id];
+    const source = diagram.nodes[edge.sourceId];
+    const target = diagram.nodes[edge.targetId];
+    if (!source || !target) continue;
+    const r = routeAStar(asRect(source), asRect(target), {
+      obstacles: edgeObstacles(diagram, edge),
+      routedEdges: routedEdgeWaypoints(diagram, edge),
+    });
+    routed.set(id, { waypoints: r.waypoints, routed: r.routed, sourceSide: r.sourceSide });
+  }
+
+  // Group by (source node, chosen exit side); spread groups of ≥2.
+  const groups = new Map<string, { side: Side; ids: string[] }>();
+  for (const [id, r] of routed) {
+    if (!r.routed || !r.sourceSide) continue;
+    const key = `${diagram.edges[id].sourceId}::${r.sourceSide}`;
+    const g = groups.get(key) ?? { side: r.sourceSide, ids: [] };
+    g.ids.push(id);
+    groups.set(key, g);
+  }
+  for (const { side, ids } of groups.values()) {
+    if (ids.length < 2) continue;
+    const vertical = side === 'left' || side === 'right';
+    const along = (id: string) => {
+      const c = rectCenter(asRect(diagram.nodes[diagram.edges[id].targetId]));
+      return vertical ? c.y : c.x;
+    };
+    // Deterministic: order siblings by target position, tie-break by id.
+    ids.sort((a, b) => along(a) - along(b) || (a < b ? -1 : 1));
+    const n = ids.length;
+    ids.forEach((id, i) => {
+      const edge = diagram.edges[id];
+      const rect = asRect(diagram.nodes[edge.sourceId]);
+      const span = vertical ? rect.height : rect.width;
+      const maxHalf = Math.max(0, span / 2 - 6);
+      const offset = Math.max(-maxHalf, Math.min(maxHalf, (i - (n - 1) / 2) * CORRIDOR_GAP));
+      const sp = spreadPort(rect, side, offset);
+      const r2 = routeAStar(rect, asRect(diagram.nodes[edge.targetId]), {
+        obstacles: edgeObstacles(diagram, edge),
+        routedEdges: routedEdgeWaypoints(diagram, edge),
+        sourcePort: sp,
+      });
+      if (r2.routed) routed.set(id, { waypoints: r2.waypoints, routed: true, sourceSide: side });
+    });
+  }
+
+  const out: AutoRoute[] = [];
+  for (const id of edgeIds) {
+    const r = routed.get(id);
+    if (r) out.push({ edgeId: id, waypoints: r.waypoints, routed: r.routed });
+  }
+  return out;
+}
+
+/** Counts a "Limpar roteamento" run reports in its toast (§1.4). */
+export interface ClearRoutingResult {
+  commands: Command[];
+  /** Auto edges re-optimized. */
+  reoptimized: number;
+  /** Manual routes left untouched (0 when `includeManual`). */
+  preserved: number;
+}
+
+/**
+ * Builds the "Limpar roteamento" edit (§1.4): re-optimize every automatic A*
+ * edge and, by default, PRESERVE manual routes. `includeManual: true` (the
+ * confirmed total reset) also converts manual routes back to auto. Returns the
+ * per-edge commands (the caller wraps them in ONE undoable composite) plus the
+ * real counts for the toast.
+ */
+export function clearRoutingCommands(
+  diagram: BpmnDiagram,
+  defaultRouter: EdgeRouterFn,
+  { includeManual }: { includeManual: boolean },
+): ClearRoutingResult {
+  const ids = astarAutoEdgeIds(diagram, defaultRouter, { includeManual });
+  const preserved = includeManual
+    ? 0
+    : Object.values(diagram.edges).filter((e) => isManualEdge(e)).length;
+  const routes = routeAndSpread(diagram, ids);
+  const commands: ClearRoutingResult['commands'] = [];
+  let reoptimized = 0;
+  for (const route of routes) {
+    const edge = diagram.edges[route.edgeId];
+    const same =
+      edge.waypoints &&
+      edge.waypoints.length === route.waypoints.length &&
+      edge.waypoints.every((p, i) => p.x === route.waypoints[i].x && p.y === route.waypoints[i].y) &&
+      edge.properties.routeMode === 'auto';
+    if (same) continue;
+    reoptimized += 1;
+    const properties: Record<string, unknown> = {
+      routeMode: 'auto' satisfies RouteMode,
+      routeFallback: route.routed ? undefined : true,
+      routeCollision: undefined,
+    };
+    commands.push(updateEdgeCommand(route.edgeId, { waypoints: route.waypoints, properties }));
+  }
+  return { commands, reoptimized, preserved };
 }
 
 /* ------------------------------------------------------------------ *

@@ -39,12 +39,31 @@ export interface AStarRouteOptions {
   routedEdges?: Point[][];
   clearance?: number;
   portOffset?: number;
+  /**
+   * Port hysteresis (§6, R-4): the side pair used by the previous route. When
+   * given with `hysteresis > 0`, the router keeps this pairing unless a
+   * different one is more than `hysteresis` (fraction) cheaper — killing the
+   * flip-flop a small move would otherwise cause.
+   */
+  preferredSourceSide?: Side;
+  preferredTargetSide?: Side;
+  /** Fractional cost improvement required to abandon the preferred pairing. */
+  hysteresis?: number;
+  /**
+   * Forces the source port (parallel corridors, R-4): bypasses source-side
+   * selection so a fan-out can be spread into 8px lanes. The target side is
+   * still chosen by A\*.
+   */
+  sourcePort?: { anchor: Point; port: Point; side: Side };
 }
 
 export interface AStarRoute {
   waypoints: Point[];
   /** false when no obstacle-free corridor was found (fallback state). */
   routed: boolean;
+  /** Side pair the router settled on — feeds port hysteresis on the next move. */
+  sourceSide?: Side;
+  targetSide?: Side;
 }
 
 const SIDES: Side[] = ['right', 'left', 'bottom', 'top'];
@@ -161,8 +180,11 @@ export function routeAStar(source: Rect, target: Rect, options: AStarRouteOption
 
   const inflated = (options.obstacles ?? []).map((o) => inflate(o, clearance));
 
-  // Candidate ports for all four sides of each endpoint.
-  const sourcePorts = SIDES.map((side) => ({ side, ...port(source, side, portOffset) }));
+  // Candidate ports for all four sides of each endpoint. A forced source port
+  // (parallel corridors) bypasses source-side selection.
+  const sourcePorts = options.sourcePort
+    ? [{ side: options.sourcePort.side, anchor: options.sourcePort.anchor, port: options.sourcePort.port }]
+    : SIDES.map((side) => ({ side, ...port(source, side, portOffset) }));
   const targetPorts = SIDES.map((side) => ({ side, ...port(target, side, portOffset) }));
   const usableSource = sourcePorts.filter((p) => !inflated.some((r) => insideInterior(p.port, r)));
   const usableTarget = targetPorts.filter((p) => !inflated.some((r) => insideInterior(p.port, r)));
@@ -203,9 +225,10 @@ export function routeAStar(source: Rect, target: Rect, options: AStarRouteOption
 
   const grid = buildGrid(xLines, yLines, inflated, routedEdges);
 
-  // Try every free port pairing; keep the cheapest route (tie-break by side
-  // order for determinism).
-  let best: { cost: number; waypoints: Point[] } | undefined;
+  // Try every free port pairing; collect them so port hysteresis (§6) can pick
+  // the previous side pair unless another is materially cheaper.
+  const sideRank = (side: Side) => SIDES.indexOf(side);
+  const candidates: { cost: number; waypoints: Point[]; sSide: Side; tSide: Side }[] = [];
   for (const s of usableSource) {
     for (const t of usableTarget) {
       const result = grid.search(s.port, t.port);
@@ -217,12 +240,28 @@ export function routeAStar(source: Rect, target: Rect, options: AStarRouteOption
         t.port,
         t.anchor,
       ]).map((p) => ({ x: round2(p.x), y: round2(p.y) }));
-      if (!best || result.cost < best.cost) best = { cost: result.cost, waypoints };
+      candidates.push({ cost: result.cost, waypoints, sSide: s.side, tSide: t.side });
     }
   }
 
-  if (!best) return { waypoints: directRoute(source, target), routed: false };
-  return { waypoints: best.waypoints, routed: true };
+  if (candidates.length === 0) return { waypoints: directRoute(source, target), routed: false };
+  // Deterministic order: cheapest first, ties broken by side order.
+  candidates.sort(
+    (a, b) =>
+      a.cost - b.cost || sideRank(a.sSide) - sideRank(b.sSide) || sideRank(a.tSide) - sideRank(b.tSide),
+  );
+  let chosen = candidates[0];
+  const hysteresis = options.hysteresis ?? 0;
+  if (hysteresis > 0 && options.preferredSourceSide && options.preferredTargetSide) {
+    const pref = candidates.find(
+      (c) => c.sSide === options.preferredSourceSide && c.tSide === options.preferredTargetSide,
+    );
+    // Keep the previous pairing unless a different one is > `hysteresis` cheaper.
+    if (pref && (pref.sSide !== chosen.sSide || pref.tSide !== chosen.tSide)) {
+      if (!(chosen.cost < (1 - hysteresis) * pref.cost)) chosen = pref;
+    }
+  }
+  return { waypoints: chosen.waypoints, routed: true, sourceSide: chosen.sSide, targetSide: chosen.tSide };
 }
 
 function getSpan(source: Rect, target: Rect, margin: number) {

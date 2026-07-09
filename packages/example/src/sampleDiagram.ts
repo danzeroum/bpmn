@@ -415,6 +415,57 @@ export function buildManualRouteDiagram(): BpmnDiagram {
 }
 
 /**
+ * No-corridor fallback demo (`?fallback=1`, Handoff 10 R-4 edge case 4): edge
+ * `fb` targets a node whose ports are all swallowed by `cage`, so it routes to
+ * the honest ⚠ fallback. The e2e drags `cage` away and watches the route heal.
+ */
+export function buildFallbackDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-fallback', name: 'Fallback', createdBy: 'demo' });
+  diagram.metadata.router = 'astar';
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, w?: number, h?: number) => {
+    const node = createNode({ type, id, label, x, y, properties: {}, versionId: v }, registry);
+    if (w !== undefined) node.width = w;
+    if (h !== undefined) node.height = h;
+    return node;
+  };
+  diagram.nodes = {
+    a: make('task', 'a', 'Origem', 0, 200),
+    b: make('task', 'b', 'Destino', 320, 200, 40, 40),
+    cage: make('task', 'cage', 'Obstáculo', 288, 168, 104, 104),
+  };
+  diagram.edges = {
+    fb: createEdge({ id: 'fb', sourceId: 'a', targetId: 'b', type: 'sequenceFlow', versionId: v }),
+  };
+  return diagram;
+}
+
+/**
+ * Gateway fan-out demo (`?fanout=1`, Handoff 10 R-4 edge case 5): a gateway
+ * splits to three nearby targets. The e2e checks the sibling routes leave the
+ * gateway in distinct 8px lanes ordered by target — no crossing.
+ */
+export function buildFanoutDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-fanout', name: 'Fan-out', createdBy: 'demo' });
+  diagram.metadata.router = 'astar';
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number) =>
+    createNode({ type, id, label, x, y, properties: {}, versionId: v }, registry);
+  diagram.nodes = {
+    g: make('exclusiveGateway', 'g', 'G', 40, 200),
+    t1: make('task', 't1', 'T1', 360, 160),
+    t2: make('task', 't2', 'T2', 360, 220),
+    t3: make('task', 't3', 'T3', 360, 280),
+  };
+  const edge = (id: string, targetId: string) =>
+    createEdge({ id, sourceId: 'g', targetId, type: 'sequenceFlow', versionId: v });
+  diagram.edges = { e1: edge('e1', 't1'), e2: edge('e2', 't2'), e3: edge('e3', 't3') };
+  return diagram;
+}
+
+/**
  * The three-path simulation demo (`?simulate=1`, Handoff 7A): a task with an
  * interrupting 48h timeout boundary, then an XOR (approve / reject). The three
  * structural paths — happy, rejection, timeout — close the coverage checklist

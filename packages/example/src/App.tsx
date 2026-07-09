@@ -32,6 +32,8 @@ import {
   buildHealthcareDiagram,
   buildDrdDiagram,
   buildAstarDiagram,
+  buildFallbackDiagram,
+  buildFanoutDiagram,
   buildManualRouteDiagram,
   buildSampleDiagram,
   buildReplayTraces,
@@ -146,6 +148,8 @@ export function App() {
     if (stress) return buildStressDiagram(Number(stress) || 350, Number(params.get('closed')) || 0);
     if (params.get('astar')) return buildAstarDiagram();
     if (params.get('manual')) return buildManualRouteDiagram();
+    if (params.get('fallback')) return buildFallbackDiagram();
+    if (params.get('fanout')) return buildFanoutDiagram();
     if (params.get('deadlock')) return buildDeadlockDiagram();
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
