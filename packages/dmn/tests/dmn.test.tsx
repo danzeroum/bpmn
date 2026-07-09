@@ -9,7 +9,23 @@ import {
   type BpmnDiagram,
 } from '@bpmn-react/core';
 import { BpmnDesigner, BpmnViewer, Palette, resolveEditorConfig } from '@bpmn-react/react';
-import { DMN_NODE_TYPES, DmnXmlConverter, dmnPlugin } from '../src/index.js';
+import {
+  DMN_NODE_TYPES,
+  DmnXmlConverter,
+  dmnPlugin,
+  type DecisionTable,
+} from '../src/index.js';
+
+/** A full decision table (fixed ids) so canonical export/round-trip is exercised. */
+const CREDIT_TABLE: DecisionTable = {
+  hitPolicy: 'F',
+  inputs: [{ id: 'in_income', label: 'Income', expression: 'income', typeRef: 'number' }],
+  outputs: [{ id: 'out_risk', label: 'Risk', expression: 'risk', typeRef: 'string' }],
+  rules: [
+    { id: 'rule_low', inputEntries: ['< 1000'], outputEntries: ['"high"'] },
+    { id: 'rule_high', inputEntries: ['>= 1000'], outputEntries: ['"low"'], annotation: 'good income' },
+  ],
+};
 
 /** Reference DRD: the 4 §4.1 nodes + the 3 requirement edges. */
 function drdDiagram(): BpmnDiagram {
@@ -20,7 +36,7 @@ function drdDiagram(): BpmnDiagram {
     createNode({ type, id, label, x, y, properties }, registry);
   diagram.nodes = {
     decision: make('dmn:decision', 'decision', 'Approve credit?', 300, 60, {
-      decisionTable: { hitPolicy: 'F' },
+      decisionTable: CREDIT_TABLE,
     }),
     income: make('dmn:inputData', 'income', 'Income', 80, 200),
     policy: make('dmn:knowledgeSource', 'policy', 'Credit policy', 520, 200),
@@ -50,6 +66,22 @@ describe('DmnXmlConverter (aceite 10.5.5 — round-trip)', () => {
     expect(xml).toContain('<dmndi:DMNEdge id="info_di" dmnElementRef="info">');
   });
 
+  it('writes the decision logic as a canonical <dmn:decisionTable>, not a JSON blob', () => {
+    const xml = new DmnXmlConverter().toXml(drdDiagram());
+    const decision = xml.slice(xml.indexOf('<dmn:decision '), xml.indexOf('</dmn:decision>'));
+    // Canonical DMN decision table (interoperable with Camunda / dmn-js / TCK).
+    expect(decision).toContain('<dmn:decisionTable id="decision_dt" hitPolicy="FIRST">');
+    expect(decision).toContain('<dmn:input id="in_income" label="Income">');
+    expect(decision).toContain('<dmn:inputExpression id="in_income_expr" typeRef="number">');
+    expect(decision).toContain('<dmn:text>income</dmn:text>');
+    expect(decision).toContain('<dmn:output id="out_risk" label="Risk" name="risk" typeRef="string" />');
+    expect(decision).toContain('<dmn:rule id="rule_high">');
+    expect(decision).toContain('<dmn:description>good income</dmn:description>');
+    expect(decision).toContain('<dmn:text>"low"</dmn:text>');
+    // The old proprietary encoding must be gone.
+    expect(decision).not.toContain('name="decisionTable"');
+  });
+
   it('round-trips the 4 nodes + 3 requirement edges identically (normalizeForDiff)', () => {
     const converter = () => new DmnXmlConverter();
     const original = drdDiagram();
@@ -61,10 +93,27 @@ describe('DmnXmlConverter (aceite 10.5.5 — round-trip)', () => {
       targetId: 'decision',
       type: 'dmn:informationRequirement',
     });
-    expect(imported.nodes.decision.properties.decisionTable).toEqual({ hitPolicy: 'F' });
+    expect(imported.nodes.decision.properties.decisionTable).toEqual(CREDIT_TABLE);
     expect(normalizeForDiff(imported)).toEqual(normalizeForDiff(original));
     // Canonical form is byte-stable.
     expect(converter().toXml(imported)).toBe(xml);
+  });
+
+  it('still imports a legacy bpmnr:property="decisionTable" JSON blob (back-compat)', () => {
+    const NS = 'https://www.omg.org/spec/DMN/20191111/MODEL/';
+    const legacyTable = { hitPolicy: 'U', inputs: [], outputs: [], rules: [] };
+    // Old exports stored the table as a JSON blob in a bpmnr:property value
+    // (quotes XML-escaped as &quot;).
+    const legacyValue = JSON.stringify(legacyTable).replace(/"/g, '&quot;');
+    const legacy = `<dmn:definitions xmlns:dmn="${NS}" id="D" name="Legacy">
+      <dmn:decision id="d1" name="Decide"><dmn:extensionElements><bpmnr:property xmlns:bpmnr="http://bpmn-react.io/schema/1.0" name="decisionTable" value="${legacyValue}" /></dmn:extensionElements></dmn:decision>
+    </dmn:definitions>`;
+    const { diagram } = new DmnXmlConverter().fromXml(legacy);
+    expect(diagram.nodes.d1.properties.decisionTable).toEqual(legacyTable);
+    // Re-export upgrades it to the canonical form.
+    const reexported = new DmnXmlConverter().toXml(diagram);
+    expect(reexported).toContain('<dmn:decisionTable');
+    expect(reexported).not.toContain('name="decisionTable"');
   });
 
   it('maps a decision-to-decision requirement to requiredDecision', () => {

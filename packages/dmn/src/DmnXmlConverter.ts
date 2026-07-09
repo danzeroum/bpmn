@@ -16,6 +16,8 @@ import {
   type XmlElement,
 } from '@bpmn-react/core';
 import { DMN_NODE_TYPES, type DmnEdgeType } from './model.js';
+import { decisionTableOf } from './decisionTable.js';
+import { readDecisionTable, writeDecisionTable } from './decisionTableXml.js';
 
 export const DMN_NS = 'https://www.omg.org/spec/DMN/20191111/MODEL/';
 export const DMNDI_NS = 'https://www.omg.org/spec/DMN/20191111/DMNDI/';
@@ -129,7 +131,10 @@ export class DmnXmlConverter {
       const tag = `dmn:${def.xml.tag}`;
       const requirements = requirementsByOwner.get(node.id) ?? [];
       const meta = this.nodeMeta(node);
-      if (requirements.length === 0 && !meta) {
+      // A decision's logic is written canonically as <dmn:decisionTable> (below),
+      // never as a bpmnr:property blob — so nodeMeta() excludes it.
+      const table = node.type === 'dmn:decision' ? decisionTableOf(node) : undefined;
+      if (requirements.length === 0 && !meta && !table) {
         xml.element(tag, { id: node.id, name: node.label });
         continue;
       }
@@ -141,6 +146,8 @@ export class DmnXmlConverter {
         xml.element(`dmn:${requiredRefTag(edge, source)}`, { href: `#${edge.sourceId}` });
         xml.close();
       }
+      // The decision's expression comes last in the DMN schema (after requirements).
+      if (table) writeDecisionTable(xml, table, node.id);
       xml.close();
     }
 
@@ -174,6 +181,9 @@ export class DmnXmlConverter {
     if (node.createdInVersion !== '0') entries.createdInVersion = node.createdInVersion;
     if (node.removedInVersion !== undefined) entries.removedInVersion = node.removedInVersion;
     for (const [key, value] of Object.entries(node.properties)) {
+      // The decision table is serialized canonically as <dmn:decisionTable>,
+      // not double-encoded here as a proprietary JSON property.
+      if (key === 'decisionTable') continue;
       entries[`property:${key}`] = JSON.stringify(value);
     }
     return Object.keys(entries).length > 0 ? entries : undefined;
@@ -238,6 +248,12 @@ export class DmnXmlConverter {
         continue;
       }
       const node = this.readNode(child, def.type, def.defaultSize);
+      // Canonical decision logic takes precedence over any legacy
+      // bpmnr:property="decisionTable" blob readNode may have parsed.
+      if (node.type === 'dmn:decision') {
+        const table = readDecisionTable(child);
+        if (table) node.properties.decisionTable = table;
+      }
       diagram.nodes[node.id] = node;
       this.readRequirements(child, node.id, diagram, warnings);
     }
