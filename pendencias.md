@@ -329,6 +329,27 @@ alimenta o seletor de versão ("N execuções presas à vX") e filtra o log. A a
 Aprovador via `latestReplayAnalysis` — tudo por injeção, degradável (sem análise → sem bloco). O
 pacote `replay` continua sem importar audit/registry.
 
+## 10. Handoff 8 (Identidade, Assinatura & Âncora) — decisões registradas
+
+**Escopo do pacote novo (I-1).** `@bpmn-react/identity` entrou como `@bpmn-react/<x>` + `"private":
+true` (workspace-only, isento do release), **não** `@buildtovalue/identity` como o handoff §3 escreve.
+Segue a decisão do §1/§9: o rename `@buildtovalue/*` continua diferido para uma PR única quando o
+escopo npm for confirmado (I-6, com provenance OIDC). Recomendação continua `@buildtovalue/*`.
+
+**WebCrypto Ed25519 — caveat de runtime do host.** A verificação usa WebCrypto Ed25519, estável no
+Node ≥ 20 e em navegadores recentes (Chrome 137+, Safari 17+). Navegadores mais antigos precisam de um
+verificador provido pelo host — a lib nunca embute criptografia própria (cerca §9). Documentado em
+`docs/limitations.md`. Se um alvo corporativo exigir navegador legado, o host injeta um verificador
+Ed25519 (mesmo padrão de injeção do Signer); nenhuma mudança na `identity`.
+
+**Nota para o Handoff 9 (registrar, não implementar — §7 do handoff).** O **Copiloto (IA governada)**
+vem depois do 8: autoria `ia.copilot@modelo` só tem força quando as aprovações humanas são assinadas
+(depende da cadeia de assinatura desta camada). Junto dele, avaliação **S-FEEL mínima** para o
+`businessRuleTask` do simulador, com **lista de exclusão explícita**: sem invocação de função externa,
+sem aritmética complexa de data/duração, sem `for`/`some`/`every`, sem contexto aninhado — apenas
+comparações, ranges, listas de valores e `-`. Célula fora do subconjunto ⇒ decisão **"não-simulável"**
+declarada (o token para com aviso honesto), nunca avaliação silenciosamente errada.
+
 ## Resolvidas (para histórico)
 
 - ~~Lane membership manual/data-only~~ → interativa na Fase 5a.

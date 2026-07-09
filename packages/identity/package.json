@@ -1,0 +1,49 @@
+{
+  "name": "@bpmn-react/identity",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Headless identity, signature and RBAC-verification layer (Handoff 8): Ed25519 approval signatures over the canonical payload (WebCrypto, offline verification), and role-requirement evaluation. NEVER generates, stores or manages keys — the Signer is always injected by the host (SSO/YubiKey/git key). Consumes only @bpmn-react/core (canonicalJson + types). Zero runtime dependencies. Workspace-only — the publish scope awaits pendencias.md §1.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@bpmn-react/core": "workspace:*"
+  },
+  "keywords": [
+    "bpmn",
+    "identity",
+    "signature",
+    "ed25519",
+    "rbac",
+    "governance"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/identity"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

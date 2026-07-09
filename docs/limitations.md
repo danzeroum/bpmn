@@ -77,6 +77,17 @@ Documented deliberately so expectations are managed — none of these fail silen
   pinned by `packages/replay/tests/independence.test.ts` + the fake-graph acid test.
 
 ## Governance
+- **RBAC is verification, not enforcement (Handoff 8, cerca §1.2).** `evaluateRoleRequirement`
+  (`@bpmn-react/identity`) checks signatures against required roles — a statement any third party can
+  re-verify — but it does **not** block actions: whoever controls the client can ignore local rules.
+  Enforcement belongs to the anchor and whoever hosts it. A pentest flagging "RBAC bypass" is an
+  architecture decision, not a bug.
+- **Signing never touches keys (cerca §1.1).** `@bpmn-react/identity` never generates, stores or
+  manages keys; the `Signer` is always injected by the host (SSO/YubiKey/git key) and the private key
+  never enters the library. Enforced by `scripts/check-no-key-generation.mjs` in CI.
+- **WebCrypto Ed25519 support.** Signature verification uses WebCrypto Ed25519, stable in Node ≥ 20
+  and recent browsers (Chrome 137+, Safari 17+). Older host browsers must provide their own verifier;
+  the library never ships its own crypto.
 - The library records `UserContext` data as given; authentication/authorization is the host
   application's responsibility.
 - `AuditLedger` and `VersionRegistry` keep entries in memory; durable storage happens through their

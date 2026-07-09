@@ -18,6 +18,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check:no-runtime-deps
+      - run: pnpm check:no-key-generation
       - run: pnpm lint
       - run: pnpm build
       - run: pnpm typecheck
