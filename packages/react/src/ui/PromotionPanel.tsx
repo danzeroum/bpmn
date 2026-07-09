@@ -9,15 +9,42 @@ import {
   type UserContext,
   type VersionStatus,
 } from '@bpmn-react/core';
+import {
+  signApproval,
+  verificationState,
+  type CanonicalApprovalPayload,
+  type SignedApproval,
+  type Signer,
+  type SignerIdentity,
+  type VerificationState,
+} from '@bpmn-react/identity';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { DiffView } from './DiffView.js';
+import { SignatureBadge } from './SignatureBadge.js';
+import { CanonicalPayloadCard } from './CanonicalPayloadCard.js';
+import { buildApprovalPayloadFor } from './approvalPayload.js';
 
 export interface PromotionApprover {
   actor: UserContext;
   /** Display name for the role button (defaults to the actor's role). */
   label?: string;
+}
+
+/** Display state for one approver's identity badge. */
+interface ApproverBadge {
+  state: VerificationState;
+  signer?: SignerIdentity;
+  fingerprint?: string;
+  expected?: string;
+  obtained?: string;
+}
+
+/** `ed25519:#0b9a…f21c` — short signature fingerprint for the verified badge. */
+function signatureFingerprintOf(signed: SignedApproval): string {
+  const s = signed.signature;
+  return `ed25519:#${s.slice(0, 4)}…${s.slice(-4)}`;
 }
 
 export interface PromotionPanelProps {
@@ -42,6 +69,22 @@ export interface PromotionPanelProps {
    * blocking lives in the injected `PromotionRule`, not here.
    */
   coverage?: { covered: number; total: number; minCoverage?: number };
+  /**
+   * Identity signing (Handoff 8 I-2, host injection — cerca §1.1: the host owns
+   * the key). When `signerFor(approver)` returns a `Signer`, that approver's
+   * button becomes the "🔏 Assinar" flow: the canonical payload is shown BEFORE
+   * signing, then `signApproval` runs and `onApprovalSigned` fires. Omitted →
+   * current behavior; already-recorded approvals render a "não assinada" badge.
+   */
+  signerFor?: (approver: PromotionApprover) => Signer | undefined;
+  /** Resolves a public key for verifying a recorded signature (for the badge). */
+  resolvePublicKey?: (
+    fingerprint: string,
+  ) => Uint8Array | Promise<Uint8Array | undefined> | undefined;
+  /** Signatures already recorded for this version (host-persisted), for badges. */
+  signedApprovals?: SignedApproval[];
+  /** Fires after a signature is produced so the host can persist it. */
+  onApprovalSigned?: (signed: SignedApproval) => void;
 }
 
 /**
@@ -61,6 +104,10 @@ export function PromotionPanel({
   ledger,
   onActivated,
   coverage,
+  signerFor,
+  resolvePublicKey,
+  signedApprovals,
+  onApprovalSigned,
 }: PromotionPanelProps) {
   const { diagram, replaceDiagram } = useDiagram();
   const { lifecycleEngine, validationEngine, emitEditorEvent } = useEditorConfig();
@@ -70,6 +117,10 @@ export function PromotionPanel({
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Identity signing state (Handoff 8 I-2).
+  const [payloads, setPayloads] = useState<Record<string, CanonicalApprovalPayload>>({});
+  const [signedLocal, setSignedLocal] = useState<Record<string, SignedApproval>>({});
+  const [badges, setBadges] = useState<Record<string, ApproverBadge>>({});
 
   const version = diagram.version;
   const diff = useMemo(() => computeDiff(baseline, diagram), [baseline, diagram]);
@@ -120,10 +171,89 @@ export function PromotionPanel({
   );
 
   const canActivate = gates !== null && gates.every((gate) => gate.satisfied) && !busy;
+  // Identity is "engaged" only when the host wired at least one signing/verifying
+  // capability. Without any of them the panel behaves exactly as before (no
+  // badges) — the degradation contract (§4.4: sem identity → comportamento atual).
+  const identityEnabled = Boolean(signerFor || signedApprovals || resolvePublicKey);
 
-  const approve = (approver: PromotionApprover) => {
+  // Precompute the canonical payload for each signer-enabled approver that has
+  // not approved yet, so the "what you sign" card can render BEFORE signing.
+  useEffect(() => {
+    if (!open || !signerFor) return;
+    let stale = false;
+    const targets = approvers.filter(
+      (a) => signerFor(a) && !version.approvedBy.some((r) => r.userId === a.actor.id),
+    );
+    void Promise.all(
+      targets.map(
+        async (a) =>
+          [
+            a.actor.id,
+            await buildApprovalPayloadFor({ diagram, ledger, decision: 'approve', role: a.actor.role }),
+          ] as const,
+      ),
+    ).then((entries) => {
+      if (!stale) setPayloads(Object.fromEntries(entries));
+    });
+    return () => {
+      stale = true;
+    };
+  }, [open, signerFor, approvers, diagram, ledger, version.approvedBy]);
+
+  // Derive the identity badge for every approver that has approved: a matching
+  // signature (signed here or host-provided) → valid/invalid; none → legacy.
+  useEffect(() => {
+    if (!open || !identityEnabled) return;
+    let stale = false;
+    const compute = async () => {
+      const next: Record<string, ApproverBadge> = {};
+      for (const a of approvers) {
+        if (!version.approvedBy.some((r) => r.userId === a.actor.id)) continue;
+        const signed =
+          signedLocal[a.actor.id] ??
+          signedApprovals?.find((s) => s.payload.role === a.actor.role);
+        if (!signed) {
+          next[a.actor.id] = { state: 'legacy' };
+          continue;
+        }
+        const publicKey = resolvePublicKey
+          ? await resolvePublicKey(signed.signer.publicKeyFingerprint)
+          : undefined;
+        const state = await verificationState(signed, publicKey ?? undefined);
+        next[a.actor.id] = {
+          state,
+          signer: signed.signer,
+          ...(state === 'valid' ? { fingerprint: signatureFingerprintOf(signed) } : {}),
+          ...(state === 'invalid'
+            ? { expected: signatureFingerprintOf(signed), obtained: 'outro hash' }
+            : {}),
+        };
+      }
+      if (!stale) setBadges(next);
+    };
+    void compute();
+    return () => {
+      stale = true;
+    };
+  }, [open, approvers, version.approvedBy, signedLocal, signedApprovals, resolvePublicKey]);
+
+  const approve = async (approver: PromotionApprover) => {
     try {
       setError(null);
+      const signer = signerFor?.(approver);
+      if (signer) {
+        const payload =
+          payloads[approver.actor.id] ??
+          (await buildApprovalPayloadFor({
+            diagram,
+            ledger,
+            decision: 'approve',
+            role: approver.actor.role,
+          }));
+        const signed = await signApproval(signer, payload, new Date().toISOString());
+        setSignedLocal((prev) => ({ ...prev, [approver.actor.id]: signed }));
+        onApprovalSigned?.(signed);
+      }
       replaceDiagram(
         lifecycleEngine.approve(
           diagram,
@@ -240,16 +370,38 @@ export function PromotionPanel({
                           (a) => a.userId === approver.actor.id,
                         );
                         const label = approver.label ?? approver.actor.role;
+                        const canSign = !!signerFor?.(approver);
+                        const badge = badges[approver.actor.id];
+                        const payload = payloads[approver.actor.id];
                         return (
-                          <button
-                            key={approver.actor.id}
-                            type="button"
-                            data-approved={approved}
-                            disabled={approved}
-                            onClick={() => approve(approver)}
-                          >
-                            {approved ? `✓ ${label} aprovou` : `Aprovar como ${label}`}
-                          </button>
+                          <div key={approver.actor.id} className="bpmnr-promotion-approver">
+                            {!approved && canSign && payload && (
+                              <CanonicalPayloadCard payload={payload} />
+                            )}
+                            {approved && identityEnabled && badge ? (
+                              <SignatureBadge
+                                state={badge.state}
+                                signer={badge.signer}
+                                signatureFingerprint={badge.fingerprint}
+                                expected={badge.expected}
+                                obtained={badge.obtained}
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                className={canSign ? 'bpmnr-sign-approval' : undefined}
+                                data-approved={approved}
+                                disabled={approved || (canSign && !payload)}
+                                onClick={() => void approve(approver)}
+                              >
+                                {approved
+                                  ? `✓ ${label} aprovou`
+                                  : canSign
+                                    ? `🔏 Assinar aprovação como ${label}`
+                                    : `Aprovar como ${label}`}
+                              </button>
+                            )}
+                          </div>
                         );
                       })}
                     </div>

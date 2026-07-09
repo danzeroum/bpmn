@@ -7,8 +7,29 @@ import {
   type BpmnDiagram,
   type UserContext,
 } from '@bpmn-react/core';
+import {
+  buildApprovalPayload,
+  signApproval,
+  type SignedApproval,
+  type Signer,
+} from '@bpmn-react/identity';
 import type { BpmnPlugin, PromotionPanelProps } from '../src/index.js';
 import { BpmnDesigner, PromotionPanel } from '../src/index.js';
+
+/** A host-style Signer with a keypair generated in the TEST (never in the lib). */
+async function makeSigner(subject: string, role: string) {
+  const pair = (await crypto.subtle.generateKey({ name: 'Ed25519' }, true, [
+    'sign',
+    'verify',
+  ])) as CryptoKeyPair;
+  const publicKey = new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey));
+  const signer: Signer = {
+    identity: { subject, role, publicKeyFingerprint: `ed25519:${subject}` },
+    sign: async (payload) =>
+      new Uint8Array(await crypto.subtle.sign('Ed25519', pair.privateKey, new Uint8Array(payload))),
+  };
+  return { signer, publicKey };
+}
 
 const owner: UserContext = { id: 'u-owner', role: 'owner' };
 const compliance: UserContext = { id: 'u-comp', role: 'compliance' };
@@ -206,5 +227,82 @@ describe('PromotionPanel — optional coverage card (Handoff 7A-3, OFF by defaul
     expect(container.querySelector('[data-sim-coverage-gate]')?.getAttribute('data-satisfied')).toBe(
       'true',
     );
+  });
+});
+
+describe('PromotionPanel — identity signing (Handoff 8 I-2)', () => {
+  it('shows the canonical payload before signing, then signs and shows the verified badge', async () => {
+    const { signer, publicKey } = await makeSigner('marta@x', 'owner');
+    const onApprovalSigned = vi.fn();
+    renderPanel(candidateDiagram(), {
+      signerFor: (a) => (a.actor.id === owner.id ? signer : undefined),
+      resolvePublicKey: () => publicKey,
+      onApprovalSigned,
+    });
+    await screen.findByRole('dialog', { name: 'Ativar v2.1.0' });
+
+    // Payload canônico visível ANTES de assinar (§4).
+    const payloadCard = await screen.findByTestId('canonical-payload');
+    expect(payloadCard).toHaveTextContent('O QUE VOCÊ ESTÁ ASSINANDO');
+    const signBtn = await screen.findByRole('button', {
+      name: '🔏 Assinar aprovação como Owner',
+    });
+
+    fireEvent.click(signBtn);
+
+    await waitFor(() => expect(onApprovalSigned).toHaveBeenCalledTimes(1));
+    const signed: SignedApproval = onApprovalSigned.mock.calls[0][0];
+    expect(signed.payload.role).toBe('owner');
+    expect(signed.signer.subject).toBe('marta@x');
+    // The verified badge replaces the button.
+    await waitFor(() => expect(screen.getByText('ASSINADA · VERIFICADA')).toBeInTheDocument());
+  });
+
+  it('renders an invalid badge for a recorded signature that no longer verifies', async () => {
+    const { signer, publicKey } = await makeSigner('marta@x', 'compliance');
+    const payload = buildApprovalPayload({
+      diagramId: 'x',
+      version: '2.1.0',
+      xmlHash: 'h',
+      ledgerHead: '',
+      decision: 'approve',
+      role: 'compliance',
+    });
+    const signed = await signApproval(signer, payload, '2026-07-09T00:00:00.000Z');
+    // Tamper the payload after signing → verification must fail.
+    const tampered: SignedApproval = {
+      ...signed,
+      payload: { ...signed.payload, xmlHash: 'tampered' },
+    };
+    let diagram = candidateDiagram();
+    diagram = {
+      ...diagram,
+      version: {
+        ...diagram.version,
+        approvedBy: [
+          { userId: compliance.id, role: 'compliance', approvedAt: '2026-07-07T10:00:00Z', reason: 'ok' },
+        ],
+      },
+    };
+    renderPanel(diagram, { signedApprovals: [tampered], resolvePublicKey: () => publicKey });
+    await screen.findByRole('dialog', { name: 'Ativar v2.1.0' });
+    await waitFor(() => expect(screen.getByText('ASSINATURA INVÁLIDA')).toBeInTheDocument());
+  });
+
+  it('without identity props, keeps the plain approve button and shows no signature badge', async () => {
+    let diagram = candidateDiagram();
+    diagram = {
+      ...diagram,
+      version: {
+        ...diagram.version,
+        approvedBy: [
+          { userId: owner.id, role: 'owner', approvedAt: '2026-07-07T10:00:00Z', reason: 'ok' },
+        ],
+      },
+    };
+    const { container } = renderPanel(diagram);
+    await screen.findByRole('dialog', { name: 'Ativar v2.1.0' });
+    expect(screen.getByRole('button', { name: '✓ Owner aprovou' })).toBeDisabled();
+    expect(container.querySelector('.bpmnr-signature-badge')).toBeNull();
   });
 });

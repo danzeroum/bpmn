@@ -1,12 +1,26 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuditLedger, LifecycleEngine, type UserContext } from '@bpmn-react/core';
+import type { Signer } from '@bpmn-react/identity';
 import { ReviewScreen } from '../src/index.js';
 import { candidateDiagram } from './fixtures.js';
 
 afterEach(cleanup);
 
 const actor: UserContext = { id: 'bruna', role: 'process-owner', name: 'Bruna' };
+
+/** A host-style Signer with a keypair generated in the TEST (never in the lib). */
+async function makeSigner(subject: string, role: string): Promise<Signer> {
+  const pair = (await crypto.subtle.generateKey({ name: 'Ed25519' }, true, [
+    'sign',
+    'verify',
+  ])) as CryptoKeyPair;
+  return {
+    identity: { subject, role, publicKeyFingerprint: `ed25519:${subject}` },
+    sign: async (payload) =>
+      new Uint8Array(await crypto.subtle.sign('Ed25519', pair.privateKey, new Uint8Array(payload))),
+  };
+}
 
 function setup(overrides: Partial<Parameters<typeof ReviewScreen>[0]> = {}) {
   const engine = new LifecycleEngine();
@@ -93,6 +107,34 @@ describe('ReviewScreen — TELA 2 (§5)', () => {
     expect(onDecided).toHaveBeenCalledWith(expect.objectContaining({ kind: 'approved' }));
     // no undo — decision buttons are gone
     expect(screen.queryByRole('button', { name: /Aprovar como/ })).not.toBeInTheDocument();
+  });
+
+  it('with a signer, shows the canonical payload and records a signed approval (I-2)', async () => {
+    const signer = await makeSigner('bruna@x', 'process-owner');
+    const onDecided = vi.fn();
+    // A host-injected converter feeds the xmlHash (exercises the toXml seam).
+    const converter = { toXml: (d: { id: string }) => `<definitions id="${d.id}"/>` };
+    const { ledger } = setup({ signer, onDecided, converter });
+    // Payload canônico visível ANTES de assinar.
+    expect(await screen.findByTestId('review-payload')).toHaveTextContent(
+      'O QUE VOCÊ ESTÁ ASSINANDO',
+    );
+    fireEvent.click(
+      await screen.findByRole('button', { name: '🔏 Assinar aprovação com minha chave' }),
+    );
+    expect(await screen.findByText('Aprovação registrada no ledger')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('ASSINADA · VERIFICADA')).toBeInTheDocument());
+    expect(ledger.getEntries()[0].details).toHaveProperty('signedApproval');
+    expect(onDecided).toHaveBeenCalledWith(expect.objectContaining({ kind: 'approved' }));
+  });
+
+  it('without a signer, keeps the plain approve button and marks the approval legacy (I-2)', async () => {
+    const { ledger } = setup();
+    expect(screen.queryByTestId('review-payload')).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole('button', { name: 'Aprovar como process-owner' }));
+    expect(await screen.findByText('Aprovação registrada no ledger')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('NÃO ASSINADA (LEGADO)')).toBeInTheDocument());
+    expect(ledger.getEntries()[0].details).not.toHaveProperty('signedApproval');
   });
 
   it('reject demands a 10+ char justification before enabling confirmation', async () => {

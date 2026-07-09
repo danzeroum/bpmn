@@ -1,4 +1,5 @@
 import type { AuditEntry, AuditLedger, BpmnDiagram, LifecycleEngine, UserContext } from '@bpmn-react/core';
+import type { SignedApproval } from '@bpmn-react/identity';
 
 /**
  * Decision commands of the Revisão (Handoff 6 §5). Both write a ledger entry
@@ -15,6 +16,13 @@ export interface ApprovePromotionInput {
   ledger: AuditLedger;
   diagram: BpmnDiagram;
   actor: UserContext;
+  /**
+   * Ed25519 signature over the approval payload (Handoff 8 I-2). When present it
+   * is persisted in the `APPROVAL_RECORDED` entry `details` — so it joins the
+   * hash-chain (tamper-evident) and travels through `onDecided`. Absent → the
+   * approval is recorded unsigned (legacy), exactly as before.
+   */
+  signedApproval?: SignedApproval;
 }
 
 export interface DecisionResult {
@@ -30,13 +38,18 @@ export interface DecisionResult {
  * approve stays in the engine — `approve` throws on double-approval.
  */
 export async function approvePromotion(input: ApprovePromotionInput): Promise<DecisionResult> {
-  const { engine, ledger, diagram, actor } = input;
+  const { engine, ledger, diagram, actor, signedApproval } = input;
   const approved = engine.approve(diagram, actor, `Aprovação formal como ${actor.role}`);
   const ledgerEntry = await ledger.append({
     type: APPROVAL_RECORDED,
     userId: actor.id,
     versionId: diagram.version.id,
-    details: { artifactId: diagram.id, role: actor.role, semanticVersion: diagram.version.semanticVersion },
+    details: {
+      artifactId: diagram.id,
+      role: actor.role,
+      semanticVersion: diagram.version.semanticVersion,
+      ...(signedApproval ? { signedApproval } : {}),
+    },
   });
   return { kind: 'approved', diagram: approved, ledgerEntry };
 }

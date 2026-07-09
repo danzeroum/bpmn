@@ -7,7 +7,19 @@ import {
   type UserContext,
 } from '@bpmn-react/core';
 import type { VersionRegistry } from '@bpmn-react/registry';
-import { DiffView, StatusBadge } from '@bpmn-react/react';
+import {
+  buildApprovalPayloadFor,
+  CanonicalPayloadCard,
+  DiffView,
+  SignatureBadge,
+  StatusBadge,
+} from '@bpmn-react/react';
+import {
+  signApproval,
+  type CanonicalApprovalPayload,
+  type SignedApproval,
+  type Signer,
+} from '@bpmn-react/identity';
 import { approvalsProgress, pendingPromotions, type PromotionRequest } from './queue.js';
 import { runReviewChecks, type ReviewCheck } from './checks.js';
 import {
@@ -40,6 +52,14 @@ export interface ReviewScreenProps {
    */
   replayAnalysisFor?: (diagram: BpmnDiagram) => ReviewReplayAnalysis | undefined;
   now?: () => string;
+  /**
+   * Identity signing (Handoff 8 I-2, host injection — cerca §1.1: the host owns
+   * the key). When present, "Aprovar como {papel}" becomes the 🔏 signing flow:
+   * the canonical payload is shown before signing, the signature is recorded in
+   * the ledger entry, and the confirmation shows the fingerprint + verified
+   * badge. Absent → current behavior + "não assinada" badge.
+   */
+  signer?: Signer;
 }
 
 /** The attached replay analysis the Approver Review renders (structural). */
@@ -55,6 +75,12 @@ export interface ReviewReplayAnalysis {
   timestamp: string;
 }
 
+/** `ed25519:#0b9a…f21c` — short signature fingerprint for the verified badge. */
+function signatureFingerprintOf(signed: SignedApproval): string {
+  const s = signed.signature;
+  return `ed25519:#${s.slice(0, 4)}…${s.slice(-4)}`;
+}
+
 /**
  * TELA 2 — Revisão do Aprovador (Handoff 6 §5): queue on the left (296px),
  * review area in the middle (max 820px). Read-only absoluto — the only
@@ -62,7 +88,7 @@ export interface ReviewReplayAnalysis {
  * Approving NEVER activates (§11): a solicitante executa a promoção final.
  */
 export function ReviewScreen(props: ReviewScreenProps) {
-  const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onOpenInDesigner, replayAnalysisFor, now } =
+  const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onOpenInDesigner, replayAnalysisFor, now, signer } =
     props;
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
@@ -70,6 +96,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
   const [decisions, setDecisions] = useState<Record<string, DecisionResult>>({});
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState('');
+  const [payloadPreview, setPayloadPreview] = useState<CanonicalApprovalPayload>();
 
   useEffect(() => {
     let alive = true;
@@ -113,6 +140,27 @@ export function ReviewScreen(props: ReviewScreenProps) {
     };
   }, [selected?.diagram.version.id, ledger, registry, converter, now]);
 
+  // Canonical payload shown BEFORE signing (§4.3) — only when a signer is wired.
+  useEffect(() => {
+    if (!selected || !signer) {
+      setPayloadPreview(undefined);
+      return;
+    }
+    let alive = true;
+    void buildApprovalPayloadFor({
+      diagram: selected.diagram,
+      ledger,
+      decision: 'approve',
+      role: actor.role,
+      ...(converter ? { toXml: (d: BpmnDiagram) => converter.toXml(d) } : {}),
+    }).then((p) => {
+      if (alive) setPayloadPreview(p);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [selected?.diagram.version.id, signer, ledger, actor.role, converter]);
+
   const moveSelection = (delta: number) => {
     if (queue.length === 0) return;
     const index = queue.findIndex((r) => r.diagram.version.id === selected?.diagram.version.id);
@@ -124,10 +172,33 @@ export function ReviewScreen(props: ReviewScreenProps) {
 
   const decide = async (kind: 'approve' | 'reject') => {
     if (!selected) return;
-    const result =
-      kind === 'approve'
-        ? await approvePromotion({ engine, ledger, diagram: selected.diagram, actor })
-        : await rejectPromotion({ ledger, diagram: selected.diagram, actor, reason });
+    let result: DecisionResult;
+    if (kind === 'approve') {
+      let signedApproval: SignedApproval | undefined;
+      if (signer) {
+        const payload = await buildApprovalPayloadFor({
+          diagram: selected.diagram,
+          ledger,
+          decision: 'approve',
+          role: actor.role,
+          ...(converter ? { toXml: (d: BpmnDiagram) => converter.toXml(d) } : {}),
+        });
+        signedApproval = await signApproval(
+          signer,
+          payload,
+          now ? now() : new Date().toISOString(),
+        );
+      }
+      result = await approvePromotion({
+        engine,
+        ledger,
+        diagram: selected.diagram,
+        actor,
+        ...(signedApproval ? { signedApproval } : {}),
+      });
+    } else {
+      result = await rejectPromotion({ ledger, diagram: selected.diagram, actor, reason });
+    }
     setDecisions((prev) => ({ ...prev, [selected.diagram.version.id]: result }));
     // Pin the decided request so the confirmation card stays visible after
     // the item leaves the queue.
@@ -296,6 +367,12 @@ export function ReviewScreen(props: ReviewScreenProps) {
               </div>
             </section>
 
+            {signer && !decision && payloadPreview && (
+              <section className="btv-studio-block" data-testid="review-payload">
+                <CanonicalPayloadCard payload={payloadPreview} />
+              </section>
+            )}
+
             <section className="btv-studio-block" data-testid="review-decision">
               <span className="btv-studio-kicker">SUA DECISÃO</span>
               {decision ? (
@@ -306,6 +383,21 @@ export function ReviewScreen(props: ReviewScreenProps) {
                       : 'Rejeição registrada no ledger'}
                   </strong>
                   <code className="btv-studio-mono">{decision.ledgerEntry.hash}</code>
+                  {decision.kind === 'approved' &&
+                    (() => {
+                      const signed = (
+                        decision.ledgerEntry.details as { signedApproval?: SignedApproval }
+                      ).signedApproval;
+                      return signed ? (
+                        <SignatureBadge
+                          state="valid"
+                          signer={signed.signer}
+                          signatureFingerprint={signatureFingerprintOf(signed)}
+                        />
+                      ) : (
+                        <SignatureBadge state="legacy" />
+                      );
+                    })()}
                   <p className="btv-studio-muted">
                     Decisão imutável — corrigir exige um novo ciclo de promoção.
                   </p>
@@ -325,9 +417,10 @@ export function ReviewScreen(props: ReviewScreenProps) {
                     <button
                       type="button"
                       className="btv-studio-approve"
+                      data-signing={signer ? true : undefined}
                       onClick={() => void decide('approve')}
                     >
-                      Aprovar como {actor.role}
+                      {signer ? '🔏 Assinar aprovação com minha chave' : `Aprovar como ${actor.role}`}
                     </button>
                     <button
                       type="button"

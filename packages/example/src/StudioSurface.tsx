@@ -22,6 +22,7 @@ import {
   replayAnalysisEntry,
 } from '@bpmn-react/adapters-bpmn';
 import type { ArtifactAction, ArtifactAdapter, ArtifactRef, LibraryQuery, LifecycleStatus, LibrarySort } from '@bpmn-react/library';
+import type { Signer } from '@bpmn-react/identity';
 import { StudioShell } from '@bpmn-react/studio';
 import '@bpmn-react/library-react/styles.css';
 import '@bpmn-react/studio/styles.css';
@@ -280,12 +281,39 @@ export function StudioSurface() {
   const [world, setWorld] = useState<StudioWorld>();
   const [user, setUser] = useState<UserContext>(USERS[0]);
   const [lastAction, setLastAction] = useState('');
+  const [signingKey, setSigningKey] = useState<CryptoKey>();
   const initialQuery = useMemo(libraryQueryFromUrl, []);
   const initialSelection = useMemo(selectionFromUrl, []);
+  // Identity signing is opt-in in the demo (`?sign=1`) so the default flow keeps
+  // showing the unsigned/legacy path — the degradation case (§4.4).
+  const wantSign = useMemo(() => new URLSearchParams(window.location.search).has('sign'), []);
 
   useEffect(() => {
     void buildWorld().then(setWorld);
   }, []);
+
+  // Handoff 8 I-2 — the HOST owns the key (cerca §1.1): generated here (SSO/
+  // YubiKey stand-in), NEVER in the library. Only the private handle is kept;
+  // the library receives a `Signer` that exposes `sign(bytes)` only.
+  useEffect(() => {
+    if (!wantSign) return;
+    void crypto.subtle
+      .generateKey({ name: 'Ed25519' }, true, ['sign', 'verify'])
+      .then((pair) => setSigningKey((pair as CryptoKeyPair).privateKey));
+  }, [wantSign]);
+
+  const signer = useMemo<Signer | undefined>(() => {
+    if (!wantSign || !signingKey) return undefined;
+    return {
+      identity: {
+        subject: `${user.id}@empresa.com.br`,
+        role: user.role,
+        publicKeyFingerprint: 'ed25519:SHA256:demo',
+      },
+      sign: async (payload: Uint8Array) =>
+        new Uint8Array(await crypto.subtle.sign('Ed25519', signingKey, new Uint8Array(payload))),
+    };
+  }, [wantSign, signingKey, user]);
 
   const review = useMemo(() => {
     if (!world) return undefined;
@@ -298,8 +326,10 @@ export function StudioSurface() {
       // Handoff 7B-3: surface the attached replay analysis for the candidate.
       replayAnalysisFor: (diagram: BpmnDiagram) =>
         latestReplayAnalysis(world.replayLedger.getEntries(), diagram.version.id),
+      // Handoff 8 I-2: sign approvals when the host wired a Signer.
+      ...(signer ? { signer } : {}),
     };
-  }, [world]);
+  }, [world, signer]);
 
   const onLibraryAction = (ref: ArtifactRef, action: ArtifactAction) => {
     setLastAction(`${action.id} → ${ref.adapterId}:${ref.artifactId}`);
