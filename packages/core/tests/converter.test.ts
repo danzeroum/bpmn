@@ -566,6 +566,24 @@ describe('BpmnXmlConverter.fromXml — external documents', () => {
     expect(warnings.some((w) => w.includes('transaction'))).toBe(true);
   });
 
+  it('drops complexGateway with a named warning suggesting an inclusive gateway', () => {
+    const xml = `<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
+      <process id="p">
+        <startEvent id="s"/>
+        <complexGateway id="cx"/>
+      </process>
+    </definitions>`;
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
+    expect(diagram.nodes.cx).toBeUndefined();
+    const warning = warnings.find((w) => w.includes('complexGateway'));
+    expect(warning).toBeDefined();
+    // Names the element (with its id) and points at the concrete remedy —
+    // not the generic "Ignored unsupported element" line.
+    expect(warning).toContain('id="cx"');
+    expect(warning).toContain('inclusive gateway');
+    expect(warning).not.toContain('Ignored unsupported element');
+  });
+
   it('applies a grid layout and warns when DI is missing', () => {
     const xml = `<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
       <process id="p">

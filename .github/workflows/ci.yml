@@ -17,6 +17,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Fail the build on any high/critical advisory in the dependency tree.
+      # All shipped packages are zero-runtime-dep, so this guards the dev/build
+      # toolchain (vitest, vite, esbuild, …) that Dependabot keeps patched.
+      - run: pnpm audit --audit-level=high
       - run: pnpm check:no-runtime-deps
       - run: pnpm check:no-key-generation
       - run: pnpm lint

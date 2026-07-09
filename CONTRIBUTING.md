@@ -27,12 +27,16 @@ tooling goes in `devDependencies`. CI enforces this via `pnpm check:no-runtime-d
 
 ```bash
 pnpm install
-pnpm build
+pnpm build   # required before `pnpm test`
 pnpm test
 pnpm typecheck
 pnpm lint
 ```
 
+- **Run `pnpm build` before `pnpm test`.** Cross-package tests (e.g. the conformance
+  corpus) import sibling packages by name (`@bpmn-react/core`), which resolves to each
+  package's built `dist/`. A bare `vitest run` on a fresh checkout therefore fails on
+  module resolution — that is an environment/ordering issue, not a conformance failure.
 - Unit tests live next to the code in `tests/` folders per package (Vitest).
 - Every package has a **public API contract test** (`tests/apiSurface.test.ts`) that freezes its
   runtime exports. A failing diff there means an export was added, renamed, or removed — update the

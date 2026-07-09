@@ -33,10 +33,24 @@ jobs:
 
       # The full quality gate must be green before anything reaches npm.
       - run: pnpm check:no-runtime-deps
+      - run: pnpm audit --audit-level=high
       - run: pnpm lint
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test:coverage
+
+      # Software Bill of Materials for the release (CycloneDX JSON), attached
+      # as a build artifact for supply-chain transparency / SBOM requirements.
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          format: cyclonedx-json
+          output-file: sbom.cyclonedx.json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-cyclonedx
+          path: sbom.cyclonedx.json
 
       # Private packages (the example app) are skipped automatically.
       - name: Publish to npm
