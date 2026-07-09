@@ -22,6 +22,8 @@ export * from './canvas/Defs.js';
 export * from './canvas/overlays.js';
 export * from './canvas/viewport.js';
 export * from './canvas/useInteractions.js';
+export * from './canvas/routers.js';
+export * from './canvas/routeEdge.js';
 
 // Simulation (Handoff 7A)
 export * from './simulation/BpmnSimulator.js';

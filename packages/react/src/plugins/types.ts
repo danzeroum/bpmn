@@ -5,6 +5,7 @@ import type {
   EdgeGeometry,
   LifecycleConfig,
   NodeTypeDefinition,
+  Point,
   Rect,
   RuleEngine,
   ValidationRule,
@@ -61,7 +62,25 @@ export interface PaletteGroup {
   itemHoverBackground?: string;
 }
 
-export type EdgeRouterFn = (source: Rect, target: Rect) => EdgeGeometry;
+/**
+ * Optional routing context (Handoff 10 R-2a). Obstacle-avoiding routers (the
+ * built-in `astar`) read the other node bounds and already-routed edges from
+ * here; the cheap built-ins (`bezier`/`orthogonal`/`straight`) ignore it. The
+ * parameter is optional, so a pre-existing two-argument `(source, target)`
+ * router keeps working unchanged.
+ */
+export interface EdgeRouterContext {
+  /** Node bounds to route around (excludes the two endpoints). */
+  obstacles: Rect[];
+  /** Waypoints of already-routed edges, for the crossing cost. */
+  routedEdges: Point[][];
+}
+
+export type EdgeRouterFn = (
+  source: Rect,
+  target: Rect,
+  context?: EdgeRouterContext,
+) => EdgeGeometry;
 
 /**
  * Editor observability event (Handoff 2 §2). The library emits a minimal
@@ -140,8 +159,9 @@ export interface BpmnPlugin {
   registerRules?: (engine: RuleEngine) => void;
   /** Lifecycle configuration override (first plugin providing one wins). */
   lifecycleConfig?: LifecycleConfig;
-  /** Edge routing override: built-in name or custom function. */
-  edgeRouter?: 'bezier' | 'orthogonal' | EdgeRouterFn;
+  /** Edge routing override: built-in name or custom function. `astar` is the
+   * obstacle-avoiding router (Handoff 10); `straight` is the plain direct line. */
+  edgeRouter?: 'bezier' | 'orthogonal' | 'straight' | 'astar' | EdgeRouterFn;
   /** Transforms the diagram before it is exported/saved. */
   onBeforeSave?: (diagram: BpmnDiagram) => BpmnDiagram;
   /** Transforms the diagram right after an import/load. */
