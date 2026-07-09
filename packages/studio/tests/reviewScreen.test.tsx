@@ -1,9 +1,25 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuditLedger, LifecycleEngine, type UserContext } from '@bpmn-react/core';
-import type { Signer } from '@bpmn-react/identity';
+import type { AnchorAdapter, Signer } from '@bpmn-react/identity';
 import { ReviewScreen } from '../src/index.js';
 import { candidateDiagram } from './fixtures.js';
+
+/** A fake anchor adapter: optionally fails the first anchor to drive pending. */
+function makeAnchor(opts: { failFirst?: boolean; verify?: 'anchored' | 'mismatch' } = {}): AnchorAdapter {
+  let failNext = opts.failFirst ?? false;
+  return {
+    id: 'git',
+    anchor: async (head) => {
+      if (failNext) {
+        failNext = false;
+        throw new Error('anchor store down');
+      }
+      return { adapterId: 'git', head, proof: 'p', anchoredAt: '2026-07-09T00:00:00.000Z' };
+    },
+    verify: async () => opts.verify ?? 'anchored',
+  };
+}
 
 afterEach(cleanup);
 
@@ -135,6 +151,43 @@ describe('ReviewScreen — TELA 2 (§5)', () => {
     expect(await screen.findByText('Aprovação registrada no ledger')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('NÃO ASSINADA (LEGADO)')).toBeInTheDocument());
     expect(ledger.getEntries()[0].details).not.toHaveProperty('signedApproval');
+  });
+
+  it('anchors a signed head: the seal reaches ANCORADA (I-3)', async () => {
+    const signer = await makeSigner('bruna@x', 'process-owner');
+    const { ledger } = setup({ signer, anchor: makeAnchor() });
+    fireEvent.click(
+      await screen.findByRole('button', { name: '🔏 Assinar aprovação com minha chave' }),
+    );
+    await screen.findByText('Aprovação registrada no ledger');
+    await waitFor(() => expect(screen.getByText('ANCORADA')).toBeInTheDocument());
+    expect(ledger.getEntries()[0].details).toHaveProperty('signedApproval');
+  });
+
+  it('third state: anchor fails → PENDENTE (não regride) → retry → ANCORADA (I-3, §1.3)', async () => {
+    const signer = await makeSigner('bruna@x', 'process-owner');
+    setup({ signer, anchor: makeAnchor({ failFirst: true }) });
+    fireEvent.click(
+      await screen.findByRole('button', { name: '🔏 Assinar aprovação com minha chave' }),
+    );
+    // Signed decision stands even though anchoring failed (does NOT regress).
+    await screen.findByText('Aprovação registrada no ledger');
+    await waitFor(() => expect(screen.getByText('PENDENTE')).toBeInTheDocument());
+    expect(
+      screen.getByText('garantia vigente: assinaturas + hash-chain local'),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '↻ Retentar ancoragem' }));
+    await waitFor(() => expect(screen.getByText('ANCORADA')).toBeInTheDocument());
+  });
+
+  it('signed but no anchor adapter → SEM ÂNCORA CONFIGURADA (§1.4)', async () => {
+    const signer = await makeSigner('bruna@x', 'process-owner');
+    setup({ signer });
+    fireEvent.click(
+      await screen.findByRole('button', { name: '🔏 Assinar aprovação com minha chave' }),
+    );
+    await screen.findByText('Aprovação registrada no ledger');
+    await waitFor(() => expect(screen.getByText('SEM ÂNCORA CONFIGURADA')).toBeInTheDocument());
   });
 
   it('reject demands a 10+ char justification before enabling confirmation', async () => {

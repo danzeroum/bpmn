@@ -8,6 +8,7 @@ import * as api from '../src/index.js';
  */
 const EXPECTED_EXPORTS = [
   'buildApprovalPayload',
+  'deriveAnchorState',
   'encodePayload',
   'evaluateRoleRequirement',
   'fromBase64',

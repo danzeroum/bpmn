@@ -57,6 +57,8 @@ export * from './ui/MiniMap.js';
 export * from './ui/StatusBadge.js';
 export * from './ui/SignatureBadge.js';
 export * from './ui/CanonicalPayloadCard.js';
+export * from './ui/AnchorSeal.js';
+export * from './ui/useAnchorCycle.js';
 export * from './ui/approvalPayload.js';
 export * from './ui/DiffView.js';
 export * from './ui/PromotionPanel.js';

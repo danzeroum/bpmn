@@ -1,0 +1,17 @@
+import { describe, expect, it } from 'vitest';
+import * as api from '../src/index.js';
+
+/** Freezes the runtime public API surface of @bpmn-react/anchor-rfc3161. */
+const EXPECTED_EXPORTS = ['createRfc3161Anchor'].sort();
+
+describe('@bpmn-react/anchor-rfc3161 public API surface', () => {
+  it('exports exactly the expected runtime members', () => {
+    expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
+  });
+
+  it('never exports undefined', () => {
+    for (const key of Object.keys(api)) {
+      expect(api[key as keyof typeof api], `export "${key}" is undefined`).not.toBeUndefined();
+    }
+  });
+});

@@ -1,0 +1,48 @@
+{
+  "name": "@bpmn-react/anchor-rfc3161",
+  "version": "1.0.0",
+  "private": true,
+  "description": "RFC 3161 timestamp anchor adapter (Handoff 8): anchors the ledger chain head to a TSA timestamp token via a HOST-injected transport (the library never does network). Implements the AnchorAdapter contract from @bpmn-react/identity. Zero runtime dependencies. Workspace-only — the publish scope awaits pendencias.md §1.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@bpmn-react/identity": "workspace:*"
+  },
+  "keywords": [
+    "bpmn",
+    "anchor",
+    "rfc3161",
+    "timestamp",
+    "trust"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/anchor-rfc3161"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
