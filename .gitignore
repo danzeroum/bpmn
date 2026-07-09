@@ -7,3 +7,6 @@ coverage/
 playwright-report/
 test-results/
 *.tsbuildinfo
+# Real third-party BPMN corpus fetched on demand (scripts/fetch-corpus.mjs) —
+# mixed MIT/Apache-2.0, never committed. See packages/conformance/README.md.
+packages/conformance/corpus-external/
