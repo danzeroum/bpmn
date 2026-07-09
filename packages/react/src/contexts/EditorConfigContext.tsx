@@ -5,7 +5,6 @@ import {
   createDefaultRuleEngine,
   cubicBezierConnection,
   LifecycleEngine,
-  orthogonalConnection,
   ValidationEngine,
   type NodeTypeRegistry,
   type RuleEngine,
@@ -21,8 +20,8 @@ import type {
   ShapeComponent,
 } from '../plugins/types.js';
 import { BUILT_IN_SHAPES } from '../shapes/index.js';
-import { EDGE_CORNER_RADIUS } from '../shapes/common.js';
 import { BUILT_IN_PALETTE, BUILT_IN_PALETTE_GROUPS } from '../ui/paletteItems.js';
+import { resolveRouter } from '../canvas/routers.js';
 
 export interface EditorConfig {
   registry: NodeTypeRegistry;
@@ -52,10 +51,6 @@ export interface EditorConfig {
 }
 
 const EditorConfigContext = createContext<EditorConfig | null>(null);
-
-/** Built-in orthogonal router with the craft-pack rounded corners applied. */
-const roundedOrthogonalConnection: EdgeRouterFn = (source, target) =>
-  orthogonalConnection(source, target, { cornerRadius: EDGE_CORNER_RADIUS });
 
 export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
   // De-duplicate by id, last registration wins.
@@ -127,12 +122,9 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
     if (plugin.autosave !== undefined) autosave = plugin.autosave;
     if (plugin.lifecycleConfig) lifecycleEngine = new LifecycleEngine(plugin.lifecycleConfig);
     if (plugin.edgeRouter) {
-      edgeRouter =
-        plugin.edgeRouter === 'bezier'
-          ? cubicBezierConnection
-          : plugin.edgeRouter === 'orthogonal'
-            ? roundedOrthogonalConnection
-            : plugin.edgeRouter;
+      // Built-in name ('bezier'|'orthogonal'|'straight'|'astar') or a custom
+      // function; an unknown value keeps the current router.
+      edgeRouter = resolveRouter(plugin.edgeRouter, edgeRouter);
     }
   }
 

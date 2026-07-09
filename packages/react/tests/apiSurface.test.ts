@@ -131,6 +131,16 @@ const EXPECTED_EXPORTS = [
   'useStore',
   'wrapLabel',
   'zoomViewportAt',
+  // Handoff 10 R-2a — named routers + inheritance routing.
+  'NAMED_ROUTERS',
+  'astarConnection',
+  'roundedOrthogonalConnection',
+  'straightRouter',
+  'resolveRouter',
+  'resolveEdgeRouterName',
+  'edgeObstacles',
+  'routedEdgeWaypoints',
+  'routeEdge',
 ].sort();
 
 describe('@bpmn-react/react public API surface', () => {
