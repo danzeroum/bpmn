@@ -1,5 +1,6 @@
 import type { BpmnDiagram } from '@bpmn-react/core';
 import { buildSimGraph, type SimGraph } from './graph.js';
+import { computeDominators, dominates } from './dominators.js';
 import type {
   BoundaryOption,
   Decision,
@@ -26,12 +27,18 @@ export interface StepResult {
  * reproduces a run bit-for-bit.
  *
  * Exact semantics for **XOR, AND and event-based** gateways and boundary
- * events. **OR (inclusive)** is approximate by design — see the class-level
- * notes on {@link SimulationEngine.hasApproximateSemantics} and
- * `docs/limitations.md`. Never mutates the diagram.
+ * events. **OR (inclusive)** uses a dominator-based structural convergence
+ * rule (see {@link dominates} and {@link SimulationEngine.orJoinReady}): the
+ * join fires once no live token can still reach it *without* having already
+ * passed through it. This is re-evaluated after every step, so a branch that
+ * diverges away from the join no longer strands it. The `approximate` flag is
+ * retained because a fully token-state-exact OR-join is undecidable in the
+ * general case; see `docs/limitations.md`. Never mutates the diagram.
  */
 export class SimulationEngine {
   readonly graph: SimGraph;
+  /** Immediate-dominator map of the flow graph — drives the OR-join rule. */
+  private readonly dom: Map<string, string>;
   private tokens: Token[] = [];
   private joinArrivals = new Map<string, Set<string>>();
   private traversedEdges = new Set<string>();
@@ -47,6 +54,7 @@ export class SimulationEngine {
     options: SimulationOptions = {},
   ) {
     this.graph = buildSimGraph(diagram, options.scope);
+    this.dom = computeDominators(this.graph);
     this.reset();
   }
 
@@ -167,9 +175,18 @@ export class SimulationEngine {
   /** Advance the first decision-free token by one hop. No-op when the only
    * tokens sit at a split (resolve with {@link choose}) or the run is done. */
   advance(): StepResult {
+    const start = this.trail.length;
     const token = this.tokens.find((t) => !this.isDecisionSplit(t.nodeId));
-    if (!token) return { moved: false, transitions: [] };
-    return this.fire(token);
+    if (!token) {
+      // No free token, but an OR-join may have become ready now that the
+      // branches diverging away from it are gone.
+      this.settleOrJoins();
+      const transitions = this.trail.slice(start);
+      return { moved: transitions.length > 0, transitions };
+    }
+    this.step(token);
+    this.settleOrJoins();
+    return { moved: true, transitions: this.trail.slice(start) };
   }
 
   /** Resolve the pending branch decision and move the token(s). */
@@ -193,6 +210,7 @@ export class SimulationEngine {
       this.emit(token, [decision.edge], 'move');
     }
     this.decisions.push(decision);
+    this.settleOrJoins();
     return { moved: true, transitions: this.trail.slice(start) };
   }
 
@@ -219,6 +237,7 @@ export class SimulationEngine {
       });
     }
     this.decisions.push({ kind: 'boundary', host, boundary: boundaryId });
+    this.settleOrJoins();
     return { moved: true, transitions: this.trail.slice(start) };
   }
 
@@ -281,10 +300,9 @@ export class SimulationEngine {
     return node.gateway === 'exclusive' || node.gateway === 'eventBased' || node.gateway === 'inclusive';
   }
 
-  /** Fire a non-decision token: end/sink consumption, parallel split, or move. */
-  private fire(token: Token): StepResult {
+  /** Advance a non-decision token: end/sink consumption, parallel split, or move. */
+  private step(token: Token): void {
     const node = this.graph.nodes.get(token.nodeId)!;
-    const start = this.trail.length;
     if (node.outgoing.length === 0) {
       // End event, or an implicit end (sink with no outgoing flow).
       this.removeToken(token.id);
@@ -295,7 +313,6 @@ export class SimulationEngine {
       // Single outgoing (task, event, XOR/OR join, AND with one out): move.
       this.emit(token, [node.outgoing[0]], 'move');
     }
-    return { moved: true, transitions: this.trail.slice(start) };
   }
 
   /** Consume `token` and deliver a token along each of `edgeIds`. */
@@ -339,23 +356,16 @@ export class SimulationEngine {
     }
 
     if (orJoin) {
+      // Record the arrival; firing is decided by settleOrJoins() at the end of
+      // the step, once every token has moved — so a branch that later diverges
+      // away from the join can't strand it.
       const arrivals = this.arrivalsFor(target.id);
       arrivals.add(edgeId);
-      if (this.orJoinReady(target.id)) {
-        this.joinArrivals.delete(target.id);
-        this.placeToken(target.id);
-        this.record('join-fire', `OR join "${target.label || target.id}" (approximate)`, {
-          nodeId: target.id,
-          edgeId,
-          approximate: true,
-        });
-      } else {
-        this.record('join-wait', `OR join "${target.label || target.id}" waiting (approximate)`, {
-          nodeId: target.id,
-          edgeId,
-          approximate: true,
-        });
-      }
+      this.record('join-wait', `OR join "${target.label || target.id}" arrival`, {
+        nodeId: target.id,
+        edgeId,
+        approximate: true,
+      });
       return;
     }
 
@@ -369,16 +379,45 @@ export class SimulationEngine {
   }
 
   /**
-   * Approximate OR-join rule (cerca §0.1): fire once no other live token can
-   * still structurally reach this join. That waits for exactly the branches
-   * the matching OR-split activated in this session, without a global
-   * inclusive-merge analysis. Documented in `docs/limitations.md`.
+   * Fires every waiting OR-join that has become ready, to a fixpoint. Run at
+   * the end of each step: firing one join places a token that may in turn
+   * settle another, and a token leaving on a diverging branch may unblock a
+   * join no arrival would otherwise re-evaluate.
+   */
+  private settleOrJoins(): void {
+    let fired = true;
+    while (fired) {
+      fired = false;
+      for (const joinId of [...this.joinArrivals.keys()]) {
+        const node = this.graph.nodes.get(joinId);
+        if (node?.gateway !== 'inclusive') continue;
+        if (!this.orJoinReady(joinId)) continue;
+        this.joinArrivals.delete(joinId);
+        this.placeToken(joinId);
+        this.record('join-fire', `OR join "${node.label || joinId}" (approximate)`, {
+          nodeId: joinId,
+          approximate: true,
+        });
+        fired = true;
+      }
+    }
+  }
+
+  /**
+   * OR-join convergence rule: ready once no live token can still reach the join
+   * *without having already passed through it*. Reachability alone over-waits
+   * in loops — a token downstream of the join can loop back to it — so we skip
+   * any token the join **dominates** (Cooper–Harvey–Kennedy): such a token only
+   * exists because a token already went through the join, so its next arrival
+   * is a later activation cycle, not the one being synchronized now. This is
+   * the global convergence analysis the local heuristic lacked.
    */
   private orJoinReady(joinId: string): boolean {
     const live = new Set<string>(this.tokens.map((t) => t.nodeId));
     for (const partial of this.joinArrivals.keys()) live.add(partial);
     live.delete(joinId);
     for (const from of live) {
+      if (dominates(this.dom, joinId, from)) continue;
       if (this.canReach(from, joinId)) return false;
     }
     return true;

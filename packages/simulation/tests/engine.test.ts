@@ -3,6 +3,7 @@ import { SimulationEngine, SimulationError, type PendingChoice } from '../src/in
 import {
   andParallel,
   eventBased,
+  flow,
   linear,
   nonInterruptingBoundary,
   orRegion,
@@ -135,6 +136,57 @@ describe('inclusive (OR) — approximate', () => {
     run(engine);
     expect(engine.complete).toBe(true);
     expect(engine.state.traversedEdges).not.toContain('e2'); // right branch never ran
+  });
+
+  it('fires the OR-join when an activated branch diverges away from it (no false deadlock)', () => {
+    // o activates a AND b; b reaches an XOR that can either reach the join (x->j)
+    // or leave the region (x->gone). Taking the exit must still let the join fire
+    // on the single arrival it received — the local heuristic stranded it here.
+    const diagram = flow(
+      [
+        's:startEvent', 'o:inclusiveGateway', 'a:task', 'b:task', 'x:exclusiveGateway',
+        'away:task', 'j:inclusiveGateway', 'e:endEvent', 'gone:endEvent',
+      ],
+      ['s->o', 'o->a', 'o->b', 'a->j', 'b->x', 'x->j', 'x->away', 'away->gone', 'j->e'],
+    );
+    const engine = new SimulationEngine(diagram);
+    engine.advance(); // s → o
+    const orChoice = engine.pendingChoice!;
+    expect(orChoice.kind).toBe('inclusive');
+    engine.choose({ kind: 'inclusive', gateway: 'o', edges: orChoice.options.map((o) => o.edgeId) });
+    for (let i = 0; i < 20 && engine.pendingChoice?.nodeId !== 'x'; i++) engine.advance();
+    expect(engine.pendingChoice?.nodeId).toBe('x');
+    const awayEdge = engine.pendingChoice!.options.find((o) => o.targetId === 'away')!.edgeId;
+    engine.choose({ kind: 'exclusive', gateway: 'x', edge: awayEdge }); // diverge away from the join
+    for (let i = 0; i < 20 && engine.canAdvance; i++) engine.advance();
+    expect(engine.deadlocked).toBe(false);
+    expect(engine.complete).toBe(true);
+    expect(engine.state.traversedEdges).toContain('e6'); // x → away taken
+    expect(engine.state.traversedEdges).not.toContain('e5'); // x → j never taken
+    expect(engine.state.traversedEdges).toContain('e8'); // j → e: the join still fired
+  });
+
+  it('terminates for an OR-join inside a loop (dominance prevents a spurious wait)', () => {
+    const diagram = flow(
+      [
+        's:startEvent', 'o:inclusiveGateway', 'a:task', 'b:task',
+        'j:inclusiveGateway', 'r:exclusiveGateway', 'e:endEvent',
+      ],
+      ['s->o', 'o->a', 'o->b', 'a->j', 'b->j', 'j->r', 'r->o:again', 'r->e:done'],
+    );
+    const engine = new SimulationEngine(diagram);
+    engine.advance(); // s → o
+    engine.choose({
+      kind: 'inclusive',
+      gateway: 'o',
+      edges: engine.pendingChoice!.options.map((o) => o.edgeId),
+    });
+    for (let i = 0; i < 30 && engine.pendingChoice?.nodeId !== 'r'; i++) engine.advance();
+    expect(engine.pendingChoice?.nodeId).toBe('r'); // join fired, token reached the loop gateway
+    const exit = engine.pendingChoice!.options.find((o) => o.targetId === 'e')!.edgeId;
+    engine.choose({ kind: 'exclusive', gateway: 'r', edge: exit });
+    for (let i = 0; i < 30 && engine.canAdvance; i++) engine.advance();
+    expect(engine.complete).toBe(true);
   });
 });
 
