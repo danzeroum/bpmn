@@ -16,6 +16,7 @@ import { ConnectedNode } from './NodeRenderer.js';
 import { ConnectedEdge } from './EdgeRenderer.js';
 import { ConnectionPreview, SelectionBoxOverlay } from './overlays.js';
 import { hiddenNodeIds } from './visibility.js';
+import { cullToViewport } from './culling.js';
 import { useKeyboardShortcuts } from '../gestures/useKeyboardShortcuts.js';
 
 export interface CanvasProps {
@@ -88,15 +89,20 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
   // show — the container itself and everything outside it hide. Memoized by
   // diagram identity — the canvas re-renders per viewport frame.
   const hiddenIds = useMemo(() => hiddenNodeIds(diagram, drillId), [diagram, drillId]);
-  const nodes = orderByZ(
+  const visibleNodes = orderByZ(
     (showClosed ? Object.values(diagram.nodes) : activeNodes(diagram)).filter(
       (node) => !hiddenIds.has(node.id),
     ),
     diagram,
   );
-  const edges = (showClosed ? Object.values(diagram.edges) : activeEdges(diagram)).filter(
+  const visibleEdges = (showClosed ? Object.values(diagram.edges) : activeEdges(diagram)).filter(
     (edge) => !hiddenIds.has(edge.sourceId) && !hiddenIds.has(edge.targetId),
   );
+  // Virtualization: on large diagrams render only what intersects the viewport
+  // (plus a margin). A no-op below CULL_THRESHOLD, so small diagrams are
+  // unchanged. The canvas already re-renders per viewport frame, so this adds
+  // no re-renders — only fewer mounted node/edge components.
+  const { nodes, edges } = cullToViewport(visibleNodes, visibleEdges, diagram.nodes, viewport);
 
   return (
     <svg

@@ -57,7 +57,7 @@ describe('React StrictMode', () => {
 });
 
 describe('scale ceiling', () => {
-  it('renders the documented ~350-node scale with a connected flow', () => {
+  it('virtualizes the documented ~350-node scale (renders only the visible subset)', () => {
     const diagram = createDiagram({ name: 'Big' });
     const COUNT = 350;
     for (let i = 0; i < COUNT; i++) {
@@ -75,8 +75,14 @@ describe('scale ceiling', () => {
     }
 
     const { container } = render(<BpmnDesigner diagram={diagram} />);
-    expect(container.querySelectorAll('[data-node-id]')).toHaveLength(COUNT);
-    expect(container.querySelectorAll('[data-edge-id]')).toHaveLength(COUNT - 1);
+    // Viewport culling: the 350-node model renders without error, but only the
+    // on-screen subset is mounted in the DOM (not all COUNT nodes/edges).
+    const renderedNodes = container.querySelectorAll('[data-node-id]').length;
+    expect(renderedNodes).toBeGreaterThan(0);
+    expect(renderedNodes).toBeLessThan(COUNT);
+    expect(container.querySelectorAll('[data-edge-id]').length).toBeLessThan(COUNT - 1);
+    // Culling is a render concern only — the full model is intact.
+    expect(Object.keys(diagram.nodes)).toHaveLength(COUNT);
   });
 });
 
