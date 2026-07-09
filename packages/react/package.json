@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@bpmn-react/core": "workspace:*",
+    "@bpmn-react/replay": "workspace:*",
     "@bpmn-react/simulation": "workspace:*"
   },
   "keywords": [

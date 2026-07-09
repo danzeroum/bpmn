@@ -47,11 +47,13 @@ describe('frequency and time aggregation (one pass)', () => {
     expect(cd.avgMs).toBe(2000); // (3000 + 1000) / 2
   });
 
-  it('computes node sojourn times and flags the bottleneck', () => {
-    const result = aggregate(linearGraph, [trace('c1', ['A', 'B', 'C', 'D'], [0, 1000, 3000, 6000])]);
-    const c = result.nodes.find((n) => n.nodeId === 'c')!;
-    expect(c.avgMs).toBe(3000); // C→D took 3000ms
-    expect(result.bottleneckNodeId).toBe('c'); // longest sojourn
+  it('computes node times as the incoming gap and flags the bottleneck', () => {
+    // Incoming gaps: B←5000, C←1000, D←1000 → B is the slowest activity.
+    const result = aggregate(linearGraph, [trace('c1', ['A', 'B', 'C', 'D'], [0, 5000, 6000, 7000])]);
+    expect(result.nodes.find((n) => n.nodeId === 'b')?.avgMs).toBe(5000);
+    expect(result.nodes.find((n) => n.nodeId === 'c')?.avgMs).toBe(1000);
+    expect(result.nodes.find((n) => n.nodeId === 'a')?.avgMs).toBeUndefined(); // no incoming
+    expect(result.bottleneckNodeId).toBe('b');
   });
 
   it('omits times when timestamps are absent but still counts frequency', () => {

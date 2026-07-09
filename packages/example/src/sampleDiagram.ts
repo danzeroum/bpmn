@@ -377,6 +377,38 @@ export function buildSimulationDiagram(): BpmnDiagram {
 }
 
 /**
+ * A synthetic event log for the replay demo (`?replay=1`, Handoff 7B-2),
+ * replayed against {@link buildSimulationDiagram}. Activity names match the
+ * node labels; timestamps make "Gerar plano" the bottleneck. Two known
+ * deviations reproduce the prototype: cases that skip the gate
+ * (Coletar briefing → Gerar plano) and a repeated "Gerar plano".
+ */
+export function buildReplayTraces() {
+  const HOUR = 3_600_000;
+  const happy = ['Novo cliente', 'Coletar briefing', 'Aprovar briefing', 'Gerar plano', 'Plano publicado'];
+  // Incoming gaps drive the ⌀ chips: briefing 8h, gate 6h, plano 31h (bottleneck), publicado 40s.
+  const happyTimes = [0, 8 * HOUR, 14 * HOUR, 45 * HOUR, 45 * HOUR + 40_000];
+  const reject = ['Novo cliente', 'Coletar briefing', 'Aprovar briefing', 'Revisar briefing', 'Rejeitado'];
+  const skip = ['Novo cliente', 'Coletar briefing', 'Gerar plano', 'Plano publicado']; // skips the gate
+  const retry = ['Novo cliente', 'Coletar briefing', 'Aprovar briefing', 'Gerar plano', 'Gerar plano', 'Plano publicado'];
+
+  const traces: { caseId: string; events: { activity: string; timestamp: number }[] }[] = [];
+  const push = (prefix: string, n: number, activities: string[], times?: number[]) => {
+    for (let i = 0; i < n; i++) {
+      traces.push({
+        caseId: `${prefix}-${i}`,
+        events: activities.map((activity, j) => ({ activity, timestamp: (times?.[j] ?? j * HOUR) })),
+      });
+    }
+  };
+  push('ok', 78, happy, happyTimes);
+  push('rej', 11, reject);
+  push('skip', 8, skip); // deviation: Coletar briefing → Gerar plano
+  push('retry', 3, retry); // deviation: Gerar plano → Gerar plano
+  return traces;
+}
+
+/**
  * A superseded snapshot of the sample (Handoff 5 §5, `?closed=1`): several
  * elements closed in this version, status deprecated — the canvas shows the
  * always-on hatch + desaturation, the hover/selection-gated "FECHADO" seal

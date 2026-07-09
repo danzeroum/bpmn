@@ -215,6 +215,9 @@ importers:
       '@bpmn-react/core':
         specifier: workspace:*
         version: link:../core
+      '@bpmn-react/replay':
+        specifier: workspace:*
+        version: link:../replay
       '@bpmn-react/simulation':
         specifier: workspace:*
         version: link:../simulation

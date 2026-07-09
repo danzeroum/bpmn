@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { AuditLedger, BpmnXmlConverter, getEdgeChain, type BpmnDiagram } from '@bpmn-react/core';
 import {
   BpmnEditor,
+  BpmnReplay,
   BpmnSimulator,
   EdgePedigreeStrip,
   resolveEditorConfig,
@@ -29,6 +30,7 @@ import {
   buildHealthcareDiagram,
   buildDrdDiagram,
   buildSampleDiagram,
+  buildReplayTraces,
   buildSimulationDiagram,
   buildStressDiagram,
   DEMO_DECISION_TABLE,
@@ -132,8 +134,23 @@ export function App() {
   const studioMode = params.get('studio') !== null;
   // `?simulate=1` enters token-simulation mode (Handoff 7A) over the 3-path demo.
   const simulateMode = params.get('simulate') !== null;
+  // `?replay=1` enters replay mode (Handoff 7B) over the same model + a synthetic log.
+  const replayMode = params.get('replay') !== null;
   if (studioMode) return <StudioSurface />;
   if (libraryMode) return <LibrarySurface />;
+  if (replayMode) {
+    return (
+      <BpmnReplay
+        diagram={buildSimulationDiagram()}
+        traces={buildReplayTraces()}
+        fileName="onboarding_prod_jun.xes"
+        plugins={PLUGINS}
+        onExit={() => {
+          window.location.search = '?simulate=1';
+        }}
+      />
+    );
+  }
   if (simulateMode) {
     return (
       <BpmnSimulator
