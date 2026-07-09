@@ -92,6 +92,9 @@ importers:
       '@bpmn-react/core':
         specifier: workspace:*
         version: link:../core
+      '@bpmn-react/identity':
+        specifier: workspace:*
+        version: link:../identity
       '@bpmn-react/registry':
         specifier: workspace:*
         version: link:../registry
