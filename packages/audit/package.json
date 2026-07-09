@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@bpmn-react/core": "workspace:*",
+    "@bpmn-react/identity": "workspace:*",
     "@bpmn-react/registry": "workspace:*"
   },
   "keywords": [

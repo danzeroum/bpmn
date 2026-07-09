@@ -227,6 +227,334 @@ export class BpmnXmlConverter {
     this.di.applyDi(root, diagram, warnings);
     return { diagram, warnings };
   }
+
+  /** Non-node children of a flow container, consumed elsewhere or ignorable. */
+  private static readonly STRUCTURAL_CHILD_TAGS = new Set([
+    'standardLoopCharacteristics',
+    'multiInstanceLoopCharacteristics',
+    'incoming',
+    'outgoing',
+    'documentation',
+    // Consumed by readDataAssociations on the owning activity; ioSpecification
+    // and its synthesized property targets are bpmn.io plumbing we don't model.
+    'dataInputAssociation',
+    'dataOutputAssociation',
+    'ioSpecification',
+    'property',
+    // Declaration behind a dataObjectReference — the reference carries the
+    // name/DI; the id round-trips via the reference's dataObjectRef attribute.
+    'dataObject',
+  ]);
+
+  /**
+   * Reads the flow elements of a container (`<process>` or, recursively, a
+   * `<subProcess>`), stamping children with their container id
+   * (`properties.parentId`). Before F7 sub-process children were silently
+   * dropped; now they round-trip as first-class nodes.
+   */
+  private readFlowElements(
+    containerEl: XmlElement,
+    parentId: string | undefined,
+    diagram: BpmnDiagram,
+    warnings: string[],
+  ): void {
+    for (const child of containerEl.children) {
+      const tag = localName(child.tag);
+      if (tag === 'extensionElements') continue;
+      if (BpmnXmlConverter.STRUCTURAL_CHILD_TAGS.has(tag) || tag.endsWith('EventDefinition')) {
+        continue; // read via readActivityMarker/readEventDefinition on the container
+      }
+      if (tag === 'laneSet') {
+        if (parentId !== undefined) {
+          warnings.push(`Ignored <laneSet> inside sub-process ${parentId} (not supported)`);
+          continue;
+        }
+        for (const laneEl of childrenByLocalName(child, 'lane')) {
+          const lane = this.readContainer(laneEl, 'lane');
+          if (lane) diagram.nodes[lane.id] = lane;
+        }
+        continue;
+      }
+      if (tag === 'sequenceFlow' || tag === 'association') {
+        const edge = this.readEdge(child, warnings, tag);
+        if (edge) diagram.edges[edge.id] = edge;
+        continue;
+      }
+      const node = this.readNode(child, warnings);
+      if (!node) continue;
+      if (parentId !== undefined) node.properties.parentId = parentId;
+      diagram.nodes[node.id] = node;
+      this.readDataAssociations(child, node.id, diagram, warnings);
+      if (node.type === 'subProcess') {
+        this.readFlowElements(child, node.id, diagram, warnings);
+      }
+    }
+  }
+
+  /**
+   * Reads the standard dataInputAssociation/dataOutputAssociation children of
+   * an activity into `dataAssociation` edges. The activity side is implied by
+   * nesting; the data side comes from the sourceRef (input) / targetRef
+   * (output) child. bpmn.io-style targetRefs pointing at a synthesized
+   * `<bpmn:property>` are ignored — the edge targets the activity itself.
+   */
+  private readDataAssociations(
+    activityEl: XmlElement,
+    activityId: string,
+    diagram: BpmnDiagram,
+    warnings: string[],
+  ): void {
+    const read = (el: XmlElement, kind: 'input' | 'output') => {
+      const refTag = kind === 'input' ? 'sourceRef' : 'targetRef';
+      const ref = firstChildByLocalName(el, refTag)?.text.trim();
+      if (!ref) {
+        warnings.push(
+          `Ignored data ${kind} association ${el.attributes.id ?? '?'} on ${activityId} without a <${refTag}>`,
+        );
+        return;
+      }
+      const { properties, meta } = this.readExtensionElements(el);
+      const edge: BpmnEdge = {
+        id: el.attributes.id ?? generateId(),
+        type: DATA_ASSOCIATION_EDGE_TYPE,
+        sourceId: kind === 'input' ? ref : activityId,
+        targetId: kind === 'input' ? activityId : ref,
+        ...(meta.label ? { label: meta.label } : {}),
+        ...(meta.purpose ? { purpose: meta.purpose } : {}),
+        properties,
+        createdInVersion: meta.createdInVersion ?? '0',
+        ...(meta.removedInVersion ? { removedInVersion: meta.removedInVersion } : {}),
+        ...(meta.supersedesEdgeId ? { supersedesEdgeId: meta.supersedesEdgeId } : {}),
+        audit: { createdAt: new Date().toISOString(), createdBy: 'import', history: [] },
+      };
+      diagram.edges[edge.id] = edge;
+    };
+    for (const el of childrenByLocalName(activityEl, 'dataInputAssociation')) read(el, 'input');
+    for (const el of childrenByLocalName(activityEl, 'dataOutputAssociation')) read(el, 'output');
+  }
+
+  private readVersion(versionMeta: XmlElement | undefined): BpmnDiagram['version'] {
+    if (!versionMeta) {
+      return createVersion({ changeSummary: 'Imported from BPMN XML', createdBy: 'import' });
+    }
+    const a = versionMeta.attributes;
+    const status = VERSION_STATUSES.includes(a.status as VersionStatus)
+      ? (a.status as VersionStatus)
+      : 'draft';
+    return {
+      id: a.versionId ?? generateId(),
+      semanticVersion: a.semanticVersion ?? '0.1.0',
+      status,
+      approvedBy: [],
+      changeSummary: a.changeSummary ?? '',
+      createdBy: a.createdBy ?? 'import',
+      createdAt: a.createdAt ?? new Date().toISOString(),
+      snapshotHash: a.snapshotHash ?? '',
+      ...(a.parentVersionId ? { parentVersionId: a.parentVersionId } : {}),
+    };
+  }
+
+  private readExtensionElements(el: XmlElement): {
+    properties: Record<string, unknown>;
+    meta: Record<string, string>;
+    elements: XmlElement[];
+  } {
+    const container = firstChildByLocalName(el, 'extensionElements');
+    const properties: Record<string, unknown> = {};
+    let meta: Record<string, string> = {};
+    const elements: XmlElement[] = container?.children ?? [];
+    for (const child of elements) {
+      const tag = localName(child.tag);
+      if (tag === 'property') {
+        const name = child.attributes.name;
+        const raw = child.attributes.value;
+        if (name !== undefined && raw !== undefined) {
+          try {
+            properties[name] = JSON.parse(raw);
+          } catch {
+            properties[name] = raw;
+          }
+        }
+      } else if (tag === 'meta') {
+        meta = { ...child.attributes };
+      }
+    }
+    return { properties, meta, elements };
+  }
+
+  private readNode(el: XmlElement, warnings: string[]): BpmnNode | undefined {
+    const tag = localName(el.tag);
+    const { properties, meta } = this.readExtensionElements(el);
+
+    let type: string | undefined;
+    if (meta.type && this.registry.has(meta.type)) {
+      type = meta.type;
+    } else {
+      type = this.registry.typeForXmlTag(tag, this.preferredTypes)?.type;
+    }
+    if (!type) {
+      // complexGateway carries an unmodellable merge/branch expression, so it
+      // is dropped rather than silently downgraded. Surface an explicit,
+      // actionable warning instead of the generic "unsupported" line so the
+      // author knows what was lost and the usual remedy (an inclusive gateway
+      // with conditional flows covers most complex-gateway intents).
+      if (tag === 'complexGateway') {
+        const idAttr = el.attributes.id ? ` id="${el.attributes.id}"` : '';
+        warnings.push(
+          `Dropped <bpmn:complexGateway${idAttr}>: complex gateways are not supported. ` +
+            `Remodel it as an inclusive gateway with conditional sequence flows.`,
+        );
+        return undefined;
+      }
+      warnings.push(`Ignored unsupported element <${el.tag}>`);
+      return undefined;
+    }
+    // Standard <bpmn:{kind}EventDefinition/> child → properties.eventDefinition.
+    const eventDef = readEventDefinition(el);
+    if (eventDef) properties.eventDefinition = eventDef;
+    // Boundary event host + interrupting flag from native attributes.
+    if (type === 'boundaryEvent') {
+      if (el.attributes.attachedToRef) properties.attachedToRef = el.attributes.attachedToRef;
+      if (el.attributes.cancelActivity === 'false') properties.cancelActivity = false;
+    }
+    // Call activity target process / data element backing ids — all native
+    // BPMN attributes, round-tripped without bpmnr:property double-encoding.
+    if (type === 'callActivity' && el.attributes.calledElement) {
+      properties.calledElement = el.attributes.calledElement;
+    }
+    if (type === 'dataStore' && el.attributes.dataStoreRef) {
+      properties.dataStoreRef = el.attributes.dataStoreRef;
+    }
+    if (type === 'dataObject' && el.attributes.dataObjectRef) {
+      properties.dataObjectRef = el.attributes.dataObjectRef;
+    }
+    // Standard loopCharacteristics child → properties.marker.
+    const marker = readActivityMarker(el);
+    if (marker) properties.marker = marker;
+    const def = this.registry.get(type);
+    return {
+      id: el.attributes.id ?? generateId(),
+      type,
+      label: el.attributes.name ?? def.label,
+      x: 0,
+      y: 0,
+      width: def.defaultSize.width,
+      height: def.defaultSize.height,
+      properties,
+      createdInVersion: meta.createdInVersion ?? '0',
+      ...(meta.removedInVersion ? { removedInVersion: meta.removedInVersion } : {}),
+      audit: { createdAt: new Date().toISOString(), createdBy: 'import', history: [] },
+    };
+  }
+
+  /** Reads a pool (participant) or lane element into a container node. */
+  private readContainer(el: XmlElement, type: 'pool' | 'lane'): BpmnNode | undefined {
+    const def = this.registry.has(type) ? this.registry.get(type) : undefined;
+    if (!def) return undefined;
+    const properties: Record<string, unknown> = {};
+    if (type === 'lane') {
+      const refs = childrenByLocalName(el, 'flowNodeRef')
+        .map((c) => c.text.trim())
+        .filter(Boolean);
+      if (refs.length > 0) properties.flowNodeRefs = refs;
+    }
+    return {
+      id: el.attributes.id ?? generateId(),
+      type,
+      label: el.attributes.name ?? def.label,
+      x: 0,
+      y: 0,
+      width: def.defaultSize.width,
+      height: def.defaultSize.height,
+      properties,
+      createdInVersion: '0',
+      audit: { createdAt: new Date().toISOString(), createdBy: 'import', history: [] },
+    };
+  }
+
+  private readEdge(
+    el: XmlElement,
+    warnings: string[],
+    defaultType: 'sequenceFlow' | 'messageFlow' | 'association' = 'sequenceFlow',
+  ): BpmnEdge | undefined {
+    const sourceId = el.attributes.sourceRef;
+    const targetId = el.attributes.targetRef;
+    if (!sourceId || !targetId) {
+      warnings.push(
+        `Ignored ${localName(el.tag)} ${el.attributes.id ?? '?'} without source/target refs`,
+      );
+      return undefined;
+    }
+    const { properties, meta } = this.readExtensionElements(el);
+    return {
+      id: el.attributes.id ?? generateId(),
+      type: meta.type ?? defaultType,
+      sourceId,
+      targetId,
+      ...(el.attributes.name ? { label: el.attributes.name } : {}),
+      ...(meta.purpose ? { purpose: meta.purpose } : {}),
+      properties,
+      createdInVersion: meta.createdInVersion ?? '0',
+      ...(meta.removedInVersion ? { removedInVersion: meta.removedInVersion } : {}),
+      ...(meta.supersedesEdgeId ? { supersedesEdgeId: meta.supersedesEdgeId } : {}),
+      audit: { createdAt: new Date().toISOString(), createdBy: 'import', history: [] },
+    };
+  }
+
+  private applyDi(root: XmlElement, diagram: BpmnDiagram, warnings: string[]): void {
+    const shapes = findByLocalName(root, 'BPMNShape');
+    for (const shape of shapes) {
+      const elementId = shape.attributes.bpmnElement;
+      const node = elementId ? diagram.nodes[elementId] : undefined;
+      const bounds = firstChildByLocalName(shape, 'Bounds');
+      if (!node || !bounds) continue;
+      const x = Number(bounds.attributes.x);
+      const y = Number(bounds.attributes.y);
+      const width = Number(bounds.attributes.width);
+      const height = Number(bounds.attributes.height);
+      if ([x, y, width, height].some(Number.isNaN)) {
+        warnings.push(`Invalid bounds for shape ${elementId}`);
+        continue;
+      }
+      // BPMN DI carries a sub-process' expansion on its shape.
+      const properties =
+        node.type === 'subProcess' && shape.attributes.isExpanded !== undefined
+          ? { ...node.properties, isExpanded: shape.attributes.isExpanded === 'true' }
+          : node.properties;
+      diagram.nodes[node.id] = { ...node, x, y, width, height, properties };
+    }
+
+    const diEdges = findByLocalName(root, 'BPMNEdge');
+    for (const diEdge of diEdges) {
+      const elementId = diEdge.attributes.bpmnElement;
+      const edge = elementId ? diagram.edges[elementId] : undefined;
+      if (!edge) continue;
+      const waypoints: Point[] = [];
+      for (const wp of childrenByLocalName(diEdge, 'waypoint')) {
+        const x = Number(wp.attributes.x);
+        const y = Number(wp.attributes.y);
+        if (Number.isNaN(x) || Number.isNaN(y)) continue;
+        waypoints.push({ x, y });
+      }
+      if (waypoints.length >= 2) {
+        diagram.edges[edge.id] = { ...edge, waypoints };
+      }
+    }
+
+    // If no DI at all, spread nodes on a simple grid so the import is usable.
+    const hasAnyDi = shapes.length > 0;
+    if (!hasAnyDi) {
+      const nodes = activeNodes(diagram);
+      nodes.forEach((node, index) => {
+        diagram.nodes[node.id] = {
+          ...node,
+          x: 80 + (index % 4) * 200,
+          y: 80 + Math.floor(index / 4) * 140,
+        };
+      });
+      if (nodes.length > 0) warnings.push('Document has no BPMN DI — applied automatic grid layout');
+    }
+  }
 }
 
 /** BPMN ids must be valid NCNames; fall back to a prefixed form when not. */

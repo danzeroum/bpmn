@@ -14,9 +14,12 @@ const EXPECTED_EXPORTS = [
   'attestationHash',
   'buildAssuranceCase',
   'canonicalAttestation',
+  'collectSignedApprovals',
   'renderAssuranceCaseHtml',
+  'signaturePromotionRule',
   'toXES',
   'verifyLedger',
+  'verifyLedgerSignatures',
 ].sort();
 
 describe('@bpmn-react/audit public API surface', () => {

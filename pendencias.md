@@ -370,6 +370,22 @@ Ed25519 (mesmo padrão de injeção do Signer); nenhuma mudança na `identity`.
   entregue e testada (`anchor-git` `verify → mismatch`; `AnchorSeal`/`useAnchorCycle` estado
   `broken`); falta só a superfície do banner no explorer. `anchor-rfc3161`/`anchor-s3` são I-4.
 
+**I-5 — SACM assinado + gate de assinatura + verifyLedger estendido (decisões de escopo, 09/07).**
+- **Gate de assinatura** (`signaturePromotionRule` em `@bpmn-react/audit`) é um `PromotionRule` que o
+  host injeta em `lifecycleConfig.promotionRules` — ON por default quando a instalação configura
+  identity (i.e., quando o host injeta a regra). Fecha só a promoção a `active`; papel sem assinatura
+  válida bloqueia. Fica como injeção do host (não hard-coded no core, que não conhece identity).
+- **`verifyLedgerSignatures` + `collectSignedApprovals`** (audit) re-verificam as assinaturas gravadas
+  no `details.signedApproval` — base para o explorer e para o SACM.
+- **SACM assinado**: `buildAssuranceCase` enriquece os aprovadores com o estado da assinatura
+  (`resolvePublicKey` injetado) + linha de âncora no rodapé; assinatura inválida → claim C1 "não
+  sustentada". Invariante do gerador estendido para "…e assinada quando a instalação suporta".
+- **Banner de "Verificar cadeia" 3-estados no Ledger Explorer (íntegra / íntegra-mas-não-ancorada /
+  rompida) + `CADEIA ≠ ÂNCORA` — follow-up contido.** Precisa persistir o *receipt* da âncora no
+  ledger (entrada `ANCHOR_RECORDED`) para o explorer re-verificar contra a cadeia atual; a biblioteca
+  de verificação (`verifyLedgerSignatures` + `AnchorAdapter.verify`) já está pronta. A **detecção** de
+  assinatura inválida e de mismatch de âncora já está entregue e testada (audit + `useAnchorCycle`).
+
 **Nota para o Handoff 9 (registrar, não implementar — §7 do handoff).** O **Copiloto (IA governada)**
 vem depois do 8: autoria `ia.copilot@modelo` só tem força quando as aprovações humanas são assinadas
 (depende da cadeia de assinatura desta camada). Junto dele, avaliação **S-FEEL mínima** para o
