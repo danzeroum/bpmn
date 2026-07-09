@@ -52,6 +52,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'replay',
+      include: ['packages/replay/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'audit',
       include: ['packages/audit/tests/**/*.test.ts'],
       environment: 'node',

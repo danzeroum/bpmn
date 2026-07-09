@@ -58,6 +58,23 @@ Documented deliberately so expectations are managed — none of these fail silen
   duplicated because `simulation` depends only on `core`, and pinned identical by
   `packages/simulation/tests/soundnessAgreement.test.ts`).
 
+## Replay / conformance (`@bpmn-react/replay`, Handoff 7B)
+- **Token-replay fitness only, never alignments (cerca §0.2).** Conformance means: a transition in
+  the log with no corresponding edge in the model is a deviation; `fitness = fit moves / total
+  moves`, and a case is conformant when it replays with zero deviations. Optimal alignments (A\*
+  over model×log — the process-mining state-of-the-art) are intentionally **out of scope**
+  (registered in [`pendencias.md`](../pendencias.md)); the fitness here is a fast, honest
+  frequency-of-fit metric, not an optimal-alignment cost.
+- **Events map to nodes by normalized activity name** (node `name`, falling back to `id`);
+  activities with no matching node are reported (`unmapped`) and their transitions count as
+  deviations. There is no fuzzy/semantic matching.
+- **Node times are sojourn times** — the average gap from an activity to the next event in the same
+  case (no start/complete lifecycle pairing in v1). Edge times are the average transition gap.
+- **One-pass aggregation, no DOM** (cerca §0.3): a 100k-event log aggregates in < 2s; the overlay
+  animates only *sampled* variant traces, never one token per event.
+- The engine imports nothing from the ecosystem (operates on an injected `{ nodes, edges }`),
+  pinned by `packages/replay/tests/independence.test.ts` + the fake-graph acid test.
+
 ## Governance
 - The library records `UserContext` data as given; authentication/authorization is the host
   application's responsibility.

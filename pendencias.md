@@ -313,8 +313,12 @@ forma aproximada (documentado em `limitations.md`: split multi-seleção manual,
 nenhum outro token vivo alcança o merge). Semântica inclusive exata (análise global de merge) fica
 FORA; registrar aqui se houver demanda concreta de um caso real que a aproximação erre.
 
-**Alignments ótimos (7B, cerca §0.2) — adiado.** Conformance do replay será token-replay fitness
-apenas; alignments A\* sobre modelo×log ficam fora. (Reconfirmar quando 7B-1 entrar.)
+**Alignments ótimos (7B, cerca §0.2) — adiado, confirmado no 7B-1.** `@bpmn-react/replay` entrega
+**token-replay fitness apenas** (`fitness = fit moves / total moves`, caso conformante = zero
+desvios). Alignments A\* sobre modelo×log (custo ótimo de alinhamento) ficam FORA, de propósito —
+é um subsistema de process mining com orçamento próprio. Registrar aqui se surgir demanda concreta
+onde a fitness de frequência engane (ex.: log muito ruidoso onde o alinhamento ótimo daria um
+diagnóstico materialmente diferente). Documentado em `limitations.md`.
 
 ## Resolvidas (para histórico)
 
