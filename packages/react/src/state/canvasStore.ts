@@ -36,6 +36,26 @@ export interface SelectionBoxState {
   current: Point;
 }
 
+/**
+ * A manual-route edit in progress (Handoff 10 R-3): the user is dragging a
+ * waypoint handle (or a freshly inserted bend). `waypoints` is the live route
+ * with the dragged point tracking the pointer; committing turns the edge
+ * manual in one command.
+ */
+export interface EdgeDragState {
+  edgeId: string;
+  /** Index of the waypoint being dragged within `waypoints`. */
+  index: number;
+  /** Working route (endpoints included); the dragged point follows the pointer. */
+  waypoints: Point[];
+  /** World-space pointer position when the gesture started. */
+  origin: Point;
+  /** Original position of the dragged point — the drag delta is applied to it. */
+  grabbed: Point;
+  /** True once the drag threshold was crossed (a click must not author a bend). */
+  active: boolean;
+}
+
 export type ResizeCorner = 'nw' | 'ne' | 'sw' | 'se';
 
 export interface ResizeState {
@@ -52,10 +72,14 @@ export interface CanvasState {
   viewport: Viewport;
   selectedIds: string[];
   hoveredId: string | null;
+  /** Edge currently hovered — reveals its route handles + manual badge (R-3). */
+  hoveredEdgeId: string | null;
   dragState: DragState | null;
   connectState: ConnectState | null;
   selectionBox: SelectionBoxState | null;
   resizeState: ResizeState | null;
+  /** In-progress manual-route edit (waypoint/segment drag), R-3. */
+  edgeDrag: EdgeDragState | null;
   /** Id of the node whose label is being edited inline, if any. */
   editingNodeId: string | null;
   isPanning: boolean;
@@ -119,10 +143,12 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     viewport: { x: 0, y: 0, width: 1200, height: 800 },
     selectedIds: [],
     hoveredId: null,
+    hoveredEdgeId: null,
     dragState: null,
     connectState: null,
     selectionBox: null,
     resizeState: null,
+    edgeDrag: null,
     editingNodeId: null,
     isPanning: false,
     gridSize: 20,

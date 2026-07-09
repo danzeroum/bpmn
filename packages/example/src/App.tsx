@@ -32,6 +32,7 @@ import {
   buildHealthcareDiagram,
   buildDrdDiagram,
   buildAstarDiagram,
+  buildManualRouteDiagram,
   buildSampleDiagram,
   buildReplayTraces,
   buildSimulationDiagram,
@@ -144,6 +145,7 @@ export function App() {
     const stress = params.get('stress');
     if (stress) return buildStressDiagram(Number(stress) || 350, Number(params.get('closed')) || 0);
     if (params.get('astar')) return buildAstarDiagram();
+    if (params.get('manual')) return buildManualRouteDiagram();
     if (params.get('deadlock')) return buildDeadlockDiagram();
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
