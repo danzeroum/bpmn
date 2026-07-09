@@ -320,6 +320,15 @@ desvios). Alignments A\* sobre modelo×log (custo ótimo de alinhamento) ficam F
 onde a fitness de frequência engane (ex.: log muito ruidoso onde o alinhamento ótimo daria um
 diagnóstico materialmente diferente). Documentado em `limitations.md`.
 
+**Replay ⇄ governança (7B-3) — run-store é do host.** `bindRun` (registry) é uma *factory* de
+valor imutável (`RunBinding`), não um armazém: o registry não guarda runs nem tem query
+"runs-por-versão". O host injeta esse armazenamento — no demo, uma lista de execuções por versão
+alimenta o seletor de versão ("N execuções presas à vX") e filtra o log. A análise comparativa
+(gargalo real vs. o que a candidata muda) é anexada ao pedido de promoção como **entrada no ledger**
+(`REPLAY_ANALYSIS_ATTACHED`, adapter `replayAnalysisEntry` em adapters-bpmn) e relida na Revisão do
+Aprovador via `latestReplayAnalysis` — tudo por injeção, degradável (sem análise → sem bloco). O
+pacote `replay` continua sem importar audit/registry.
+
 ## Resolvidas (para histórico)
 
 - ~~Lane membership manual/data-only~~ → interativa na Fase 5a.

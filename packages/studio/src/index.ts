@@ -1,7 +1,7 @@
 export { StudioShell } from './StudioShell.js';
 export type { StudioScreen, StudioShellProps } from './StudioShell.js';
 export { ReviewScreen } from './review/ReviewScreen.js';
-export type { ReviewScreenProps } from './review/ReviewScreen.js';
+export type { ReviewScreenProps, ReviewReplayAnalysis } from './review/ReviewScreen.js';
 export { approvalsProgress, pendingPromotions } from './review/queue.js';
 export type { PendingPromotionsInput, PromotionRequest } from './review/queue.js';
 export { LedgerExplorer } from './ledger/LedgerExplorer.js';

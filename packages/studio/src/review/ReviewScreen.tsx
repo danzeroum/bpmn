@@ -33,7 +33,26 @@ export interface ReviewScreenProps {
   onDecided?: (result: DecisionResult) => void;
   /** Renders the "abrir no canvas →" link when provided (read-only Designer). */
   onOpenInDesigner?: (diagram: BpmnDiagram) => void;
+  /**
+   * Replay analysis attached to a candidate's promotion (Handoff 7B-3, host
+   * injection — usually `latestReplayAnalysis` over the ledger). When it returns
+   * a value, the review shows an "ANÁLISE DE REPLAY" block; absent → no block.
+   */
+  replayAnalysisFor?: (diagram: BpmnDiagram) => ReviewReplayAnalysis | undefined;
   now?: () => string;
+}
+
+/** The attached replay analysis the Approver Review renders (structural). */
+export interface ReviewReplayAnalysis {
+  headline: string;
+  fitness: number;
+  totalCases: number;
+  analyzedVersion: string;
+  bottleneck?: string;
+  deviation?: string;
+  deviationCases?: number;
+  author: string;
+  timestamp: string;
 }
 
 /**
@@ -43,7 +62,7 @@ export interface ReviewScreenProps {
  * Approving NEVER activates (§11): a solicitante executa a promoção final.
  */
 export function ReviewScreen(props: ReviewScreenProps) {
-  const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onOpenInDesigner, now } =
+  const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onOpenInDesigner, replayAnalysisFor, now } =
     props;
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
@@ -238,6 +257,29 @@ export function ReviewScreen(props: ReviewScreenProps) {
                 <p className="btv-studio-muted">Primeira versão — não há baseline para comparar.</p>
               )}
             </section>
+
+            {(() => {
+              const analysis = replayAnalysisFor?.(selected.diagram);
+              if (!analysis) return null;
+              return (
+                <section className="btv-studio-block" data-testid="review-replay">
+                  <span className="btv-studio-kicker">ANÁLISE DE REPLAY (ANEXADA)</span>
+                  <p className="btv-studio-replay-headline" data-replay-headline>
+                    {analysis.headline}
+                  </p>
+                  <div className="btv-studio-replay-meta">
+                    fitness {(analysis.fitness * 100).toFixed(1).replace('.', ',')}% ·{' '}
+                    {analysis.totalCases.toLocaleString('pt-BR')} casos
+                    {analysis.bottleneck ? ` · gargalo "${analysis.bottleneck}"` : ''}
+                    {analysis.deviation
+                      ? ` · ${analysis.deviationCases ?? 0} desvios em "${analysis.deviation}"`
+                      : ''}
+                    <br />
+                    anexado por {analysis.author}
+                  </div>
+                </section>
+              );
+            })()}
 
             <section className="btv-studio-block">
               <span className="btv-studio-kicker">VERIFICAÇÕES AUTOMÁTICAS</span>

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, cleanup } from '@testing-library/react';
 import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@bpmn-react/core';
 import type { Trace } from '@bpmn-react/replay';
@@ -84,6 +84,55 @@ describe('BpmnReplay', () => {
     const play = container.querySelector<HTMLButtonElement>('[data-replay-play="0"]')!;
     fireEvent.click(play);
     expect(container.querySelector('[data-replay-token]')).toBeInTheDocument();
+    cleanup();
+  });
+});
+
+describe('BpmnReplay — governance (7B-3)', () => {
+  const versions = [
+    { versionId: 'v20', semanticVersion: '2.0.0', runCount: 3, traces },
+    { versionId: 'v21', semanticVersion: '2.1.0', status: 'candidate', runCount: 0, traces: [] },
+  ];
+  const candidate = { semanticVersion: '2.1.0', change: 'boundary timer de 48h' };
+
+  it('shows a version selector and the comparison card for the version with runs', () => {
+    const { container } = render(
+      <BpmnReplay diagram={linearModel()} versions={versions} candidate={candidate} author="ana" now={() => '2026-07-09T00:00:00.000Z'} />,
+    );
+    expect(container.querySelectorAll('[data-replay-version]')).toHaveLength(2);
+    // v2.0.0 (with runs) is selected by default.
+    expect(container.querySelector('[data-replay-version="v20"][data-active]')).toBeInTheDocument();
+    const compare = container.querySelector('[data-replay-compare-text]');
+    expect(compare?.textContent).toContain('O gargalo real da v2.0.0');
+    expect(compare?.textContent).toContain('a v2.1.0 ataca isso: boundary timer de 48h');
+    cleanup();
+  });
+
+  it('attaches the analysis to the promotion via the injected callback', () => {
+    const onAttach = vi.fn();
+    const { container } = render(
+      <BpmnReplay diagram={linearModel()} versions={versions} candidate={candidate} onAttachAnalysis={onAttach} author="ana" now={() => '2026-07-09T00:00:00.000Z'} />,
+    );
+    fireEvent.click(container.querySelector<HTMLButtonElement>('[data-replay-attach]')!);
+    expect(onAttach).toHaveBeenCalledTimes(1);
+    expect(onAttach.mock.calls[0][0]).toMatchObject({
+      versionId: 'v20',
+      candidateSemanticVersion: '2.1.0',
+      bottleneck: { label: 'B' },
+    });
+    // The button flips to the confirmation.
+    expect(container.querySelector('[data-replay-attached]')).toBeInTheDocument();
+    cleanup();
+  });
+
+  it('switching to the candidate (no runs) shows the empty state, no comparison', () => {
+    const { container } = render(
+      <BpmnReplay diagram={linearModel()} versions={versions} candidate={candidate} author="ana" now={() => '2026-07-09T00:00:00.000Z'} />,
+    );
+    fireEvent.click(container.querySelector<HTMLButtonElement>('[data-replay-version="v21"]')!);
+    expect(container.querySelector('[data-replay-version="v21"][data-active]')).toBeInTheDocument();
+    expect(container.querySelector('[data-replay-compare]')).not.toBeInTheDocument();
+    expect(container.querySelector('[data-replay-fitness]')?.textContent?.trim()).toBe('—'); // no runs
     cleanup();
   });
 });

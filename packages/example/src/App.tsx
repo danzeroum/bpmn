@@ -23,7 +23,7 @@ import { domainExamplePlugin } from '@bpmn-react/domain-example';
 import { healthcarePlugin } from '@bpmn-react/healthcare';
 import { callActivityBindingRule, VersionRegistry } from '@bpmn-react/registry';
 import { soundnessPromotionRule, soundnessRules } from '@bpmn-react/soundness';
-import { simulationSessionEntry } from '@bpmn-react/adapters-bpmn';
+import { replayAnalysisEntry, simulationSessionEntry } from '@bpmn-react/adapters-bpmn';
 import {
   buildClosedDiagram,
   buildDeadlockDiagram,
@@ -107,6 +107,14 @@ const PLUGINS = [domainExamplePlugin, dmnDemoPlugin, healthcarePlugin, observabi
 /** In-memory ledger the `?simulate` demo registers sessions into (Handoff 7A-3). */
 const simulationDemoLedger = new AuditLedger();
 
+/** Two versions with bound runs for the `?replay` demo header (bindRun, 7B-3). */
+const REPLAY_VERSIONS = [
+  { versionId: 'v20', semanticVersion: '2.0.0', runCount: 100, traces: buildReplayTraces() },
+  { versionId: 'v21', semanticVersion: '2.1.0', status: 'candidate', runCount: 0, traces: [] },
+];
+/** Ledger the `?replay` demo attaches its comparative analysis into (7B-3). */
+const replayDemoLedger = new AuditLedger();
+
 export function App() {
   const [diagram, setDiagram] = useState<BpmnDiagram>(() => {
     // `?stress=350` loads the synthetic perf grid (see perf.spec.ts / NFR);
@@ -142,9 +150,16 @@ export function App() {
     return (
       <BpmnReplay
         diagram={buildSimulationDiagram()}
-        traces={buildReplayTraces()}
+        versions={REPLAY_VERSIONS}
+        candidate={{ semanticVersion: '2.1.0', change: 'boundary timer de 48h + escalation' }}
+        author="demo"
         fileName="onboarding_prod_jun.xes"
         plugins={PLUGINS}
+        // Handoff 7B-3: attach the comparative analysis to the candidate's
+        // promotion — a ledger entry (host injection) the Approver Review reads.
+        onAttachAnalysis={(analysis) => {
+          void replayDemoLedger.append(replayAnalysisEntry(analysis, { id: 'demo' }, 'v21'));
+        }}
         onExit={() => {
           window.location.search = '?simulate=1';
         }}

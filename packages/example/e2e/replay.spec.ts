@@ -49,6 +49,26 @@ test('reproduces a sampled variant with the violet token', async ({ page }) => {
   await expect(page.locator('[data-replay-token]')).toBeVisible();
 });
 
+test('filters by version (bindRun) and attaches the analysis to the promotion (7B-3)', async ({ page }) => {
+  await page.goto('/?replay=1');
+  await expect(canvas(page)).toBeVisible();
+
+  // Version selector: v2.0.0 has runs and is selected; v2.1.0 is the candidate.
+  await expect(page.locator('[data-replay-version="v20"]')).toContainText('100 execuções');
+  await expect(page.locator('[data-replay-version="v21"]')).toContainText('candidata');
+  await expect(page.locator('[data-replay-version="v20"][data-active]')).toHaveCount(1);
+
+  // Comparison card names the bottleneck and the candidate fix, then attaches.
+  await expect(page.locator('[data-replay-compare-text]')).toContainText('O gargalo real da v2.0.0');
+  await page.locator('[data-replay-attach]').click();
+  await expect(page.locator('[data-replay-attached]')).toBeVisible();
+
+  // Switching to the candidate (no runs) shows the empty state, no comparison.
+  await page.locator('[data-replay-version="v21"]').click();
+  await expect(page.locator('[data-replay-fitness]')).toHaveText('—');
+  await expect(page.locator('[data-replay-compare]')).toHaveCount(0);
+});
+
 test.describe('reduced motion', () => {
   test('the heatmap and variant playback stay operable without animation', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });

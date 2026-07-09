@@ -55,6 +55,31 @@ describe('ReviewScreen — TELA 2 (§5)', () => {
     });
   });
 
+  it('renders the attached replay analysis block when injected (7B-3)', async () => {
+    setup({
+      replayAnalysisFor: () => ({
+        headline: 'O gargalo real da v2.0.0 é "Gerar plano" (⌀ 31 h) — a v2.1.0 ataca isso',
+        fitness: 0.912,
+        totalCases: 1240,
+        analyzedVersion: '2.0.0',
+        bottleneck: 'Gerar plano',
+        deviation: 'Coletar briefing → Gerar plano',
+        deviationCases: 96,
+        author: 'ana',
+        timestamp: '2026-07-08T00:00:00.000Z',
+      }),
+    });
+    expect(await screen.findByText('ANÁLISE DE REPLAY (ANEXADA)')).toBeInTheDocument();
+    expect(screen.getByText(/O gargalo real da v2\.0\.0/)).toBeInTheDocument();
+    expect(screen.getByText(/fitness 91,2% · 1\.240 casos · gargalo "Gerar plano"/)).toBeInTheDocument();
+  });
+
+  it('omits the replay block when no analysis is attached', async () => {
+    setup();
+    await screen.findByText('VERIFICAÇÕES AUTOMÁTICAS');
+    expect(screen.queryByTestId('review-replay')).not.toBeInTheDocument();
+  });
+
   it('approve records the decision: green card with ledger hash, immutable', async () => {
     const onDecided = vi.fn();
     const { ledger } = setup({ onDecided });
