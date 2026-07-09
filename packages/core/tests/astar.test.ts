@@ -156,4 +156,54 @@ describe('routeAStar', () => {
   it('exposes the default clearance', () => {
     expect(DEFAULT_CLEARANCE).toBe(12);
   });
+
+  it('reports the chosen source/target sides (feeds port hysteresis)', () => {
+    const source = rect(0, 100);
+    const target = rect(400, 100);
+    const r = routeAStar(source, target, { obstacles: [] });
+    expect(r.sourceSide).toBe('right');
+    expect(r.targetSide).toBe('left');
+  });
+
+  it('port hysteresis: keeps the preferred side pair unless another is >20% cheaper', () => {
+    // Endpoints roughly diagonal so left/right and top/bottom pairings are
+    // close in cost — the regime where flip-flop happens.
+    const source = rect(0, 0);
+    const target = rect(120, 120);
+    const baseline = routeAStar(source, target, { obstacles: [] });
+    // Force a preference for a pairing that is NOT the natural min; with a big
+    // hysteresis margin the router must honour it (it's not 100% cheaper).
+    const held = routeAStar(source, target, {
+      obstacles: [],
+      preferredSourceSide: 'bottom',
+      preferredTargetSide: 'top',
+      hysteresis: 0.99,
+    });
+    expect(held.sourceSide).toBe('bottom');
+    expect(held.targetSide).toBe('top');
+    // With hysteresis 0 the router is free to pick its natural minimum again.
+    const free = routeAStar(source, target, {
+      obstacles: [],
+      preferredSourceSide: 'bottom',
+      preferredTargetSide: 'top',
+      hysteresis: 0,
+    });
+    expect(free.sourceSide).toBe(baseline.sourceSide);
+  });
+
+  it('forced source port: routes from the supplied port (parallel corridors)', () => {
+    const source = rect(0, 100);
+    const target = rect(400, 100);
+    const r = routeAStar(source, target, {
+      obstacles: [],
+      sourcePort: {
+        side: 'right',
+        anchor: { x: 80, y: 108 }, // 8px below the border centre (y=130 → 138? centre is 130)
+        port: { x: 96, y: 108 },
+      },
+    });
+    expect(r.routed).toBe(true);
+    expect(r.sourceSide).toBe('right');
+    expect(r.waypoints[0]).toEqual({ x: 80, y: 108 }); // exits from the forced anchor
+  });
 });

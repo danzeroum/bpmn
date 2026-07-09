@@ -165,6 +165,13 @@ function EdgeRendererInner({
   const showHandles = (hovered || selected) && !closed && !dragging;
   const editable = showHandles && selected && !readOnly && Boolean(interactions);
 
+  // Edge labels sit on the LONGEST segment of the route, not the geometric
+  // midpoint (§4) — the readability §8.1 criterion depends on it.
+  const labelPoint =
+    edge.waypoints && edge.waypoints.length >= 2 && !dragging
+      ? longestSegmentMidpoint(liveWaypoints && liveWaypoints.length >= 2 ? liveWaypoints : edge.waypoints)
+      : geometry.midpoint;
+
   // Mid-segment decoration is tied to the edge type (not selection); hidden
   // only on retired edges.
   const decoration = closed ? undefined : domainStyle?.midDecoration;
@@ -220,8 +227,8 @@ function EdgeRendererInner({
       {edge.label && (
         <text
           className="bpmnr-edge-label"
-          x={geometry.midpoint.x}
-          y={geometry.midpoint.y - 8}
+          x={labelPoint.x}
+          y={labelPoint.y - 8}
           textAnchor="middle"
           fontSize={11}
           fill={theme.textMuted}
@@ -441,6 +448,24 @@ function ManualBadge({ x, y }: { x: number; y: number }) {
       </text>
     </g>
   );
+}
+
+/** Midpoint of the longest segment of a polyline route (§4 label placement). */
+export function longestSegmentMidpoint(waypoints: Point[]): Point {
+  let best = 0;
+  let bestLen = -1;
+  for (let i = 0; i + 1 < waypoints.length; i++) {
+    const a = waypoints[i];
+    const b = waypoints[i + 1];
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (len > bestLen) {
+      bestLen = len;
+      best = i;
+    }
+  }
+  const a = waypoints[best];
+  const b = waypoints[best + 1] ?? a;
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
 
 export const EdgeRenderer = memo(EdgeRendererInner);

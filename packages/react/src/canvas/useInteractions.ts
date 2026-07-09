@@ -30,8 +30,10 @@ import { useCanvasStore } from '../contexts/CanvasContext.js';
 import type { ResizeCorner, SettlingEntry } from '../state/canvasStore.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import {
+  computeRoutedWaypoints,
   edgeObstacles,
   edgeRouteCollides,
+  isManualEdge,
   rerouteConnectedEdges,
   translateManualEdges,
   type RouteMode,
@@ -707,6 +709,23 @@ function appendRerouteCommands(
       updateEdgeCommand(t.edgeId, {
         waypoints: t.waypoints,
         properties: { routeCollision: t.collides ? true : undefined },
+      }),
+    );
+  }
+  // Fallback recovery (edge case 4): a route with no corridor self-heals when
+  // an obstacle move opens space — retry the *flagged* auto edges (not the
+  // connected ones, already handled) and clear ⚠ only if a corridor is found.
+  // Bounded to fallbacks, so healthy unrelated edges are never recomputed.
+  for (const edge of Object.values(nextDiagram.edges)) {
+    if (!edge.properties.routeFallback) continue;
+    if (movedIds.has(edge.sourceId) || movedIds.has(edge.targetId)) continue;
+    if (isManualEdge(edge)) continue;
+    const result = computeRoutedWaypoints(nextDiagram, edge, defaultRouter);
+    if (!result || !result.routed) continue; // still no corridor → leave it flagged
+    commands.push(
+      updateEdgeCommand(edge.id, {
+        waypoints: result.waypoints,
+        properties: { routeMode: 'auto' satisfies RouteMode, routeFallback: undefined },
       }),
     );
   }

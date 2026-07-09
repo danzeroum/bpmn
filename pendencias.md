@@ -487,9 +487,48 @@ edição + translação rígida no `useInteractions`; `RouteEditLayer` + `Manual
 colisão no `EdgeRenderer`; botão "Voltar ao automático" no `PropertiesPanel`; `EdgeDragState`/
 `hoveredEdgeId` no store; unit + integração + e2e (`?manual=1`, caso de borda 6 + §8.3).
 
-**R-3b (adiado, próximo):** menu de contexto de aresta ("voltar ao automático" fora do inspector);
-histerese de porta (só troca de lado se custo melhora >20%); polimento de label no maior segmento
-livre. Nenhum bloqueia o ciclo manual entregue.
+**R-3b:** os dois itens de layout (label no maior segmento livre e histerese de porta) foram
+**incorporados na R-4** (o critério §8.1 de legibilidade depende do label; a histerese evita o
+flip-flop que "Limpar roteamento" tornaria frequente). Fica só o **menu de contexto de aresta** —
+conveniência pura, o inspector já cobre "voltar ao automático".
+
+### 11.3 R-4 — limpar roteamento + corredores paralelos + fallback (decisões registradas)
+
+Decisões tomadas ao iniciar a R-4:
+
+1. **"Limpar roteamento" = UM comando undoável para o diagrama inteiro.** `clearRoutingCommands`
+   recomputa todas as arestas `astar` automáticas e, por default, **preserva rotas manuais**;
+   o toolbar embrulha o resultado num único `compositeCommand('Clear routing', …)`. O toast reporta
+   **contagens reais** (`reoptimized` re-otimizadas / `preserved` manuais preservadas). Reset total
+   (`includeManual: true`, dobra as manuais de volta a auto) só via botão secundário com
+   `window.confirm`. Rota idêntica à atual não gera comando (no-op honesto).
+2. **Corredores paralelos 8px (§4, caso de borda 5).** `routeAndSpread`: 2 passes determinísticos —
+   (1) roteia cada aresta para descobrir o lado de saída; (2) grupos de ≥2 irmãs que compartilham
+   origem+lado são ordenados pela posição do alvo e re-roteados de uma porta deslocada `±8px` ao
+   longo da borda (via nova opção `sourcePort` do `routeAStar`). Lanes na mesma ordem dos alvos ⇒
+   **sem cruzamento entre irmãs**. Aplicado no batch (load `deriveAstarRoutes` + "Limpar
+   roteamento"); o move de host individual continua per-aresta com histerese.
+3. **Fallback sem-corredor revalida sozinho (caso de borda 4).** Além do reroute das arestas
+   conectadas (R-2b), todo move re-tenta as arestas auto **já marcadas `routeFallback`** (poucas,
+   limitado) e limpa o ⚠ **só** se um corredor aparecer — então afastar o obstáculo cura a rota sem
+   ação. Arestas saudáveis não relacionadas continuam intocadas (zero-recalc, §8.2).
+4. **Histerese de porta (§6, ex-R-3b).** `routeAStar` ganha `preferredSourceSide`/
+   `preferredTargetSide` + `hysteresis` e retorna os lados escolhidos; `computeRoutedWaypoints`
+   deriva os lados anteriores dos waypoints atuais e exige ganho de custo > 20% para trocar de face —
+   mata o flip-flop ao mover 2px.
+5. **Label no maior segmento livre (§4, ex-R-3b).** `longestSegmentMidpoint` posiciona o rótulo no
+   ponto médio do segmento mais longo da rota (não no ponto médio geométrico) — de que depende o
+   critério de legibilidade §8.1.
+
+Escopo R-4 (entregue): `routeAStar` com `sourcePort`/histerese + lados no retorno (core);
+`astarAutoEdgeIds`/`routeAndSpread`/`clearRoutingCommands`/`sideOfAnchor` + histerese em
+`computeRoutedWaypoints` + recuperação de fallback no `useInteractions` (`routeEdge.ts`);
+`longestSegmentMidpoint` no `EdgeRenderer`; botões "Limpar roteamento"/reset + toast no `Toolbar`;
+unit + integração + e2e (`?fallback=1` recuperação + toast, `?fanout=1` corredores).
+
+**Adiado (pós-Handoff 10):** menu de contexto de aresta; re-spread da fan-out no move de host
+individual (hoje só no batch); re-ranqueamento em idle das arestas que cruzam a área antiga/nova de
+um nó movido (§3) — o "Limpar roteamento" cobre a re-otimização global sob demanda.
 
 ## Resolvidas (para histórico)
 

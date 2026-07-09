@@ -1,7 +1,8 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   BpmnXmlConverter,
   childrenOf,
+  compositeCommand,
   getBoundingBox,
   JsonSerializer,
   nodeParentId,
@@ -13,6 +14,7 @@ import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { fitViewport, zoomViewportAt } from '../canvas/viewport.js';
+import { clearRoutingCommands } from '../canvas/routeEdge.js';
 import { downloadFile, exportPng, exportSvg } from './exporters.js';
 import { clearAutosave } from '../state/autosave.js';
 import { GovernanceBreadcrumb, type GovernanceBreadcrumbLevel } from './GovernanceBreadcrumb.js';
@@ -27,14 +29,42 @@ export interface ToolbarProps {
  * export (BPMN XML / JSON / SVG / PNG).
  */
 export function Toolbar({ extra }: ToolbarProps) {
-  const { diagram, undo, redo, canUndo, canRedo, lastVeto } = useDiagram();
+  const { diagram, execute, undo, redo, canUndo, canRedo, lastVeto } = useDiagram();
   const store = useCanvasStore();
   const config = useEditorConfig();
   const snapEnabled = useCanvasState((s) => s.snapEnabled);
   const viewportWidth = useCanvasState((s) => s.viewport.width);
   const drillId = useCanvasState((s) => s.drillId);
+  const readOnly = useCanvasState((s) => s.readOnly);
   const [issues, setIssues] = useState<ValidationIssue[] | null>(null);
   const issuesRef = useRef<HTMLDivElement | null>(null);
+  // Transient status line (Handoff 10 §1.4 "Limpar roteamento" toast).
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (toast === null) return;
+    const id = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(id);
+  }, [toast]);
+
+  // "Limpar roteamento" (§1.4): re-optimize every automatic A* route as ONE
+  // undoable command; manual routes are preserved unless `includeManual` (the
+  // confirmed total reset). The toast reports the real counts.
+  const clearRouting = (includeManual: boolean) => {
+    const { commands, reoptimized, preserved } = clearRoutingCommands(diagram, config.edgeRouter, {
+      includeManual,
+    });
+    if (commands.length === 0) {
+      setToast('Nenhuma rota automática para re-otimizar');
+      return;
+    }
+    execute(compositeCommand('Clear routing', commands));
+    const parts = [`${reoptimized} ${reoptimized === 1 ? 'aresta re-otimizada' : 'arestas re-otimizadas'}`];
+    if (!includeManual && preserved > 0) {
+      parts.push(`${preserved} ${preserved === 1 ? 'rota manual preservada' : 'rotas manuais preservadas'}`);
+    }
+    parts.push('desfazível');
+    setToast(parts.join(' · '));
+  };
 
   const zoomBy = (factor: number) => {
     const { viewport } = store.getState();
@@ -208,7 +238,43 @@ export function Toolbar({ extra }: ToolbarProps) {
       >
         PNG
       </button>
+      {!readOnly && (
+        <>
+          <span className="bpmnr-toolbar-sep" />
+          <button
+            type="button"
+            data-action="clear-routing"
+            onClick={() => clearRouting(false)}
+            aria-label="Limpar roteamento"
+            title="Re-otimiza as rotas automáticas (preserva rotas manuais)"
+          >
+            ⟲ Rotas
+          </button>
+          <button
+            type="button"
+            data-action="clear-routing-all"
+            onClick={() => {
+              const ok =
+                typeof window === 'undefined' ||
+                typeof window.confirm !== 'function' ||
+                window.confirm(
+                  'Resetar TODAS as rotas ao automático, incluindo as manuais? Esta ação é desfazível.',
+                );
+              if (ok) clearRouting(true);
+            }}
+            aria-label="Resetar todas as rotas"
+            title="Reseta todas as rotas ao automático, incluindo as manuais (pede confirmação)"
+          >
+            ⟲⟲
+          </button>
+        </>
+      )}
       {extra}
+      {toast && (
+        <span className="bpmnr-toolbar-toast" role="status" data-testid="routing-toast">
+          {toast}
+        </span>
+      )}
       {lastVeto && (
         <span className="bpmnr-toolbar-veto" role="status">
           🔒 {lastVeto}

@@ -24,6 +24,11 @@ import {
   translateManualWaypoints,
   translateManualEdges,
   backToAutoPatch,
+  astarAutoEdgeIds,
+  routeAndSpread,
+  clearRoutingCommands,
+  longestSegmentMidpoint,
+  sideOfAnchor,
 } from '../src/index.js';
 import type { EdgeRouterFn } from '../src/plugins/types.js';
 
@@ -294,6 +299,91 @@ describe('manual routes (Handoff 10 R-3)', () => {
     expect(routed.waypoints).not.toBeNull();
     expect(routed.waypoints!.length).toBeGreaterThanOrEqual(2);
     expect(routed.properties.routeMode).toBe('auto');
+  });
+});
+
+describe('clear routing + parallel corridors (Handoff 10 R-4)', () => {
+  function fanout() {
+    const registry = createDefaultRegistry();
+    const diagram = createDiagram({ name: 'Fan', id: 'fan' });
+    diagram.metadata.router = 'astar';
+    diagram.nodes.g = createNode({ type: 'exclusiveGateway', id: 'g', label: 'G', x: 0, y: 100 }, registry);
+    diagram.nodes.t1 = createNode({ type: 'task', id: 't1', label: 'T1', x: 320, y: 100 }, registry);
+    diagram.nodes.t2 = createNode({ type: 'task', id: 't2', label: 'T2', x: 320, y: 140 }, registry);
+    diagram.nodes.t3 = createNode({ type: 'task', id: 't3', label: 'T3', x: 320, y: 180 }, registry);
+    diagram.edges.e1 = createEdge({ id: 'e1', sourceId: 'g', targetId: 't1' });
+    diagram.edges.e2 = createEdge({ id: 'e2', sourceId: 'g', targetId: 't2' });
+    diagram.edges.e3 = createEdge({ id: 'e3', sourceId: 'g', targetId: 't3' });
+    return diagram;
+  }
+
+  it('routeAndSpread lays fan-out siblings into distinct 8px lanes ordered by target', () => {
+    const d = fanout();
+    const routes = routeAndSpread(d, ['e1', 'e2', 'e3']);
+    const yOf = (id: string) => routes.find((r) => r.edgeId === id)!.waypoints[0].y;
+    // The exit points are distinct, monotonic with target Y, and 8px apart.
+    expect(yOf('e1')).toBeLessThan(yOf('e2'));
+    expect(yOf('e2')).toBeLessThan(yOf('e3'));
+    expect(yOf('e2') - yOf('e1')).toBeCloseTo(8, 5);
+    expect(yOf('e3') - yOf('e2')).toBeCloseTo(8, 5);
+  });
+
+  it('routeAndSpread is deterministic (byte-identical across runs)', () => {
+    const d = fanout();
+    const a = JSON.stringify(routeAndSpread(d, ['e1', 'e2', 'e3']));
+    for (let i = 0; i < 5; i++) {
+      expect(JSON.stringify(routeAndSpread(d, ['e1', 'e2', 'e3']))).toBe(a);
+    }
+  });
+
+  it('astarAutoEdgeIds excludes manual routes unless includeManual', () => {
+    const d = fanout();
+    d.edges.e2.properties.routeMode = 'manual';
+    d.edges.e2.waypoints = [
+      { x: 60, y: 130 },
+      { x: 320, y: 170 },
+    ];
+    expect(astarAutoEdgeIds(d, straightRouter, { includeManual: false }).sort()).toEqual(['e1', 'e3']);
+    expect(astarAutoEdgeIds(d, straightRouter, { includeManual: true }).sort()).toEqual([
+      'e1',
+      'e2',
+      'e3',
+    ]);
+  });
+
+  it('clearRoutingCommands re-optimizes auto edges and preserves manual by default', () => {
+    const d = fanout();
+    d.edges.e2.properties.routeMode = 'manual';
+    d.edges.e2.waypoints = [
+      { x: 60, y: 130 },
+      { x: 320, y: 170 },
+    ];
+    const preserve = clearRoutingCommands(d, straightRouter, { includeManual: false });
+    expect(preserve.preserved).toBe(1);
+    expect(preserve.reoptimized).toBe(2); // e1 + e3, not the manual e2
+    expect(preserve.commands).toHaveLength(2);
+
+    const total = clearRoutingCommands(d, straightRouter, { includeManual: true });
+    expect(total.preserved).toBe(0);
+    expect(total.reoptimized).toBe(3); // manual e2 folded back to auto too
+  });
+
+  it('longestSegmentMidpoint returns the midpoint of the longest leg', () => {
+    const wp = [
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 200 }, // longest leg
+      { x: 40, y: 200 },
+    ];
+    expect(longestSegmentMidpoint(wp)).toEqual({ x: 10, y: 100 });
+  });
+
+  it('sideOfAnchor detects the border an anchor sits on', () => {
+    const rect = { x: 0, y: 0, width: 80, height: 60 };
+    expect(sideOfAnchor({ x: 80, y: 30 }, rect)).toBe('right');
+    expect(sideOfAnchor({ x: 0, y: 30 }, rect)).toBe('left');
+    expect(sideOfAnchor({ x: 40, y: 0 }, rect)).toBe('top');
+    expect(sideOfAnchor({ x: 40, y: 60 }, rect)).toBe('bottom');
   });
 });
 

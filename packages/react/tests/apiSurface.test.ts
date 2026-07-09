@@ -154,6 +154,12 @@ const EXPECTED_EXPORTS = [
   'translateManualWaypoints',
   'translateManualEdges',
   'backToAutoPatch',
+  // Handoff 10 R-4 — clear routing + parallel corridors + label placement.
+  'sideOfAnchor',
+  'astarAutoEdgeIds',
+  'routeAndSpread',
+  'clearRoutingCommands',
+  'longestSegmentMidpoint',
 ].sort();
 
 describe('@bpmn-react/react public API surface', () => {
