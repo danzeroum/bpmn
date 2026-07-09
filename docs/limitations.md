@@ -68,8 +68,9 @@ Documented deliberately so expectations are managed — none of these fail silen
 - **Events map to nodes by normalized activity name** (node `name`, falling back to `id`);
   activities with no matching node are reported (`unmapped`) and their transitions count as
   deviations. There is no fuzzy/semantic matching.
-- **Node times are sojourn times** — the average gap from an activity to the next event in the same
-  case (no start/complete lifecycle pairing in v1). Edge times are the average transition gap.
+- **Node times are the incoming gap** — the average time from the previous event to this one (how
+  long the activity took to complete), which is what the ⌀ chip and the bottleneck (GARGALO) read;
+  there is no start/complete lifecycle pairing in v1. Edge times are the same transition gap.
 - **One-pass aggregation, no DOM** (cerca §0.3): a 100k-event log aggregates in < 2s; the overlay
   animates only *sampled* variant traces, never one token per event.
 - The engine imports nothing from the ecosystem (operates on an injected `{ nodes, edges }`),

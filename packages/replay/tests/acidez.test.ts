@@ -23,7 +23,8 @@ const coffeeGraph: ReplayGraph = {
 };
 
 const brews: Trace[] = [
-  { caseId: 'mug-1', events: [{ activity: 'grind', timestamp: 0 }, { activity: 'heat water', timestamp: 60_000 }, { activity: 'brew', timestamp: 120_000 }, { activity: 'serve', timestamp: 300_000 }] },
+  // heat→brew is the long step (brewing time) → "brew" is the bottleneck.
+  { caseId: 'mug-1', events: [{ activity: 'grind', timestamp: 0 }, { activity: 'heat water', timestamp: 60_000 }, { activity: 'brew', timestamp: 600_000 }, { activity: 'serve', timestamp: 660_000 }] },
   { caseId: 'mug-2', events: [{ activity: 'grind' }, { activity: 'brew' }, { activity: 'serve' }] }, // skipped "heat water"
 ];
 
@@ -34,7 +35,7 @@ describe('replay over a fake, non-BPMN graph', () => {
     expect(result.deviations).toEqual([{ from: 'n1', to: 'n3', count: 1, cases: 1 }]);
     expect(result.fitness.conformingCases).toBe(1);
     expect(result.fitness.totalCases).toBe(2);
-    // The slow step (brew→serve, 3 min) is the bottleneck.
+    // The slow step (heat→brew, 9 min of brewing) makes "brew" the bottleneck.
     expect(result.bottleneckNodeId).toBe('n3');
     expect(result.variants).toHaveLength(2);
   });
