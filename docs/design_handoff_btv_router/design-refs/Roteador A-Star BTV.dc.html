@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #faf9f6; }
+  a { color: #9a7b1e; } a:hover { color: #7a611e; }
+</style>
+</helmet>
+<div style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; height: 100vh; display: flex; flex-direction: column; background: #faf9f6; overflow: hidden;">
+
+  <!-- ============ HEADER ============ -->
+  <header data-screen-label="Header" style="height: 58px; flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2ddd3; display: flex; align-items: center; gap: 14px; padding: 0 16px; z-index: 6;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 26px; height: 26px; border-radius: 7px; background: #9a7b1e; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">B</div>
+      <div style="font-weight: 600; font-size: 14px;">BuildToValue <span style="color: #6f675a; font-weight: 400;">Designer</span></div>
+    </div>
+    <div style="width: 1px; height: 22px; background: #e2ddd3;"></div>
+    <div style="font-size: 13.5px; font-weight: 500;">Esteira de Crédito <span style="color: #6f675a; font-weight: 400;">· diagrama denso</span></div>
+    <div style="flex: 1;"></div>
+    <div style="display: flex; align-items: center; gap: 2px; border: 1px solid #e2ddd3; border-radius: 9px; padding: 3px; background: #faf9f6;">
+      <button onClick="{{ setOrto }}" style="border: none; background: {{ ortoBg }}; color: {{ ortoFg }}; border-radius: 7px; height: 28px; padding: 0 14px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;">Ortogonal (hoje)</button>
+      <button onClick="{{ setAstar }}" style="border: none; background: {{ astarBg }}; color: {{ astarFg }}; border-radius: 7px; height: 28px; padding: 0 14px; font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;">A* com desvio</button>
+    </div>
+    <button onClick="{{ cleanup }}" disabled="{{ notAstar }}" style="border: 1px solid #e2ddd3; background: transparent; border-radius: 8px; height: 32px; padding: 0 14px; font-family: inherit; font-size: 12.5px; color: {{ cleanupFg }}; cursor: {{ cleanupCursor }};" style-hover="background: #f2efe8;">🧹 Limpar roteamento</button>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0;">
+
+    <!-- ============ CANVAS ============ -->
+    <main data-screen-label="Canvas" style="flex: 1; min-width: 0; position: relative; background-color: #faf9f6; background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; overflow: auto;">
+      <div style="position: relative; width: 960px; margin: 10px auto;">
+        <svg width="960" height="460" viewBox="0 0 960 460" style="display: block;">
+          <!-- pool -->
+          <rect x="16" y="12" width="932" height="436" fill="none" stroke="#44403a" stroke-width="1.5"></rect>
+          <rect x="16" y="12" width="30" height="436" fill="#f2f0ec"></rect>
+          <line x1="46" y1="12" x2="46" y2="448" stroke="#44403a" stroke-width="1"></line>
+          <line x1="46" y1="228" x2="948" y2="228" stroke="#44403a" stroke-width="0.75"></line>
+          <text x="31" y="230" transform="rotate(-90, 31, 230)" text-anchor="middle" font-size="11.5" fill="#262220" font-family="inherit">Crédito</text>
+          <text x="58" y="120" transform="rotate(-90, 58, 120)" text-anchor="middle" font-size="9.5" fill="#6f675a" font-family="inherit">Análise</text>
+          <text x="58" y="338" transform="rotate(-90, 58, 338)" text-anchor="middle" font-size="9.5" fill="#6f675a" font-family="inherit">Operações</text>
+
+          <!-- ===== ARESTAS MODO ORTOGONAL (atravessam) ===== -->
+          <g style="opacity: {{ ortoOp }}; transition: opacity 160ms ease-out;" pointer-events="none">
+            <!-- gw → Validar renda: reta atravessando "Consultar bureau" -->
+            <path d="M 402 120 H 700" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+            <polygon points="708,120 698,115.5 698,124.5" fill="#44403a"></polygon>
+            <!-- gw → Formalizar: desce atravessando "Mesa de análise" -->
+            <path d="M 366 156 V 340 H 540" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+            <polygon points="548,340 538,335.5 538,344.5" fill="#44403a"></polygon>
+            <!-- fan-out sobrepostas no mesmo trilho -->
+            <path d="M 232 144 V 340 H 302" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+            <path d="M 244 144 V 336 H 302" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+            <polygon points="310,340 300,335.5 300,344.5" fill="#44403a"></polygon>
+          </g>
+
+          <!-- ===== ARESTAS MODO A* (desviam, cantos r8) ===== -->
+          <g style="opacity: {{ astarOp }}; transition: opacity 160ms ease-out;" pointer-events="none">
+            <!-- gw → Validar renda: desvia por cima do bureau -->
+            <path d="M 402 120 H 448 Q 456 120 456 112 V 66 Q 456 58 464 58 H 630 Q 638 58 638 66 V 112 Q 638 120 646 120 H 700" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+            <polygon points="708,120 698,115.5 698,124.5" fill="#44403a"></polygon>
+            <!-- gw → Formalizar: contorna a mesa pela esquerda -->
+            <path d="M 366 156 V 248 Q 366 256 374 256 H 420 Q 428 256 428 264 V 332 Q 428 340 436 340 H 540" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+            <polygon points="548,340 538,335.5 538,344.5" fill="#44403a"></polygon>
+            <!-- fan-out em corredores paralelos (8px) -->
+            <path d="M 232 144 V 296 Q 232 304 240 304 H 270 Q 278 304 278 312 V 332 Q 278 340 286 340 H 302" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+            <path d="M 244 144 V 288 Q 244 296 252 296 H 278 Q 286 296 286 304 V 328" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+            <polygon points="310,340 300,335.5 300,344.5" fill="#44403a"></polygon>
+          </g>
+
+          <!-- ===== ARESTAS FIXAS (iguais nos 2 modos) ===== -->
+          <path d="M 118 120 H 148" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+          <polygon points="156,120 146,115.5 146,124.5" fill="#44403a"></polygon>
+          <path d="M 296 120 H 322" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+          <polygon points="330,120 320,115.5 320,124.5" fill="#44403a"></polygon>
+          <path d="M 836 120 H 856" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+          <polygon points="864,120 854,115.5 854,124.5" fill="#44403a"></polygon>
+
+          <!-- MANUAL: Receber proposta → Mesa de análise (waypoints do usuário) -->
+          <g onClick="{{ pickManual }}" style="cursor: pointer;">
+            <path d="M 222 144 V 200 H 120 V 372 H 302 V 356" fill="none" stroke="transparent" stroke-width="12"></path>
+            <path d="M 222 144 V 200 H 120 V 372 H 302 V 356" fill="none" stroke="{{ manualStroke }}" stroke-width="{{ manualW }}"></path>
+            <polygon points="302,352 297.5,362 306.5,362" fill="{{ manualStroke }}" transform="rotate(180, 302, 357)"></polygon>
+            <sc-if value="{{ manualSel }}" hint-placeholder-val="{{ true }}">
+              <circle cx="222" cy="200" r="5" fill="#9a7b1e" stroke="#ffffff" stroke-width="1.5"></circle>
+              <circle cx="120" cy="200" r="5" fill="#9a7b1e" stroke="#ffffff" stroke-width="1.5"></circle>
+              <circle cx="120" cy="372" r="5" fill="#9a7b1e" stroke="#ffffff" stroke-width="1.5"></circle>
+              <circle cx="302" cy="372" r="5" fill="#9a7b1e" stroke="#ffffff" stroke-width="1.5"></circle>
+              <g transform="translate(96, 270)">
+                <rect width="96" height="18" rx="9" fill="#fdfaf1" stroke="#9a7b1e" stroke-width="1"></rect>
+                <text x="48" y="12.5" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#7a611e">📍 rota manual</text>
+              </g>
+            </sc-if>
+          </g>
+
+          <!-- SEM ROTA: nós sobrepostos, fallback honesto -->
+          <path d="M 790 316 L 852 344" fill="none" stroke="#b3372f" stroke-width="1.5" stroke-dasharray="3,4" opacity="0.85"></path>
+          <polygon points="856,346 845.5,344.5 850,336.5" fill="#b3372f"></polygon>
+          <g transform="translate(756, 282)">
+            <rect width="104" height="17" rx="8.5" fill="#fdf3f1" stroke="#b3372f" stroke-width="1"></rect>
+            <text x="52" y="12" text-anchor="middle" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="#b3372f">⚠ sem corredor</text>
+          </g>
+
+          <!-- ===== NÓS ===== -->
+          <circle cx="100" cy="120" r="18" fill="#eef4f0" stroke="#44403a" stroke-width="1.5"></circle>
+          <text x="100" y="152" text-anchor="middle" font-size="9.5" fill="#6f675a" font-family="inherit">Proposta</text>
+
+          <rect x="156" y="88" width="140" height="56" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+          <text x="226" y="120" text-anchor="middle" font-size="11" fill="#262220" font-family="inherit">Receber proposta</text>
+
+          <polygon points="366,92 402,120 366,148 330,120" fill="#fdf4e3" stroke="#44403a" stroke-width="1.5"></polygon>
+          <path d="M 359 113 L 373 127 M 373 113 L 359 127" stroke="#44403a" stroke-width="2" stroke-linecap="round"></path>
+
+          <!-- obstáculo 1 -->
+          <rect x="464" y="88" width="150" height="56" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+          <text x="539" y="112" text-anchor="middle" font-size="11" fill="#262220" font-family="inherit">Consultar bureau</text>
+          <text x="539" y="128" text-anchor="middle" font-size="9" fill="{{ obst1Note }}" font-family="IBM Plex Mono, monospace">{{ obst1Text }}</text>
+
+          <rect x="708" y="88" width="128" height="56" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+          <text x="772" y="120" text-anchor="middle" font-size="11" fill="#262220" font-family="inherit">Validar renda</text>
+
+          <circle cx="882" cy="120" r="18" fill="#eef4f0" stroke="#44403a" stroke-width="3"></circle>
+          <circle cx="882" cy="120" r="13" fill="none" stroke="#44403a" stroke-width="1"></circle>
+
+          <!-- obstáculo 2 (lane 2) -->
+          <rect x="310" y="252" width="146" height="56" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+          <text x="383" y="276" text-anchor="middle" font-size="11" fill="#262220" font-family="inherit">Mesa de análise</text>
+          <text x="383" y="292" text-anchor="middle" font-size="9" fill="{{ obst2Note }}" font-family="IBM Plex Mono, monospace">{{ obst2Text }}</text>
+
+          <rect x="302" y="316" width="0" height="0" fill="none"></rect>
+          <rect x="240" y="316" width="130" height="48" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5" transform="translate(62, 24)" display="none"></rect>
+          <rect x="302" y="340" width="0" height="0" fill="none"></rect>
+
+          <rect x="240" y="340" width="124" height="48" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5" transform="translate(70, 0)" display="none"></rect>
+          <rect x="310" y="340" width="0" height="0"></rect>
+          <rect x="302" y="336" width="130" height="52" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5" display="none"></rect>
+          <rect x="310" y="336" width="128" height="52" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5" transform="translate(0,0)" display="none"></rect>
+
+          <rect x="310" y="336" width="0" height="0"></rect>
+          <rect x="302" y="332" width="132" height="52" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5" display="none"></rect>
+
+          <!-- destino do fan-out e manual -->
+          <rect x="310" y="316" width="0" height="0"></rect>
+          <rect x="252" y="368" width="0" height="0"></rect>
+          <rect x="302" y="330" width="0" height="0"></rect>
+          <rect x="310" y="316" width="132" height="0" fill="none"></rect>
+          <rect x="252" y="316" width="180" height="48" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5" display="none"></rect>
+          <rect x="310" y="316" width="130" height="48" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5" display="none"></rect>
+
+          <rect x="252" y="316" width="0" height="0"></rect>
+          <rect x="240" y="316" width="0" height="0"></rect>
+          <rect x="302" y="316" width="140" height="48" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+          <text x="372" y="344" text-anchor="middle" font-size="11" fill="#262220" font-family="inherit">Documentação</text>
+
+          <rect x="548" y="316" width="130" height="48" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+          <text x="613" y="344" text-anchor="middle" font-size="11" fill="#262220" font-family="inherit">Formalizar</text>
+
+          <!-- nós sobrepostos (caso sem rota) -->
+          <rect x="732" y="292" width="118" height="48" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+          <text x="791" y="320" text-anchor="middle" font-size="10.5" fill="#262220" font-family="inherit">Registrar garantia</text>
+          <rect x="796" y="322" width="118" height="48" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+          <text x="855" y="350" text-anchor="middle" font-size="10.5" fill="#262220" font-family="inherit">Liberar recurso</text>
+        </svg>
+
+        <sc-if value="{{ toastOn }}" hint-placeholder-val="{{ false }}">
+          <div style="position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); background: #262220; color: #ece8e1; border-radius: 10px; padding: 9px 16px; font-size: 12px; display: flex; align-items: center; gap: 9px; box-shadow: 0 6px 20px rgba(0,0,0,0.25);">
+            <span style="color: #57b895; font-weight: 700;">✓</span> 6 arestas re-otimizadas · <strong>1 rota manual preservada</strong> · undoável (Ctrl+Z)
+          </div>
+        </sc-if>
+      </div>
+    </main>
+
+    <!-- ============ PAINEL DE SPEC ============ -->
+    <aside data-screen-label="Spec" style="width: 312px; flex-shrink: 0; background: #ffffff; border-left: 1px solid #e2ddd3; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 11px;">
+      <div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.8px; color: #9a7b1e; margin-bottom: 4px;">ROTEADOR A* · DECISÕES DE UX</div>
+        <div style="font-size: 12px; color: #6f675a; line-height: 1.55;">Alterne Ortogonal ↔ A* no topo e observe: desvio de obstáculos, corredores paralelos de 8px, rota manual (clique nela) e o fallback honesto.</div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 12px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">DRAG: PREVIEW + ASSENTAR</div>
+        <div style="font-size: 11.5px; line-height: 1.6; color: #44403a;">Durante o drag: rota <strong>ortogonal barata ao vivo</strong> (estável, 60fps). Ao soltar: A* <strong>assenta em 160ms ease-out</strong> — só as arestas do nó movido; as demais nunca "dançam". A* ao vivo oscila em diagrama denso — recusado.</div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 12px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">AUTO × MANUAL</div>
+        <div style="font-size: 11.5px; line-height: 1.6; color: #44403a;">Config por diagrama, override por aresta (herança). Badge 📍 e handles preenchidos <strong>só em hover/seleção</strong> — nada permanente no canvas. "Voltar ao automático" no menu de contexto. Reroteamento <strong>nunca</strong> sobrescreve rota manual.</div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 12px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEM ROTA · FALLBACK HONESTO</div>
+        <div style="font-size: 11.5px; line-height: 1.6; color: #44403a;">Sem corredor (nós sobrepostos): reta tracejada 3/4 em <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #b3372f;">--btv-error</span> + chip "⚠ sem corredor". Nunca trava, nunca finge.</div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 12px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">REGRAS DE LAYOUT</div>
+        <div style="font-size: 11.5px; line-height: 1.7; color: #44403a;">Corredores paralelos: <strong>8px</strong> entre trilhos · cantos r8 (herda craft pack) · clearance de obstáculo: <strong>12px</strong> · labels no maior segmento livre, halo paint-order · custo A*: comprimento + 2×curva + 4×cruzamento (menos cantos e cruzamentos).</div>
+      </div>
+
+      <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 12px;">
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">MOTION</div>
+        <div style="font-size: 11.5px; line-height: 1.7; color: #44403a;">Assentamento: crossfade 160ms ease-out (nunca morphing de path — imprevisível) · hover de aresta: 120ms · reduced-motion: 0ms · o que NÃO anima: arestas não relacionadas ao drag.</div>
+      </div>
+    </aside>
+  </div>
+
+  <footer style="height: 30px; flex-shrink: 0; background: #ffffff; border-top: 1px solid #e2ddd3; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a;">
+    <span>router plugável: reto · ortogonal · A* (visibility graph) · determinístico · undoável</span>
+    <span>60fps: A* só no soltar · virtualização existente</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { router: 'astar', manualSel: true, toast: false };
+
+  renderVals() {
+    const s = this.state;
+    const astar = s.router === 'astar';
+    return {
+      setOrto: () => this.setState({ router: 'orto' }),
+      setAstar: () => this.setState({ router: 'astar' }),
+      ortoBg: !astar ? '#9a7b1e' : 'transparent',
+      ortoFg: !astar ? '#ffffff' : '#6f675a',
+      astarBg: astar ? '#9a7b1e' : 'transparent',
+      astarFg: astar ? '#ffffff' : '#6f675a',
+      ortoOp: astar ? 0 : 1,
+      astarOp: astar ? 1 : 0,
+      notAstar: !astar,
+      cleanupFg: astar ? '#262220' : '#a49c8f',
+      cleanupCursor: astar ? 'pointer' : 'not-allowed',
+      cleanup: () => {
+        if (!astar) return;
+        this.setState({ toast: true });
+        clearTimeout(this._t);
+        this._t = setTimeout(() => this.setState({ toast: false }), 5000);
+      },
+      toastOn: s.toast,
+      manualSel: s.manualSel,
+      pickManual: () => this.setState({ manualSel: !s.manualSel }),
+      manualStroke: s.manualSel ? '#9a7b1e' : '#44403a',
+      manualW: s.manualSel ? 2.5 : 1.5,
+      obst1Text: astar ? 'desviado ✓' : '✕ atravessado',
+      obst1Note: astar ? '#1a6a54' : '#b3372f',
+      obst2Text: astar ? 'desviado ✓' : '✕ atravessado',
+      obst2Note: astar ? '#1a6a54' : '#b3372f',
+    };
+  }
+}
+</script>
+</body>
+</html>
