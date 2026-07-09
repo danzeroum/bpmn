@@ -82,12 +82,42 @@ export interface RoleRequirementResult {
 
 /**
  * Derived state of the external anchor for the chain head (Handoff 8 §3).
- * Modeled here in I-1 so the third state (cerca §1.3) is a first-class type
- * from the start; the {@link https AnchorAdapter} interface and adapters land
- * in I-3.
  * - `anchored`  — head matches an external anchor receipt.
  * - `pending`   — signed but anchoring failed; retrying, does NOT regress (§1.3).
  * - `none`      — no anchor adapter configured; never simulate external proof (§1.4).
  * - `broken`    — local head ≠ anchored head (chain regenerated after anchoring).
  */
 export type AnchorState = 'anchored' | 'pending' | 'none' | 'broken';
+
+/** The chain head an anchor binds: the newest ledger entry's hash + seq. */
+export interface AnchorHead {
+  hash: string;
+  seq: number;
+}
+
+/**
+ * Proof returned by an {@link AnchorAdapter} after anchoring a chain head. It
+ * is host-persisted (e.g. in a ledger entry `details`) and later re-verified.
+ */
+export interface AnchorReceipt {
+  /** Adapter that produced it ("git", "rfc3161", "s3"). */
+  adapterId: string;
+  /** The head that was anchored. */
+  head: AnchorHead;
+  /** Opaque proof the adapter can verify later (commit hash, TSA token, object key…). */
+  proof: string;
+  /** ISO-8601 time the anchor was produced. */
+  anchoredAt: string;
+}
+
+/**
+ * External anchor for the chain head (Handoff 8 §3). Implemented by the adapter
+ * packages (anchor-git/rfc3161/s3), each with a host-injected transport —
+ * `identity` never does network. `verify` returns the raw comparison; the
+ * derived UI state comes from {@link deriveAnchorState}.
+ */
+export interface AnchorAdapter {
+  id: string;
+  anchor(head: AnchorHead): Promise<AnchorReceipt>;
+  verify(receipt: AnchorReceipt, head: string): Promise<'anchored' | 'mismatch' | 'unavailable'>;
+}

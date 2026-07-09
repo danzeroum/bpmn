@@ -43,3 +43,33 @@ test('degradation without identity: plain approve button and a legacy badge', as
   await expect(page.locator('.bpmnr-signature-badge[data-verification="legacy"]')).toBeVisible();
   await expect(page.getByText('NÃO ASSINADA (LEGADO)')).toBeVisible();
 });
+
+test('anchor: a signed head reaches ANCORADA (I-3)', async ({ page }) => {
+  await page.goto('/?studio=1&sign=1&anchor=1#/revisao');
+  await page.getByRole('button', { name: '🔏 Assinar aprovação com minha chave' }).click();
+  await expect(page.getByText('Aprovação registrada no ledger')).toBeVisible();
+  await expect(page.locator('.bpmnr-anchor-seal[data-anchor="anchored"]')).toBeVisible();
+  await expect(page.getByText('ANCORADA')).toBeVisible();
+});
+
+test('third state: anchor fails → PENDENTE (não regride) → retentar → ANCORADA (§1.3)', async ({
+  page,
+}) => {
+  await page.goto('/?studio=1&sign=1&anchor=1&anchorflaky=1#/revisao');
+  await page.getByRole('button', { name: '🔏 Assinar aprovação com minha chave' }).click();
+
+  // The signed decision stands even though anchoring failed (does NOT regress).
+  await expect(page.getByText('Aprovação registrada no ledger')).toBeVisible();
+  await expect(page.locator('.bpmnr-anchor-seal[data-anchor="pending"]')).toBeVisible();
+  await expect(page.getByText('garantia vigente: assinaturas + hash-chain local')).toBeVisible();
+
+  await page.getByRole('button', { name: '↻ Retentar ancoragem' }).click();
+  await expect(page.locator('.bpmnr-anchor-seal[data-anchor="anchored"]')).toBeVisible();
+});
+
+test('signed but no anchor adapter → SEM ÂNCORA CONFIGURADA (§1.4)', async ({ page }) => {
+  await page.goto('/?studio=1&sign=1#/revisao');
+  await page.getByRole('button', { name: '🔏 Assinar aprovação com minha chave' }).click();
+  await expect(page.getByText('Aprovação registrada no ledger')).toBeVisible();
+  await expect(page.locator('.bpmnr-anchor-seal[data-anchor="none"]')).toBeVisible();
+});

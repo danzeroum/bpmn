@@ -356,6 +356,20 @@ Ed25519 (mesmo padrão de injeção do Signer); nenhuma mudança na `identity`.
   (`packages/react/tests/promotionPanel.test.tsx`, assinatura adulterada → `✕ ASSINATURA INVÁLIDA`).
 - **Badges no SACM (§4.1)** são I-5 (SACM assinado).
 
+**I-3 — âncora + terceiro estado (decisões de escopo, 09/07).**
+- **Contrato `AnchorAdapter` em `@bpmn-react/identity`** (headless, §3), adapters em pacotes próprios
+  com transport injetado (`@bpmn-react/anchor-git` — o host provê `commit`/`read`, a lib nunca faz
+  rede nem shella `git`). `deriveAnchorState` deriva os 4 estados; o ciclo pendente→ancorada vive no
+  hook `useAnchorCycle` (react) e o selo em `AnchorSeal`.
+- **Terceiro estado entregue** na Revisão do Aprovador (selo abaixo da confirmação de assinatura):
+  assinar → falha de âncora → `PENDENTE` (não regride, retry) → `ANCORADA`; sem adapter → `SEM
+  ÂNCORA CONFIGURADA` (§1.4). e2e cobre o ciclo.
+- **`CADEIA ≠ ÂNCORA` (broken) + banner no Ledger Explorer adiados para a I-5**, junto da extensão de
+  "Verificar cadeia" a assinaturas/âncora — o explorer precisa re-verificar um *receipt gravado*
+  contra a cadeia atual (mesmo resolver/verificação da I-5). A **detecção** de mismatch já está
+  entregue e testada (`anchor-git` `verify → mismatch`; `AnchorSeal`/`useAnchorCycle` estado
+  `broken`); falta só a superfície do banner no explorer. `anchor-rfc3161`/`anchor-s3` são I-4.
+
 **Nota para o Handoff 9 (registrar, não implementar — §7 do handoff).** O **Copiloto (IA governada)**
 vem depois do 8: autoria `ia.copilot@modelo` só tem força quando as aprovações humanas são assinadas
 (depende da cadeia de assinatura desta camada). Junto dele, avaliação **S-FEEL mínima** para o

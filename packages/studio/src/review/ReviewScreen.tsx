@@ -8,14 +8,18 @@ import {
 } from '@bpmn-react/core';
 import type { VersionRegistry } from '@bpmn-react/registry';
 import {
+  AnchorSeal,
   buildApprovalPayloadFor,
   CanonicalPayloadCard,
   DiffView,
   SignatureBadge,
   StatusBadge,
+  useAnchorCycle,
 } from '@bpmn-react/react';
 import {
   signApproval,
+  type AnchorAdapter,
+  type AnchorHead,
   type CanonicalApprovalPayload,
   type SignedApproval,
   type Signer,
@@ -60,6 +64,13 @@ export interface ReviewScreenProps {
    * badge. Absent → current behavior + "não assinada" badge.
    */
   signer?: Signer;
+  /**
+   * External anchor adapter (Handoff 8 I-3, host injection). When present, a
+   * signed approval's chain head is anchored after the decision: the seal shows
+   * the pending→ancorada cycle with retry (cerca §1.3 — never regresses). Absent
+   * → "sem âncora configurada" for signed approvals (§1.4).
+   */
+  anchor?: AnchorAdapter;
 }
 
 /** The attached replay analysis the Approver Review renders (structural). */
@@ -88,7 +99,7 @@ function signatureFingerprintOf(signed: SignedApproval): string {
  * Approving NEVER activates (§11): a solicitante executa a promoção final.
  */
 export function ReviewScreen(props: ReviewScreenProps) {
-  const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onOpenInDesigner, replayAnalysisFor, now, signer } =
+  const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onOpenInDesigner, replayAnalysisFor, now, signer, anchor } =
     props;
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
@@ -160,6 +171,16 @@ export function ReviewScreen(props: ReviewScreenProps) {
       alive = false;
     };
   }, [selected?.diagram.version.id, signer, ledger, actor.role, converter]);
+
+  // Anchor the chain head of a *signed* approval (Handoff 8 I-3). Memoized so
+  // the cycle re-runs only when the decision changes, not every render.
+  const anchorHead = useMemo<AnchorHead | undefined>(() => {
+    if (decision?.kind !== 'approved') return undefined;
+    const signed = (decision.ledgerEntry.details as { signedApproval?: SignedApproval }).signedApproval;
+    if (!signed) return undefined;
+    return { hash: decision.ledgerEntry.hash, seq: decision.ledgerEntry.seq };
+  }, [decision]);
+  const anchorCycle = useAnchorCycle(anchor, anchorHead);
 
   const moveSelection = (delta: number) => {
     if (queue.length === 0) return;
@@ -398,6 +419,15 @@ export function ReviewScreen(props: ReviewScreenProps) {
                         <SignatureBadge state="legacy" />
                       );
                     })()}
+                  {anchorHead && (
+                    <AnchorSeal
+                      state={anchorCycle.state}
+                      adapterId={anchor?.id}
+                      head={anchorHead.hash}
+                      onRetry={anchorCycle.retry}
+                      retrying={anchorCycle.retrying}
+                    />
+                  )}
                   <p className="btv-studio-muted">
                     Decisão imutável — corrigir exige um novo ciclo de promoção.
                   </p>

@@ -73,6 +73,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'anchor-git',
+      include: ['packages/anchor-git/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'dmn',
       include: ['packages/dmn/tests/**/*.test.{ts,tsx}'],
       environment: 'jsdom',

@@ -69,6 +69,12 @@ importers:
         specifier: workspace:*
         version: link:../simulation
 
+  packages/anchor-git:
+    dependencies:
+      '@bpmn-react/identity':
+        specifier: workspace:*
+        version: link:../identity
+
   packages/audit:
     dependencies:
       '@bpmn-react/core':
@@ -133,6 +139,9 @@ importers:
       '@bpmn-react/adapters-bpmn':
         specifier: workspace:*
         version: link:../adapters-bpmn
+      '@bpmn-react/anchor-git':
+        specifier: workspace:*
+        version: link:../anchor-git
       '@bpmn-react/audit':
         specifier: workspace:*
         version: link:../audit

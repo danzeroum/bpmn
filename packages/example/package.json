@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@bpmn-react/adapters-bpmn": "workspace:*",
+    "@bpmn-react/anchor-git": "workspace:*",
     "@bpmn-react/audit": "workspace:*",
     "@bpmn-react/core": "workspace:*",
     "@bpmn-react/identity": "workspace:*",

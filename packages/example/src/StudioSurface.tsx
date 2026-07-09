@@ -23,6 +23,7 @@ import {
 } from '@bpmn-react/adapters-bpmn';
 import type { ArtifactAction, ArtifactAdapter, ArtifactRef, LibraryQuery, LifecycleStatus, LibrarySort } from '@bpmn-react/library';
 import type { Signer } from '@bpmn-react/identity';
+import { createGitAnchor, type GitAnchorTransport } from '@bpmn-react/anchor-git';
 import { StudioShell } from '@bpmn-react/studio';
 import '@bpmn-react/library-react/styles.css';
 import '@bpmn-react/studio/styles.css';
@@ -287,6 +288,12 @@ export function StudioSurface() {
   // Identity signing is opt-in in the demo (`?sign=1`) so the default flow keeps
   // showing the unsigned/legacy path — the degradation case (§4.4).
   const wantSign = useMemo(() => new URLSearchParams(window.location.search).has('sign'), []);
+  // Anchor is opt-in (`?anchor=1`); `?anchorflaky=1` fails the first attempt to
+  // demonstrate the third state (pendente → retentar → ancorada).
+  const anchorFlags = useMemo(() => {
+    const p = new URLSearchParams(window.location.search);
+    return { want: p.has('anchor'), flaky: p.has('anchorflaky') };
+  }, []);
 
   useEffect(() => {
     void buildWorld().then(setWorld);
@@ -315,6 +322,31 @@ export function StudioSurface() {
     };
   }, [wantSign, signingKey, user]);
 
+  // Handoff 8 I-3 — a demo git anchor over an in-memory store (the host owns the
+  // transport; the library never touches git). Stable across retries so the
+  // flaky-first flag drives pendente → retentar → ancorada.
+  const anchor = useMemo(() => {
+    if (!anchorFlags.want) return undefined;
+    const store = new Map<string, string>();
+    let counter = 0;
+    let failNext = anchorFlags.flaky;
+    const transport: GitAnchorTransport = {
+      async commit(payload) {
+        if (failNext) {
+          failNext = false;
+          throw new Error('anchor store unavailable (demo)');
+        }
+        const ref = `commit-${counter++}`;
+        store.set(ref, payload);
+        return { ref };
+      },
+      async read(ref) {
+        return store.get(ref);
+      },
+    };
+    return createGitAnchor(transport);
+  }, [anchorFlags]);
+
   const review = useMemo(() => {
     if (!world) return undefined;
     return {
@@ -326,10 +358,11 @@ export function StudioSurface() {
       // Handoff 7B-3: surface the attached replay analysis for the candidate.
       replayAnalysisFor: (diagram: BpmnDiagram) =>
         latestReplayAnalysis(world.replayLedger.getEntries(), diagram.version.id),
-      // Handoff 8 I-2: sign approvals when the host wired a Signer.
+      // Handoff 8 I-2/I-3: sign approvals and anchor the head when wired.
       ...(signer ? { signer } : {}),
+      ...(anchor ? { anchor } : {}),
     };
-  }, [world, signer]);
+  }, [world, signer, anchor]);
 
   const onLibraryAction = (ref: ArtifactRef, action: ArtifactAction) => {
     setLastAction(`${action.id} → ${ref.adapterId}:${ref.artifactId}`);
