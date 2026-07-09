@@ -148,6 +148,9 @@ importers:
       '@bpmn-react/healthcare':
         specifier: workspace:*
         version: link:../healthcare
+      '@bpmn-react/identity':
+        specifier: workspace:*
+        version: link:../identity
       '@bpmn-react/library':
         specifier: workspace:*
         version: link:../library
@@ -224,6 +227,9 @@ importers:
       '@bpmn-react/core':
         specifier: workspace:*
         version: link:../core
+      '@bpmn-react/identity':
+        specifier: workspace:*
+        version: link:../identity
       '@bpmn-react/replay':
         specifier: workspace:*
         version: link:../replay
@@ -272,6 +278,9 @@ importers:
       '@bpmn-react/core':
         specifier: workspace:*
         version: link:../core
+      '@bpmn-react/identity':
+        specifier: workspace:*
+        version: link:../identity
       '@bpmn-react/library':
         specifier: workspace:*
         version: link:../library

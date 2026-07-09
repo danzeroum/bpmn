@@ -342,6 +342,20 @@ verificador provido pelo host — a lib nunca embute criptografia própria (cerc
 `docs/limitations.md`. Se um alvo corporativo exigir navegador legado, o host injeta um verificador
 Ed25519 (mesmo padrão de injeção do Signer); nenhuma mudança na `identity`.
 
+**I-2 — assinatura na UI (decisões de escopo, 09/07).**
+- **`SignedApproval` persiste no `details` do ledger** (`APPROVAL_RECORDED`), **não** em
+  `core.ApprovalRecord`. Evita mudança de core; a assinatura entra na hash-chain (tamper-evident) e
+  viaja pelo `onDecided`. Promover a um campo próprio de `ApprovalRecord` fica para quando/se o core
+  ganhar o seam de assinatura em `LifecycleEngine.approve`.
+- **Badges no Ledger Explorer (§4.1) adiados** para a mesma PR que estende "Verificar cadeia" a
+  assinaturas (I-5): ambos precisam do mesmo resolver de chave pública + re-verificação assíncrona no
+  explorer. Na I-2, os badges vivem nas duas superfícies de aprovação (PromotionPanel + ReviewScreen).
+- **Estado `invalid` no e2e adiado** junto com o item acima (não há, na I-2, superfície in-app que
+  exiba uma assinatura *gravada* que falhe a verificação — só a recém-assinada, válida por
+  construção). O caminho `invalid` é coberto em teste de componente
+  (`packages/react/tests/promotionPanel.test.tsx`, assinatura adulterada → `✕ ASSINATURA INVÁLIDA`).
+- **Badges no SACM (§4.1)** são I-5 (SACM assinado).
+
 **Nota para o Handoff 9 (registrar, não implementar — §7 do handoff).** O **Copiloto (IA governada)**
 vem depois do 8: autoria `ia.copilot@modelo` só tem força quando as aprovações humanas são assinadas
 (depende da cadeia de assinatura desta camada). Junto dele, avaliação **S-FEEL mínima** para o

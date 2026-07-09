@@ -35,6 +35,7 @@
     "@bpmn-react/audit": "workspace:*",
     "@bpmn-react/conformance": "workspace:*",
     "@bpmn-react/core": "workspace:*",
+    "@bpmn-react/identity": "workspace:*",
     "@bpmn-react/library": "workspace:*",
     "@bpmn-react/library-react": "workspace:*",
     "@bpmn-react/react": "workspace:*",

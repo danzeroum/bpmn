@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AuditLedger, LifecycleEngine, type UserContext } from '@bpmn-react/core';
+import type { SignedApproval } from '@bpmn-react/identity';
 import {
   APPROVAL_RECORDED,
   PROMOTION_REJECTED,
@@ -9,6 +10,20 @@ import {
 import { candidateDiagram } from './fixtures.js';
 
 const actor: UserContext = { id: 'bruna', role: 'process-owner', name: 'Bruna' };
+
+const signedApproval: SignedApproval = {
+  payload: {
+    diagramId: 'onboarding',
+    version: '2.0.0',
+    xmlHash: 'h',
+    ledgerHead: '',
+    decision: 'approve',
+    role: 'process-owner',
+  },
+  signature: 'YmFzZTY0c2ln',
+  signer: { subject: 'bruna@x', role: 'process-owner', publicKeyFingerprint: 'ed25519:fp' },
+  signedAt: '2026-07-09T00:00:00.000Z',
+};
 
 describe('approvePromotion — aprovar ≠ ativar (§5/§11)', () => {
   it('records the approval on the diagram AND in the ledger, without activating', async () => {
@@ -26,6 +41,29 @@ describe('approvePromotion — aprovar ≠ ativar (§5/§11)', () => {
     expect(result.ledgerEntry.details).toMatchObject({ role: 'process-owner', artifactId: 'onboarding' });
     // original diagram untouched (immutable copy)
     expect(diagram.version.approvedBy).toHaveLength(0);
+  });
+
+  it('persists an injected signature in the ledger entry details (Handoff 8 I-2)', async () => {
+    const ledger = new AuditLedger();
+    const result = await approvePromotion({
+      engine: new LifecycleEngine(),
+      ledger,
+      diagram: candidateDiagram(),
+      actor,
+      signedApproval,
+    });
+    expect(result.ledgerEntry.details).toMatchObject({ signedApproval });
+  });
+
+  it('omits the signature key entirely when none is injected (legacy path)', async () => {
+    const ledger = new AuditLedger();
+    const result = await approvePromotion({
+      engine: new LifecycleEngine(),
+      ledger,
+      diagram: candidateDiagram(),
+      actor,
+    });
+    expect(result.ledgerEntry.details).not.toHaveProperty('signedApproval');
   });
 
   it('double approval is vetoed by the engine, not the UI', async () => {
