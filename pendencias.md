@@ -394,6 +394,30 @@ sem aritmética complexa de data/duração, sem `for`/`some`/`every`, sem contex
 comparações, ranges, listas de valores e `-`. Célula fora do subconjunto ⇒ decisão **"não-simulável"**
 declarada (o token para com aviso honesto), nunca avaliação silenciosamente errada.
 
+## 11. Handoff 10 (Roteador A*) — decisões de contrato registradas (R-1)
+
+Decisões tomadas ao iniciar a R-1 (visibility graph + A\* headless), aprovadas com o handoff:
+
+1. **`EdgeRouterFn` — extensão aditiva.** A assinatura ganha um 3º parâmetro **opcional** de
+   contexto (obstáculos + arestas já roteadas + identidade da aresta). `bezier`/`orthogonal` e o
+   consumo em `simulation/edgePath.ts` ficam intactos (ignoram o parâmetro). Materializa-se na R-2;
+   a R-1 entrega a função pura `routeAStar(source, target, { obstacles, routedEdges, … })` no core.
+2. **Nomes de router.** Mantém-se `'bezier'` como está (API existente prevalece); adiciona-se
+   `'astar'` e expõe-se `'straight'` como opção nomeada (R-2).
+3. **Router por diagrama/aresta = metadado de APRESENTAÇÃO.** Vive em `extensionElements` (`bpmnr:`),
+   nunca em properties semânticas — ferramentas externas ignoram sem quebrar round-trip. Herança
+   diagrama→aresta (R-2).
+4. **`routeMode='manual'`.** Import externo com waypoints ⇒ tratado como manual; **mas** o
+   `routeMode` é gravado no export para que o round-trip **interno** preserve o estado real
+   (re-importar um arquivo próprio não torna tudo manual). Materializa-se na R-3.
+
+Escopo R-1 (entregue): `core/src/geometry/astar.ts` — Hanan grid com clearance 12px + A\* de custo
+`comprimento + 2×curvas + 4×cruzamentos`, determinístico (byte-idêntico), seleção de porta pela de
+menor custo, fallback honesto (`routed:false`). Orçamento: rota típica < 5ms em 100 nós (medido
+~1.3ms); pior caso (diagonal de campo inteiro) reconstrói o grid inteiro (~30ms) — a amortização por
+**reuso de grid no frame** para o "Limpar roteamento" de 200 arestas fica para a R-4. Data
+associations ficam fora do §8.6 (lacuna de idempotência de DI pré-existente, anotada no teste).
+
 ## Resolvidas (para histórico)
 
 - ~~Lane membership manual/data-only~~ → interativa na Fase 5a.
