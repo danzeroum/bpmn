@@ -25,6 +25,9 @@ const EXPECTED_EXPORTS = [
   'policyAdapter',
   'promptAdapter',
   'relevantEntry',
+  'latestReplayAnalysis',
+  'replayAnalysisEntry',
+  'REPLAY_ANALYSIS_TYPE',
   'SIMULATION_SESSION_TYPE',
   'simulationSessionEntry',
 ].sort();

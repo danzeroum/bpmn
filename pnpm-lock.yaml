@@ -62,6 +62,9 @@ importers:
       '@bpmn-react/registry':
         specifier: workspace:*
         version: link:../registry
+      '@bpmn-react/replay':
+        specifier: workspace:*
+        version: link:../replay
       '@bpmn-react/simulation':
         specifier: workspace:*
         version: link:../simulation

@@ -27,6 +27,13 @@ test('the review shows the request with 1/2 progress, real checks and the warnin
   await expect(page.locator('svg.bpmnr-canvas')).toHaveCount(0);
 });
 
+test('the review shows the attached replay analysis block (7B-3)', async ({ page }) => {
+  await page.goto('/?studio=1#/revisao');
+  await expect(page.getByText('ANÁLISE DE REPLAY (ANEXADA)')).toBeVisible();
+  await expect(page.locator('[data-replay-headline]')).toContainText('O gargalo real da v2.0.0');
+  await expect(page.getByTestId('review-replay')).toContainText('gargalo "Checagem manual"');
+});
+
 test('approve flow: confirmation card with ledger hash, no undo', async ({ page }) => {
   await page.goto('/?studio=1#/revisao');
   await page.getByRole('button', { name: 'Aprovar como process-owner' }).click();

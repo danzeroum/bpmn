@@ -213,6 +213,20 @@
   opacity: 0.7;
   margin: 0;
 }
+.btv-studio-replay-headline {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  border-left: 3px solid var(--btv-replay, #7a4f9a);
+  padding-left: 10px;
+}
+.btv-studio-replay-meta {
+  margin-top: 8px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--bpmnr-text-muted, #6f675a);
+}
 .btv-studio-mono {
   font-family: ui-monospace, monospace;
   font-size: 10.5px;

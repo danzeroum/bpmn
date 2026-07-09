@@ -33,3 +33,9 @@ export {
   SIMULATION_SESSION_TYPE,
 } from './simulationLedger.js';
 export type { CoveragePromotionOptions, RecordedCoverage } from './simulationLedger.js';
+export {
+  latestReplayAnalysis,
+  replayAnalysisEntry,
+  REPLAY_ANALYSIS_TYPE,
+} from './replayLedger.js';
+export type { AttachedReplayAnalysis } from './replayLedger.js';

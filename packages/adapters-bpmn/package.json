@@ -30,6 +30,7 @@
     "@bpmn-react/core": "workspace:*",
     "@bpmn-react/library": "workspace:*",
     "@bpmn-react/registry": "workspace:*",
+    "@bpmn-react/replay": "workspace:*",
     "@bpmn-react/simulation": "workspace:*"
   },
   "keywords": [

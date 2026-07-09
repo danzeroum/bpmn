@@ -15,9 +15,11 @@ import {
   connectorAdapter,
   createRecipeAdapter,
   dmnDecisionAdapter,
+  latestReplayAnalysis,
   personaAdapter,
   policyAdapter,
   promptAdapter,
+  replayAnalysisEntry,
 } from '@bpmn-react/adapters-bpmn';
 import type { ArtifactAction, ArtifactAdapter, ArtifactRef, LibraryQuery, LifecycleStatus, LibrarySort } from '@bpmn-react/library';
 import { StudioShell } from '@bpmn-react/studio';
@@ -79,6 +81,9 @@ interface StudioWorld {
   baseline: BpmnDiagram;
   registry: VersionRegistry;
   ledger: AuditLedger;
+  /** Separate ledger for the attached replay analysis (7B-3), so the audit
+   * trail fixtures stay untouched. In production this is the same ledger. */
+  replayLedger: AuditLedger;
   /** `?tamper=1`: a forged copy for the broken-chain demo/e2e (§10.5). */
   auditLedger: AuditLedger | { entries: ReturnType<AuditLedger['export']>['entries'] };
 }
@@ -182,6 +187,32 @@ async function buildWorld(): Promise<StudioWorld> {
     },
   });
 
+  // Handoff 7B-3: a replay analysis of the active version's runs, attached to
+  // the candidate's promotion — surfaces as the "ANÁLISE DE REPLAY" block in
+  // the Approver Review (host injection, read back with latestReplayAnalysis).
+  // Kept in its own ledger so the audit-trail demo/e2e counts stay untouched.
+  const replayLedger = new AuditLedger();
+  await replayLedger.append(
+    replayAnalysisEntry(
+      {
+        diagramId: 'onboarding',
+        versionId: 'onb-v1',
+        semanticVersion: '2.0.0',
+        totalCases: 1240,
+        fitness: 0.912,
+        bottleneck: { nodeId: 'work', label: 'Checagem manual', avgMs: 31 * 3_600_000 },
+        topDeviation: { from: 'work', to: 'end', label: 'Checagem manual → Fim', cases: 96, share: 0.077 },
+        candidateSemanticVersion: '2.1.0',
+        author: 'bruna',
+        timestamp: '2026-07-05T00:00:00.000Z',
+        headline:
+          'O gargalo real da v2.0.0 é "Checagem manual" (⌀ 31 h) · 96 casos desviam — a v2.1.0 automatiza o passo.',
+      },
+      { id: 'bruna' },
+      'onb-v2',
+    ),
+  );
+
   // `?tamper=1` flips one byte of an entry — the Explorer must point at the
   // exact break and distrust everything after it (§10.5).
   const tampered = new URLSearchParams(window.location.search).get('tamper') !== null;
@@ -206,6 +237,7 @@ async function buildWorld(): Promise<StudioWorld> {
     baseline,
     registry,
     ledger,
+    replayLedger,
     auditLedger,
   };
 }
@@ -263,6 +295,9 @@ export function StudioSurface() {
       ledger: world.ledger,
       registry: world.registry,
       baselineOf: () => world.baseline,
+      // Handoff 7B-3: surface the attached replay analysis for the candidate.
+      replayAnalysisFor: (diagram: BpmnDiagram) =>
+        latestReplayAnalysis(world.replayLedger.getEntries(), diagram.version.id),
     };
   }, [world]);
 
