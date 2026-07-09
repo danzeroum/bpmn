@@ -212,6 +212,9 @@ importers:
       '@bpmn-react/core':
         specifier: workspace:*
         version: link:../core
+      '@bpmn-react/simulation':
+        specifier: workspace:*
+        version: link:../simulation
       react:
         specifier: '>=18'
         version: 18.3.1

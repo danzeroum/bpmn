@@ -23,6 +23,14 @@ export * from './canvas/overlays.js';
 export * from './canvas/viewport.js';
 export * from './canvas/useInteractions.js';
 
+// Simulation (Handoff 7A)
+export * from './simulation/BpmnSimulator.js';
+export * from './simulation/SimulationPanel.js';
+export * from './simulation/SimulationOverlaySvg.js';
+export * from './simulation/GatewayChoiceCard.js';
+export * from './simulation/useSimulation.js';
+export * from './simulation/edgePath.js';
+
 // Gestures
 export * from './gestures/useKeyboardShortcuts.js';
 

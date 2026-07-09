@@ -33,7 +33,8 @@
     "react-dom": ">=18"
   },
   "dependencies": {
-    "@bpmn-react/core": "workspace:*"
+    "@bpmn-react/core": "workspace:*",
+    "@bpmn-react/simulation": "workspace:*"
   },
   "keywords": [
     "bpmn",
