@@ -292,6 +292,30 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   verificação final; o gate de zoom desliga sombras (<50%) e chips (<60%) para proteger a taxa em
   diagramas densos.
 
+## 9. Handoff 7 (Simulação & Inteligência) — decisões registradas
+
+**Escopo dos pacotes novos (decisão sua, 08/07):** o rename para `@buildtovalue/*` **ainda não foi
+executado** — todos os pacotes seguem `@bpmn-react/*`. Decidido manter a convenção da §1: os pacotes
+novos do Handoff 7 (`<scope>/simulation`, e depois `<scope>/replay`) entram como `@bpmn-react/<x>` +
+`"private": true` (workspace-only, isentos do release), sem rename agora. O rename vira uma PR única
+quando o escopo npm for confirmado. Recomendação continua `@buildtovalue/*`.
+
+**Cobertura de caminhos = mesma análise do soundness, por duplicação testada (aceite §7.2).** Como
+`@bpmn-react/simulation` só pode depender de `core` (cerca §2 de desacoplamento) e a construção do
+grafo de fluxo vive em `@bpmn-react/soundness`, a classificação flow-node/flow-edge foi **duplicada**
+em `packages/simulation/src/graph.ts` e **pinada como idêntica** ao `buildScopeGraphs` do soundness
+em `tests/soundnessAgreement.test.ts` (mesmos nós + mesma adjacência de sequence flow, em 7 fixtures).
+Se um dia essa análise for promovida para `core`, os dois pacotes passam a importá-la de lá e a
+duplicação some — mas isso é refactor do soundness, fora do 7A-1.
+
+**OR-join exato / semântica inclusive completa — demanda adiada (cerca §0.1).** A v1 executa OR de
+forma aproximada (documentado em `limitations.md`: split multi-seleção manual, join dispara quando
+nenhum outro token vivo alcança o merge). Semântica inclusive exata (análise global de merge) fica
+FORA; registrar aqui se houver demanda concreta de um caso real que a aproximação erre.
+
+**Alignments ótimos (7B, cerca §0.2) — adiado.** Conformance do replay será token-replay fitness
+apenas; alignments A\* sobre modelo×log ficam fora. (Reconfirmar quando 7B-1 entrar.)
+
 ## Resolvidas (para histórico)
 
 - ~~Lane membership manual/data-only~~ → interativa na Fase 5a.

@@ -225,6 +225,16 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/simulation:
+    dependencies:
+      '@bpmn-react/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
+      '@bpmn-react/soundness':
+        specifier: workspace:*
+        version: link:../soundness
+
   packages/soundness:
     dependencies:
       '@bpmn-react/core':

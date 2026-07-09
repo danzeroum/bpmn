@@ -1,0 +1,51 @@
+{
+  "name": "@bpmn-react/simulation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Headless BPMN token-simulation engine for bpmn-react: XOR/AND/event-based semantics, boundary events, approximate OR, structural path coverage and replayable scenarios. Consumes only @bpmn-react/core. Zero runtime dependencies.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@bpmn-react/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@bpmn-react/soundness": "workspace:*"
+  },
+  "keywords": [
+    "bpmn",
+    "simulation",
+    "token",
+    "process",
+    "coverage"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/simulation"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

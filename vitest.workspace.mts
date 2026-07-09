@@ -45,6 +45,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'simulation',
+      include: ['packages/simulation/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'audit',
       include: ['packages/audit/tests/**/*.test.ts'],
       environment: 'node',

@@ -37,6 +37,27 @@ Documented deliberately so expectations are managed — none of these fail silen
 - Dragging a pool/lane moves only the container, not the nodes inside it; lanes do not auto-reflow
   siblings when resized. Both are candidates for a post-1.0 "swimlane layout" pass.
 
+## Token simulation (`@bpmn-react/simulation`, Handoff 7A)
+- **OR (inclusive) gateways are approximate — declaredly (cerca §0.1).** The engine executes
+  **exact** token semantics only for **XOR (exclusive), AND (parallel) and event-based** gateways
+  and for boundary events (interrupting / non-interrupting). For inclusive gateways: the **split**
+  is a manual multi-select (the caller picks ≥1 outgoing flow), and the **join** uses a *local
+  approximation* — it fires once no other live token can still structurally reach it (i.e. it waits
+  for exactly the branches the matching split activated in this session), not a global
+  inclusive-merge analysis. Any run touching an OR gateway reports `hasApproximateSemantics = true`
+  and every OR-join transition is marked `approximate`, so the UI shows the notice. Exact OR-join
+  semantics are intentionally **not** implemented (registered in [`pendencias.md`](../pendencias.md)).
+- **Path coverage** enumerates one route per XOR/event-based/inclusive branch and per boundary
+  event; inclusive splits are enumerated one branch at a time (not the power set), matching the
+  approximate OR semantics. Enumeration cuts cycles at the first repeated edge and caps at
+  `MAX_PATHS` (flagged as `truncated`).
+- **Sub-process token descent is not modelled in v1** — a sub-process is simulated as a single
+  activity in its own scope; the engine does not step *into* it. The scope is selectable, so a
+  sub-process can be simulated on its own.
+- The engine reasons over the **same flow graph as the soundness analysis** (the classification is
+  duplicated because `simulation` depends only on `core`, and pinned identical by
+  `packages/simulation/tests/soundnessAgreement.test.ts`).
+
 ## Governance
 - The library records `UserContext` data as given; authentication/authorization is the host
   application's responsibility.
