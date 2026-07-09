@@ -62,6 +62,9 @@ importers:
       '@bpmn-react/registry':
         specifier: workspace:*
         version: link:../registry
+      '@bpmn-react/simulation':
+        specifier: workspace:*
+        version: link:../simulation
 
   packages/audit:
     dependencies:

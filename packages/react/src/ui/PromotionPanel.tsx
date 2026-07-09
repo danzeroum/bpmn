@@ -34,6 +34,14 @@ export interface PromotionPanelProps {
   /** When provided, activation appends a VERSION_ACTIVATED entry and the toast shows its hash. */
   ledger?: AuditLedger;
   onActivated?: (result: { diagram: BpmnDiagram; ledgerEntry?: AuditEntry }) => void;
+  /**
+   * Optional path-coverage card (Handoff 7A-3). Shown next to the checks ONLY
+   * when provided — the coverage promotion gate is OFF by default, so the host
+   * passes this only when it has enabled the gate. `minCoverage` (0–1) draws
+   * the pass/fail threshold; omit it for an informational card. The actual
+   * blocking lives in the injected `PromotionRule`, not here.
+   */
+  coverage?: { covered: number; total: number; minCoverage?: number };
 }
 
 /**
@@ -52,6 +60,7 @@ export function PromotionPanel({
   previousActive,
   ledger,
   onActivated,
+  coverage,
 }: PromotionPanelProps) {
   const { diagram, replaceDiagram } = useDiagram();
   const { lifecycleEngine, validationEngine, emitEditorEvent } = useEditorConfig();
@@ -277,6 +286,39 @@ export function PromotionPanel({
                 )}
               </div>
             </div>
+
+            {coverage && (
+              <div
+                className="bpmnr-promotion-gate bpmnr-promotion-coverage"
+                data-sim-coverage-gate
+                data-satisfied={
+                  coverage.total === 0 ||
+                  coverage.minCoverage === undefined ||
+                  coverage.covered / coverage.total >= coverage.minCoverage
+                }
+              >
+                <span aria-hidden>
+                  {coverage.total === 0 ||
+                  coverage.minCoverage === undefined ||
+                  coverage.covered / coverage.total >= coverage.minCoverage
+                    ? '✓'
+                    : '○'}
+                </span>
+                <div>
+                  <strong>
+                    Cobertura de caminhos · {coverage.covered}/{coverage.total}
+                    {coverage.minCoverage !== undefined
+                      ? ` · mín ${Math.round(coverage.minCoverage * 100)}%`
+                      : ''}
+                  </strong>
+                  <div className="bpmnr-promotion-coverage-pct">
+                    {coverage.total > 0
+                      ? `${Math.round((coverage.covered / coverage.total) * 100)}% exercitado`
+                      : 'nenhum roteiro registrado para esta versão'}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="bpmnr-promotion-diff">
               <strong>Diff vs baseline</strong>

@@ -81,6 +81,32 @@ describe('buildAssuranceCase (aceite 10.5.8 — 100% derivado do ledger)', () =>
     expect(assurance.generatedAt).toBe('2026-07-08T12:00:00Z');
   });
 
+  it('adds argument A3 / claim C3 for a registered simulation session (7A-3)', async () => {
+    const { diagram, ledger } = await governedFixture();
+    await ledger.append({
+      type: 'SIMULATION_SESSION',
+      userId: 'ana',
+      versionId: diagram.version.id,
+      details: { artifactId: 'billing', covered: 2, total: 3, roteiroHash: 'abcd1234ef01' },
+    });
+    await ledger.flush();
+
+    const assurance = await buildAssuranceCase(diagram, ledger, { generatedAt: '2026-07-08T12:00:00Z' });
+
+    expect(assurance.claims.map((c) => c.id)).toEqual(['C1', 'C2', 'C3']);
+    const a3 = assurance.arguments.find((a) => a.id === 'A3')!;
+    expect(a3.evidence).toHaveLength(1);
+    // Caption is DERIVED from the entry details, never typed.
+    expect(a3.evidence[0].kind).toBe('comportamento validado · 2/3 caminhos · roteiro #abcd1234ef01');
+    expect(a3.evidence[0].hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(assurance.claims.find((c) => c.id === 'C3')!.supported).toBe(true);
+
+    // The session must NOT leak into A2 (commands) — it has its own argument.
+    const a2 = assurance.arguments.find((a) => a.id === 'A2')!;
+    expect(a2.evidence.some((e) => e.kind.includes('validado'))).toBe(false);
+    expect(a2.evidence.some((e) => e.kind === 'SIMULATION_SESSION')).toBe(false);
+  });
+
   it('marks claims without evidence as unsupported (never invents support)', async () => {
     const diagram = createDiagram({ name: 'Sem governança' });
     const assurance = await buildAssuranceCase(diagram, { entries: [] });

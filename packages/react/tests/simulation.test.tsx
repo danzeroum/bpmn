@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, fireEvent, cleanup } from '@testing-library/react';
+import { render, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@bpmn-react/core';
 import { BpmnSimulator } from '../src/simulation/BpmnSimulator.js';
 import { edgeGeometryFor, nodeCenter } from '../src/simulation/edgePath.js';
@@ -95,6 +95,37 @@ describe('BpmnSimulator', () => {
     fireEvent.click(container.querySelector('[data-sim-advance]')!); // s → prod
     expect(container.querySelector('[data-sim-exercised-edge="e0"]')).toBeTruthy();
     expect(container.querySelector('[data-sim-active-node="prod"]')).toBeTruthy();
+    cleanup();
+  });
+
+  it('builds a session and hands it to onRecord, then shows the SACM confirmation', async () => {
+    const onRecord = vi.fn();
+    const { container } = render(<BpmnSimulator diagram={threePaths()} author="ana" onRecord={onRecord} />);
+
+    // Close the happy path so coverage > 0 and the record button appears.
+    advanceUntilChoiceOrDone(container);
+    fireEvent.click(container.querySelector('[data-sim-choice-option="e2"]')!);
+    advanceUntilChoiceOrDone(container);
+
+    const record = container.querySelector<HTMLButtonElement>('[data-sim-record]');
+    expect(record).toBeTruthy();
+    fireEvent.click(record!);
+
+    await waitFor(() => expect(onRecord).toHaveBeenCalledTimes(1));
+    const session = onRecord.mock.calls[0][0];
+    expect(session).toMatchObject({
+      author: 'ana',
+      coverage: { covered: 1, total: 3 },
+    });
+    expect(session.scenarioHash).toMatch(/^[0-9a-f]{12}$/);
+    expect(session.scenario.decisions).toEqual([{ kind: 'exclusive', gateway: 'x', edge: 'e2' }]);
+
+    // Default confirmation surfaces the roteiro hash and the SACM evidence line.
+    await waitFor(() =>
+      expect(container.querySelector('[data-sim-recorded]')).toHaveTextContent('Sessão registrada'),
+    );
+    expect(container.querySelector('[data-sim-recorded]')).toHaveTextContent('1/3 caminhos exercitados');
+    expect(container.querySelector('[data-sim-record]')).toBeNull(); // button hides after recording
     cleanup();
   });
 

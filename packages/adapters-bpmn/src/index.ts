@@ -24,3 +24,12 @@ export { dmnDecisionAdapter } from './dmnDecisionAdapter.js';
 export type { DmnDecisionAdapterOptions } from './dmnDecisionAdapter.js';
 export { createRecipeAdapter } from './recipeAdapter.js';
 export type { RecipeAdapter } from './recipeAdapter.js';
+export { createRoteiroAdapter } from './roteiroAdapter.js';
+export type { RoteiroAdapter, RoteiroRecord } from './roteiroAdapter.js';
+export {
+  coveragePromotionRule,
+  latestSessionCoverage,
+  simulationSessionEntry,
+  SIMULATION_SESSION_TYPE,
+} from './simulationLedger.js';
+export type { CoveragePromotionOptions, RecordedCoverage } from './simulationLedger.js';

@@ -19,6 +19,13 @@ export {
   type CoverageSummary,
 } from './coverage.js';
 export { canonicalizeScenario, hashScenario } from './scenario.js';
+export {
+  buildSession,
+  canonicalizeSession,
+  coveragePercent,
+  type SessionCoverage,
+  type SimulationSession,
+} from './session.js';
 export type {
   BoundaryOption,
   Decision,

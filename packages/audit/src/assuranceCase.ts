@@ -77,6 +77,8 @@ function entriesOf(ledger: LedgerLike): readonly AuditEntry[] {
 }
 
 const PROMOTION_TYPES = /VERSION|PROMOT|ATTEST|APPROV|ACTIVAT/;
+/** Registered simulation sessions (Handoff 7A-3) — their own argument A3. */
+const SIMULATION_TYPES = /SIMULATION/;
 
 async function approvalEvidence(approval: ApprovalRecord): Promise<AssuranceEvidence> {
   return {
@@ -99,6 +101,27 @@ function entryEvidence(entry: AuditEntry): AssuranceEvidence {
 }
 
 /**
+ * Evidence for a registered simulation session — the caption is *derived* from
+ * the entry's own recorded details (coverage counts + roteiro hash), never
+ * typed by a human, so the "nunca digitado" invariant holds (Handoff 7A-3).
+ */
+function simulationEvidence(entry: AuditEntry): AssuranceEvidence {
+  const covered = Number(entry.details.covered) || 0;
+  const total = Number(entry.details.total) || 0;
+  const roteiroHash = typeof entry.details.roteiroHash === 'string' ? entry.details.roteiroHash : '';
+  const paths = `${covered}/${total} caminhos`;
+  return {
+    id: entry.id,
+    hash: entry.hash,
+    kind: roteiroHash
+      ? `comportamento validado · ${paths} · roteiro #${roteiroHash}`
+      : `comportamento validado · ${paths}`,
+    at: entry.timestamp,
+    actor: entry.userId,
+  };
+}
+
+/**
  * Builds the assurance case 100% from governance records (aceite 10.5.8):
  * claims and argument statements are canonical templates instantiated with
  * version identity; every evidence row is a ledger entry or a promotion
@@ -115,8 +138,13 @@ export async function buildAssuranceCase(
   const verification = await verifyLedger(ledger);
   const version = diagram.version;
 
-  const promotionEntries = entries.filter((entry) => PROMOTION_TYPES.test(entry.type));
-  const commandEntries = entries.filter((entry) => !PROMOTION_TYPES.test(entry.type));
+  const simulationEntries = entries.filter((entry) => SIMULATION_TYPES.test(entry.type));
+  const promotionEntries = entries.filter(
+    (entry) => PROMOTION_TYPES.test(entry.type) && !SIMULATION_TYPES.test(entry.type),
+  );
+  const commandEntries = entries.filter(
+    (entry) => !PROMOTION_TYPES.test(entry.type) && !SIMULATION_TYPES.test(entry.type),
+  );
 
   const a1: AssuranceArgument = {
     id: 'A1',
@@ -148,6 +176,25 @@ export async function buildAssuranceCase(
     },
   ];
 
+  const argumentList: AssuranceArgument[] = [a1, a2];
+
+  // A3/C3 appear only when the version has a registered simulation session
+  // (aceite §7.7 — "certify inclui a evidence de cobertura quando existir").
+  if (simulationEntries.length > 0) {
+    const a3: AssuranceArgument = {
+      id: 'A3',
+      statement: `O comportamento modelado da versão ${version.semanticVersion} foi validado por simulação de tokens — caminhos estruturais exercitados e registrados como roteiros auditáveis.`,
+      evidence: simulationEntries.map(simulationEvidence),
+    };
+    argumentList.push(a3);
+    claims.push({
+      id: 'C3',
+      statement: `O comportamento da versão ${version.semanticVersion} foi validado por simulação (roteiros de cobertura registrados no ledger).`,
+      argumentId: 'A3',
+      supported: a3.evidence.length > 0,
+    });
+  }
+
   return {
     spec: options.specVersion ?? SACM_SPEC_VERSION,
     diagramId: diagram.id,
@@ -155,7 +202,7 @@ export async function buildAssuranceCase(
     semanticVersion: version.semanticVersion,
     status: version.status,
     claims,
-    arguments: [a1, a2],
+    arguments: argumentList,
     approvers: version.approvedBy,
     verification,
     ledgerHeadHash: entries.length > 0 ? entries[entries.length - 1].hash : '',
