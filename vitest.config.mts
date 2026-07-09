@@ -31,6 +31,7 @@ export default defineConfig({
         'packages/cli/src/**': { statements: 85, branches: 65, functions: 95, lines: 85 },
         'packages/conformance/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
         'packages/soundness/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
+        'packages/simulation/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
         'packages/audit/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
         'packages/dmn/src/**': { statements: 90, branches: 80, functions: 90, lines: 90 },
         'packages/healthcare/src/**': { statements: 90, branches: 80, functions: 90, lines: 90 },
