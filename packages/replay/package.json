@@ -1,0 +1,45 @@
+{
+  "name": "@bpmn-react/replay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Headless conformance-checking for BPMN replay (Handoff 7B): streaming XES 2.0 / CSV parsing, one-pass frequency/time pre-aggregation, token-replay fitness with deviation detection, and variant extraction — all over an ABSTRACT injected graph {nodes, edges}. Imports NOTHING from the ecosystem (not even @bpmn-react/core). Zero dependencies. Workspace-only — the publish scope awaits pendencias.md §1.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "bpmn",
+    "process-mining",
+    "conformance",
+    "xes",
+    "replay"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/replay"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
