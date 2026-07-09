@@ -37,6 +37,8 @@ export default defineConfig({
         'packages/audit/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
         'packages/identity/src/**': { statements: 95, branches: 90, functions: 95, lines: 95 },
         'packages/anchor-git/src/**': { statements: 95, branches: 90, functions: 95, lines: 95 },
+        'packages/anchor-rfc3161/src/**': { statements: 95, branches: 90, functions: 95, lines: 95 },
+        'packages/anchor-s3/src/**': { statements: 95, branches: 90, functions: 95, lines: 95 },
         'packages/dmn/src/**': { statements: 90, branches: 80, functions: 90, lines: 90 },
         'packages/healthcare/src/**': { statements: 90, branches: 80, functions: 90, lines: 90 },
         'packages/library/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },

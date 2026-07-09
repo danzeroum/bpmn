@@ -80,6 +80,20 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'anchor-rfc3161',
+      include: ['packages/anchor-rfc3161/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
+      name: 'anchor-s3',
+      include: ['packages/anchor-s3/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'dmn',
       include: ['packages/dmn/tests/**/*.test.{ts,tsx}'],
       environment: 'jsdom',

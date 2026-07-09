@@ -75,6 +75,18 @@ importers:
         specifier: workspace:*
         version: link:../identity
 
+  packages/anchor-rfc3161:
+    dependencies:
+      '@bpmn-react/identity':
+        specifier: workspace:*
+        version: link:../identity
+
+  packages/anchor-s3:
+    dependencies:
+      '@bpmn-react/identity':
+        specifier: workspace:*
+        version: link:../identity
+
   packages/audit:
     dependencies:
       '@bpmn-react/core':
