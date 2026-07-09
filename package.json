@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "e2e": "pnpm --filter @bpmn-react/example run e2e",
-    "check:no-runtime-deps": "node scripts/check-no-runtime-deps.mjs"
+    "check:no-runtime-deps": "node scripts/check-no-runtime-deps.mjs",
+    "check:no-key-generation": "node scripts/check-no-key-generation.mjs"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3",

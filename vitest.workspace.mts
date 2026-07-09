@@ -66,6 +66,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'identity',
+      include: ['packages/identity/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'dmn',
       include: ['packages/dmn/tests/**/*.test.{ts,tsx}'],
       environment: 'jsdom',
