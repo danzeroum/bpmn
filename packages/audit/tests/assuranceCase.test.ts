@@ -208,7 +208,8 @@ describe('renderAssuranceCaseHtml (print-ready, §11.2/§11.3/§11.4)', () => {
     expect(html).toContain('data-chain-intact="true"');
     expect(html).toMatch(/cadeia SHA-256 íntegra · 4 entradas · head #[0-9a-f]{7}/);
     expect(html).toContain('gerado 2026-07-08T12:00:00Z');
-    expect(html).toContain('ana (operacao) · bruno (compliance)');
+    // Approvers now carry a signature-state glyph (◌ legacy without a resolver).
+    expect(html).toContain('◌ ana (operacao) · ◌ bruno (compliance)');
     expect(html).toContain('position: fixed'); // prints on every page
     expect(html).toContain("counter(page) '/' counter(pages)"); // página n/N
   });

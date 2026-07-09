@@ -1,9 +1,33 @@
+import type { VerificationState } from '@bpmn-react/identity';
 import {
   EVIDENCE_COLLAPSE_THRESHOLD,
+  type AssuranceAnchor,
   type AssuranceArgument,
   type AssuranceCase,
   type AssuranceEvidence,
 } from './assuranceCase.js';
+
+/** Icon glyph per signature state (never color alone — §4.1). */
+const APPROVER_GLYPH: Record<VerificationState, string> = {
+  valid: '✓',
+  invalid: '✕',
+  legacy: '◌',
+};
+
+/** The footer anchor line (Handoff 8 §4.2), or undefined when none is passed. */
+function anchorLine(anchor: AssuranceAnchor | undefined): string | undefined {
+  if (!anchor) return undefined;
+  switch (anchor.state) {
+    case 'anchored':
+      return `ancorado: ${anchor.adapterId ?? 'externo'} · head ${short(anchor.head ?? '')}`;
+    case 'pending':
+      return 'ancoragem pendente · garantia vigente: assinaturas + hash-chain local';
+    case 'broken':
+      return 'CADEIA ≠ ÂNCORA — o head local diverge do ancorado';
+    default:
+      return 'sem âncora configurada';
+  }
+}
 
 const esc = (value: string): string =>
   value
@@ -142,9 +166,17 @@ export function renderAssuranceCaseHtml(assurance: AssuranceCase): string {
         verification.firstBreak?.expected ?? '',
       )}, encontrado ${short(verification.firstBreak?.actual ?? '')}`;
   const approvers =
-    assurance.approvers.length > 0
-      ? assurance.approvers.map((approval) => `${approval.userId} (${approval.role})`).join(' · ')
+    assurance.signedApprovers.length > 0
+      ? assurance.signedApprovers
+          .map(
+            (a) =>
+              `${APPROVER_GLYPH[a.state]} ${a.userId} (${a.role})${
+                a.state === 'valid' && a.fingerprint ? ` ${a.fingerprint}` : ''
+              }`,
+          )
+          .join(' · ')
       : 'sem aprovações registradas';
+  const anchor = anchorLine(assurance.anchor);
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -308,6 +340,7 @@ export function renderAssuranceCaseHtml(assurance: AssuranceCase): string {
   <span>${chainLine}</span>
   <span>verificado ${esc(verification.verifiedAt)} · gerado ${esc(assurance.generatedAt)}</span>
   <span>aprovadores: ${esc(approvers)}</span>
+  ${anchor ? `<span data-audit-anchor>âncora: ${esc(anchor)}</span>` : ''}
   <span class="page-counter"></span>
 </footer>
 </body>

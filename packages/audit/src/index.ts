@@ -6,6 +6,15 @@ export {
   type AttestOptions,
 } from './attest.js';
 export { verifyLedger, type LedgerLike, type VerificationReport } from './verify.js';
+export {
+  collectSignedApprovals,
+  signaturePromotionRule,
+  verifyLedgerSignatures,
+  type LedgerSignatureReport,
+  type PublicKeyResolver,
+  type SignatureGateOptions,
+  type SignedApprovalVerification,
+} from './signatures.js';
 export { toXES, type XesOptions } from './xes.js';
 export {
   buildAssuranceCase,
