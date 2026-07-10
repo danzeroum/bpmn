@@ -18,6 +18,8 @@
     "check:no-runtime-deps": "node scripts/check-no-runtime-deps.mjs",
     "check:no-key-generation": "node scripts/check-no-key-generation.mjs",
     "check:no-hardcoded-strings": "node scripts/check-no-hardcoded-strings.mjs",
+    "check:docs-fresh": "node scripts/check-docs-fresh.mjs",
+    "docs:api": "typedoc",
     "fetch:corpus": "node scripts/fetch-corpus.mjs"
   },
   "devDependencies": {
@@ -27,11 +29,14 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitest/coverage-v8": "^3.2.4",
+    "axe-core": "^4.12.1",
     "eslint": "^9.16.0",
     "jsdom": "^25.0.1",
     "prettier": "^3.4.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.12.0",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.0",
     "vitest": "^3.2.4"

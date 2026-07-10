@@ -178,6 +178,12 @@ const EXPECTED_EXPORTS = [
   'useT',
   'EN',
   'PT_BR',
+  // Optional off-thread compute (N-8).
+  'createSyncExecutor',
+  'createWorkerExecutor',
+  'createWorkerHandler',
+  'routeJob',
+  'DEFAULT_JOBS',
 ].sort();
 
 describe('@buildtovalue/react public API surface', () => {

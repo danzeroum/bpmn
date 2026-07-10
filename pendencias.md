@@ -577,6 +577,27 @@ a re-otimização global sob demanda.
   `BpmnViewer` da raiz foi realinhado para a impl leve sem quebrar consumidores (equivalência como
   prova). Substrato compartilhado: `canvas/renderList.ts` (visível+z-order+cull) usado pelo canvas
   do editor e pelo `ViewerCanvas`, para os dois caminhos nunca divergirem.
+- **N-8 ENTREGUE (fecha o Handoff 11):**
+  - **A11y:** passe com axe (`color-contrast` desabilitado — jsdom não calcula layout) nas
+    superfícies principais: Designer/Viewer/menus/painéis (react) e as 3 telas do Studio
+    (Biblioteca/Revisão/Auditoria). Gate de CI = **zero violações CRÍTICAS** (asserção nos testes
+    `a11y.test`, que rodam no `test:coverage`). Resultado real: **zero violações de QUALQUER
+    impacto** — os 3 problemas encontrados foram corrigidos, não só registrados: `role="list"` sem
+    `listitem` na grade da Biblioteca (crítico), `role="listbox"` vazio na Revisão/Auditoria
+    (crítico), `<p>` direto dentro de `<ol>` no ledger (sério), e `<main>` aninhado na Revisão
+    (moderado ×3 → `<section>`). Sem dívida sérias/moderadas a registrar. Teclado do canvas
+    re-assertado (role=application + nome + Esc na pilha de dismissal).
+  - **Web Workers opcionais:** harness genérico zero-dep (`workers/executor.ts`) — `createSyncExecutor`
+    (default = comportamento síncrono atual), `createWorkerExecutor(worker)`, `createWorkerHandler`,
+    e a entrada `@buildtovalue/react/worker`. Jobs puros serializáveis: `route` embutido (react); o
+    host registra `soundness`/`layout` do mesmo modo (não há algoritmo de auto-layout no código
+    ainda — o harness já o comporta). Degradável: sem worker = síncrono. Equivalência **byte a byte**
+    provada (`workers.test` para route; `workerSoundness.test` no studio para soundness) via round-trip
+    JSON simulando a fronteira do worker.
+  - **TypeDoc:** `docs/api` gerado dos tipos públicos (react index + viewer) com `typedoc.json`
+    (`outputFileStrategy: modules`, `disableSources` → saída determinística). Frescor no CI
+    (`check:docs-fresh`): regenera e diffa (mesmo padrão do CONFORMANCE.md) — mudança na superfície
+    pública sem regenerar deixa o CI vermelho.
 - **N-2 ENTREGUE:** `corpusPolicy.ts` é a fonte única (contagem gerada anti-drift + bounds do
   fetch); CONFORMANCE.md ganhou as seções "Corpus real vs gerado" (com a decisão
   MANIFEST-como-proveniência) e "`certify --strict` vs validação XSD"; o CLI ganhou `--strict`
