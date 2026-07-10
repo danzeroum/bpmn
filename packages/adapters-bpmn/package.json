@@ -27,6 +27,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@buildtovalue/agentflow": "workspace:*",
     "@buildtovalue/copilot": "workspace:*",
     "@buildtovalue/core": "workspace:*",
     "@buildtovalue/library": "workspace:*",

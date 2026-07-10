@@ -21,6 +21,7 @@ describe('categorizeEntry — função pura de categorização (§6/§8)', () =>
     expect(categorizeEntry({ type: 'NODE_ADDED' })).toBe('command');
     expect(categorizeEntry({ type: 'CHAIN_VERIFIED' })).toBe('verification');
     expect(categorizeEntry({ type: 'SIMULATION_SESSION' })).toBe('simulation');
+    expect(categorizeEntry({ type: 'AGENT_SIMULATION_SESSION' })).toBe('simulation'); // Agent Lane (H12)
     expect(categorizeEntry({ type: 'REPLAY_ANALYSIS_ATTACHED' })).toBe('replay');
     // undo/redo suffixes keep the base category; unknown falls to command
     expect(categorizeEntry({ type: 'VERSION_ACTIVATED_UNDONE' })).toBe('promotion');

@@ -683,10 +683,21 @@ a re-otimização global sob demanda.
   **Deferido:** o editor de fixtures por nó no inspector (hoje as fixtures chegam por prop
   `simulationFixtures`; default vazio → bloqueio honesto por campo ausente, que é o caminho §3) — UI
   de edição de fixtures é incremento sob demanda; Shadow/Live Mode segue fora da v1.
-- **Fronteira A-6 (a decidir na PR A-6):** um `AgentWorkflow` é JSON, não `BpmnDiagram`, então o
-  adapter "AGENTE" da Biblioteca NÃO é um `kindAdapter` sobre `VersionRegistry<BpmnDiagram>` como os
-  demais; A-6 decide entre registrar o JSON do agente como snapshot no registry ou escrever um adapter
-  bespoke sobre a interface `ArtifactAdapter`. `classifyDiagram` também não tem kind `agent`.
+- **Fronteira A-6 — RESOLVIDO (adapter "AGENTE" = BESPOKE):** decidido **adapter bespoke sobre a
+  interface `ArtifactAdapter`**, NÃO envelopar o `AgentWorkflow` como pseudo-`BpmnDiagram` num
+  `kindAdapter`. Racional: o `VersionRegistry` é hardcoded a `BpmnDiagram` (snapshot + `computeDiagramHash`);
+  forçar o JSON do agente por ele — mais `classifyDiagram`/diff/thumbnails — seria **desonestidade de
+  tipo** (assumiriam semântica BPMN que o grafo não tem). O contrato `ArtifactAdapter` do H6 existe
+  exatamente para artefatos não-BPMN (a Biblioteca é genérica por design) — o agente é o primeiro que
+  prova isso. **Caminho: path 2** — o adapter (`agentWorkflowAdapter`) guarda versões como JSON
+  canônico + hash (`canonicalJson`/`sha256Hex` do core) sobre uma `source` injetada e implementa o
+  mínimo do contrato (list→cards AGENTE com autonomia em TEXTO + 🤖 icon, sem cor nova; get→ficha com
+  timeline/ações/proveniência). Resolução versionada (`id@semver`) e a **vigência REUSADA** do
+  callActivity: `agentReferenceCurrencyWarnings` avisa quando processo ativo referencia versão de
+  agente não-`active` (candidata/obsoleta). Promoção de agente = `agentPromotionGate` (validação §3
+  do grafo como gate, shape `RuleVerdict` padrão). Ledger: `AGENT_SIMULATION_SESSION` categorizado em
+  Simulações; ref@versão vira filtro por artefato (deep-link à ficha = navegação do host, mesmo item
+  aberto do callActivity §1.2). `classifyDiagram` permanece BPMN-only (o agente não é um kind dele).
 - **Shadow / Live Mode — FORA da v1 (§7):** a simulação da v1 é só mock client-side. Shadow/Live
   entra como evolução futura via `AIProvider` (H9), sob demanda — sem runtime de execução real de
   agente no código ainda.
