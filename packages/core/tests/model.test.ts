@@ -8,6 +8,8 @@ import {
   createEdge,
   createNode,
   createVersion,
+  subProcessContainerAt,
+  type BpmnDiagram,
 } from '../src/index.js';
 
 describe('NodeTypeRegistry', () => {
@@ -112,5 +114,63 @@ describe('active element helpers', () => {
     diagram.edges[e2.id] = e2;
     expect(activeNodes(diagram)).toHaveLength(1);
     expect(activeEdges(diagram)).toHaveLength(1);
+  });
+});
+
+describe('subProcessContainerAt (reparent hit-test, F7)', () => {
+  // outer (expanded, 100..500 × 100..460) ⊃ inner (expanded, 200..420 × 180..380).
+  function nested(): BpmnDiagram {
+    const diagram = createDiagram({ name: 'Nested' });
+    diagram.nodes = {
+      outer: createNode({
+        type: 'subProcess', id: 'outer', x: 100, y: 100, width: 400, height: 360,
+        properties: { isExpanded: true },
+      }),
+      inner: createNode({
+        type: 'subProcess', id: 'inner', x: 200, y: 180, width: 220, height: 200,
+        properties: { isExpanded: true, parentId: 'outer' },
+      }),
+    };
+    return diagram;
+  }
+
+  it('returns undefined over empty canvas', () => {
+    expect(subProcessContainerAt(nested(), { x: 20, y: 20 })).toBeUndefined();
+  });
+
+  it('captures the outer container when the point is only inside it', () => {
+    // Inside outer (x=120), outside inner (inner starts at x=200).
+    expect(subProcessContainerAt(nested(), { x: 120, y: 300 })?.id).toBe('outer');
+  });
+
+  it('captures the DEEPEST container under the cursor', () => {
+    // Inside both — the innermost (nested) wins.
+    expect(subProcessContainerAt(nested(), { x: 300, y: 280 })?.id).toBe('inner');
+  });
+
+  it('excludes the dragged node and its subtree (no self-reparent)', () => {
+    const diagram = nested();
+    // Dragging inner (+ its subtree): the point is inside inner, but inner is
+    // excluded, so it falls back to the outer container.
+    expect(
+      subProcessContainerAt(diagram, { x: 300, y: 280 }, new Set(['inner']))?.id,
+    ).toBe('outer');
+    // Excluding both leaves nothing eligible under the point.
+    expect(
+      subProcessContainerAt(diagram, { x: 300, y: 280 }, new Set(['inner', 'outer'])),
+    ).toBeUndefined();
+  });
+
+  it('ignores collapsed sub-processes — their interior is not droppable', () => {
+    const diagram = nested();
+    diagram.nodes.inner.properties.isExpanded = false;
+    // Point inside the (now collapsed) inner rect resolves to outer instead.
+    expect(subProcessContainerAt(diagram, { x: 300, y: 280 })?.id).toBe('outer');
+  });
+
+  it('ignores removed sub-processes', () => {
+    const diagram = nested();
+    diagram.nodes.inner = { ...diagram.nodes.inner, removedInVersion: 'v9' };
+    expect(subProcessContainerAt(diagram, { x: 300, y: 280 })?.id).toBe('outer');
   });
 });

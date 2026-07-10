@@ -4147,6 +4147,17 @@ height: number;
 nodeIds: string[];
 ```
 
+##### rootIds
+
+```ts
+rootIds: string[];
+```
+
+The nodes the user actually grabbed (before folding in ride-along
+descendants and attached boundary events). Only these reparent on drop —
+their descendants keep their parentId, which points inside the moved
+subtree.
+
 ##### origin
 
 ```ts
@@ -4184,6 +4195,18 @@ optional dropLaneId?: string | null;
 ```
 
 Lane currently under the dragged node — the drop target for membership.
+
+##### reparentTargetId?
+
+```ts
+optional reparentTargetId?: string | null;
+```
+
+Expanded sub-process currently under the cursor — the reparent-on-drop
+target (F7). Its border highlights; the drop sets the grabbed nodes'
+parentId. `null` means no container (a plain move, or a drag to top level
+that clears parentId). Boundary snap takes precedence: while a boundary
+snap is armed this stays null, so the two gestures never both light up.
 
 ***
 
@@ -7323,6 +7346,25 @@ function BoundarySnapOverlay(): Element | null;
 Border highlight while an event drags inside an activity's boundary snap
 zone (Handoff 11 N-1): the host border strokes selected/2px with a 120ms
 fade, plus a dot on the exact parametric anchor the drop will attach to.
+
+#### Returns
+
+`Element` \| `null`
+
+***
+
+### ReparentTargetOverlay()
+
+```ts
+function ReparentTargetOverlay(): Element | null;
+```
+
+Border highlight while a node drags over an expanded sub-process that would
+adopt it on drop (F7 reparent-on-drop). Reuses the boundary-snap affordance
+— the candidate container strokes selected/2px with the same 120ms fade — so
+"highlight now, reparent on drop" reads identically to "highlight now, attach
+on drop". No highlight ⇒ no reparent. Boundary snap has precedence, so this
+and the boundary highlight are never armed at once.
 
 #### Returns
 
