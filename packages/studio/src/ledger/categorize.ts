@@ -41,6 +41,8 @@ export function categorizeEntry(entry: Pick<AuditEntry, 'type'>): LedgerCategory
   if (APPROVAL_TYPES.has(base)) return 'approval';
   if (SIMULATION_TYPES.has(base)) return 'simulation';
   if (REPLAY_TYPES.has(base)) return 'replay';
+  // The anchoring act is a first-class verification entry (Handoff 11 N-4).
+  if (base === 'ANCHOR_RECORDED') return 'verification';
   if (base.startsWith('VERIFICATION') || base.startsWith('CHAIN_')) return 'verification';
   // NODE_*/EDGE_*/COMPOSITE/DIAGRAM_*/COMMAND and any unknown domain event:
   // editor commands are the ledger's default population.

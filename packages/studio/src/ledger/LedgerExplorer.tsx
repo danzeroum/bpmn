@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { AuditEntry } from '@buildtovalue/core';
 import { toXES, verifyLedger, type LedgerLike, type VerificationReport } from '@buildtovalue/audit';
 import { parseLedgerAnswer, type LedgerQueryResult } from '@buildtovalue/copilot';
+import type { AnchorAdapter, AnchorReceipt } from '@buildtovalue/identity';
 import type { VersionRegistry } from '@buildtovalue/registry';
 import {
   LEDGER_CATEGORIES,
@@ -35,6 +36,26 @@ export interface LedgerExplorerProps {
    * or the panel says "não encontrei registro" — never an invented answer.
    */
   query?: (question: string) => Promise<string>;
+  /**
+   * N-4 (Handoff 11): the EXTERNAL anchor dimension of "Verificar cadeia".
+   * `verifyLedger` (is the local chain self-consistent?) and the anchor
+   * verification (does the head match the externally recorded one?) are
+   * INDEPENDENT results — the banners render them as separate statements
+   * and never fuse them. Absent → explorer unchanged.
+   */
+  anchor?: {
+    adapter: AnchorAdapter;
+    /** The host-persisted receipt to re-verify; absent → "pendente". */
+    receipt?: AnchorReceipt;
+    /** Fires after "Retentar âncora" produces a fresh receipt (host persists). */
+    onAnchored?: (receipt: AnchorReceipt) => void;
+  };
+}
+
+/** N-4: the anchor verification outcome shown by its own banner. */
+interface AnchorOutcome {
+  status: 'anchored' | 'pending' | 'mismatch';
+  receipt?: AnchorReceipt;
 }
 
 function browserDownload(filename: string, content: string, mime: string): void {
@@ -67,10 +88,13 @@ function formatWhen(iso: string): string {
  * (max 720px) + detail column (340px). Read-only: verification, export and
  * navigation only — the chain is never mutated here.
  */
-export function LedgerExplorer({ ledger, registry, onAction, onDownload, initialFilter, query }: LedgerExplorerProps) {
+export function LedgerExplorer({ ledger, registry, onAction, onDownload, initialFilter, query, anchor }: LedgerExplorerProps) {
   const [filter, setFilter] = useState<LedgerFilter>(initialFilter ?? {});
   const [selectedSeq, setSelectedSeq] = useState<number>();
   const [report, setReport] = useState<VerificationReport>();
+  // N-4 anchor state — independent from the chain report above.
+  const [anchorResult, setAnchorResult] = useState<AnchorOutcome>();
+  const [anchorRetrying, setAnchorRetrying] = useState(false);
   // C6 — ledger query state: pure component state, never appended anywhere.
   const [question, setQuestion] = useState('');
   const [asking, setAsking] = useState(false);
@@ -97,11 +121,48 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
 
   useEffect(() => {
     setReport(undefined);
+    setAnchorResult(undefined);
   }, [ledger]);
 
-  const verify = async () => {
-    setReport(await verifyLedger(ledger));
+  const verifyAnchor = async (receipt?: AnchorReceipt): Promise<AnchorOutcome> => {
+    const head = all[all.length - 1];
+    if (!anchor || !receipt || !head) return { status: 'pending', ...(receipt ? { receipt } : {}) };
+    const status = await anchor.adapter.verify(receipt, head.hash);
+    // 'unavailable' (transport down) is NOT a verdict: stay pendente —
+    // retry, never regress (H8 §1.3).
+    return { status: status === 'unavailable' ? 'pending' : status, receipt };
   };
+
+  const verify = async () => {
+    // Two INDEPENDENT verifications, two independent banners (N-4): the
+    // chain report never fuses with the anchor outcome.
+    setReport(await verifyLedger(ledger));
+    if (anchor) setAnchorResult(await verifyAnchor(anchor.receipt));
+  };
+
+  const retryAnchor = async () => {
+    const head = all[all.length - 1];
+    if (!anchor || !head || anchorRetrying) return;
+    setAnchorRetrying(true);
+    try {
+      const receipt = await anchor.adapter.anchor({ hash: head.hash, seq: head.seq });
+      anchor.onAnchored?.(receipt);
+      setAnchorResult(await verifyAnchor(receipt));
+    } catch {
+      // Transport down: stay 'pendente' (retry, never regress).
+    } finally {
+      setAnchorRetrying(false);
+    }
+  };
+
+  /**
+   * Under CADEIA ≠ ÂNCORA the anchored head asserted entry #seq — the local
+   * entry there provably diverges, and everything after it stands on an
+   * unverified base: mark #seq and every later entry as não-confiável.
+   */
+  const anchorUntrusted = (entry: AuditEntry): boolean =>
+    anchorResult?.status === 'mismatch' &&
+    entry.seq >= (anchorResult.receipt?.head.seq ?? Number.POSITIVE_INFINITY);
 
   const exportXes = () => {
     const xes = toXES({ entries: [...entries] }, registry ? { registry } : {});
@@ -192,6 +253,56 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
         </div>
       )}
 
+      {anchorResult && (
+        <div
+          className="btv-studio-ledger-anchor"
+          data-anchor-state={anchorResult.status}
+          data-testid="anchor-banner"
+          role="status"
+        >
+          {anchorResult.status === 'anchored' && (
+            <>
+              <strong>Ancorada</strong>
+              <span>
+                head local = âncora · {anchorResult.receipt!.adapterId} ·{' '}
+                {formatWhen(anchorResult.receipt!.anchoredAt)}
+              </span>
+              <span className="btv-studio-mono">{headHash.slice(0, 12)}…</span>
+            </>
+          )}
+          {anchorResult.status === 'pending' && (
+            <>
+              <strong>Ancoragem pendente</strong>
+              <span>
+                garantia vigente: a verificação da CADEIA acima — a âncora externa ainda não
+                cobre este head.
+              </span>
+              <button
+                type="button"
+                className="btv-studio-ledger-retry-anchor"
+                disabled={anchorRetrying}
+                onClick={() => void retryAnchor()}
+              >
+                {anchorRetrying ? 'Ancorando…' : 'Retentar âncora'}
+              </button>
+            </>
+          )}
+          {anchorResult.status === 'mismatch' && (
+            <>
+              <strong>CADEIA ≠ ÂNCORA</strong>
+              <span className="btv-studio-mono">
+                local {headHash.slice(0, 12)}… ≠ ancorado{' '}
+                {anchorResult.receipt!.head.hash.slice(0, 12)}…
+              </span>
+              <span>
+                divergência a partir da entrada #{anchorResult.receipt!.head.seq} — esta e todas
+                as posteriores não são confiáveis.
+              </span>
+            </>
+          )}
+        </div>
+      )}
+
       {query && (
         <div className="btv-studio-ledger-query" data-testid="ledger-query">
           <input
@@ -268,6 +379,7 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
                   className="btv-studio-ledger-entry"
                   data-selected={isSelected || undefined}
                   data-untrusted={untrusted(entry) || undefined}
+                  data-anchor-untrusted={anchorUntrusted(entry) || undefined}
                   data-seq={entry.seq}
                   onClick={() => setSelectedSeq(entry.seq)}
                 >
@@ -288,6 +400,9 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
                     <span className="btv-studio-ledger-meta">
                       {entry.userId} · {formatWhen(entry.timestamp)} ·{' '}
                       <span className="btv-studio-mono">{entry.hash.slice(0, 12)}…</span>
+                      {anchorUntrusted(entry) && (
+                        <span className="btv-studio-ledger-untrusted-flag"> · não-confiável</span>
+                      )}
                     </span>
                   </span>
                 </button>
