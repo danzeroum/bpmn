@@ -81,6 +81,27 @@ test('dragging the child back out un-nests it (undoable)', async ({ page }) => {
   await expect(billing).toHaveCount(0);
 });
 
+test('context menu removes a child from the sub-process by keyboard (a11y path)', async ({
+  page,
+}) => {
+  // Expand 'returns' so its child 'returnsInspect' is on the canvas.
+  await page.locator('[data-node-id="returns"] [data-subprocess-toggle]').click();
+  const child = page.locator('[data-node-id="returnsInspect"]');
+  await expect(child).toBeVisible();
+
+  // Select the child, open the menu with the keyboard, run "Remover do subprocesso".
+  const box = (await child.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await page.keyboard.press('Shift+F10');
+  const menu = page.locator('[data-testid="context-menu"]');
+  await expect(menu).toBeVisible();
+  await menu.getByRole('menuitem', { name: 'Remover do subprocesso' }).click();
+
+  // No longer a child: collapsing 'returns' leaves it on the canvas.
+  await page.locator('[data-node-id="returns"] [data-subprocess-toggle]').click();
+  await expect(child).toBeVisible();
+});
+
 test('the reparented result exports nested inside the sub-process (PR 1 contract)', async ({
   page,
 }) => {
