@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: an Agent Lane export (Handoff 12) — agentTask carried on bpmn:task with a bpmnr:meta type + read-degraded snapshot.
+  Pattern: agentTask round-trips losslessly (full registry); an external editor reads it as a plain task (unknown extension); a downstream btv:gate satisfies the autonomy rule.
+  Generated content - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bpmnr="http://bpmn-react.io/schema/1.0" id="Definitions_Process_agent0" targetNamespace="http://bpmn-react.io/bpmn" exporter="bpmn-react" exporterVersion="1.0.0">
+  <bpmn:process id="Process_agent0" name="Agent research flow" isExecutable="false">
+    <bpmn:extensionElements>
+      <bpmnr:diagram originalId="Process_agent0" />
+      <bpmnr:version versionId="839f3930-35c9-4428-876b-76c06f0aea4a" semanticVersion="0.1.0" status="draft" changeSummary="Agent Lane corpus fixture — agentTask round-trip with snapshot." createdBy="anonymous" createdAt="2026-07-10T19:09:52.359Z" />
+    </bpmn:extensionElements>
+    <bpmn:startEvent id="Start_1" name="Start Event" />
+    <bpmn:task id="Task_agent" name="Pesquisar fontes">
+      <bpmn:extensionElements>
+        <bpmnr:meta type="agentTask" />
+        <bpmnr:property name="agentWorkflowRef" value="&quot;agnt-rsch@2.1.0&quot;" />
+        <bpmnr:property name="autonomyLevel" value="2" />
+        <bpmnr:property name="inputMapping" value="{&quot;query&quot;:&quot;processVariable.customerRequest&quot;}" />
+        <bpmnr:property name="outputMapping" value="{&quot;answer&quot;:&quot;processVariable.researchResult&quot;}" />
+        <bpmnr:agentWorkflowSnapshot snapshot="{&quot;kind&quot;:&quot;AgentWorkflow&quot;,&quot;id&quot;:&quot;agnt-rsch&quot;,&quot;version&quot;:&quot;2.1.0&quot;,&quot;name&quot;:&quot;Research Agent&quot;,&quot;autonomyLevel&quot;:2,&quot;inputSchema&quot;:{&quot;query&quot;:&quot;string&quot;},&quot;outputSchema&quot;:{&quot;answer&quot;:&quot;string&quot;,&quot;is_complete&quot;:&quot;boolean&quot;}}" />
+      </bpmn:extensionElements>
+    </bpmn:task>
+    <bpmn:task id="Gate_1" name="Approval Gate">
+      <bpmn:extensionElements>
+        <bpmnr:meta type="btv:gate" />
+      </bpmn:extensionElements>
+    </bpmn:task>
+    <bpmn:endEvent id="End_1" name="End Event" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Task_agent" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_agent" targetRef="Gate_1" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Gate_1" targetRef="End_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_agent0">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_agent_di" bpmnElement="Task_agent">
+        <dc:Bounds x="300" y="88" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gate_1_di" bpmnElement="Gate_1">
+        <dc:Bounds x="500" y="90" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="660" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="196" y="118" />
+        <di:waypoint x="300" y="118" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="420" y="118" />
+        <di:waypoint x="460" y="118" />
+        <di:waypoint x="460" y="115" />
+        <di:waypoint x="500" y="115" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="550" y="115" />
+        <di:waypoint x="605" y="115" />
+        <di:waypoint x="605" y="118" />
+        <di:waypoint x="660" y="118" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

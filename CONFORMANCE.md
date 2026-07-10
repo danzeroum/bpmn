@@ -25,6 +25,7 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:businessRuleTask` | ✅ supported | analytic | `businessRuleTask` | DMN table glyph + decision-link badge (properties.decisionRef); decision table editor lands with Handoff 5 F-B. |
 | `bpmn:subProcess` | ✅ supported | descriptive | `subProcess` | Nested children as first-class nodes (lossless round-trip, DI isExpanded); expand/collapse and drill-down in the editor. |
 | `bpmn:callActivity` | ✅ supported | descriptive | `callActivity` | Native calledElement; @buildtovalue/registry resolves the called process version (resolveCallActivities/activeAt). |
+| `btv:agentTask (extension)` | ✅ supported | extended | `agentTask` | Agent Lane (Handoff 12): a governed AI-agent sub-workflow. Exports as bpmn:task (external editors read it as a plain task — graceful degradation); agentWorkflowRef/autonomyLevel/mappings + an optional read-degraded snapshot ride in extensionElements. The @buildtovalue/agentflow schema/simulation back it. |
 | `bpmn:transaction` | ⛔ unsupported | extended | — | Deliberately out of scope before v2.x. |
 | `bpmn:adHocSubProcess` | ⛔ unsupported | extended | — |  |
 | `loopCharacteristics (standard)` | ✅ supported | analytic | `activity marker` |  |
@@ -69,7 +70,7 @@ warning counts are snapshotted so fidelity regressions are detectable.
 
 ## Corpus real vs gerado (Handoff 11 N-2)
 
-- **Gerados (commitados):** 57 arquivos em `corpus/` — equivalentes
+- **Gerados (commitados):** 58 arquivos em `corpus/` — equivalentes
   estruturais, zero material proprietário.
 - **Reais (fetch em CI):** ≥ 20 exigidos pelo gate (cap 40), baixados por
   `pnpm fetch:corpus` para `corpus-external/` (git-ignorado) a partir de:

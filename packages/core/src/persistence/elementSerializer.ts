@@ -95,6 +95,15 @@ export class ElementSerializer {
     const nestedNodes = isSubProcess ? childrenOf(diagram, node.id) : [];
     const nestedEdges = isSubProcess ? (edgesByScope.get(node.id) ?? []) : [];
     const dataAssocs = dataAssocsByActivity.get(node.id) ?? [];
+    // Agent Lane (Handoff 12 §5, §1.1): an agentTask MAY embed a read-degraded
+    // snapshot of its sub-workflow — generated only on "export with snapshot",
+    // never the source of truth. It rides as a dedicated bpmnr: element (not a
+    // bpmnr:property) so it stays out of the generic property soup, and is
+    // reserved below so it is never double-encoded.
+    const agentSnapshot =
+      node.type === 'agentTask' && typeof node.properties.agentWorkflowSnapshot === 'string'
+        ? node.properties.agentWorkflowSnapshot
+        : undefined;
     // The parametric boundary anchor (Handoff 11 N-1) is editor-only state,
     // re-derived from the DI geometry on import — like parentId, it never
     // appears as a bpmnr:property (the XML profile stays intact).
@@ -107,6 +116,7 @@ export class ElementSerializer {
     if (dataStoreRef !== undefined) reserved.add('dataStoreRef');
     if (dataObjectRef !== undefined) reserved.add('dataObjectRef');
     if (isSubProcess) reserved.add('isExpanded');
+    if (agentSnapshot !== undefined) reserved.add('agentWorkflowSnapshot');
     const propEntries = Object.entries(node.properties).filter(([key]) => !reserved.has(key));
     const attrs = {
       id: node.id,
@@ -127,7 +137,8 @@ export class ElementSerializer {
       node.type !== tag ||
       node.removedInVersion !== undefined ||
       propEntries.length > 0 ||
-      node.createdInVersion !== '0';
+      node.createdInVersion !== '0' ||
+      agentSnapshot !== undefined;
 
     if (!needsMeta && !hasChildren) {
       xml.element(`bpmn:${tag}`, attrs);
@@ -135,15 +146,21 @@ export class ElementSerializer {
     }
     xml.open(`bpmn:${tag}`, attrs);
     if (needsMeta) {
-      this.ext.writeMetaBlock(
-        xml,
-        {
-          type: node.type !== tag ? node.type : undefined,
-          createdInVersion: node.createdInVersion !== '0' ? node.createdInVersion : undefined,
-          removedInVersion: node.removedInVersion,
-        },
-        propEntries,
-      );
+      const metaAttrs = {
+        type: node.type !== tag ? node.type : undefined,
+        createdInVersion: node.createdInVersion !== '0' ? node.createdInVersion : undefined,
+        removedInVersion: node.removedInVersion,
+      };
+      if (agentSnapshot === undefined) {
+        this.ext.writeMetaBlock(xml, metaAttrs, propEntries);
+      } else {
+        // Same extensionElements block as meta+properties, plus the snapshot.
+        this.ext.writeExtensionElements(xml, () => {
+          this.ext.writeMeta(xml, metaAttrs);
+          this.ext.writeProperties(xml, propEntries);
+          xml.element(`${this.ext.prefix}:agentWorkflowSnapshot`, { snapshot: agentSnapshot });
+        });
+      }
     }
     if (eventDef !== undefined) {
       xml.element(`bpmn:${eventDef}EventDefinition`, { id: `${node.id}_def` });

@@ -55,5 +55,6 @@
   "54-nested-subprocess-v3.bpmn": 0,
   "55-call-activity-data-v1.bpmn": 0,
   "56-call-activity-data-v2.bpmn": 0,
-  "57-call-activity-data-v3.bpmn": 0
+  "57-call-activity-data-v3.bpmn": 0,
+  "58-agent-task-v1.bpmn": 0
 }

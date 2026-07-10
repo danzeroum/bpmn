@@ -11,9 +11,10 @@ import {
 } from '../src/index.js';
 
 describe('NodeTypeRegistry', () => {
-  it('registers the 25 built-in BPMN types', () => {
+  it('registers the 26 built-in BPMN types', () => {
     const registry = createDefaultRegistry();
-    expect(registry.list()).toHaveLength(25);
+    expect(registry.list()).toHaveLength(26);
+    expect(registry.has('agentTask')).toBe(true); // Agent Lane (Handoff 12)
     expect(registry.has('sendTask')).toBe(true);
     expect(registry.has('receiveTask')).toBe(true);
     expect(registry.has('manualTask')).toBe(true);

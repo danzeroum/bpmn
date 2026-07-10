@@ -21,6 +21,7 @@ export * from './commands/commands.js';
 export * from './engine/lifecycle.js';
 export * from './engine/rules.js';
 export * from './engine/validation.js';
+export * from './engine/agentTask.js';
 
 // Diff
 export * from './diff/index.js';
