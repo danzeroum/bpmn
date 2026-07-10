@@ -138,3 +138,72 @@ describe('LedgerExplorer — TELA 3 (§6)', () => {
     expect(screen.getByText('Nenhum evento nos filtros atuais.')).toBeInTheDocument();
   });
 });
+
+describe('LedgerExplorer — C6 consulta com citações (Handoff 9 CP-4)', () => {
+  it('answer renders with citation chips; clicking a citation OPENS the entry', async () => {
+    const ledger = await seededLedger();
+    const approval = ledger.getEntries().find((e) => e.type === 'APPROVAL_RECORDED')!;
+    const query = vi.fn(async () =>
+      JSON.stringify({ answer: 'bruna aprovou a onb-v2.', citations: [approval.hash] }),
+    );
+    render(<LedgerExplorer ledger={ledger} query={query} />);
+
+    fireEvent.change(screen.getByTestId('ledger-query-input'), {
+      target: { value: 'quem aprovou a onb-v2?' },
+    });
+    fireEvent.click(screen.getByTestId('ledger-query-ask'));
+
+    const answer = await screen.findByTestId('ledger-query-answer');
+    expect(answer.textContent).toContain('bruna aprovou a onb-v2.');
+    const citation = screen.getByTestId('ledger-query-citation');
+    expect(citation.textContent).toContain(`#${approval.hash.slice(0, 12)}`);
+    expect(citation.textContent).toContain('APPROVAL_RECORDED');
+
+    fireEvent.click(citation);
+    await waitFor(() => {
+      const selected = screen
+        .getAllByRole('option')
+        .find((option) => option.getAttribute('aria-selected') === 'true');
+      expect(selected?.textContent).toContain('APPROVAL_RECORDED');
+    });
+    // Read-only como a C3: a consulta não gera NENHUMA trilha.
+    expect(ledger.getEntries()).toHaveLength(4);
+  });
+
+  it('no citable entry → "não encontrei registro", the invented answer is NEVER shown', async () => {
+    const ledger = await seededLedger();
+    const query = vi.fn(async () =>
+      JSON.stringify({ answer: 'A v9.9.9 foi aprovada por fulano.', citations: ['f'.repeat(64)] }),
+    );
+    render(<LedgerExplorer ledger={ledger} query={query} />);
+
+    fireEvent.change(screen.getByTestId('ledger-query-input'), {
+      target: { value: 'quem aprovou a v9.9.9?' },
+    });
+    fireEvent.click(screen.getByTestId('ledger-query-ask'));
+
+    const norecord = await screen.findByTestId('ledger-query-norecord');
+    expect(norecord.textContent).toContain('não encontrei registro');
+    expect(norecord.textContent).toContain('não corresponde a nenhuma entrada');
+    expect(screen.queryByTestId('ledger-query-answer')).not.toBeInTheDocument();
+    expect(screen.queryByText(/fulano/)).not.toBeInTheDocument();
+    expect(ledger.getEntries()).toHaveLength(4);
+  });
+
+  it('a provider failure degrades to "não encontrei registro" (never a crash)', async () => {
+    const ledger = await seededLedger();
+    const query = vi.fn(async () => {
+      throw new Error('provider indisponível');
+    });
+    render(<LedgerExplorer ledger={ledger} query={query} />);
+    fireEvent.change(screen.getByTestId('ledger-query-input'), { target: { value: 'x' } });
+    fireEvent.click(screen.getByTestId('ledger-query-ask'));
+    const norecord = await screen.findByTestId('ledger-query-norecord');
+    expect(norecord.textContent).toContain('provider indisponível');
+  });
+
+  it('without the query prop the box is absent — zero regression', async () => {
+    render(<LedgerExplorer ledger={await seededLedger()} />);
+    expect(screen.queryByTestId('ledger-query')).not.toBeInTheDocument();
+  });
+});

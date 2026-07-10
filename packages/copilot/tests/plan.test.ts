@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { CommandStack, createDiagram } from '@buildtovalue/core';
-import { buildPlan, parseProposal, validateProposal, type CopilotProposal } from '../src/index.js';
+import {
+  buildPlan,
+  parseProposal,
+  soundnessErrors,
+  validateProposal,
+  type CopilotProposal,
+} from '../src/index.js';
 
 /**
  * CP-1 proposal lifecycle: parse (structured errors, never throws), integral
@@ -177,5 +183,45 @@ describe('buildPlan', () => {
         promptTemplateRef: REF,
       }),
     ).toThrow(/not on the whitelist/);
+  });
+});
+
+describe('soundnessErrors (C5) — the fix flow lists errors from the LOCAL analyzer', () => {
+  const trap: CopilotProposal = {
+    commands: [
+      { type: 'addNode', params: { id: 's', type: 'startEvent', label: 'Início', x: 0, y: 0 } },
+      { type: 'addNode', params: { id: 'x', type: 'exclusiveGateway', label: 'X?', x: 120, y: 0 } },
+      { type: 'addNode', params: { id: 'a', type: 'task', label: 'A', x: 240, y: -60 } },
+      { type: 'addNode', params: { id: 'b', type: 'task', label: 'B', x: 240, y: 60 } },
+      { type: 'addNode', params: { id: 'j', type: 'parallelGateway', label: 'Join', x: 380, y: 0 } },
+      { type: 'addNode', params: { id: 'e', type: 'endEvent', label: 'Fim', x: 500, y: 0 } },
+      { type: 'addEdge', params: { id: 'f1', sourceId: 's', targetId: 'x' } },
+      { type: 'addEdge', params: { id: 'f2', sourceId: 'x', targetId: 'a' } },
+      { type: 'addEdge', params: { id: 'f3', sourceId: 'x', targetId: 'b' } },
+      { type: 'addEdge', params: { id: 'f4', sourceId: 'a', targetId: 'j' } },
+      { type: 'addEdge', params: { id: 'f5', sourceId: 'b', targetId: 'j' } },
+      { type: 'addEdge', params: { id: 'f6', sourceId: 'j', targetId: 'e' } },
+    ],
+    rationale: 'armadilha',
+    promptTemplateRef: REF,
+  };
+
+  it('names the offending SND_* code and element for the trap', () => {
+    const { projected } = buildPlan(createDiagram({ name: 'S' }), trap);
+    const errors = soundnessErrors(projected);
+    expect(errors.length).toBeGreaterThan(0);
+    const deadlock = errors.find((e) => e.code === 'SND_DEADLOCK_JOIN');
+    expect(deadlock?.nodeId).toBe('j');
+    expect(deadlock?.message).toBeTruthy();
+  });
+
+  it('returns [] for a sound diagram (and for the fixed trap)', () => {
+    const sound = buildPlan(createDiagram({ name: 'S' }), {
+      commands: soundCommands(),
+      rationale: 'ok',
+      promptTemplateRef: REF,
+    });
+    expect(soundnessErrors(sound.projected)).toEqual([]);
+    expect(soundnessErrors(createDiagram({ name: 'vazio' }))).toEqual([]);
   });
 });

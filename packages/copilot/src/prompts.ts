@@ -57,3 +57,29 @@ export const COPILOT_SUMMARY_PROMPT: CopilotPromptTemplate = {
 diff real fornecido. Responda em TEXTO PURO (sem JSON), 1-3 frases em
 português, factual — apenas o que mudou.`,
 };
+
+/** C5 — fix de soundness: erro SND_* selecionado → correção como comandos.
+ * A aplicação passa pelo MESMO pipeline da C2 (whitelist + rejeição íntegra +
+ * soundness preview local) — um fix que não corrige fica visível porque a
+ * lista de erros é recomputada localmente sobre o diagrama real. */
+export const COPILOT_FIX_PROMPT: CopilotPromptTemplate = {
+  id: 'copilot-fix',
+  version: '1.0.0',
+  system: `Você corrige erros estruturais (SND_*) de um processo BPMN. Receberá
+os erros e o estado atual do diagrama; proponha a MENOR sequência de comandos
+que elimina os erros sem mudar a intenção do processo. ${CONTRACT}`,
+};
+
+/** C6 — consulta ao ledger com citações. Regra de ouro (§10): toda afirmação
+ * sustentada por hashes de entradas REAIS fornecidas no contexto; sem entrada
+ * aplicável → "citations": [] (a UI dirá "não encontrei registro" — nunca
+ * inventar). A validação local rejeita hashes que não existem no ledger. */
+export const COPILOT_QUERY_PROMPT: CopilotPromptTemplate = {
+  id: 'copilot-query',
+  version: '1.0.0',
+  system: `Você responde perguntas sobre o histórico de governança usando
+APENAS as entradas de ledger fornecidas no contexto. Responda SOMENTE com
+JSON: {"answer": string, "citations": [hash, ...]} — cada afirmação deve ser
+sustentada por hashes de entradas reais do contexto. Se nenhuma entrada
+sustenta a resposta, retorne "citations": [].`,
+};

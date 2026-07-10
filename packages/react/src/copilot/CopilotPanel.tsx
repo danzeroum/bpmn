@@ -1,11 +1,14 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   buildPlan,
   parseProposal,
+  soundnessErrors,
   validateProposal,
   COPILOT_ADJUST_PROMPT,
   COPILOT_DRAFT_PROMPT,
+  COPILOT_FIX_PROMPT,
   type AIProvider,
+  type CopilotPromptTemplate,
   type Msg,
   type SoundnessPreview,
 } from '@buildtovalue/copilot';
@@ -52,20 +55,30 @@ export function CopilotPanel({ provider, resolveLedgerHash, author = 'anônimo' 
 
   const empty = Object.keys(diagram.nodes).length === 0;
   const template = empty && messages.length === 0 ? COPILOT_DRAFT_PROMPT : COPILOT_ADJUST_PROMPT;
+  // C5 (Handoff 9 §4): the SND_* errors of the CURRENT diagram, from the same
+  // LOCAL analyzer as the preview — the list recomputes after every apply, so
+  // a "fix" that does not fix stays visibly listed.
+  const sndErrors = useMemo(() => soundnessErrors(diagram), [diagram]);
 
   const push = (entry: ChatEntry) => setMessages((m) => [...m, entry]);
 
   const ask = useCallback(
-    async (text: string) => {
+    async (text: string, promptTemplate?: CopilotPromptTemplate) => {
       if (!provider || busy) return;
       setBusy(true);
       push({ role: 'user', text });
       const context =
-        `Estado atual do diagrama (nós): ` +
-        JSON.stringify(Object.values(diagram.nodes).map((n) => ({ id: n.id, type: n.type, label: n.label })));
+        `Estado atual do diagrama: ` +
+        JSON.stringify({
+          nodes: Object.values(diagram.nodes).map((n) => ({ id: n.id, type: n.type, label: n.label })),
+          edges: Object.values(diagram.edges).map((e) => ({ id: e.id, sourceId: e.sourceId, targetId: e.targetId })),
+        });
       history.current.push({ role: 'user', content: `${text}\n\n${context}` });
       try {
-        const raw = await provider.complete({ system: template.system, messages: history.current });
+        const raw = await provider.complete({
+          system: (promptTemplate ?? template).system,
+          messages: history.current,
+        });
         history.current.push({ role: 'assistant', content: raw });
         const parsed = parseProposal(raw);
         if ('error' in parsed) {
@@ -135,6 +148,39 @@ export function CopilotPanel({ provider, resolveLedgerHash, author = 'anônimo' 
         <div className="bpmnr-copilot-seal" data-testid="copilot-seal">
           ◌ RASCUNHO · autoria: <span style={{ color: '#33567E' }}>ia.copilot@{provider.id}</span> +{' '}
           {author}
+        </div>
+      )}
+      {sndErrors.length > 0 && (
+        <div className="bpmnr-copilot-snd" data-testid="copilot-snd-errors">
+          <strong>⚠ Soundness · {sndErrors.length} erro(s)</strong>
+          <ul>
+            {sndErrors.map((issue, index) => (
+              <li key={index}>
+                <code>{issue.code}</code> {issue.nodeId ?? issue.edgeId ?? ''}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            data-testid="copilot-fix"
+            disabled={busy}
+            onClick={() =>
+              // C5: the fix request rides the SAME pipeline as C2 — whitelist,
+              // integral rejection, local preview; only the template differs.
+              void ask(
+                'Corrija os erros de soundness: ' +
+                  sndErrors
+                    .map((issue) => `${issue.code} em '${issue.nodeId ?? issue.edgeId ?? '?'}'`)
+                    .join('; '),
+                COPILOT_FIX_PROMPT,
+              )
+            }
+          >
+            ✦ Sugerir correção
+          </button>
+          <span className="bpmnr-copilot-meta">
+            prompt: {COPILOT_FIX_PROMPT.id} v{COPILOT_FIX_PROMPT.version}
+          </span>
         </div>
       )}
       <div className="bpmnr-copilot-chat">

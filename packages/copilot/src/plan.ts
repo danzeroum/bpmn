@@ -166,3 +166,29 @@ export function buildPlan(
   };
   return { command, projected, soundnessPreview };
 }
+
+/** A SND_* error surfaced to the fix flow (C5): enough to name the offender. */
+export interface SoundnessErrorRef {
+  code: string;
+  message: string;
+  nodeId?: string;
+  edgeId?: string;
+}
+
+/**
+ * The SND_* ERRORS of the current diagram, from the same LOCAL analyzer the
+ * preview uses (C5, Handoff 9 §4). The fix flow lists (and re-lists) errors
+ * based on THIS — so a "fix" that does not actually fix stays visibly listed:
+ * honesty comes from re-analysis of the real diagram, never from the AI's
+ * claim that it fixed something.
+ */
+export function soundnessErrors(diagram: BpmnDiagram): SoundnessErrorRef[] {
+  return analyzeSoundness(diagram)
+    .filter((issue) => issue.severity === 'error')
+    .map((issue) => ({
+      code: issue.code,
+      message: issue.message,
+      ...(issue.nodeId ? { nodeId: issue.nodeId } : {}),
+      ...(issue.edgeId ? { edgeId: issue.edgeId } : {}),
+    }));
+}

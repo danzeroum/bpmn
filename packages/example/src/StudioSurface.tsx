@@ -436,6 +436,25 @@ export function StudioSurface() {
           ledger: world.auditLedger,
           registry: world.registry,
           onAction: (action) => setLastAction(`${action.id} → seq ${action.entry.seq}`),
+          // Handoff 9 CP-4 (C6): DETERMINISTIC fake provider (§8.6). The known
+          // question cites the REAL approval entry; anything else returns an
+          // invented citation — which the LOCAL citability rule rejects, so
+          // the panel says "não encontrei registro" instead of inventing.
+          query: async (question) => {
+            if (/aprovou/i.test(question) && question.includes('2.0.0')) {
+              const approval = world.ledger
+                .getEntries()
+                .find((entry) => entry.type === 'APPROVAL_RECORDED');
+              return JSON.stringify({
+                answer: 'carla (compliance) registrou a aprovação da candidata v2.0.0 do onboarding.',
+                citations: approval ? [approval.hash] : [],
+              });
+            }
+            return JSON.stringify({
+              answer: 'Essa versão foi aprovada por alguém da equipe.',
+              citations: ['0'.repeat(64)],
+            });
+          },
         }}
       />
     </>

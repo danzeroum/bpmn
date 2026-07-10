@@ -28,6 +28,38 @@ const fakeProvider = (responses: string[]): AIProvider => {
   return { id: 'claude-4', complete: async () => responses[Math.min(call++, responses.length - 1)] };
 };
 
+/** C5 fixtures: the XOR-split → AND-join trap and the real fix (XOR join). */
+const TRAP_DRAFT = JSON.stringify({
+  commands: [
+    { type: 'addNode', params: { id: 's', type: 'startEvent', label: 'Início', x: 0, y: 0 } },
+    { type: 'addNode', params: { id: 'x', type: 'exclusiveGateway', label: 'X?', x: 120, y: 0 } },
+    { type: 'addNode', params: { id: 'a', type: 'task', label: 'A', x: 240, y: -60 } },
+    { type: 'addNode', params: { id: 'b', type: 'task', label: 'B', x: 240, y: 60 } },
+    { type: 'addNode', params: { id: 'j', type: 'parallelGateway', label: 'Join', x: 380, y: 0 } },
+    { type: 'addNode', params: { id: 'e', type: 'endEvent', label: 'Fim', x: 500, y: 0 } },
+    { type: 'addEdge', params: { id: 'f1', sourceId: 's', targetId: 'x' } },
+    { type: 'addEdge', params: { id: 'f2', sourceId: 'x', targetId: 'a' } },
+    { type: 'addEdge', params: { id: 'f3', sourceId: 'x', targetId: 'b' } },
+    { type: 'addEdge', params: { id: 'f4', sourceId: 'a', targetId: 'j' } },
+    { type: 'addEdge', params: { id: 'f5', sourceId: 'b', targetId: 'j' } },
+    { type: 'addEdge', params: { id: 'f6', sourceId: 'j', targetId: 'e' } },
+  ],
+  rationale: 'Rascunho com sincronização (armadilha).',
+  promptTemplateRef: { id: 'copilot-draft', version: '1.0.0' },
+});
+
+const REAL_FIX = JSON.stringify({
+  commands: [
+    { type: 'removeNode', params: { id: 'j' } },
+    { type: 'addNode', params: { id: 'j2', type: 'exclusiveGateway', label: 'Convergir', x: 380, y: 0 } },
+    { type: 'addEdge', params: { id: 'g1', sourceId: 'a', targetId: 'j2' } },
+    { type: 'addEdge', params: { id: 'g2', sourceId: 'b', targetId: 'j2' } },
+    { type: 'addEdge', params: { id: 'g3', sourceId: 'j2', targetId: 'e' } },
+  ],
+  rationale: 'Correção: a sincronização AND vira convergência XOR — os ramos são alternativos.',
+  promptTemplateRef: { id: 'copilot-fix', version: '1.0.0' },
+});
+
 function mount(provider: AIProvider | undefined, onChange?: (d: BpmnDiagram) => void) {
   return render(
     <BpmnDesigner diagram={createDiagram({ name: 'C' })} onChange={onChange}>
@@ -106,6 +138,70 @@ describe('CopilotPanel (CP-2)', () => {
     );
     expect(container.querySelector('[data-error]')?.textContent).toContain("'promote' is not on the whitelist");
     expect(onChange).not.toHaveBeenCalled(); // nothing applied
+  });
+
+  it('C5: SND_* error listed → the applied fix REALLY removes it (local re-analysis)', async () => {
+    const { container } = mount(fakeProvider([TRAP_DRAFT, REAL_FIX]));
+    await generate(container, 'processo com sincronização');
+
+    // The trap surfaced by the LOCAL analyzer: list + named code + fix button.
+    const snd = container.querySelector('[data-testid="copilot-snd-errors"]')!;
+    expect(snd.textContent).toContain('SND_DEADLOCK_JOIN');
+    expect(snd.textContent).toContain('prompt: copilot-fix v1.0.0');
+
+    fireEvent.click(container.querySelector('[data-testid="copilot-fix"]')!);
+    await waitFor(() =>
+      expect(container.querySelectorAll('[data-testid="copilot-footer"]')).toHaveLength(2),
+    );
+    // The motivating error is REALLY gone — the list recomputed over the real
+    // diagram disappears and the footer shows the local 0-error preview.
+    expect(container.querySelector('[data-testid="copilot-snd-errors"]')).toBeNull();
+    const footers = container.querySelectorAll('[data-testid="copilot-footer"]');
+    expect(footers[1].textContent).toContain('soundness: 0 erros');
+  });
+
+  it('C5: a "fix" that does NOT fix keeps the error listed (honesty by re-analysis)', async () => {
+    const noopFix = JSON.stringify({
+      commands: [{ type: 'updateNode', params: { id: 'j', label: 'Join (renomeado)' } }],
+      rationale: 'Só renomeia — não corrige nada.',
+      promptTemplateRef: { id: 'copilot-fix', version: '1.0.0' },
+    });
+    const { container } = mount(fakeProvider([TRAP_DRAFT, noopFix]));
+    await generate(container, 'processo com sincronização');
+
+    fireEvent.click(container.querySelector('[data-testid="copilot-fix"]')!);
+    await waitFor(() =>
+      expect(container.querySelectorAll('[data-testid="copilot-footer"]')).toHaveLength(2),
+    );
+    const snd = container.querySelector('[data-testid="copilot-snd-errors"]')!;
+    expect(snd.textContent).toContain('SND_DEADLOCK_JOIN'); // still there
+    const footers = container.querySelectorAll('[data-testid="copilot-footer"]');
+    expect(footers[1].textContent).toContain('soundness: 1 erros');
+  });
+
+  it('C5: a fix smuggling governance is rejected whole by the SAME pipeline', async () => {
+    const evilFix = JSON.stringify({
+      commands: [
+        { type: 'removeNode', params: { id: 'j' } },
+        { type: 'promote', params: {} },
+      ],
+      rationale: 'corrige e promove',
+      promptTemplateRef: { id: 'copilot-fix', version: '1.0.0' },
+    });
+    const onChange = vi.fn();
+    const { container } = mount(fakeProvider([TRAP_DRAFT, evilFix]), onChange);
+    await generate(container, 'processo com sincronização');
+    const callsAfterDraft = onChange.mock.calls.length;
+
+    fireEvent.click(container.querySelector('[data-testid="copilot-fix"]')!);
+    await waitFor(() =>
+      expect(container.querySelector('[data-error]')?.textContent).toContain('rejeitada por inteiro'),
+    );
+    expect(onChange.mock.calls.length).toBe(callsAfterDraft); // nothing applied
+    // The trap is untouched — the error list stays.
+    expect(container.querySelector('[data-testid="copilot-snd-errors"]')?.textContent).toContain(
+      'SND_DEADLOCK_JOIN',
+    );
   });
 
   it('C2: after a draft the action becomes "Pedir ajuste" and applies incrementally', async () => {

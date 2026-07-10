@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { AuditEntry } from '@buildtovalue/core';
 import { toXES, verifyLedger, type LedgerLike, type VerificationReport } from '@buildtovalue/audit';
+import { parseLedgerAnswer, type LedgerQueryResult } from '@buildtovalue/copilot';
 import type { VersionRegistry } from '@buildtovalue/registry';
 import {
   LEDGER_CATEGORIES,
@@ -25,6 +26,14 @@ export interface LedgerExplorerProps {
   /** Download seam (VerificationReport.json / attestation.json / .xes); default: browser download. */
   onDownload?: (filename: string, content: string, mime: string) => void;
   initialFilter?: LedgerFilter;
+  /**
+   * C6 (Handoff 9): host-injected copilot transport for the ledger query box.
+   * Read-only like C3 — neither the question nor the answer touches the
+   * chain. The raw completion goes through `parseLedgerAnswer`: EVERY
+   * citation must resolve to a real entry hash (clickable, opens the entry)
+   * or the panel says "não encontrei registro" — never an invented answer.
+   */
+  query?: (question: string) => Promise<string>;
 }
 
 function browserDownload(filename: string, content: string, mime: string): void {
@@ -57,15 +66,33 @@ function formatWhen(iso: string): string {
  * (max 720px) + detail column (340px). Read-only: verification, export and
  * navigation only — the chain is never mutated here.
  */
-export function LedgerExplorer({ ledger, registry, onAction, onDownload, initialFilter }: LedgerExplorerProps) {
+export function LedgerExplorer({ ledger, registry, onAction, onDownload, initialFilter, query }: LedgerExplorerProps) {
   const [filter, setFilter] = useState<LedgerFilter>(initialFilter ?? {});
   const [selectedSeq, setSelectedSeq] = useState<number>();
   const [report, setReport] = useState<VerificationReport>();
+  // C6 — ledger query state: pure component state, never appended anywhere.
+  const [question, setQuestion] = useState('');
+  const [asking, setAsking] = useState(false);
+  const [queryResult, setQueryResult] = useState<LedgerQueryResult>();
 
   const all = entriesOf(ledger);
   const { entries, counts } = useMemo(() => filterEntries(all, filter), [all, filter]);
   const selected = entries.find((e) => e.seq === selectedSeq) ?? entries[0];
   const download = onDownload ?? browserDownload;
+
+  const askLedger = async () => {
+    if (!query || asking || question.trim() === '') return;
+    setAsking(true);
+    try {
+      const raw = await query(question.trim());
+      // The citability golden rule runs LOCALLY over the REAL entry hashes.
+      setQueryResult(parseLedgerAnswer(raw, all.map((entry) => entry.hash)));
+    } catch (cause) {
+      setQueryResult({ ok: false, reason: (cause as Error).message });
+    } finally {
+      setAsking(false);
+    }
+  };
 
   useEffect(() => {
     setReport(undefined);
@@ -161,6 +188,56 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
           >
             baixar VerificationReport.json
           </button>
+        </div>
+      )}
+
+      {query && (
+        <div className="btv-studio-ledger-query" data-testid="ledger-query">
+          <input
+            aria-label="Pergunta ao ledger"
+            data-testid="ledger-query-input"
+            value={question}
+            placeholder="ex.: quem aprovou a v2.0.0?"
+            onChange={(event) => setQuestion(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') void askLedger();
+            }}
+          />
+          <button
+            type="button"
+            data-testid="ledger-query-ask"
+            disabled={asking || question.trim() === ''}
+            onClick={() => void askLedger()}
+          >
+            ✦ Perguntar
+          </button>
+          {queryResult &&
+            (queryResult.ok ? (
+              <div className="btv-studio-ledger-answer" data-testid="ledger-query-answer">
+                <p>{queryResult.answer}</p>
+                <div className="btv-studio-ledger-citations">
+                  {queryResult.citations.map((hash) => {
+                    const entry = all.find((e) => e.hash === hash);
+                    return (
+                      <button
+                        key={hash}
+                        type="button"
+                        className="btv-studio-ledger-citation btv-studio-mono"
+                        data-testid="ledger-query-citation"
+                        onClick={() => entry && setSelectedSeq(entry.seq)}
+                      >
+                        #{hash.slice(0, 12)}…{entry ? ` · ${entry.type}` : ''}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="btv-studio-ledger-answer" data-testid="ledger-query-norecord">
+                não encontrei registro
+                <span className="btv-studio-muted"> · {queryResult.reason}</span>
+              </div>
+            ))}
         </div>
       )}
 
