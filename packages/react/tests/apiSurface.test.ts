@@ -87,6 +87,18 @@ const EXPECTED_EXPORTS = [
   'SignatureBadge',
   'CanonicalPayloadCard',
   'AnchorSeal',
+  // Agent Lane (Handoff 12 A-4) — Agent Studio + isolated editor + shape.
+  'AgentStudio',
+  'AgentTaskShape',
+  'addEdge',
+  'addNode',
+  'agentEditorReducer',
+  'initEditorState',
+  'layoutWorkflow',
+  'nextNodeId',
+  'removeNode',
+  'toggleDecorator',
+  'updateNodeConfig',
   'ANCHOR_GLYPHS',
   'ANCHOR_LABELS',
   'VERIFICATION_GLYPHS',
@@ -191,9 +203,10 @@ describe('@buildtovalue/react public API surface', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });
 
-  it('every one of the 25 built-in shapes is registered in BUILT_IN_SHAPES', () => {
+  it('every one of the 26 built-in shapes is registered in BUILT_IN_SHAPES', () => {
     expect(Object.keys(api.BUILT_IN_SHAPES).sort()).toEqual(
       [
+        'agentTask',
         'boundaryEvent',
         'businessRuleTask',
         'callActivity',

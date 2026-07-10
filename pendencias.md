@@ -657,6 +657,18 @@ a re-otimização global sob demanda.
   agentflow nem domain-example. Bloqueia promoção a `active` via `evaluateGates` (template
   `soundnessPromotionRule`), com remediação exata. `resolveAgentWorkflow` faz o fallback de snapshot
   (registry = fonte de verdade; snapshot = leitura degradada com aviso; nunca fonte de verdade).
+- **A-4 — AgentStudio shell (entregue):** shape do agentTask reusa `ActivityBox` (geometria/tokens
+  padrão, SEM borda dupla do callActivity — marcador 🤖 próprio traço 1.2 + rodapé mono da ref);
+  badge de ref não resolvida reusa o `CALL_REF_MISSING` (regra do registry, A-6). Modal com `useDismissal`
+  (Esc fecha antes do Designer), eventos N-3 (`element.added`/`changed`/`removed` + `command.executed`/
+  `command.undone`) emitidos de DENTRO do modal via `emitEditorEvent`, i18n via fragment `agentStudio`
+  (superfície no MIGRATED do grep). **Undo isolado:** pilha própria via `useReducer`
+  (`agentEditorReducer`, past/present/future) — NÃO reusa o `CommandStack` do core (que é sobre
+  `BpmnDiagram`); undo no modal nunca desfaz o BPMN. **Layout do canvas:** derivado
+  (`layoutWorkflow`, layered BFS) porque o schema §3 é grafo puro sem coordenadas — determinístico.
+  **Deferido para A-5 (declarado):** o botão Simular (trilha compartilhada), a PROPOSTA undoável do
+  boundary event (o aviso já é renderizado no inspector; o comando `attachBoundaryCommand` é A-5) e
+  a instância de templates com fixtures de simulação. A-4 entrega o SHELL (§8).
 - **Fronteira A-6 (a decidir na PR A-6):** um `AgentWorkflow` é JSON, não `BpmnDiagram`, então o
   adapter "AGENTE" da Biblioteca NÃO é um `kindAdapter` sobre `VersionRegistry<BpmnDiagram>` como os
   demais; A-6 decide entre registrar o JSON do agente como snapshot no registry ou escrever um adapter

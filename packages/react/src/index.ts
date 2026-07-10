@@ -31,6 +31,10 @@ export * from './canvas/useInteractions.js';
 export * from './canvas/routers.js';
 export * from './canvas/routeEdge.js';
 
+// Agent Lane (Handoff 12) — Agent Studio
+export { AgentStudio, type AgentStudioProps } from './agent/AgentStudio.js';
+export * from './agent/agentEditor.js';
+
 // Simulation (Handoff 7A)
 export * from './simulation/BpmnSimulator.js';
 export * from './simulation/SimulationPanel.js';

@@ -1,5 +1,6 @@
 import type { ShapeComponent } from '../plugins/types.js';
 import {
+  AgentTaskShape,
   BoundaryEventShape,
   BusinessRuleTaskShape,
   CallActivityShape,
@@ -51,6 +52,7 @@ export const BUILT_IN_SHAPES: Record<string, ShapeComponent> = {
   eventBasedGateway: EventBasedGatewayShape,
   subProcess: SubProcessShape,
   callActivity: CallActivityShape,
+  agentTask: AgentTaskShape,
   dataObject: DataObjectShape,
   dataStore: DataStoreShape,
   textAnnotation: TextAnnotationShape,
