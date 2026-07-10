@@ -1,6 +1,11 @@
 // Entry components
 export * from './BpmnDesigner.js';
 export * from './BpmnEditor.js';
+// Lightweight read-only viewer (N-7) — re-exported here for drop-in
+// compatibility; import from '@buildtovalue/react/viewer' to tree-shake the
+// editor graph.
+export { BpmnViewer, type BpmnViewerProps } from './viewer/BpmnViewer.js';
+export { ViewerCanvas, type ViewerCanvasProps } from './viewer/ViewerCanvas.js';
 
 // Contexts & hooks
 export * from './contexts/DiagramContext.js';

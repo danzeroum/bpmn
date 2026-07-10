@@ -17,6 +17,11 @@
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
     },
+    "./viewer": {
+      "types": "./dist/esm/viewer.d.ts",
+      "import": "./dist/esm/viewer.js",
+      "require": "./dist/cjs/viewer.js"
+    },
     "./styles.css": "./styles.css"
   },
   "files": [

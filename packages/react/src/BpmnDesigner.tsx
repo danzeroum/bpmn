@@ -85,27 +85,9 @@ export function BpmnDesigner({ plugins, messages, ...rest }: BpmnDesignerProps) 
   return messages !== undefined ? <I18nProvider messages={messages}>{body}</I18nProvider> : body;
 }
 
-export interface BpmnViewerProps {
-  diagram: BpmnDiagram;
-  plugins?: BpmnPlugin[];
-  overlay?: ReactNode;
-  showClosed?: boolean;
-  /** Injected UI dictionary (Handoff 11 N-6). Omitted → English. */
-  messages?: Messages;
-}
-
-/** Read-only rendering of a diagram (no gestures that mutate state). */
-export function BpmnViewer({ diagram, plugins, overlay, showClosed, messages }: BpmnViewerProps) {
-  return (
-    <BpmnDesigner
-      diagram={diagram}
-      plugins={plugins}
-      readOnly
-      overlay={overlay}
-      showClosed={showClosed}
-      messages={messages}
-    />
-  );
-}
+// The read-only viewer moved to a tree-shakeable entry point (Handoff 11 N-7):
+// `@buildtovalue/react/viewer`. It is re-exported from the package root (see
+// index.ts) for drop-in compatibility — a lightweight render-equivalent of the
+// former `<BpmnDesigner readOnly>` wrapper (proven by viewerEquivalence.test).
 
 export { resolveEditorConfig };

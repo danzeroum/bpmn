@@ -569,6 +569,14 @@ a re-otimização global sob demanda.
   entra no catálogo documentado. O contrato de estabilidade semver nasce na N-3.
 - **Triagem N-7 (viewer):** o nome `BpmnViewer` já existe como wrapper readOnly do Designer; o
   realinhamento para o entry point leve exige **teste de equivalência de render** antes de mexer.
+  → **ENTREGUE (N-7):** `@buildtovalue/react/viewer` é o entry point leve (render + pan/zoom +
+  overlays read-only: selos/⚠), sem `useInteractions`/toolbar/paleta/inspector/comandos. O
+  `viewerEquivalence.test` (escrito PRIMEIRO) prova que `<BpmnViewer>` pinta o mesmo canvas que
+  `<BpmnDesigner readOnly>` (compara o SVG); `viewerBundle.test` mede o grafo de deps (o entry NÃO
+  alcança nenhum módulo do editor) e o tamanho (viewer = 44.8% do editor, ≤50% medido). O export
+  `BpmnViewer` da raiz foi realinhado para a impl leve sem quebrar consumidores (equivalência como
+  prova). Substrato compartilhado: `canvas/renderList.ts` (visível+z-order+cull) usado pelo canvas
+  do editor e pelo `ViewerCanvas`, para os dois caminhos nunca divergirem.
 - **N-2 ENTREGUE:** `corpusPolicy.ts` é a fonte única (contagem gerada anti-drift + bounds do
   fetch); CONFORMANCE.md ganhou as seções "Corpus real vs gerado" (com a decisão
   MANIFEST-como-proveniência) e "`certify --strict` vs validação XSD"; o CLI ganhou `--strict`
