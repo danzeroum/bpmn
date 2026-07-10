@@ -207,3 +207,37 @@ describe('LedgerExplorer — C6 consulta com citações (Handoff 9 CP-4)', () =>
     expect(screen.queryByTestId('ledger-query')).not.toBeInTheDocument();
   });
 });
+
+describe('LedgerExplorer — selo de autoria de IA (Handoff 9 §8.2)', () => {
+  it('entries authored (or co-authored) by the copilot carry the ✦ seal; human ones do not', async () => {
+    const ledger = await seededLedger(); // 4 human entries
+    await ledger.append({
+      type: 'COPILOT_PROPOSAL_APPLIED',
+      userId: 'ana',
+      versionId: 'onb-v2',
+      details: {
+        author: 'ia.copilot@claude-4',
+        promptTemplateRef: { id: 'copilot-draft', version: '1.0.0' },
+      },
+    });
+    await ledger.append({
+      type: 'VERSION_ACTIVATED',
+      userId: 'ana',
+      versionId: 'onb-v3',
+      details: {
+        semanticVersion: '3.0.0',
+        changeSummaryOrigin: {
+          author: 'ia.copilot@claude-4',
+          promptTemplateRef: { id: 'copilot-summary', version: '1.0.0' },
+          edited: true,
+        },
+      },
+    });
+    render(<LedgerExplorer ledger={ledger} />);
+    // Exactly the two AI-touched entries carry the seal — direct authorship
+    // (C1/C2/C5) and text co-authorship (C4); the 4 human entries do not.
+    const seals = screen.getAllByTestId('ledger-ai-seal');
+    expect(seals).toHaveLength(2);
+    for (const seal of seals) expect(seal.textContent).toContain('✦ ia.copilot@claude-4');
+  });
+});

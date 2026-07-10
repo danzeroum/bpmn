@@ -5,6 +5,7 @@ import { parseLedgerAnswer, type LedgerQueryResult } from '@buildtovalue/copilot
 import type { VersionRegistry } from '@buildtovalue/registry';
 import {
   LEDGER_CATEGORIES,
+  aiAuthorOf,
   categorizeEntry,
   describeEntry,
   filterEntries,
@@ -275,6 +276,11 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
                     <span className={`btv-studio-ledger-type btv-studio-ledger-type-${category}`}>
                       {entry.type}
                     </span>
+                    {aiAuthorOf(entry) && (
+                      <span className="btv-studio-ledger-ai" data-testid="ledger-ai-seal">
+                        ✦ {aiAuthorOf(entry)}
+                      </span>
+                    )}
                     <span className="btv-studio-ledger-title">
                       {entry.details['artifactId'] ? `${entry.details['artifactId']} · ` : ''}
                       {entry.versionId}

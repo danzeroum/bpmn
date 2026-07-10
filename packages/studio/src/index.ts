@@ -8,6 +8,7 @@ export { LedgerExplorer } from './ledger/LedgerExplorer.js';
 export type { LedgerAction, LedgerExplorerProps } from './ledger/LedgerExplorer.js';
 export {
   LEDGER_CATEGORIES,
+  aiAuthorOf,
   categorizeEntry,
   describeEntry,
   filterEntries,
