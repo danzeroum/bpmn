@@ -1,5 +1,5 @@
-import { canonicalJson, XmlBuilder, type AuditEntry } from '@bpmn-react/core';
-import type { VersionRegistry } from '@bpmn-react/registry';
+import { canonicalJson, XmlBuilder, type AuditEntry } from '@buildtovalue/core';
+import type { VersionRegistry } from '@buildtovalue/registry';
 import type { LedgerLike } from './verify.js';
 
 /**

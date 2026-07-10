@@ -6,8 +6,8 @@ import {
   createDiagram,
   createNode,
   type BpmnDiagram,
-} from '@bpmn-react/core';
-import { updateNodeCommand } from '@bpmn-react/core';
+} from '@buildtovalue/core';
+import { updateNodeCommand } from '@buildtovalue/core';
 import type { BpmnPlugin, EditorEvent } from '../src/index.js';
 import { autosaveKey, BpmnDesigner, BpmnEditor, useDiagram } from '../src/index.js';
 

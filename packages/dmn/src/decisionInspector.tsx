@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { createNode, type BpmnNode } from '@bpmn-react/core';
+import { createNode, type BpmnNode } from '@buildtovalue/core';
 import {
   SEAL_LABELS,
   useDiagram,
   useEditorConfig,
   type InspectorSection,
-} from '@bpmn-react/react';
+} from '@buildtovalue/react';
 import {
   createDecisionCommand,
   createDecisionTable,

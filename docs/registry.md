@@ -1,4 +1,4 @@
-# Version governance — `@bpmn-react/registry`
+# Version governance — `@buildtovalue/registry`
 
 The core [`LifecycleEngine`](versioning.md) enforces *how* a version transitions and what it takes
 to reach `active`. The registry is the **queryable governance layer on top**: it records the
@@ -9,7 +9,7 @@ there.
 ## Registering versions
 
 ```ts
-import { VersionRegistry } from '@bpmn-react/registry';
+import { VersionRegistry } from '@buildtovalue/registry';
 
 const registry = new VersionRegistry();
 await registry.register(diagram, {
@@ -71,7 +71,7 @@ The "commit hash of the deploy" applied to a process. Each execution/delivery is
 version that produced it:
 
 ```ts
-import { bindRun, verifyRunBinding } from '@bpmn-react/registry';
+import { bindRun, verifyRunBinding } from '@buildtovalue/registry';
 
 const run = bindRun(registry.get('v2')!, { channel: 'general', environment: 'prod' });
 // { runId, versionId, semanticVersion, snapshotHash, channel, environment, boundAt } — frozen

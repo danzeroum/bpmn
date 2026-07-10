@@ -6,8 +6,8 @@ import {
   createNode,
   LifecycleEngine,
   type BpmnDiagram,
-} from '@bpmn-react/core';
-import { CoverageTracker, SimulationEngine, buildSession } from '@bpmn-react/simulation';
+} from '@buildtovalue/core';
+import { CoverageTracker, SimulationEngine, buildSession } from '@buildtovalue/simulation';
 import {
   coveragePromotionRule,
   createRoteiroAdapter,

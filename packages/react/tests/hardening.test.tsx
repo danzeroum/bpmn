@@ -1,7 +1,7 @@
 import { StrictMode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
-import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@bpmn-react/core';
+import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@buildtovalue/core';
 import { BpmnDesigner } from '../src/index.js';
 
 /**

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, cleanup, waitFor } from '@testing-library/react';
-import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@bpmn-react/core';
+import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@buildtovalue/core';
 import { BpmnSimulator } from '../src/simulation/BpmnSimulator.js';
 import { edgeGeometryFor, nodeCenter } from '../src/simulation/edgePath.js';
 

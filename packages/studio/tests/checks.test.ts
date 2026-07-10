@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { AuditLedger } from '@bpmn-react/core';
-import { VersionRegistry } from '@bpmn-react/registry';
-import { computeDiagramHash } from '@bpmn-react/core';
+import { AuditLedger } from '@buildtovalue/core';
+import { VersionRegistry } from '@buildtovalue/registry';
+import { computeDiagramHash } from '@buildtovalue/core';
 import { runReviewChecks } from '../src/index.js';
 import { candidateDiagram, extraNode } from './fixtures.js';
 

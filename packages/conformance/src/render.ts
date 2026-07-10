@@ -27,7 +27,7 @@ export function renderConformanceMarkdown(entries: ConformanceEntry[] = CONFORMA
     '     Regenerate with: node scripts/gen-conformance.mjs -->',
     '',
     'Element-by-element conformance of the bpmn-react import/export profile',
-    '(`@bpmn-react/core` BpmnXmlConverter). Statuses: **supported** — imports,',
+    '(`@buildtovalue/core` BpmnXmlConverter). Statuses: **supported** — imports,',
     'renders, exports and round-trips losslessly; **partial** — model and',
     'round-trip work, some interactions pending; **degraded** — imported with a',
     'warning and downgraded; **unsupported** — ignored on import with a warning.',

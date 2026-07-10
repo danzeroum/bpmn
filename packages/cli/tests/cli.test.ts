@@ -10,7 +10,7 @@ import {
   createEdge,
   createNode,
   JsonSerializer,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import {
   auditCommand,
   certifyCommand,

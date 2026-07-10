@@ -1,5 +1,5 @@
 {
-  "name": "@bpmn-react/registry",
+  "name": "@buildtovalue/registry",
   "version": "1.0.0",
   "description": "Headless version governance for bpmn-react: a queryable registry of diagram versions with temporal validity, publication channels/environments, dual changelog and execution pinning (run-binding). Zero runtime dependencies.",
   "license": "Apache-2.0",
@@ -27,7 +27,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@bpmn-react/core": "workspace:*"
+    "@buildtovalue/core": "workspace:*"
   },
   "keywords": [
     "bpmn",

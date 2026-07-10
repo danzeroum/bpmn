@@ -3,7 +3,7 @@ import {
   childrenByLocalName,
   firstChildByLocalName,
   type XmlElement,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import type { DecisionRule, DecisionTable, DecisionTableColumn, HitPolicy } from './decisionTable.js';
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { VersionRegistry } from '@bpmn-react/registry';
+import { VersionRegistry } from '@buildtovalue/registry';
 import { dmnDecisionAdapter } from '../src/index.js';
 import { diagramAt } from './fixtures.js';
 

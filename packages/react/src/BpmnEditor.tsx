@@ -18,7 +18,7 @@ export interface BpmnEditorProps extends BpmnDesignerProps {
 /**
  * Batteries-included editor: BpmnDesigner + Toolbar + Palette +
  * PropertiesPanel + MiniMap + StatusBadge, arranged with the default layout.
- * Import `@bpmn-react/react/styles.css` for the default styling.
+ * Import `@buildtovalue/react/styles.css` for the default styling.
  */
 export function BpmnEditor({
   toolbarExtra,

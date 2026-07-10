@@ -1,11 +1,11 @@
 import { useMemo, useState, type KeyboardEvent } from 'react';
-import type { BpmnNode } from '@bpmn-react/core';
+import type { BpmnNode } from '@buildtovalue/core';
 import {
   GovernanceBreadcrumb,
   useDiagram,
   useDismissal,
   type GovernanceBreadcrumbLevel,
-} from '@bpmn-react/react';
+} from '@buildtovalue/react';
 import {
   decisionTableOf,
   HIT_POLICIES,

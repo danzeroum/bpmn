@@ -1,7 +1,7 @@
 {
-  "name": "@bpmn-react/adapters-bpmn",
+  "name": "@buildtovalue/adapters-bpmn",
   "version": "1.0.0",
-  "description": "ArtifactAdapter implementations for the BuildToValue Studio library (Handoff 6 S-2): BPMN flow, persona, prompt, connector and policy adapters over the version registry, a DMN decision adapter, headless SVG thumbnails, plus the in-memory \"recipe\" fixture adapter that proves the library's genericity (acid test §10.1). Workspace-only — the publish scope awaits pendencias.md §1. Zero runtime dependencies beyond @bpmn-react/*.",
+  "description": "ArtifactAdapter implementations for the BuildToValue Studio library (Handoff 6 S-2): BPMN flow, persona, prompt, connector and policy adapters over the version registry, a DMN decision adapter, headless SVG thumbnails, plus the in-memory \"recipe\" fixture adapter that proves the library's genericity (acid test §10.1). Zero runtime dependencies beyond @buildtovalue/*.",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
@@ -27,11 +27,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@bpmn-react/core": "workspace:*",
-    "@bpmn-react/library": "workspace:*",
-    "@bpmn-react/registry": "workspace:*",
-    "@bpmn-react/replay": "workspace:*",
-    "@bpmn-react/simulation": "workspace:*"
+    "@buildtovalue/core": "workspace:*",
+    "@buildtovalue/library": "workspace:*",
+    "@buildtovalue/registry": "workspace:*",
+    "@buildtovalue/replay": "workspace:*",
+    "@buildtovalue/simulation": "workspace:*"
   },
   "keywords": [
     "bpmn",
@@ -47,6 +47,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "private": true
+  }
 }

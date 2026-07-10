@@ -1,4 +1,4 @@
-# @bpmn-react/soundness
+# @buildtovalue/soundness
 
 Structural soundness analysis for BPMN diagrams: deadlock, livelock and
 dead-branch detection over the process graph — **O(V+E) per rule, never
@@ -7,7 +7,7 @@ the react editor and the CLI consume it with zero new integration code.
 Zero runtime dependencies.
 
 ```ts
-import { soundnessRules, analyzeSoundness } from '@bpmn-react/soundness';
+import { soundnessRules, analyzeSoundness } from '@buildtovalue/soundness';
 
 // As an editor plugin (errors surface in Validate and block promotion in C2):
 const plugin = { id: 'soundness', validationRules: soundnessRules() };

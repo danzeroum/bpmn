@@ -5,7 +5,7 @@ import {
   straightConnection,
   waypointsToPath,
   type EdgeGeometry,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { EDGE_CORNER_RADIUS } from '../shapes/common.js';
 import type { EdgeRouterFn } from '../plugins/types.js';
 

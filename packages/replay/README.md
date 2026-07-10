@@ -1,16 +1,16 @@
-# @bpmn-react/replay
+# @buildtovalue/replay
 
 Headless **conformance checking** for BPMN replay — "does reality behave the way
 the model says?". Streaming XES 2.0 / CSV parsing, one-pass frequency/time
 pre-aggregation, **token-replay fitness** (never alignments), deviation
 detection and variant extraction.
 
-**Imports nothing from the ecosystem — not even `@bpmn-react/core`.** It replays
+**Imports nothing from the ecosystem — not even `@buildtovalue/core`.** It replays
 over an *abstract graph injected by the caller*, so the same machinery works on
 a BPMN model, a future DMN DRD, or a fake graph. **Zero dependencies.**
 
 ```ts
-import { parseXes, aggregate } from '@bpmn-react/replay';
+import { parseXes, aggregate } from '@buildtovalue/replay';
 
 const traces = parseXes(xesText); // or parseCsv(csvText, { case, activity, timestamp })
 const graph = {

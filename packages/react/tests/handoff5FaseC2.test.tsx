@@ -7,7 +7,7 @@ import {
   edgeVersionDiff,
   type BpmnDiagram,
   type BpmnEdge,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { BpmnDesigner, EdgePedigreeStrip } from '../src/index.js';
 
 /** gate→publish handoff renegotiated twice: e1a (closed) → e1b (closed) → e1. */

@@ -1,4 +1,4 @@
-import { activeNodes, type BpmnDiagram } from '@bpmn-react/core';
+import { activeNodes, type BpmnDiagram } from '@buildtovalue/core';
 
 /**
  * The catalog kinds a registered diagram can embody. "policy" maps to the

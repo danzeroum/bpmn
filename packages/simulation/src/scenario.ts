@@ -1,4 +1,4 @@
-import { sha256Hex } from '@bpmn-react/core';
+import { sha256Hex } from '@buildtovalue/core';
 import type { Decision } from './types.js';
 import type { Scenario } from './engine.js';
 

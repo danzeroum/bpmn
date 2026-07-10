@@ -1,4 +1,4 @@
-import type { VersionStatus } from '@bpmn-react/core';
+import type { VersionStatus } from '@buildtovalue/core';
 import { SEAL_LABELS } from './StatusBadge.js';
 
 /**

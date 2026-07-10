@@ -3,7 +3,7 @@ import {
   nodeParentId,
   type BpmnDiagram,
   type BpmnNode,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 
 /**
  * Whether a node renders on the canvas (F7-2). With no drill: hidden when its

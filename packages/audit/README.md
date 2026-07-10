@@ -1,10 +1,10 @@
-# @bpmn-react/audit
+# @buildtovalue/audit
 
 Demonstrable integrity for bpmn-react governance. Zero runtime dependencies;
-consumes `@bpmn-react/core` and `@bpmn-react/registry` (read-only).
+consumes `@buildtovalue/core` and `@buildtovalue/registry` (read-only).
 
 ```ts
-import { verifyLedger, attestVersion, attestationHash } from '@bpmn-react/audit';
+import { verifyLedger, attestVersion, attestationHash } from '@buildtovalue/audit';
 
 // Re-verify a hash-chained ledger — live object or exported ledger.json:
 const report = await verifyLedger(ledger);

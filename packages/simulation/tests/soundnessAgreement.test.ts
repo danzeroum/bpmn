@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeSoundness, buildScopeGraphs, type ScopeGraph } from '@bpmn-react/soundness';
+import { analyzeSoundness, buildScopeGraphs, type ScopeGraph } from '@buildtovalue/soundness';
 import { SimulationEngine } from '../src/index.js';
 import { buildSimGraph, type SimGraph } from '../src/graph.js';
 import {

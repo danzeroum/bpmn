@@ -1,5 +1,5 @@
-import type { AuditEntry, PromotionRule } from '@bpmn-react/core';
-import { verificationState, type SignedApproval, type VerificationState } from '@bpmn-react/identity';
+import type { AuditEntry, PromotionRule } from '@buildtovalue/core';
+import { verificationState, type SignedApproval, type VerificationState } from '@buildtovalue/identity';
 import type { LedgerLike } from './verify.js';
 
 /**
@@ -7,7 +7,7 @@ import type { LedgerLike } from './verify.js';
  * UI (I-2) and the `SignedApproval` is persisted in the recording entry's
  * `details.signedApproval` — so it joins the hash-chain. This module reads those
  * back, re-verifies them, and exposes the optional promotion gate. Verification
- * is OFFLINE via `@bpmn-react/identity`; the public key is resolved by the host.
+ * is OFFLINE via `@buildtovalue/identity`; the public key is resolved by the host.
  */
 
 /** Resolves a public key for a signer fingerprint (host-provided). */

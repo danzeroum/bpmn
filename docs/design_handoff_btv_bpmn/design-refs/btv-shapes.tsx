@@ -4,8 +4,8 @@
  * tag de tipo em small-caps, traço 1.5 / 2.5 selecionado, glifos no stroke do tipo.
  * Requer btv-tokens.css (fallbacks embutidos).
  */
-import type { ShapeProps } from '@bpmn-react/react';
-import { ShapeLabel, theme } from '@bpmn-react/react';
+import type { ShapeProps } from '@buildtovalue/react';
+import { ShapeLabel, theme } from '@buildtovalue/react';
 
 const sw = (selected: boolean) => (selected ? 2.5 : 1.5);
 const GOLD = 'var(--btv-gold, #9a7b1e)';

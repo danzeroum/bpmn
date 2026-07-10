@@ -1,4 +1,4 @@
-# @bpmn-react/react
+# @buildtovalue/react
 
 React layer for [bpmn-react](https://github.com/danzeroum/bpmn): a native-SVG BPMN designer with
 zero runtime dependencies (React as peer).
@@ -15,8 +15,8 @@ zero runtime dependencies (React as peer).
 - `DiffView`, SVG/PNG exporters
 
 ```tsx
-import { BpmnEditor } from '@bpmn-react/react';
-import '@bpmn-react/react/styles.css';
+import { BpmnEditor } from '@buildtovalue/react';
+import '@buildtovalue/react/styles.css';
 
 <BpmnEditor diagram={diagram} plugins={[myPlugin]} onChange={save} />;
 ```

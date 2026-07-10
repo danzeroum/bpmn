@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import type { BpmnNode, VersionStatus } from '@bpmn-react/core';
-import { SEAL_LABELS, useCanvasState, useDiagram, useDismissal } from '@bpmn-react/react';
+import type { BpmnNode, VersionStatus } from '@buildtovalue/core';
+import { SEAL_LABELS, useCanvasState, useDiagram, useDismissal } from '@buildtovalue/react';
 import { decisionTableOf, HIT_POLICIES, type DecisionTable } from './decisionTable.js';
 
 /**

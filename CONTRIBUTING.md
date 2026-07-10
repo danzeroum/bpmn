@@ -19,7 +19,7 @@ This project is a **from-scratch implementation**. To keep it legally clean:
 ## Zero runtime dependencies policy
 
 Publishable packages (`core`, `react`, `registry`, `domain-example`, `cli`) must declare **no
-external runtime `dependencies`** — only workspace-internal `@bpmn-react/*` links are allowed.
+external runtime `dependencies`** — only workspace-internal `@buildtovalue/*` links are allowed.
 `react`/`react-dom` are allowed only as `peerDependencies` of the React packages. Build and test
 tooling goes in `devDependencies`. CI enforces this via `pnpm check:no-runtime-deps`.
 
@@ -34,7 +34,7 @@ pnpm lint
 ```
 
 - **Run `pnpm build` before `pnpm test`.** Cross-package tests (e.g. the conformance
-  corpus) import sibling packages by name (`@bpmn-react/core`), which resolves to each
+  corpus) import sibling packages by name (`@buildtovalue/core`), which resolves to each
   package's built `dist/`. A bare `vitest run` on a fresh checkout therefore fails on
   module resolution — that is an environment/ordering issue, not a conformance failure.
 - Unit tests live next to the code in `tests/` folders per package (Vitest).

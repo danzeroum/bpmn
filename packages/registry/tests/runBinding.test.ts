@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeDiagramHash, createDiagram, type BpmnDiagram } from '@bpmn-react/core';
+import { computeDiagramHash, createDiagram, type BpmnDiagram } from '@buildtovalue/core';
 import { bindRun, RegistryError, verifyRunBinding, VersionRegistry, type RegistryEntry } from '../src/index.js';
 
 async function versioned(versionId: string, semver: string): Promise<BpmnDiagram> {

@@ -1,13 +1,13 @@
-# @bpmn-react/simulation
+# @buildtovalue/simulation
 
 Headless BPMN **token-simulation** engine — "does the model behave the way I
 expect?". Walks a diagram with animated-token semantics, entirely without a
 DOM, so the React overlay (Handoff 7A-2) is a thin rendering layer over a
-fully-tested core. **Consumes only `@bpmn-react/core`. Zero runtime
+fully-tested core. **Consumes only `@buildtovalue/core`. Zero runtime
 dependencies.**
 
 ```ts
-import { SimulationEngine, CoverageTracker } from '@bpmn-react/simulation';
+import { SimulationEngine, CoverageTracker } from '@buildtovalue/simulation';
 
 const engine = new SimulationEngine(diagram);
 const coverage = new CoverageTracker(engine.graph); // survives engine.reset()

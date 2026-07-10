@@ -5,7 +5,7 @@
      Regenerate with: node scripts/gen-conformance.mjs -->
 
 Element-by-element conformance of the bpmn-react import/export profile
-(`@bpmn-react/core` BpmnXmlConverter). Statuses: **supported** — imports,
+(`@buildtovalue/core` BpmnXmlConverter). Statuses: **supported** — imports,
 renders, exports and round-trips losslessly; **partial** — model and
 round-trip work, some interactions pending; **degraded** — imported with a
 warning and downgraded; **unsupported** — ignored on import with a warning.
@@ -24,7 +24,7 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:manualTask` | ✅ supported | analytic | `manualTask` |  |
 | `bpmn:businessRuleTask` | ✅ supported | analytic | `businessRuleTask` | DMN table glyph + decision-link badge (properties.decisionRef); decision table editor lands with Handoff 5 F-B. |
 | `bpmn:subProcess` | ✅ supported | descriptive | `subProcess` | Nested children as first-class nodes (lossless round-trip, DI isExpanded); expand/collapse and drill-down in the editor. |
-| `bpmn:callActivity` | ✅ supported | descriptive | `callActivity` | Native calledElement; @bpmn-react/registry resolves the called process version (resolveCallActivities/activeAt). |
+| `bpmn:callActivity` | ✅ supported | descriptive | `callActivity` | Native calledElement; @buildtovalue/registry resolves the called process version (resolveCallActivities/activeAt). |
 | `bpmn:transaction` | ⛔ unsupported | extended | — | Deliberately out of scope before v2.x. |
 | `bpmn:adHocSubProcess` | ⛔ unsupported | extended | — |  |
 | `loopCharacteristics (standard)` | ✅ supported | analytic | `activity marker` |  |

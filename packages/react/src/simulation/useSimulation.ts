@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { BpmnDiagram } from '@bpmn-react/core';
+import type { BpmnDiagram } from '@buildtovalue/core';
 import {
   CoverageTracker,
   SimulationEngine,
@@ -7,7 +7,7 @@ import {
   type Decision,
   type SimulationState,
   type TransitionRecord,
-} from '@bpmn-react/simulation';
+} from '@buildtovalue/simulation';
 
 /** A token journey to animate along one edge, keyed so it plays exactly once. */
 export interface TokenTravel {

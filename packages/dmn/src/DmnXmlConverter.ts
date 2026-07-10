@@ -14,7 +14,7 @@ import {
   type Point,
   type VersionStatus,
   type XmlElement,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { DMN_NODE_TYPES, type DmnEdgeType } from './model.js';
 import { decisionTableOf } from './decisionTable.js';
 import { readDecisionTable, writeDecisionTable } from './decisionTableXml.js';

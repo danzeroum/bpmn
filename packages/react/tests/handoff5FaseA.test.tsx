@@ -5,7 +5,7 @@ import {
   createNode,
   type BpmnDiagram,
   type ValidationRule,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { BpmnDesigner, GovernanceBreadcrumb, Toolbar } from '../src/index.js';
 
 /** Expanded sub-process with children + a businessRuleTask, for F-A checks. */

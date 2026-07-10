@@ -6,7 +6,7 @@ import {
   type BpmnNode,
   type EdgeGeometry,
   type Point,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { isManualEdge } from './routeEdge.js';

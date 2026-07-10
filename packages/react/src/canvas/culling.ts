@@ -1,4 +1,4 @@
-import type { BpmnEdge, BpmnNode } from '@bpmn-react/core';
+import type { BpmnEdge, BpmnNode } from '@buildtovalue/core';
 import type { Viewport } from '../state/canvasStore.js';
 
 /**

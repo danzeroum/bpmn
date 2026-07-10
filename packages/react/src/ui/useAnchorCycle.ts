@@ -5,7 +5,7 @@ import {
   type AnchorHead,
   type AnchorReceipt,
   type AnchorState,
-} from '@bpmn-react/identity';
+} from '@buildtovalue/identity';
 
 export interface AnchorCycle {
   state: AnchorState;

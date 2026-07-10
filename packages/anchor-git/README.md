@@ -1,8 +1,8 @@
-# @bpmn-react/anchor-git
+# @buildtovalue/anchor-git
 
 Git **anchor adapter** for BPMN governance (Handoff 8): anchors the ledger chain
 head to a commit and verifies it later, implementing the `AnchorAdapter` contract
-from `@bpmn-react/identity`.
+from `@buildtovalue/identity`.
 
 ## The host owns the transport (no network in the library)
 
@@ -11,7 +11,7 @@ never shells out to `git` nor does network. You provide `commit`/`read`; the
 adapter provides the anchor/verify semantics.
 
 ```ts
-import { createGitAnchor } from '@bpmn-react/anchor-git';
+import { createGitAnchor } from '@buildtovalue/anchor-git';
 
 const anchor = createGitAnchor({
   async commit(payload) {
@@ -36,9 +36,9 @@ await anchor.verify(receipt, currentHashAtSeq); // 'anchored' | 'mismatch' | 'un
 - `mismatch` → the chain was regenerated after anchoring (**cadeia ≠ âncora**) —
   the case a local hash-chain alone never detects.
 
-Derive the UI state from these via `deriveAnchorState` in `@bpmn-react/identity`.
+Derive the UI state from these via `deriveAnchorState` in `@buildtovalue/identity`.
 
 ## Decoupling
 
-Consumes only `@bpmn-react/identity` (the contracts) — pinned by
+Consumes only `@buildtovalue/identity` (the contracts) — pinned by
 `tests/independence.test.ts`. **Zero runtime dependencies.**

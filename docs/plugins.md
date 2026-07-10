@@ -3,7 +3,7 @@
 A plugin is a **plain declarative object** — no dependency injection, no lifecycle classes:
 
 ```tsx
-import type { BpmnPlugin } from '@bpmn-react/react';
+import type { BpmnPlugin } from '@buildtovalue/react';
 
 export const myDomainPlugin: BpmnPlugin = {
   id: 'my-company/orders',
@@ -69,4 +69,4 @@ Use it:
 | `onBeforeSave` / `onAfterLoad` | Transform the diagram at export/import boundaries. |
 
 Plugins are merged in order; duplicate ids — the last one wins. A complete worked example lives in
-[`@bpmn-react/domain-example`](../packages/domain-example).
+[`@buildtovalue/domain-example`](../packages/domain-example).

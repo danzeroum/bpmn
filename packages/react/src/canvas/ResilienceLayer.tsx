@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { computeDiagramHash, restoreDiagramCommand } from '@bpmn-react/core';
+import { computeDiagramHash, restoreDiagramCommand } from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';

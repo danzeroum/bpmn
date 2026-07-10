@@ -1,6 +1,7 @@
 {
-  "name": "@bpmn-react/domain-example",
+  "name": "@buildtovalue/domain-example",
   "version": "1.0.0",
+  "private": true,
   "description": "Example domain plugin for bpmn-react: squads, personas, gates, prompts, connectors and deliverables — a template for building your own domain vocabulary on top of the generic core.",
   "license": "Apache-2.0",
   "type": "module",
@@ -30,8 +31,8 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@bpmn-react/core": "workspace:*",
-    "@bpmn-react/react": "workspace:*"
+    "@buildtovalue/core": "workspace:*",
+    "@buildtovalue/react": "workspace:*"
   },
   "repository": {
     "type": "git",

@@ -1,6 +1,6 @@
 import { useCallback, useState, type ReactNode } from 'react';
-import type { BpmnDiagram } from '@bpmn-react/core';
-import { buildSession, coveragePercent, type SimulationSession } from '@bpmn-react/simulation';
+import type { BpmnDiagram } from '@buildtovalue/core';
+import { buildSession, coveragePercent, type SimulationSession } from '@buildtovalue/simulation';
 import { BpmnEditor } from '../BpmnEditor.js';
 import type { BpmnPlugin } from '../plugins/types.js';
 import { useSimulation } from './useSimulation.js';

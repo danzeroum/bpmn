@@ -1,4 +1,4 @@
-import type { Point } from '@bpmn-react/core';
+import type { Point } from '@buildtovalue/core';
 import { createStore, type Store } from './createStore.js';
 
 export interface Viewport {

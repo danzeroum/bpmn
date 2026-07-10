@@ -7,14 +7,14 @@ import {
   nodeParentId,
   type BpmnDiagram,
   type BpmnNode,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import type { GatewayKind, SimEdge, SimNode } from './types.js';
 
 /**
  * The control-flow graph the token engine walks. It is built from a diagram
  * using the **same flow-node / flow-edge classification the soundness analysis
  * uses** (Handoff 7 §7.2). Because `simulation` may only depend on `core`, that
- * classification is duplicated here rather than imported from `@bpmn-react/
+ * classification is duplicated here rather than imported from `@buildtovalue/
  * soundness`; `tests/soundnessAgreement.test.ts` pins the two to identical
  * adjacency so the coverage checklist and the deadlock verdict agree with
  * soundness by construction, not by coincidence.
@@ -28,7 +28,7 @@ export interface SimGraph {
   boundariesByHost: Map<string, string[]>;
 }
 
-// Kept identical to @bpmn-react/soundness graph.ts (see class doc above).
+// Kept identical to @buildtovalue/soundness graph.ts (see class doc above).
 const NON_FLOW_TYPES = new Set(['dataObject', 'dataStore', 'textAnnotation', 'group']);
 const NON_FLOW_EDGE_TYPES = new Set(['messageFlow', 'association', 'dataAssociation']);
 

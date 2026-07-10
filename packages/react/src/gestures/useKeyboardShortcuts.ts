@@ -7,7 +7,7 @@ import {
   nodeParentId,
   removeEdgeCommand,
   removeNodeCommand,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { fitViewport } from '../canvas/viewport.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';

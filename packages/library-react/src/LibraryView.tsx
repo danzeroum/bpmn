@@ -7,8 +7,8 @@ import {
   type LibraryQuery,
   type LibrarySort,
   type LifecycleStatus,
-} from '@bpmn-react/library';
-import { SEAL_LABELS } from '@bpmn-react/react';
+} from '@buildtovalue/library';
+import { SEAL_LABELS } from '@buildtovalue/react';
 import { ArtifactCard } from './ArtifactCard.js';
 import { ArtifactDrawer } from './ArtifactDrawer.js';
 import { useLibrary } from './useLibrary.js';

@@ -6,7 +6,7 @@ import {
   type BpmnDiagram,
   type BpmnDiff,
   type ValidationResult,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 
 export interface LoadResult {
   diagram: BpmnDiagram;

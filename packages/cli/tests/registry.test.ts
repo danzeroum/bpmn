@@ -9,7 +9,7 @@ import {
   JsonSerializer,
   LifecycleEngine,
   type BpmnDiagram,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import {
   approveCommand,
   formatEntry,

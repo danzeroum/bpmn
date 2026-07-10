@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { BoundaryOption, CoverageSummary, TransitionRecord } from '@bpmn-react/simulation';
+import type { BoundaryOption, CoverageSummary, TransitionRecord } from '@buildtovalue/simulation';
 
 export interface SimulationPanelProps {
   sessionNumber: number;

@@ -1,4 +1,4 @@
-import { activeNodes, getBoundingBox } from '@bpmn-react/core';
+import { activeNodes, getBoundingBox } from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { theme } from '../shapes/common.js';

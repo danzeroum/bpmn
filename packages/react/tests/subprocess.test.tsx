@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@bpmn-react/core';
+import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@buildtovalue/core';
 import { BpmnDesigner, BpmnViewer, Toolbar } from '../src/index.js';
 import { hiddenNodeIds, isNodeVisible } from '../src/canvas/visibility.js';
 

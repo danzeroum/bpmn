@@ -25,7 +25,7 @@ Promotion to `active` requires:
 3. optionally an attached diff (`requireDiff: true`).
 
 ```ts
-import { LifecycleEngine } from '@bpmn-react/core';
+import { LifecycleEngine } from '@buildtovalue/core';
 
 const engine = new LifecycleEngine(); // or new LifecycleEngine({ minApprovalRoles: 3, ... })
 
@@ -79,7 +79,7 @@ old edge and links the new one via `supersedesEdgeId` in a single undo step.
 ## Audit ledger
 
 ```ts
-import { AuditLedger } from '@bpmn-react/core';
+import { AuditLedger } from '@buildtovalue/core';
 
 const ledger = new AuditLedger({ sink: myDatabaseSink }); // sink optional
 const off = ledger.connectCommandStack(stack, { id: 'alice', role: 'editor' });
@@ -96,5 +96,5 @@ to import a chain that does not verify.
 
 The lifecycle governs *transitions*; to ask temporal and rollout questions — "which version was in
 effect on day X?", "what's live on the pilot channel?", "which version produced this delivery?" —
-use [`@bpmn-react/registry`](registry.md), the queryable governance layer built on top of the
+use [`@buildtovalue/registry`](registry.md), the queryable governance layer built on top of the
 lifecycle.

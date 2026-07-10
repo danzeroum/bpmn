@@ -7,8 +7,8 @@ import {
   createNode,
   normalizeForDiff,
   type BpmnDiagram,
-} from '@bpmn-react/core';
-import { BpmnDesigner, Palette, resolveEditorConfig } from '@bpmn-react/react';
+} from '@buildtovalue/core';
+import { BpmnDesigner, Palette, resolveEditorConfig } from '@buildtovalue/react';
 import {
   clinicalDecisionLinkedRule,
   HC_DECISION_UNLINKED,

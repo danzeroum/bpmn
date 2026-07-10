@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { activeNodes, type BpmnDiagram, type ValidationIssue, type ValidationRule } from '@bpmn-react/core';
-import type { BpmnPlugin } from '@bpmn-react/react';
+import { activeNodes, type BpmnDiagram, type ValidationIssue, type ValidationRule } from '@buildtovalue/core';
+import type { BpmnPlugin } from '@buildtovalue/react';
 import { HC_NODE_TYPES } from './model.js';
 import {
   ClinicalDecisionShape,

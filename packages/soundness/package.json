@@ -1,5 +1,5 @@
 {
-  "name": "@bpmn-react/soundness",
+  "name": "@buildtovalue/soundness",
   "version": "1.0.0",
   "description": "Structural soundness analysis for bpmn-react: deadlock/livelock/dead-branch detection over the process graph (O(V+E), no state-space search), delivered as plugin-compatible validation rules. Zero runtime dependencies.",
   "license": "Apache-2.0",
@@ -27,7 +27,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@bpmn-react/core": "workspace:*"
+    "@buildtovalue/core": "workspace:*"
   },
   "keywords": [
     "bpmn",

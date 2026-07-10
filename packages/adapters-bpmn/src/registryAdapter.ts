@@ -1,4 +1,4 @@
-import type { BpmnDiagram } from '@bpmn-react/core';
+import type { BpmnDiagram } from '@buildtovalue/core';
 import type {
   ArtifactAction,
   ArtifactAdapter,
@@ -6,8 +6,8 @@ import type {
   ArtifactSummary,
   ThumbnailSpec,
   VersionEntry,
-} from '@bpmn-react/library';
-import type { Publication, RegistryEntry, VersionRegistry } from '@bpmn-react/registry';
+} from '@buildtovalue/library';
+import type { Publication, RegistryEntry, VersionRegistry } from '@buildtovalue/registry';
 import { diagramThumbnail } from './thumbnails.js';
 
 /**

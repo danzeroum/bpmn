@@ -5,7 +5,7 @@ import {
   createNode,
   laneFlowNodeRefs,
   type BpmnDiagram,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { BpmnDesigner } from '../src/index.js';
 
 /**

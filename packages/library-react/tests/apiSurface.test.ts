@@ -3,7 +3,7 @@ import * as api from '../src/index.js';
 
 /**
  * Contract test: freezes the runtime public API surface of
- * @bpmn-react/library-react (type-only exports erase at compile time and
+ * @buildtovalue/library-react (type-only exports erase at compile time and
  * don't appear here). See core/tests/apiSurface.test.ts for rationale — a
  * failing diff means an export was added, renamed, or removed.
  */
@@ -15,7 +15,7 @@ const EXPECTED_EXPORTS = [
   'useLibrary',
 ].sort();
 
-describe('@bpmn-react/library-react public API surface', () => {
+describe('@buildtovalue/library-react public API surface', () => {
   it('exports exactly the expected runtime members', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });

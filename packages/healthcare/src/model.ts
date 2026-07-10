@@ -1,4 +1,4 @@
-import type { NodeTypeDefinition } from '@bpmn-react/core';
+import type { NodeTypeDefinition } from '@buildtovalue/core';
 
 /**
  * Healthcare vocabulary (Handoff 5 §6): every clinical type maps to a

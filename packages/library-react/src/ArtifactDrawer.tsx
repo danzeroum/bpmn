@@ -1,5 +1,5 @@
-import type { ArtifactAction, ArtifactDetail, ArtifactRef } from '@bpmn-react/library';
-import { StatusBadge } from '@bpmn-react/react';
+import type { ArtifactAction, ArtifactDetail, ArtifactRef } from '@buildtovalue/library';
+import { StatusBadge } from '@buildtovalue/react';
 
 export interface ArtifactDrawerProps {
   detail: ArtifactDetail;

@@ -1,5 +1,5 @@
 {
-  "name": "@bpmn-react/cli",
+  "name": "@buildtovalue/cli",
   "version": "1.0.0",
   "description": "Headless CLI for bpmn-react diagrams: validate, export (xml/json) and diff.",
   "license": "Apache-2.0",
@@ -27,11 +27,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@bpmn-react/audit": "workspace:*",
-    "@bpmn-react/conformance": "workspace:*",
-    "@bpmn-react/core": "workspace:*",
-    "@bpmn-react/registry": "workspace:*",
-    "@bpmn-react/soundness": "workspace:*"
+    "@buildtovalue/audit": "workspace:*",
+    "@buildtovalue/conformance": "workspace:*",
+    "@buildtovalue/core": "workspace:*",
+    "@buildtovalue/registry": "workspace:*",
+    "@buildtovalue/soundness": "workspace:*"
   },
   "repository": {
     "type": "git",

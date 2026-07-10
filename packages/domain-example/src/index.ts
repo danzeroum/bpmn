@@ -5,8 +5,8 @@ import {
   type NodeTypeDefinition,
   type ValidationIssue,
   type ValidationRule,
-} from '@bpmn-react/core';
-import type { BpmnPlugin, EdgeStyle } from '@bpmn-react/react';
+} from '@buildtovalue/core';
+import type { BpmnPlugin, EdgeStyle } from '@buildtovalue/react';
 import {
   BTV_PALETTE_ICONS,
   ConnectorShape,

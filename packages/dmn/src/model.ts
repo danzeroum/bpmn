@@ -1,4 +1,4 @@
-import type { NodeTypeDefinition } from '@bpmn-react/core';
+import type { NodeTypeDefinition } from '@buildtovalue/core';
 
 /**
  * DRD node types (Handoff 5 §4.1) — minimum viable DMN family. Sizes are the

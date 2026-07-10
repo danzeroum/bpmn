@@ -1,4 +1,4 @@
-import { generateId, nowIso } from '@bpmn-react/core';
+import { generateId, nowIso } from '@buildtovalue/core';
 import { RegistryError } from './errors.js';
 import type { RegistryEntry, RunBinding } from './types.js';
 

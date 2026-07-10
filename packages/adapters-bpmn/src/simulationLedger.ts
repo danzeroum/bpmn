@@ -4,8 +4,8 @@ import type {
   BpmnDiagram,
   PromotionRule,
   UserContext,
-} from '@bpmn-react/core';
-import type { SimulationSession } from '@bpmn-react/simulation';
+} from '@buildtovalue/core';
+import type { SimulationSession } from '@buildtovalue/simulation';
 
 /**
  * Host adapters connecting a headless simulation {@link SimulationSession} to
@@ -17,7 +17,7 @@ import type { SimulationSession } from '@bpmn-react/simulation';
 
 /**
  * Ledger entry type for a registered simulation session. Recognized by the
- * SACM generator (`@bpmn-react/audit` `buildAssuranceCase`, which matches
+ * SACM generator (`@buildtovalue/audit` `buildAssuranceCase`, which matches
  * `/SIMULATION/`) and given its own kind in the Studio Ledger Explorer.
  */
 export const SIMULATION_SESSION_TYPE = 'SIMULATION_SESSION';

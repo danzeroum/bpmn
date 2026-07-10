@@ -6,7 +6,7 @@ import {
   type Publication,
   type RegistryEntry,
   type RunBinding,
-} from '@bpmn-react/registry';
+} from '@buildtovalue/registry';
 import { formatDiff, loadDiagram } from './io.js';
 
 /**

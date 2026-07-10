@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Decision, PendingChoice } from '@bpmn-react/simulation';
+import type { Decision, PendingChoice } from '@buildtovalue/simulation';
 
 export interface GatewayChoiceCardProps {
   choice: PendingChoice;

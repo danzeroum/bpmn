@@ -4,14 +4,14 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Handoff 8 §3 — the dependency-graph acid test for `@bpmn-react/anchor-git`.
- * The adapter must consume ONLY `@bpmn-react/identity` (the contracts). No
+ * Handoff 8 §3 — the dependency-graph acid test for `@buildtovalue/anchor-git`.
+ * The adapter must consume ONLY `@buildtovalue/identity` (the contracts). No
  * network module, no react, no core — the git transport is injected by the host.
  */
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC_DIR = join(HERE, '..', 'src');
 
-const ALLOWED_ECOSYSTEM = new Set(['@bpmn-react/identity']);
+const ALLOWED_ECOSYSTEM = new Set(['@buildtovalue/identity']);
 
 function sourceFiles(dir: string): string[] {
   const files: string[] = [];
@@ -25,8 +25,8 @@ function sourceFiles(dir: string): string[] {
 
 const SPECIFIER_PATTERN = /(?:from\s+|import\s*\(\s*)['"]([^'"]+)['"]/g;
 
-describe('@bpmn-react/anchor-git dependency graph (Handoff 8 §3)', () => {
-  it('src/ imports only relative paths and @bpmn-react/identity', () => {
+describe('@buildtovalue/anchor-git dependency graph (Handoff 8 §3)', () => {
+  it('src/ imports only relative paths and @buildtovalue/identity', () => {
     const files = sourceFiles(SRC_DIR);
     expect(files.length).toBeGreaterThan(0);
     const violations: string[] = [];
@@ -43,9 +43,9 @@ describe('@bpmn-react/anchor-git dependency graph (Handoff 8 §3)', () => {
     expect(violations).toEqual([]);
   });
 
-  it('declares @bpmn-react/identity as its only runtime dependency', () => {
+  it('declares @buildtovalue/identity as its only runtime dependency', () => {
     const pkg = JSON.parse(readFileSync(join(HERE, '..', 'package.json'), 'utf8'));
-    expect(Object.keys(pkg.dependencies ?? {})).toEqual(['@bpmn-react/identity']);
+    expect(Object.keys(pkg.dependencies ?? {})).toEqual(['@buildtovalue/identity']);
     expect(pkg.peerDependencies ?? {}).toEqual({});
   });
 });

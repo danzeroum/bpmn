@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { AuditEntry } from '@bpmn-react/core';
-import { toXES, verifyLedger, type LedgerLike, type VerificationReport } from '@bpmn-react/audit';
-import type { VersionRegistry } from '@bpmn-react/registry';
+import type { AuditEntry } from '@buildtovalue/core';
+import { toXES, verifyLedger, type LedgerLike, type VerificationReport } from '@buildtovalue/audit';
+import type { VersionRegistry } from '@buildtovalue/registry';
 import {
   LEDGER_CATEGORIES,
   categorizeEntry,

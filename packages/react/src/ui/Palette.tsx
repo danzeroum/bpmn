@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { addNodeCommand, createNode } from '@bpmn-react/core';
+import { addNodeCommand, createNode } from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';

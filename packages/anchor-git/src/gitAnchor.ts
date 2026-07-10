@@ -1,4 +1,4 @@
-import type { AnchorAdapter, AnchorHead, AnchorReceipt } from '@bpmn-react/identity';
+import type { AnchorAdapter, AnchorHead, AnchorReceipt } from '@buildtovalue/identity';
 
 /**
  * Git transport the HOST injects (cerca §1.1 analogue for anchors — the library

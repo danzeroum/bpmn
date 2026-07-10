@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { computeDiagramHash, createDiagram, type BpmnNode } from '@bpmn-react/core';
-import { VersionRegistry } from '@bpmn-react/registry';
+import { computeDiagramHash, createDiagram, type BpmnNode } from '@buildtovalue/core';
+import { VersionRegistry } from '@buildtovalue/registry';
 import {
   bpmnDiagramAdapter,
   createRecipeAdapter,
   personaAdapter,
-} from '@bpmn-react/adapters-bpmn';
+} from '@buildtovalue/adapters-bpmn';
 import type {
   ArtifactAction,
   ArtifactAdapter,
@@ -13,9 +13,9 @@ import type {
   LibraryQuery,
   LifecycleStatus,
   LibrarySort,
-} from '@bpmn-react/library';
-import { LibraryView } from '@bpmn-react/library-react';
-import '@bpmn-react/library-react/styles.css';
+} from '@buildtovalue/library';
+import { LibraryView } from '@buildtovalue/library-react';
+import '@buildtovalue/library-react/styles.css';
 
 /**
  * `?library=1` — the Biblioteca surface (Handoff 6 S-3): LibraryView over a

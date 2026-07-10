@@ -13,8 +13,8 @@
  * Requer os tokens de packages/react/styles.css (fallbacks embutidos).
  */
 import type { ReactNode } from 'react';
-import type { ShapeProps } from '@bpmn-react/react';
-import { ShapeLabel, theme } from '@bpmn-react/react';
+import type { ShapeProps } from '@buildtovalue/react';
+import { ShapeLabel, theme } from '@buildtovalue/react';
 
 const sw = (selected: boolean) => (selected ? 2.5 : 1.5);
 const GOLD = 'var(--btv-gold, #9a7b1e)';

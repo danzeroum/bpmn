@@ -1,4 +1,4 @@
-import type { AggregatedLog } from '@bpmn-react/replay';
+import type { AggregatedLog } from '@buildtovalue/replay';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { edgeGeometryFor, nodeCenter } from '../simulation/edgePath.js';

@@ -7,7 +7,7 @@ import {
   type BpmnDiagram,
   type BpmnEdge,
   type BpmnNode,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 
 /**
  * The sequence-flow graph the soundness rules run on. Built once per

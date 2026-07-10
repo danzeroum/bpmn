@@ -1,4 +1,4 @@
-import type { AnchorAdapter, AnchorHead, AnchorReceipt } from '@bpmn-react/identity';
+import type { AnchorAdapter, AnchorHead, AnchorReceipt } from '@buildtovalue/identity';
 
 /**
  * S3 client the HOST injects — the library never does network. `put` writes the

@@ -7,7 +7,7 @@ import {
   createDefaultRegistry,
   type EdgeGeometry,
   type Rect,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import {
   resolveEditorConfig,
   astarConnection,

@@ -8,7 +8,7 @@ import {
   type PromotionGate,
   type UserContext,
   type VersionStatus,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import {
   signApproval,
   verificationState,
@@ -17,7 +17,7 @@ import {
   type Signer,
   type SignerIdentity,
   type VerificationState,
-} from '@bpmn-react/identity';
+} from '@buildtovalue/identity';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';

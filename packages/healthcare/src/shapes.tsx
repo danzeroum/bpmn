@@ -1,4 +1,4 @@
-import { ShapeLabel, theme, type ShapeProps } from '@bpmn-react/react';
+import { ShapeLabel, theme, type ShapeProps } from '@buildtovalue/react';
 
 /**
  * Healthcare shapes (Handoff 5 §6) — 305° clinical violet family. Plugin

@@ -1,5 +1,5 @@
-import type { Point } from '@bpmn-react/core';
-import { clamp } from '@bpmn-react/core';
+import type { Point } from '@buildtovalue/core';
+import { clamp } from '@buildtovalue/core';
 import {
   MAX_VIEWPORT_WIDTH,
   MIN_VIEWPORT_WIDTH,

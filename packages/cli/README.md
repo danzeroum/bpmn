@@ -1,4 +1,4 @@
-# @bpmn-react/cli
+# @buildtovalue/cli
 
 Headless tooling for bpmn-react diagrams (Node ≥ 20, no DOM required — uses the core's bundled
 XML parser).

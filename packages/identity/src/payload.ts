@@ -1,4 +1,4 @@
-import { canonicalJson } from '@bpmn-react/core';
+import { canonicalJson } from '@buildtovalue/core';
 import type { CanonicalApprovalPayload } from './types.js';
 
 /**

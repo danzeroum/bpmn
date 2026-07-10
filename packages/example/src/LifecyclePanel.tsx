@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { attestationHash, attestVersion } from '@bpmn-react/audit';
+import { attestationHash, attestVersion } from '@buildtovalue/audit';
 import {
   computeDiff,
   type AuditLedger,
   type BpmnDiagram,
   type UserContext,
   type VersionStatus,
-} from '@bpmn-react/core';
-import { VersionRegistry } from '@bpmn-react/registry';
+} from '@buildtovalue/core';
+import { VersionRegistry } from '@buildtovalue/registry';
 import {
   DiffView,
   PromotionPanel,
@@ -15,7 +15,7 @@ import {
   useEditorConfig,
   VersionTimeline,
   type VersionTimelineItem,
-} from '@bpmn-react/react';
+} from '@buildtovalue/react';
 
 const ACTORS: UserContext[] = [
   { id: 'u-owner', role: 'owner', name: 'Olivia (owner)' },

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { BpmnDiagram } from '@bpmn-react/core';
+import type { BpmnDiagram } from '@buildtovalue/core';
 import { EditorConfigProvider, resolveEditorConfig, useEditorConfig } from './contexts/EditorConfigContext.js';
 import { DiagramProvider } from './contexts/DiagramContext.js';
 import { CanvasProvider } from './contexts/CanvasContext.js';

@@ -1,5 +1,5 @@
-import type { BpmnDiagram, BpmnDiff } from '@bpmn-react/core';
-import { isEmptyDiff } from '@bpmn-react/core';
+import type { BpmnDiagram, BpmnDiff } from '@buildtovalue/core';
+import { isEmptyDiff } from '@buildtovalue/core';
 
 export interface DiffViewProps {
   diff: BpmnDiff;

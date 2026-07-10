@@ -8,7 +8,7 @@ import {
   ValidationEngine,
   type NodeTypeRegistry,
   type RuleEngine,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import type {
   BpmnPlugin,
   EdgeRouterFn,

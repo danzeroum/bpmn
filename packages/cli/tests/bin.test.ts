@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { AuditLedger, createDiagram, createEdge, createNode, JsonSerializer } from '@bpmn-react/core';
+import { AuditLedger, createDiagram, createEdge, createNode, JsonSerializer } from '@buildtovalue/core';
 
 /**
  * Exercises `bin.ts` — the actual script users invoke as `bpmn-react ...` —
@@ -54,7 +54,7 @@ async function fixture() {
 beforeAll(() => {
   if (!existsSync(BIN_PATH)) {
     throw new Error(
-      `${BIN_PATH} not found. Run "pnpm --filter @bpmn-react/cli build" (or "pnpm build") before running the CLI test suite.`,
+      `${BIN_PATH} not found. Run "pnpm --filter @buildtovalue/cli build" (or "pnpm build") before running the CLI test suite.`,
     );
   }
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { AuditLedger, createDiagram } from '@bpmn-react/core';
-import { buildApprovalPayload, signApproval, type Signer } from '@bpmn-react/identity';
+import { AuditLedger, createDiagram } from '@buildtovalue/core';
+import { buildApprovalPayload, signApproval, type Signer } from '@buildtovalue/identity';
 import { buildAssuranceCase, renderAssuranceCaseHtml } from '../src/index.js';
 
 async function makeSigner(subject: string, role: string) {

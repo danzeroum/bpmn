@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { AuditLedger, LifecycleEngine, type UserContext } from '@bpmn-react/core';
-import { createRecipeAdapter } from '@bpmn-react/adapters-bpmn';
+import { AuditLedger, LifecycleEngine, type UserContext } from '@buildtovalue/core';
+import { createRecipeAdapter } from '@buildtovalue/adapters-bpmn';
 import { StudioShell } from '../src/index.js';
 import { candidateDiagram } from './fixtures.js';
 

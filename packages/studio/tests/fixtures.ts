@@ -5,7 +5,7 @@ import {
   type BpmnEdge,
   type BpmnNode,
   type VersionStatus,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 
 const AUDIT = { createdBy: 'ana', createdAt: '2026-06-01T00:00:00.000Z', history: [] };
 

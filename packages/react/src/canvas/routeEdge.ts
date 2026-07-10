@@ -11,7 +11,7 @@ import {
   type Point,
   type Rect,
   type Side,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import type { EdgeRouterContext, EdgeRouterFn } from '../plugins/types.js';
 import { astarConnection, resolveRouter } from './routers.js';
 

@@ -18,7 +18,7 @@ Este pacote entrega duas coisas que devem ser implementadas **no repositório ex
 Os arquivos neste bundle são **referências de design criadas em HTML** — protótipos que mostram aparência e comportamento pretendidos, **não código de produção para copiar diretamente**. Exceções parciais:
 
 - `btv-tokens.css` — **pronto para uso**: anexar a `packages/react/styles.css`. Zero breaking change (todo consumo usa fallback).
-- `btv-shapes.tsx` — **ponto de partida real**: usa a API pública existente (`ShapeProps`, `ShapeLabel`, `theme` de `@bpmn-react/react`) e substitui `packages/domain-example/src/shapes.tsx`. Revisar, tipar contra o build atual e cobrir com os testes de fixture existentes antes do merge.
+- `btv-shapes.tsx` — **ponto de partida real**: usa a API pública existente (`ShapeProps`, `ShapeLabel`, `theme` de `@buildtovalue/react`) e substitui `packages/domain-example/src/shapes.tsx`. Revisar, tipar contra o build atual e cobrir com os testes de fixture existentes antes do merge.
 - `BTV Notation.dc.html` / `Roadmap OMG.dc.html` — folhas de especificação visual (podem não renderizar fora da ferramenta de design; toda a informação delas está duplicada neste README).
 
 **Fidelidade: alta (hifi).** Cores, medidas, traços e geometria são finais — recriar fielmente.
@@ -50,7 +50,7 @@ Ordem de execução. Cada fase = 1–3 PRs gated em CI verde (build-test + e2e).
 
 ### F7 · v1.2 — Atividades compostas
 - `subProcess` aninhado (expand/collapse, drill-down no canvas, DI hierárquico).
-- `callActivity` — sinergia com `@bpmn-react/registry`: referenciar diagrama versionado (`activeAt`).
+- `callActivity` — sinergia com `@buildtovalue/registry`: referenciar diagrama versionado (`activeAt`).
 - `sendTask` / `receiveTask` / `manualTask` (glifos novos na mesma `ActivityBox`).
 - Marcadores loop / multi-instance na base da activity. `dataStore`, `dataAssociation`.
 - **Aceite:** classe OMG **Descriptive 100%**.
@@ -60,7 +60,7 @@ Ordem de execução. Cada fase = 1–3 PRs gated em CI verde (build-test + e2e).
 - Corpus de interoperabilidade: ≥ 50 arquivos externos (Camunda, bpmn.io, Signavio) como fixtures de round-trip.
 - `CONFORMANCE.md` gerado por script a partir dos testes; declarar classe **Analytic** no README.
 
-### F9 · v2.0 — DMN (novo pacote `@bpmn-react/dmn`)
+### F9 · v2.0 — DMN (novo pacote `@buildtovalue/dmn`)
 - `businessRuleTask` + decision table DMN 1.x: editor de tabela, import/export DMN XML, link bidirecional gateway ↔ decisão.
 - Mesma filosofia do perfil MVP: perfil documentado, warnings em import. Limitar a decision table + DRD mínimo.
 

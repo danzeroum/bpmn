@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { BpmnPlugin } from '@bpmn-react/react';
+import type { BpmnPlugin } from '@buildtovalue/react';
 import { DMN_NODE_TYPES } from './model.js';
 import { decisionInspectorSection } from './decisionInspector.js';
 import {

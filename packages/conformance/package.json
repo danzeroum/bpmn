@@ -1,5 +1,5 @@
 {
-  "name": "@bpmn-react/conformance",
+  "name": "@buildtovalue/conformance",
   "version": "1.0.0",
   "description": "OMG BPMN 2.0 conformance tooling for bpmn-react: interoperability corpus, element-by-element conformance matrix and generated CONFORMANCE.md. Zero runtime dependencies.",
   "license": "Apache-2.0",
@@ -28,7 +28,7 @@
     "gen:corpus": "node scripts/gen-corpus.mjs"
   },
   "dependencies": {
-    "@bpmn-react/core": "workspace:*"
+    "@buildtovalue/core": "workspace:*"
   },
   "keywords": [
     "bpmn",

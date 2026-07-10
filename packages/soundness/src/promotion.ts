@@ -1,4 +1,4 @@
-import type { PromotionRule } from '@bpmn-react/core';
+import type { PromotionRule } from '@buildtovalue/core';
 import { analyzeSoundness, type SoundnessOptions } from './rules.js';
 
 /**

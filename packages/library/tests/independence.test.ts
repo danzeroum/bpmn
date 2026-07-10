@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * Handoff 6 acceptance criterion §10.2 — the structural guarantee behind the
- * generic library: @bpmn-react/library must not import anything from the
- * ecosystem (no @bpmn-react/core, no @bpmn-react/registry, no react, no
+ * generic library: @buildtovalue/library must not import anything from the
+ * ecosystem (no @buildtovalue/core, no @buildtovalue/registry, no react, no
  * external package at all). Same spirit as scripts/check-no-runtime-deps.mjs,
  * applied to the import graph of this package's sources. A violation here is
  * an architecture bug, never an acceptable exception.
@@ -28,7 +28,7 @@ function sourceFiles(dir: string): string[] {
 /** Matches static imports, re-exports and dynamic import() specifiers. */
 const SPECIFIER_PATTERN = /(?:from\s+|import\s*\(\s*)['"]([^'"]+)['"]/g;
 
-describe('@bpmn-react/library independence (§10.2)', () => {
+describe('@buildtovalue/library independence (§10.2)', () => {
   it('src/ contains only relative imports — nothing from the ecosystem', () => {
     const files = sourceFiles(SRC_DIR);
     expect(files.length).toBeGreaterThan(0);

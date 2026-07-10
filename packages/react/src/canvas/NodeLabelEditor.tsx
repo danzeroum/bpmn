@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { updateNodeCommand, type BpmnNode } from '@bpmn-react/core';
+import { updateNodeCommand, type BpmnNode } from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 

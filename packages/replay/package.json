@@ -1,8 +1,7 @@
 {
-  "name": "@bpmn-react/replay",
+  "name": "@buildtovalue/replay",
   "version": "1.0.0",
-  "private": true,
-  "description": "Headless conformance-checking for BPMN replay (Handoff 7B): streaming XES 2.0 / CSV parsing, one-pass frequency/time pre-aggregation, token-replay fitness with deviation detection, and variant extraction — all over an ABSTRACT injected graph {nodes, edges}. Imports NOTHING from the ecosystem (not even @bpmn-react/core). Zero dependencies. Workspace-only — the publish scope awaits pendencias.md §1.",
+  "description": "Headless conformance-checking for BPMN replay (Handoff 7B): streaming XES 2.0 / CSV parsing, one-pass frequency/time pre-aggregation, token-replay fitness with deviation detection, and variant extraction — all over an ABSTRACT injected graph {nodes, edges}. Imports NOTHING from the ecosystem (not even @buildtovalue/core). Zero dependencies.",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,

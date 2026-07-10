@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { VersionRegistry } from '@bpmn-react/registry';
+import { VersionRegistry } from '@buildtovalue/registry';
 import {
   bpmnDiagramAdapter,
   connectorAdapter,

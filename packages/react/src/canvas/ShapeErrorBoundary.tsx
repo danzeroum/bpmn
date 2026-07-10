@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from 'react';
-import type { BpmnNode } from '@bpmn-react/core';
+import type { BpmnNode } from '@buildtovalue/core';
 
 export interface ShapeErrorBoundaryProps {
   node: BpmnNode;

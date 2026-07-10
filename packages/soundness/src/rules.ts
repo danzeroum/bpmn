@@ -5,7 +5,7 @@ import {
   type IssueSeverity,
   type ValidationIssue,
   type ValidationRule,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import {
   buildScopeGraphs,
   coReachableTo,

@@ -5,7 +5,7 @@ import {
   nodeParentId,
   type BpmnDiagram,
   type BpmnNode,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';

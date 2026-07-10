@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AuditLedger } from '@bpmn-react/core';
+import { AuditLedger } from '@buildtovalue/core';
 import { LedgerExplorer } from '../src/index.js';
 
 afterEach(cleanup);

@@ -10,8 +10,8 @@ import {
   BUILT_IN_VALIDATION_RULES,
   BpmnXmlConverter,
   RuleEngine,
-} from '@bpmn-react/core';
-import { BpmnDesigner, resolveEditorConfig } from '@bpmn-react/react';
+} from '@buildtovalue/core';
+import { BpmnDesigner, resolveEditorConfig } from '@buildtovalue/react';
 import {
   domainExamplePlugin,
   DOMAIN_NODE_TYPES,

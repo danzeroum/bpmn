@@ -1,4 +1,4 @@
-# @bpmn-react/identity
+# @buildtovalue/identity
 
 Headless **identity, signature and RBAC-verification** layer for BPMN governance
 (Handoff 8): Ed25519 approval signatures over the canonical payload, offline
@@ -29,7 +29,7 @@ import {
   signApproval,
   verifySignature,
   evaluateRoleRequirement,
-} from '@bpmn-react/identity';
+} from '@buildtovalue/identity';
 
 // The host implements Signer — the private key never enters the library.
 const payload = buildApprovalPayload({
@@ -50,7 +50,7 @@ evaluateRoleRequirement(['compliance', 'architecture'], [approval]); // { satisf
 ## What a signature covers
 
 The signature binds `diagramId + version + xmlHash + ledgerHead + decision +
-role`, serialized deterministically with `canonicalJson` from `@bpmn-react/core`
+role`, serialized deterministically with `canonicalJson` from `@buildtovalue/core`
 (the same input as the attestation). Any later change to those fields makes
 verification return `invalid` — with `expected × obtained` surfaced by the host UI.
 
@@ -63,7 +63,7 @@ verification return `invalid` — with `expected × obtained` surfaced by the ho
 
 ## Decoupling
 
-Consumes **only** `@bpmn-react/core` (`canonicalJson` + types) — pinned by
+Consumes **only** `@buildtovalue/core` (`canonicalJson` + types) — pinned by
 `tests/independence.test.ts`. Zero network, zero react, zero anchor code (anchor
 adapters live in separate packages, injected by the host). **Zero runtime
 dependencies** beyond the workspace core link.

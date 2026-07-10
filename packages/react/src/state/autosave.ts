@@ -1,4 +1,4 @@
-import { computeDiagramHash, type BpmnDiagram } from '@bpmn-react/core';
+import { computeDiagramHash, type BpmnDiagram } from '@buildtovalue/core';
 
 /**
  * Autosave payload (Handoff 4 §D2). The diagram is stored as its JSON model —

@@ -4,7 +4,7 @@ import {
   MiniXmlParser,
   normalizeForDiff,
   type XmlElement,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { classCoverage, CONFORMANCE_MATRIX, type ConformanceEntry } from './matrix.js';
 import { STRUCTURAL_MANIFEST } from './manifest.js';
 

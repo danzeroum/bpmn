@@ -1,4 +1,4 @@
-import { BpmnError } from '@bpmn-react/core';
+import { BpmnError } from '@buildtovalue/core';
 
 /** A registry operation failed (unknown version, integrity break, bad publish). */
 export class RegistryError extends BpmnError {

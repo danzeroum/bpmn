@@ -6,7 +6,7 @@ import {
   type BpmnDiff,
   type BpmnEdge,
   type BpmnNode,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { useDismissal } from '../gestures/useDismissal.js';
