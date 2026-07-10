@@ -402,6 +402,62 @@ optional hideMiniMap?: boolean;
 
 ***
 
+### AgentSimulationRecord
+
+A finished agent-simulation session handed to the host for the ledger (§7).
+
+#### Properties
+
+##### workflowRef
+
+```ts
+workflowRef: string;
+```
+
+##### steps
+
+```ts
+steps: number;
+```
+
+##### complete
+
+```ts
+complete: boolean;
+```
+
+##### blocked?
+
+```ts
+optional blocked?: object;
+```
+
+###### nodeId
+
+```ts
+nodeId: string;
+```
+
+###### reason
+
+```ts
+reason: string;
+```
+
+##### author
+
+```ts
+author: string;
+```
+
+##### timestamp
+
+```ts
+timestamp: string;
+```
+
+***
+
 ### AgentStudioProps
 
 #### Properties
@@ -475,6 +531,54 @@ Close the modal (Esc routes here before any Designer dismissal).
 ###### Returns
 
 `void`
+
+##### agentTaskId?
+
+```ts
+optional agentTaskId?: string;
+```
+
+The macro agentTask node id — enables the error-boundary proposal (§5).
+
+##### simulationFixtures?
+
+```ts
+optional simulationFixtures?: Fixtures;
+```
+
+Per-node mock fixtures for the simulation (§7); default empty → the
+decision blocks honestly on absent structured output.
+
+##### onRecordSimulation?
+
+```ts
+optional onRecordSimulation?: (record) => void;
+```
+
+Record a finished simulation session to the ledger (§7). Button hidden
+when absent. `author`/`timestamp` come from the host (clock-free).
+
+###### Parameters
+
+###### record
+
+[`AgentSimulationRecord`](#agentsimulationrecord)
+
+###### Returns
+
+`void`
+
+##### author?
+
+```ts
+optional author?: string;
+```
+
+##### timestamp?
+
+```ts
+optional timestamp?: string;
+```
 
 ***
 
@@ -6464,6 +6568,39 @@ Designer dismissal.
 #### Returns
 
 `Element` \| `null`
+
+***
+
+### proposeErrorBoundaryCommand()
+
+```ts
+function proposeErrorBoundaryCommand(diagram, hostId): Command | null;
+```
+
+Agent Lane (Handoff 12 §5) — the ONE undoable command that PROPOSES an error
+boundary event on the macro agentTask when the sub-workflow carries an
+errorBoundary decorator. It reuses N-1's parametric boundary anchoring
+(`attachBoundaryCommand` + `boundaryNodePosition`): a boundary event node is
+created and attached to the host in a single composite, so one undo removes
+the whole proposal. Returns `null` when the host node is absent (nothing to
+anchor to) — the Studio then simply doesn't offer the proposal.
+
+The command is NEVER dispatched silently: the Studio shows an accept/refuse
+card and only executes this on accept.
+
+#### Parameters
+
+##### diagram
+
+`BpmnDiagram`
+
+##### hostId
+
+`string`
+
+#### Returns
+
+`Command` \| `null`
 
 ***
 

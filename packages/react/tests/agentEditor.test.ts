@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RESEARCH_AGENT, type AgentWorkflow } from '@buildtovalue/agentflow';
+import { createDiagram, createNode } from '@buildtovalue/core';
 import {
   addEdge,
   addNode,
@@ -7,6 +8,7 @@ import {
   initEditorState,
   layoutWorkflow,
   nextNodeId,
+  proposeErrorBoundaryCommand,
   removeNode,
   toggleDecorator,
   updateNodeConfig,
@@ -93,5 +95,25 @@ describe('agentEditor isolated undo stack', () => {
     expect(state.present.id).toBe('agnt-other');
     expect(state.past).toEqual([]);
     expect(state.future).toEqual([]);
+  });
+});
+
+describe('proposeErrorBoundaryCommand (N-1 reuse)', () => {
+  it('builds one composite command that attaches a boundary event to the host', () => {
+    const d = createDiagram({ name: 'M' });
+    d.nodes = { t1: createNode({ type: 'agentTask', id: 't1', label: 'Agent', x: 100, y: 100 }) };
+    const cmd = proposeErrorBoundaryCommand(d, 't1');
+    expect(cmd).not.toBeNull();
+    const next = cmd!.execute(d);
+    const attached = Object.values(next.nodes).filter(
+      (n) => n.type === 'boundaryEvent' && n.properties.attachedToRef === 't1',
+    );
+    expect(attached).toHaveLength(1);
+    // undoable back to the original
+    expect(Object.keys(cmd!.undo(next).nodes)).toEqual(['t1']);
+  });
+
+  it('returns null when the host node is absent (nothing to anchor)', () => {
+    expect(proposeErrorBoundaryCommand(createDiagram({ name: 'M' }), 'ghost')).toBeNull();
   });
 });
