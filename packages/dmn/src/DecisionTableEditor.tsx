@@ -15,6 +15,7 @@ import {
   type DecisionTable,
   type HitPolicy,
 } from './decisionTable.js';
+import { nonSimulableCells } from './sfeelSupport.js';
 
 export interface DecisionTableEditorProps {
   /** The `dmn:decision` node whose table is edited (same diagram/stack). */
@@ -62,6 +63,11 @@ export function DecisionTableEditor({
   const invalid = useMemo(() => (table ? validateDecisionTable(table) : []), [table]);
   const invalidAt = (ruleId: string, column: number) =>
     invalid.find((cell) => cell.ruleId === ruleId && cell.column === column);
+  // §5 feedback-before-simulation: cells outside the S-FEEL subset get a ⚠
+  // "não-simulável" marker while EDITING — before any token ever runs.
+  const notSimulable = useMemo(() => (table ? nonSimulableCells(table) : []), [table]);
+  const nonSimAt = (ruleIndex: number, column: number) =>
+    notSimulable.find((c) => c.ruleIndex === ruleIndex && c.columnIndex === column);
 
   if (!node || !table) {
     return (
@@ -193,11 +199,14 @@ export function DecisionTableEditor({
     const editing = editingCell?.ruleId === rule.id && editingCell.column === column;
     const selected = selectedCell?.ruleId === rule.id && selectedCell.column === column;
     const problem = kind === 'annotation' ? undefined : invalidAt(rule.id, column);
+    const ruleIndex = table.rules.findIndex((r) => r.id === rule.id);
+    const simIssue = kind === 'annotation' ? undefined : nonSimAt(ruleIndex, column);
     return (
       <td
         key={column}
         data-cell={`${rule.id}:${column}`}
         data-invalid={problem ? true : undefined}
+        data-nonsimulable={simIssue ? true : undefined}
         data-cell-selected={selected || undefined}
         className={kind === 'annotation' ? 'btv-dmn-annotation' : undefined}
         title={problem?.message}
@@ -229,6 +238,11 @@ export function DecisionTableEditor({
         ) : (
           <>
             {problem && <span aria-hidden>▲ </span>}
+            {simIssue && (
+              <span title={`não-simulável: ${simIssue.reason}`} aria-label="não-simulável">
+                ⚠{' '}
+              </span>
+            )}
             {value}
           </>
         )}

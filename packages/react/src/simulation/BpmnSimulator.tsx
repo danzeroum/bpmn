@@ -1,5 +1,6 @@
 import { useCallback, useState, type ReactNode } from 'react';
 import type { BpmnDiagram } from '@buildtovalue/core';
+import type { DecisionEvaluator } from '@buildtovalue/simulation';
 import { buildSession, coveragePercent, type SimulationSession } from '@buildtovalue/simulation';
 import { BpmnEditor } from '../BpmnEditor.js';
 import type { BpmnPlugin } from '../plugins/types.js';
@@ -7,6 +8,7 @@ import { useSimulation } from './useSimulation.js';
 import { SimulationOverlaySvg } from './SimulationOverlaySvg.js';
 import { SimulationPanel } from './SimulationPanel.js';
 import { GatewayChoiceCard } from './GatewayChoiceCard.js';
+import { BlockedDecisionNotice, DecisionInputCard } from './DecisionInputCard.js';
 
 export interface BpmnSimulatorProps {
   diagram: BpmnDiagram;
@@ -27,6 +29,12 @@ export interface BpmnSimulatorProps {
    * default confirmation (roteiro #hash + the SACM evidence line) is shown.
    */
   recordedInfo?: ReactNode;
+  /**
+   * HOST-injected decision-table support (Handoff 9 SF-2) — e.g.
+   * `createSfeelDecisionSupport(diagram)` from `@buildtovalue/dmn`. Without it
+   * businessRuleTask is an ordinary activity (declared degradation).
+   */
+  decisions?: DecisionEvaluator;
 }
 
 /**
@@ -45,8 +53,9 @@ export function BpmnSimulator({
   onRecord,
   author = 'anônimo',
   recordedInfo,
+  decisions,
 }: BpmnSimulatorProps) {
-  const sim = useSimulation(diagram);
+  const sim = useSimulation(diagram, { decisions });
   const { state } = sim;
   const choice = state.pendingChoice;
   const gatewayLabel = choice ? diagram.nodes[choice.nodeId]?.label || choice.nodeId : '';
@@ -111,6 +120,16 @@ export function BpmnSimulator({
       {choice && (
         <div className="bpmnr-sim-choice-slot">
           <GatewayChoiceCard choice={choice} gatewayLabel={gatewayLabel} onChoose={sim.choose} />
+        </div>
+      )}
+      {state.pendingDecisionInput && (
+        <div className="bpmnr-sim-choice-slot">
+          <DecisionInputCard pending={state.pendingDecisionInput} onDecide={sim.choose} />
+        </div>
+      )}
+      {state.blockedDecision && (
+        <div className="bpmnr-sim-choice-slot">
+          <BlockedDecisionNotice blocked={state.blockedDecision} />
         </div>
       )}
       <div className="bpmnr-sim-panel-slot">

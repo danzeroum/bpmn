@@ -31,7 +31,8 @@
   },
   "dependencies": {
     "@buildtovalue/core": "workspace:*",
-    "@buildtovalue/react": "workspace:*"
+    "@buildtovalue/react": "workspace:*",
+    "@buildtovalue/sfeel": "workspace:*"
   },
   "repository": {
     "type": "git",

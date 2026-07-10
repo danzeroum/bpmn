@@ -27,8 +27,12 @@ export {
   type SimulationSession,
 } from './session.js';
 export type {
+  BlockedDecision,
   BoundaryOption,
   Decision,
+  DecisionEvaluator,
+  DecisionOutcome,
+  PendingDecisionInput,
   GatewayKind,
   PendingChoice,
   SimEdge,

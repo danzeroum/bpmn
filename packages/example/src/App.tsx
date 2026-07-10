@@ -15,6 +15,7 @@ import {
   type GovernanceBreadcrumbLevel,
 } from '@buildtovalue/react';
 import {
+  createSfeelDecisionSupport,
   DecisionPeek,
   DecisionTableEditor,
   decisionInspectorSection,
@@ -36,6 +37,7 @@ import {
   buildFanoutDiagram,
   buildManualRouteDiagram,
   buildSampleDiagram,
+  buildSfeelDiagram,
   buildReplayTraces,
   buildSimulationDiagram,
   buildStressDiagram,
@@ -174,6 +176,9 @@ export function App() {
   const astarMode = params.get('astar') !== null;
   // `?replay=1` enters replay mode (Handoff 7B) over the same model + a synthetic log.
   const replayMode = params.get('replay') !== null;
+  // `?sfeel=1` — S-FEEL decision demo (Handoff 9 SF-2); `&bad=1` uses a table
+  // with a date() cell, outside the subset (honest ⚠ stop).
+  const sfeelMode = params.get('sfeel') !== null;
   if (studioMode) return <StudioSurface />;
   if (libraryMode) return <LibrarySurface />;
   if (replayMode) {
@@ -192,6 +197,20 @@ export function App() {
         }}
         onExit={() => {
           window.location.search = '?simulate=1';
+        }}
+      />
+    );
+  }
+  if (sfeelMode) {
+    const sfeelDiagram = buildSfeelDiagram(params.get('bad') !== null);
+    return (
+      <BpmnSimulator
+        diagram={sfeelDiagram}
+        plugins={PLUGINS}
+        author="demo"
+        decisions={createSfeelDecisionSupport(sfeelDiagram)}
+        onExit={() => {
+          window.location.search = '';
         }}
       />
     );

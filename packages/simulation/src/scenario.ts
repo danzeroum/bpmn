@@ -25,6 +25,14 @@ function canonicalDecision(decision: Decision): Record<string, unknown> {
       return { kind: 'inclusive', gateway: decision.gateway, edges: [...decision.edges].sort() };
     case 'boundary':
       return { kind: 'boundary', host: decision.host, boundary: decision.boundary };
+    case 'decision':
+      return {
+        kind: 'decision',
+        node: decision.node,
+        context: Object.fromEntries(
+          Object.entries(decision.context).sort(([a], [b]) => (a < b ? -1 : 1)),
+        ),
+      };
     default:
       return { kind: decision.kind, gateway: decision.gateway, edge: decision.edge };
   }

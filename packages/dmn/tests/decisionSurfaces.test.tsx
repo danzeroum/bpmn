@@ -193,6 +193,18 @@ describe('DecisionTableEditor (§4.2)', () => {
       </BpmnDesigner>,
     );
 
+  it('marks out-of-subset cells with the ⚠ não-simulável marker (Handoff 9 SF-2)', () => {
+    const diagram = linkedDiagram();
+    const table = decisionTableOf(diagram.nodes.risk)!;
+    table.rules[0] = { ...table.rules[0], inputEntries: ['date("2024") > x', ...table.rules[0].inputEntries.slice(1)] };
+    const { container } = mount(diagram);
+    const cell = container.querySelector('[data-nonsimulable]');
+    expect(cell).not.toBeNull();
+    expect(cell?.querySelector('[aria-label="não-simulável"]')?.getAttribute('title')).toMatch(
+      /function invocation/,
+    );
+  });
+
   it('renders the canonical anatomy: hit cell, double divider, rule numbers, annotation', () => {
     const { container } = mount(linkedDiagram());
     expect(container.querySelector('.btv-dmn-hit button')?.textContent).toBe('F');

@@ -2,9 +2,12 @@ import type { BpmnDiagram } from '@buildtovalue/core';
 import { buildSimGraph, type SimGraph } from './graph.js';
 import { computeDominators, dominates } from './dominators.js';
 import type {
+  BlockedDecision,
   BoundaryOption,
   Decision,
+  DecisionEvaluator,
   PendingChoice,
+  PendingDecisionInput,
   SimulationOptions,
   SimulationState,
   Token,
@@ -48,6 +51,9 @@ export class SimulationEngine {
   private tokenSeq = 0;
   private stepSeq = 0;
   private started = false;
+  /** HOST-injected decision-table support (SF-2); undefined = no decisions. */
+  private readonly decisionSupport?: DecisionEvaluator;
+  private blocked: BlockedDecision | null = null;
 
   constructor(
     private readonly diagram: BpmnDiagram,
@@ -55,6 +61,7 @@ export class SimulationEngine {
   ) {
     this.graph = buildSimGraph(diagram, options.scope);
     this.dom = computeDominators(this.graph);
+    this.decisionSupport = options.decisions;
     this.reset();
   }
 
@@ -76,6 +83,7 @@ export class SimulationEngine {
     this.trail = [];
     this.tokenSeq = 0;
     this.stepSeq = 0;
+    this.blocked = null;
     this.started = true;
     // Start events, then any source node when a scope has no explicit start
     // (BPMN allows an implicit start) — keeps the engine and soundness aligned.
@@ -99,6 +107,8 @@ export class SimulationEngine {
       deadlocked: this.deadlocked,
       pendingChoice: this.pendingChoice,
       boundaryOptions: this.boundaryOptions,
+      pendingDecisionInput: this.pendingDecisionInput,
+      blockedDecision: this.blocked ? { ...this.blocked } : null,
     };
   }
 
@@ -156,7 +166,29 @@ export class SimulationEngine {
 
   /** A token exists that can be advanced without a decision. */
   get canAdvance(): boolean {
-    return !this.complete && this.tokens.some((t) => !this.isDecisionSplit(t.nodeId));
+    return (
+      !this.complete &&
+      this.tokens.some((t) => this.isFreeToken(t))
+    );
+  }
+
+  /** Advanceable without a decision: not a split, not awaiting/blocked on a
+   * decision table (a blocked token stays put — the declared stop, §5). */
+  private isFreeToken(token: Token): boolean {
+    if (this.isDecisionSplit(token.nodeId)) return false;
+    if (this.blocked?.nodeId === token.nodeId) return false;
+    return !this.decisionSupport?.hasDecision(token.nodeId);
+  }
+
+  /** A businessRuleTask waiting for its decision inputs (SF-2), if any. */
+  get pendingDecisionInput(): PendingDecisionInput | null {
+    if (this.blocked) return null; // the honest warning owns the panel now
+    const support = this.decisionSupport;
+    if (!support) return null;
+    const token = this.tokens.find((t) => support.hasDecision(t.nodeId));
+    if (!token) return null;
+    const node = this.graph.nodes.get(token.nodeId)!;
+    return { nodeId: node.id, label: node.label || node.id, inputs: support.inputsOf(node.id) };
   }
 
   /** The serializable scenario: the ordered decisions plus provenance. */
@@ -176,7 +208,7 @@ export class SimulationEngine {
    * tokens sit at a split (resolve with {@link choose}) or the run is done. */
   advance(): StepResult {
     const start = this.trail.length;
-    const token = this.tokens.find((t) => !this.isDecisionSplit(t.nodeId));
+    const token = this.tokens.find((t) => this.isFreeToken(t));
     if (!token) {
       // No free token, but an OR-join may have become ready now that the
       // branches diverging away from it are gone.
@@ -192,6 +224,7 @@ export class SimulationEngine {
   /** Resolve the pending branch decision and move the token(s). */
   choose(decision: Decision): StepResult {
     if (decision.kind === 'boundary') return this.fireBoundary(decision.boundary);
+    if (decision.kind === 'decision') return this.decideDecision(decision);
     const token = this.tokens.find((t) => t.nodeId === decision.gateway);
     if (!token) throw new SimulationError(`No token at gateway ${decision.gateway}`);
     const node = this.graph.nodes.get(token.nodeId)!;
@@ -241,12 +274,77 @@ export class SimulationEngine {
     return { moved: true, transitions: this.trail.slice(start) };
   }
 
+  /**
+   * Evaluate the pending businessRuleTask decision (SF-2) with the supplied
+   * context and route the token by the FIRST output value: with multiple
+   * outgoing flows, the flow whose label equals the output (stringified) is
+   * taken; with one, the token just moves on. Every failure mode — a cell
+   * outside the S-FEEL subset, no matching rule, an output matching no flow —
+   * is a DECLARED stop ({@link BlockedDecision}), never a guess (§5).
+   */
+  private decideDecision(decision: Extract<Decision, { kind: 'decision' }>): StepResult {
+    const support = this.decisionSupport;
+    if (!support?.hasDecision(decision.node)) {
+      throw new SimulationError(`${decision.node} has no evaluable decision table`);
+    }
+    const token = this.tokens.find((t) => t.nodeId === decision.node);
+    if (!token) throw new SimulationError(`No token at ${decision.node}`);
+    const node = this.graph.nodes.get(decision.node)!;
+    const start = this.trail.length;
+
+    const outcome = support.evaluate(decision.node, decision.context);
+    const stop = (cell: string, reason: string): StepResult => {
+      this.blocked = { nodeId: node.id, cell, reason };
+      this.record('decision-blocked', `Decision "${node.label || node.id}" not simulable: ${reason}`, {
+        nodeId: node.id,
+      });
+      this.decisions.push(decision);
+      return { moved: false, transitions: this.trail.slice(start) };
+    };
+    if (outcome.nonSimulable) return stop(outcome.nonSimulable.cell, outcome.nonSimulable.reason);
+    if (outcome.noMatch || !outcome.outputs) {
+      return stop('', 'no rule matched the provided inputs (declared non-result)');
+    }
+
+    const values = Object.values(outcome.outputs);
+    const summary = Object.entries(outcome.outputs)
+      .map(([k, v]) => `${k}=${JSON.stringify(v)}`)
+      .join(', ');
+    this.record(
+      'decision',
+      `Decision "${node.label || node.id}" fired rule ${(outcome.ruleIndex ?? 0) + 1}: ${summary}`,
+      { nodeId: node.id },
+    );
+
+    if (node.outgoing.length > 1) {
+      const wanted = String(values[0]);
+      const edgeId = node.outgoing.find((e) => this.graph.edges.get(e)!.label === wanted);
+      if (!edgeId) {
+        return stop('', `decision output '${wanted}' matches no outgoing flow label`);
+      }
+      this.emit(token, [edgeId], 'move');
+    } else if (node.outgoing.length === 1) {
+      this.emit(token, [node.outgoing[0]], 'move');
+    } else {
+      this.removeToken(token.id);
+      this.record('end', `Token consumed at "${node.label || node.id}"`, { nodeId: node.id });
+    }
+    this.decisions.push(decision);
+    this.settleOrJoins();
+    return { moved: true, transitions: this.trail.slice(start) };
+  }
+
   // ------------------------------------------------------------------- replay
 
   /** Rebuild a run deterministically from a scenario. Auto-advances between
    * recorded decisions; applies each decision at the point it becomes due. */
-  static replay(diagram: BpmnDiagram, scenario: Scenario): SimulationEngine {
+  static replay(
+    diagram: BpmnDiagram,
+    scenario: Scenario,
+    options: Omit<SimulationOptions, 'scope'> = {},
+  ): SimulationEngine {
     const engine = new SimulationEngine(diagram, {
+      ...options,
       scope: scenario.scope ?? undefined,
     });
     const queue = [...scenario.decisions];
@@ -264,6 +362,19 @@ export class SimulationEngine {
         }
         engine.choose(next);
         queue.shift();
+        continue;
+      }
+      // A businessRuleTask waiting for inputs consumes its decision.
+      const pendingDecision = engine.pendingDecisionInput;
+      if (pendingDecision) {
+        if (!next || next.kind !== 'decision' || next.node !== pendingDecision.nodeId) {
+          throw new SimulationError(
+            `Scenario diverged: decision ${pendingDecision.nodeId} needs inputs`,
+          );
+        }
+        engine.choose(next);
+        queue.shift();
+        if (engine.blocked) break; // declared stop — the scenario ends here
         continue;
       }
       // A boundary decision fires before its host is advanced past.
@@ -285,7 +396,7 @@ export class SimulationEngine {
   }
 
   private static matchesChoice(decision: Decision, choice: PendingChoice): boolean {
-    if (decision.kind === 'boundary') return false;
+    if (decision.kind === 'boundary' || decision.kind === 'decision') return false;
     if (decision.kind === 'inclusive') {
       return choice.kind === 'inclusive' && decision.gateway === choice.nodeId;
     }

@@ -133,6 +133,9 @@ importers:
       '@buildtovalue/react':
         specifier: workspace:*
         version: link:../react
+      '@buildtovalue/sfeel':
+        specifier: workspace:*
+        version: link:../sfeel
       react:
         specifier: '>=18'
         version: 18.3.1
