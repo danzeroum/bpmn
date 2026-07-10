@@ -39,7 +39,8 @@ export function Palette() {
     const verdict = execute(addNodeCommand(node));
     if (verdict.allowed) {
       store.setState({ selectedIds: [node.id], lastCreatedNodeId: node.id });
-      config.emitEditorEvent('node.created', { nodeType });
+      // N-3: `element.added` (with the deprecated `node.created` alias) is
+      // emitted by the command channel — no direct emission here anymore.
     }
   };
 

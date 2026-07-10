@@ -355,8 +355,10 @@ export function App() {
     try {
       const { diagram: imported, warnings } = converter.fromXml(text);
       if (warnings.length > 0) {
-        // Observability (§2): import warnings are a product KPI.
-        config.emitEditorEvent('import.warning', { count: warnings.length, warnings });
+        // Observability (§2, payload tipado N-3): one event per warning.
+        for (const warning of warnings) {
+          config.emitEditorEvent('import.warning', { message: warning });
+        }
 
         alert(`Imported with warnings:\n${warnings.join('\n')}`);
       }

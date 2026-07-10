@@ -14,6 +14,8 @@ import type {
   EdgeRouterFn,
   EdgeStyle,
   EditorEventHandler,
+  EditorEventName,
+  EditorEventPayloads,
   InspectorSection,
   PaletteGroup,
   PaletteItem,
@@ -41,11 +43,13 @@ export interface EditorConfig {
   /** Custom types (from plugins) preferred when importing XML. */
   preferredTypes: string[];
   /**
-   * Emits an observability event to every plugin `onEditorEvent` handler
-   * (no-op when none is registered). The timestamp is stamped here so all
-   * handlers see the same event object.
+   * Emits a catalog event (Handoff 11 N-3 — see EDITOR_EVENTS and the semver
+   * stability contract) to every plugin `onEditorEvent` handler (no-op when
+   * none is registered). The timestamp is stamped here so all handlers see
+   * the same event object. Deprecated aliases fan out automatically with a
+   * single console warning per session.
    */
-  emitEditorEvent: (type: string, meta?: Record<string, unknown>) => void;
+  emitEditorEvent: <T extends EditorEventName>(type: T, meta?: EditorEventPayloads[T]) => void;
   /** Autosave + recovery banner + beforeunload guard toggle. Default true. */
   autosave: boolean;
 }
@@ -145,11 +149,33 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
       eventHandlers.length === 0
         ? () => {}
         : (type, meta) => {
-            const event = { type, ts: Date.now(), ...(meta ? { meta } : {}) };
-            for (const handler of eventHandlers) handler(event);
+            const fan = (name: string, payload?: Record<string, unknown>) => {
+              const event = { type: name, ts: Date.now(), ...(payload ? { meta: payload } : {}) };
+              for (const handler of eventHandlers) handler(event);
+            };
+            fan(type, meta as Record<string, unknown> | undefined);
+            // N-3 deprecation grace: renamed events keep emitting under the
+            // old name for one minor, with a single console warning.
+            if (type === 'element.added' && (meta as { kind?: string } | undefined)?.kind === 'node') {
+              warnDeprecatedAliasOnce('node.created', 'element.added');
+              fan('node.created', {
+                nodeType: (meta as { elementType?: string } | undefined)?.elementType,
+              });
+            }
           },
     autosave,
   };
+}
+
+/** One console warning per deprecated alias per session (N-3 contract). */
+const warnedAliases = new Set<string>();
+function warnDeprecatedAliasOnce(oldName: string, newName: string): void {
+  if (warnedAliases.has(oldName)) return;
+  warnedAliases.add(oldName);
+  console.warn(
+    `[bpmn-react] o evento '${oldName}' está deprecado e será removido na próxima major — ` +
+      `escute '${newName}' (contrato de estabilidade N-3).`,
+  );
 }
 
 export function EditorConfigProvider({

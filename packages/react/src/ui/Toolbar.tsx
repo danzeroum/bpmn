@@ -83,6 +83,12 @@ export function Toolbar({ extra }: ToolbarProps) {
   const validate = () => {
     const found = config.validationEngine.validate(applyBeforeSave()).issues;
     setIssues(found);
+    // N-3 `validation.changed`: counts + stable codes for the host's sink.
+    config.emitEditorEvent('validation.changed', {
+      errors: found.filter((issue) => issue.severity === 'error').length,
+      warnings: found.filter((issue) => issue.severity === 'warning').length,
+      codes: [...new Set(found.map((issue) => issue.code))].sort(),
+    });
     // Shape-state badges (pendência §5): mark offending nodes on the canvas
     // while the issues panel is open; errors win over warnings, info stays
     // panel-only. The issue code rides along (Handoff 5 §3.2).

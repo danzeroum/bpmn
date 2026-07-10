@@ -41,6 +41,7 @@ function DesignerBody({
       ruleEngine={config.ruleEngine}
       edgeRouter={config.edgeRouter}
       onChange={onChange}
+      emitEditorEvent={config.emitEditorEvent}
     >
       <CanvasProvider initial={{ readOnly: readOnly ?? false }}>
         <div className="bpmnr-designer" style={{ position: 'relative', width: '100%', height: '100%' }}>
