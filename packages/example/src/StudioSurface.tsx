@@ -27,6 +27,7 @@ import type { ArtifactAction, ArtifactAdapter, ArtifactRef, LibraryQuery, Lifecy
 import type { Signer } from '@buildtovalue/identity';
 import { createGitAnchor, type GitAnchorTransport } from '@buildtovalue/anchor-git';
 import { StudioShell } from '@buildtovalue/studio';
+import { PT_BR } from '@buildtovalue/react';
 import '@buildtovalue/library-react/styles.css';
 import '@buildtovalue/studio/styles.css';
 
@@ -436,6 +437,7 @@ export function StudioSurface() {
       <StudioShell
         key={user.id}
         user={user}
+        messages={PT_BR}
         library={{
           adapters: world.adapters,
           onAction: onLibraryAction,

@@ -1,0 +1,26 @@
+import type { Messages } from '../messages.js';
+
+/**
+ * Menus dictionary fragment (Handoff 11 N-6): built-in context-menu labels and
+ * the inline label editors. Plugin-provided item labels stay data (`item.label`)
+ * and are never keyed here. Keys are namespaced by surface (`contextMenu.*`,
+ * `edgeLabel.*`, `nodeLabel.*`); both official dictionaries sit side by side.
+ */
+export const menus: { en: Messages; ptBR: Messages } = {
+  en: {
+    'contextMenu.aria': 'Context menu',
+    'contextMenu.backToAuto': 'Back to automatic',
+    'contextMenu.addWaypoint': 'Add waypoint here',
+    'contextMenu.editLabel': 'Edit label',
+    'edgeLabel.aria': 'Edit edge label',
+    'nodeLabel.aria': 'Edit label',
+  },
+  ptBR: {
+    'contextMenu.aria': 'Menu de contexto',
+    'contextMenu.backToAuto': 'Voltar ao automático',
+    'contextMenu.addWaypoint': 'Adicionar waypoint aqui',
+    'contextMenu.editLabel': 'Editar rótulo',
+    'edgeLabel.aria': 'Editar rótulo da aresta',
+    'nodeLabel.aria': 'Editar rótulo',
+  },
+};

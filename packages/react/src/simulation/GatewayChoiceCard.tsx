@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Decision, PendingChoice } from '@buildtovalue/simulation';
+import { useT } from '../i18n/I18nContext.js';
 
 export interface GatewayChoiceCardProps {
   choice: PendingChoice;
@@ -17,6 +18,7 @@ const TOUCH = 44;
  * gateway is a multi-select with an explicit confirm.
  */
 export function GatewayChoiceCard({ choice, gatewayLabel, onChoose }: GatewayChoiceCardProps) {
+  const t = useT();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const toggle = (edgeId: string) =>
@@ -28,9 +30,9 @@ export function GatewayChoiceCard({ choice, gatewayLabel, onChoose }: GatewayCho
     });
 
   return (
-    <div className="bpmnr-sim-choice" role="group" aria-label={`Gateway ${gatewayLabel}`} data-sim-choice>
+    <div className="bpmnr-sim-choice" role="group" aria-label={t('sim.gateway.aria', { label: gatewayLabel })} data-sim-choice>
       <span className="bpmnr-sim-choice-title">
-        Gateway “{gatewayLabel}” — escolha a saída:
+        {t('sim.gateway.chooseExit', { label: gatewayLabel })}
       </span>
       <div className="bpmnr-sim-choice-options">
         {choice.options.map((option) =>
@@ -78,12 +80,12 @@ export function GatewayChoiceCard({ choice, gatewayLabel, onChoose }: GatewayCho
           className="bpmnr-sim-choice-btn bpmnr-sim-choice-confirm"
           style={{ minHeight: TOUCH }}
         >
-          Confirmar ({selected.size})
+          {t('sim.choice.confirm', { n: selected.size })}
         </button>
       )}
       {choice.approximate && (
         <span className="bpmnr-sim-approx" data-sim-approx>
-          semântica aproximada (limitations.md)
+          {t('sim.choice.approx')}
         </span>
       )}
     </div>

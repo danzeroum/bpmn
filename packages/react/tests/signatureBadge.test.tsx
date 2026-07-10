@@ -1,6 +1,11 @@
+import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { SignatureBadge } from '../src/index.js';
+import { I18nProvider, PT_BR, SignatureBadge } from '../src/index.js';
+
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <I18nProvider messages={PT_BR}>{children}</I18nProvider>
+);
 
 /**
  * The identity badge (Handoff 8 §4.1) — three states, each with an icon glyph
@@ -15,6 +20,7 @@ describe('SignatureBadge', () => {
         signer={{ subject: 'marta@x', role: 'compliance', publicKeyFingerprint: 'ed25519:fp' }}
         signatureFingerprint="ed25519:#0b9a…f21c"
       />,
+      { wrapper },
     );
     const badge = container.querySelector('.bpmnr-signature-badge')!;
     expect(badge.getAttribute('data-verification')).toBe('valid');
@@ -30,7 +36,7 @@ describe('SignatureBadge', () => {
   });
 
   it('renders the legacy (unsigned) state in amber', () => {
-    const { container } = render(<SignatureBadge state="legacy" />);
+    const { container } = render(<SignatureBadge state="legacy" />, { wrapper });
     const badge = container.querySelector('.bpmnr-signature-badge')!;
     expect(badge.getAttribute('data-verification')).toBe('legacy');
     expect(badge).toHaveTextContent('◌');
@@ -40,6 +46,7 @@ describe('SignatureBadge', () => {
   it('renders the invalid state with the expected × obtained hashes', () => {
     const { container } = render(
       <SignatureBadge state="invalid" expected="ed25519:#0b9a…f21c" obtained="outro hash" />,
+      { wrapper },
     );
     const badge = container.querySelector('.bpmnr-signature-badge')!;
     expect(badge.getAttribute('data-verification')).toBe('invalid');
@@ -51,6 +58,7 @@ describe('SignatureBadge', () => {
   it('does not render a fingerprint for non-valid states', () => {
     const { container } = render(
       <SignatureBadge state="legacy" signatureFingerprint="should-not-show" />,
+      { wrapper },
     );
     expect(container.querySelector('.bpmnr-signature-fingerprint')).toBeNull();
   });

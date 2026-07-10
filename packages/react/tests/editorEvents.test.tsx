@@ -15,6 +15,7 @@ import {
   DEPRECATED_EVENT_ALIASES,
   EDITOR_EVENTS,
   PromotionPanel,
+  PT_BR,
   resolveEditorConfig,
   useCanvasStore,
   useDiagram,
@@ -209,7 +210,7 @@ describe('N-3 — the complete typed catalog', () => {
     diagram.version.semanticVersion = '2.1.0';
     diagram.version.changeSummary = 'A change summary long enough for promotion.';
     render(
-      <BpmnDesigner diagram={diagram} plugins={[plugin]}>
+      <BpmnDesigner diagram={diagram} plugins={[plugin]} messages={PT_BR}>
         <PromotionPanel
           open
           onClose={() => {}}

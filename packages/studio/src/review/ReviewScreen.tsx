@@ -15,6 +15,7 @@ import {
   SignatureBadge,
   StatusBadge,
   useAnchorCycle,
+  useT,
 } from '@buildtovalue/react';
 import {
   signApproval,
@@ -105,6 +106,7 @@ function signatureFingerprintOf(signed: SignedApproval): string {
  * Approving NEVER activates (§11): a solicitante executa a promoção final.
  */
 export function ReviewScreen(props: ReviewScreenProps) {
+  const t = useT();
   const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onOpenInDesigner, replayAnalysisFor, explain, now, signer, anchor } =
     props;
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
@@ -249,14 +251,14 @@ export function ReviewScreen(props: ReviewScreenProps) {
 
   return (
     <div className="btv-studio-review" data-testid="review-screen">
-      <aside className="btv-studio-queue" aria-label="Fila de aprovação">
+      <aside className="btv-studio-queue" aria-label={t('review.queue.aria')}>
         <header className="btv-studio-queue-header">
-          FILA DE APROVAÇÃO · SEU PAPEL: {actor.role.toUpperCase()}
+          {t('review.queue.header', { role: actor.role.toUpperCase() })}
         </header>
         <div
           className="btv-studio-queue-list"
           role="listbox"
-          aria-label="Pedidos de promoção pendentes"
+          aria-label={t('review.queue.list.aria')}
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') {
@@ -298,15 +300,15 @@ export function ReviewScreen(props: ReviewScreenProps) {
                 {request.slaDays !== undefined && (
                   <span className="btv-studio-queue-sla" data-urgent={request.slaDays < 3 || undefined}>
                     {request.slaDays >= 0
-                      ? `ativação alvo em ${request.slaDays}d`
-                      : `alvo vencido há ${-request.slaDays}d`}
+                      ? t('review.queue.sla.target', { days: request.slaDays })
+                      : t('review.queue.sla.overdue', { days: -request.slaDays })}
                   </span>
                 )}
               </button>
             );
           })}
           {queue.length === 0 && (
-            <p className="btv-studio-queue-empty">Nenhum pedido aguardando a sua aprovação.</p>
+            <p className="btv-studio-queue-empty">{t('review.queue.empty')}</p>
           )}
         </div>
       </aside>
@@ -315,13 +317,15 @@ export function ReviewScreen(props: ReviewScreenProps) {
         {selected && (
           <>
             <section className="btv-studio-block">
-              <span className="btv-studio-kicker">PEDIDO DE PROMOÇÃO · CANDIDATE → ACTIVE</span>
+              <span className="btv-studio-kicker">{t('review.request.kicker')}</span>
               <h1 className="btv-studio-title">
                 {selected.diagram.name} <code>v{selected.diagram.version.semanticVersion}</code>
               </h1>
               <p className="btv-studio-subtitle">
-                solicitado por {selected.diagram.version.createdBy} ·{' '}
-                {selected.diagram.version.createdAt.slice(0, 10)}
+                {t('review.request.subtitle', {
+                  author: selected.diagram.version.createdBy,
+                  date: selected.diagram.version.createdAt.slice(0, 10),
+                })}
               </p>
               <StatusBadge
                 seal={{
@@ -348,7 +352,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
                       })();
                     }}
                   >
-                    ✦ Explicar
+                    ✦ {t('review.explain')}
                   </button>
                   {explanations[selected.diagram.id] && (
                     <p className="btv-studio-explain-text" data-testid="review-explanation">
@@ -360,14 +364,16 @@ export function ReviewScreen(props: ReviewScreenProps) {
             </section>
 
             <section className="btv-studio-block">
-              <span className="btv-studio-kicker">CHANGE SUMMARY (DA SOLICITANTE)</span>
+              <span className="btv-studio-kicker">{t('review.changeSummary.kicker')}</span>
               <blockquote className="btv-studio-quote">{selected.diagram.version.changeSummary}</blockquote>
             </section>
 
             <section className="btv-studio-block">
               <div className="btv-studio-block-head">
                 <span className="btv-studio-kicker">
-                  {baseline ? `DIFF VS V${baseline.version.semanticVersion}` : 'DIFF'}
+                  {baseline
+                    ? t('review.diff.kicker', { version: baseline.version.semanticVersion })
+                    : t('review.diff.kickerNoBaseline')}
                 </span>
                 {onOpenInDesigner && (
                   <button
@@ -375,14 +381,14 @@ export function ReviewScreen(props: ReviewScreenProps) {
                     className="btv-studio-link"
                     onClick={() => onOpenInDesigner(selected.diagram)}
                   >
-                    abrir no canvas →
+                    {t('review.openCanvas')} →
                   </button>
                 )}
               </div>
               {diff ? (
                 <DiffView diff={diff} diagram={selected.diagram} />
               ) : (
-                <p className="btv-studio-muted">Primeira versão — não há baseline para comparar.</p>
+                <p className="btv-studio-muted">{t('review.diff.firstVersion')}</p>
               )}
             </section>
 
@@ -391,26 +397,33 @@ export function ReviewScreen(props: ReviewScreenProps) {
               if (!analysis) return null;
               return (
                 <section className="btv-studio-block" data-testid="review-replay">
-                  <span className="btv-studio-kicker">ANÁLISE DE REPLAY (ANEXADA)</span>
+                  <span className="btv-studio-kicker">{t('review.replay.kicker')}</span>
                   <p className="btv-studio-replay-headline" data-replay-headline>
                     {analysis.headline}
                   </p>
                   <div className="btv-studio-replay-meta">
-                    fitness {(analysis.fitness * 100).toFixed(1).replace('.', ',')}% ·{' '}
-                    {analysis.totalCases.toLocaleString('pt-BR')} casos
-                    {analysis.bottleneck ? ` · gargalo "${analysis.bottleneck}"` : ''}
+                    {t('review.replay.meta', {
+                      fitness: (analysis.fitness * 100).toFixed(1).replace('.', ','),
+                      cases: analysis.totalCases.toLocaleString('pt-BR'),
+                    })}
+                    {analysis.bottleneck
+                      ? t('review.replay.bottleneck', { name: analysis.bottleneck })
+                      : ''}
                     {analysis.deviation
-                      ? ` · ${analysis.deviationCases ?? 0} desvios em "${analysis.deviation}"`
+                      ? t('review.replay.deviation', {
+                          count: analysis.deviationCases ?? 0,
+                          name: analysis.deviation,
+                        })
                       : ''}
                     <br />
-                    anexado por {analysis.author}
+                    {t('review.replay.attachedBy', { author: analysis.author })}
                   </div>
                 </section>
               );
             })()}
 
             <section className="btv-studio-block">
-              <span className="btv-studio-kicker">VERIFICAÇÕES AUTOMÁTICAS</span>
+              <span className="btv-studio-kicker">{t('review.checks.kicker')}</span>
               <div className="btv-studio-checks" data-testid="review-checks">
                 {(checks ?? []).map((check) => (
                   <div key={check.id} className="btv-studio-check" data-ok={check.ok} data-check={check.id}>
@@ -420,7 +433,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
                     <span className="btv-studio-check-detail">{check.detail}</span>
                   </div>
                 ))}
-                {!checks && <p className="btv-studio-muted">Executando verificações…</p>}
+                {!checks && <p className="btv-studio-muted">{t('review.checks.running')}</p>}
               </div>
             </section>
 
@@ -431,13 +444,13 @@ export function ReviewScreen(props: ReviewScreenProps) {
             )}
 
             <section className="btv-studio-block" data-testid="review-decision">
-              <span className="btv-studio-kicker">SUA DECISÃO</span>
+              <span className="btv-studio-kicker">{t('review.decision.kicker')}</span>
               {decision ? (
                 <div className="btv-studio-decision-done" data-kind={decision.kind}>
                   <strong>
                     {decision.kind === 'approved'
-                      ? 'Aprovação registrada no ledger'
-                      : 'Rejeição registrada no ledger'}
+                      ? t('review.decision.approved')
+                      : t('review.decision.rejected')}
                   </strong>
                   <code className="btv-studio-mono">{decision.ledgerEntry.hash}</code>
                   {decision.kind === 'approved' &&
@@ -464,20 +477,16 @@ export function ReviewScreen(props: ReviewScreenProps) {
                       retrying={anchorCycle.retrying}
                     />
                   )}
-                  <p className="btv-studio-muted">
-                    Decisão imutável — corrigir exige um novo ciclo de promoção.
-                  </p>
+                  <p className="btv-studio-muted">{t('review.decision.immutable')}</p>
                 </div>
               ) : (
                 <>
                   <p className="btv-studio-decision-context">
                     {selected.approvedRoles.length > 0
-                      ? `Já aprovaram: ${selected.approvedRoles.join(', ')}.`
-                      : 'Nenhuma aprovação registrada ainda.'}{' '}
-                    {lastRole && 'A sua é a última aprovação necessária.'}{' '}
-                    <strong>
-                      A ativação NÃO é automática — a solicitante executa a promoção final.
-                    </strong>
+                      ? t('review.decision.approvedBy', { roles: selected.approvedRoles.join(', ') })
+                      : t('review.decision.noneYet')}{' '}
+                    {lastRole && t('review.decision.lastNeeded')}{' '}
+                    <strong>{t('review.decision.notAutomatic')}</strong>
                   </p>
                   <div className="btv-studio-decision-buttons">
                     <button
@@ -486,7 +495,11 @@ export function ReviewScreen(props: ReviewScreenProps) {
                       data-signing={signer ? true : undefined}
                       onClick={() => void decide('approve')}
                     >
-                      {signer ? '🔏 Assinar aprovação com minha chave' : `Aprovar como ${actor.role}`}
+                      {signer ? (
+                        <>🔏 {t('review.decision.sign')}</>
+                      ) : (
+                        t('review.decision.approveAs', { role: actor.role })
+                      )}
                     </button>
                     <button
                       type="button"
@@ -494,14 +507,16 @@ export function ReviewScreen(props: ReviewScreenProps) {
                       aria-expanded={rejecting}
                       onClick={() => setRejecting((r) => !r)}
                     >
-                      Rejeitar com justificativa…
+                      {t('review.decision.rejectToggle')}
                     </button>
                   </div>
                   {rejecting && (
                     <div className="btv-studio-reject-form">
                       <textarea
-                        aria-label="Justificativa da rejeição"
-                        placeholder={`Justificativa obrigatória (mín. ${MIN_REJECTION_REASON_LENGTH} caracteres) — vira entrada de ledger`}
+                        aria-label={t('review.reject.aria')}
+                        placeholder={t('review.reject.placeholder', {
+                          min: MIN_REJECTION_REASON_LENGTH,
+                        })}
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                         rows={3}
@@ -512,7 +527,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
                         disabled={reason.trim().length < MIN_REJECTION_REASON_LENGTH}
                         onClick={() => void decide('reject')}
                       >
-                        Confirmar rejeição
+                        {t('review.reject.confirm')}
                       </button>
                     </div>
                   )}
@@ -521,7 +536,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
             </section>
           </>
         )}
-        {!selected && <p className="btv-studio-muted">Selecione um pedido na fila.</p>}
+        {!selected && <p className="btv-studio-muted">{t('review.empty')}</p>}
       </main>
     </div>
   );

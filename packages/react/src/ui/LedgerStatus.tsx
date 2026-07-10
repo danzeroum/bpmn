@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * Structural mirror of `@buildtovalue/audit`'s VerificationReport — kept as a
@@ -24,6 +25,7 @@ export interface LedgerStatusProps {
  * expected vs. found hash.
  */
 export function LedgerStatus({ verify }: LedgerStatusProps) {
+  const t = useT();
   const [report, setReport] = useState<LedgerVerificationReport | null>(null);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -45,30 +47,40 @@ export function LedgerStatus({ verify }: LedgerStatusProps) {
         onClick={() => void run()}
         disabled={busy}
         data-intact={report?.intact}
-        aria-label="Verificar ledger"
+        aria-label={t('ledgerStatus.verify.aria')}
       >
-        {report === null ? 'ledger · verificar' : report.intact ? 'ledger íntegro ✓' : 'ledger quebrado ✗'}
+        {report === null
+          ? t('ledgerStatus.button.idle')
+          : report.intact
+            ? `${t('ledgerStatus.button.intact')} ✓`
+            : `${t('ledgerStatus.button.broken')} ✗`}
       </button>
       {open && report && (
         <div className="bpmnr-ledger-popover" role="status" data-intact={report.intact}>
           {report.intact ? (
             <p>
-              <strong>Cadeia íntegra ✓</strong> — {report.entries} entrada(s) reverificadas.
+              <strong>{t('ledgerStatus.chainIntact')} ✓</strong> —{' '}
+              {t('ledgerStatus.entriesReverified', { count: report.entries })}
             </p>
           ) : (
             <>
               <p>
-                <strong>Adulteração detectada ✗</strong> — entrada #{report.firstBreak!.index} de{' '}
-                {report.entries}.
+                <strong>{t('ledgerStatus.tamperDetected')} ✗</strong> —{' '}
+                {t('ledgerStatus.entryOfTotal', {
+                  index: report.firstBreak!.index,
+                  total: report.entries,
+                })}
               </p>
               <p className="bpmnr-ledger-hashes">
-                esperado <code>{report.firstBreak!.expected.slice(0, 12)}…</code> · encontrado{' '}
-                <code>{report.firstBreak!.actual.slice(0, 12)}…</code>
+                {t('ledgerStatus.expected')} <code>{report.firstBreak!.expected.slice(0, 12)}…</code> ·{' '}
+                {t('ledgerStatus.found')} <code>{report.firstBreak!.actual.slice(0, 12)}…</code>
               </p>
             </>
           )}
-          <p className="bpmnr-ledger-meta">verificado em {report.verifiedAt}</p>
-          <button type="button" onClick={() => setOpen(false)} aria-label="Fechar relatório">
+          <p className="bpmnr-ledger-meta">
+            {t('ledgerStatus.verifiedAt', { time: report.verifiedAt })}
+          </p>
+          <button type="button" onClick={() => setOpen(false)} aria-label={t('ledgerStatus.close.aria')}>
             ×
           </button>
         </div>

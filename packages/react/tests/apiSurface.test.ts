@@ -170,6 +170,13 @@ const EXPECTED_EXPORTS = [
   // Handoff 11 N-5 — pluggable context menu + inline edge label editor.
   'ContextMenu',
   'EdgeLabelEditor',
+  // Handoff 11 N-6 — injected i18n dictionary (engine + EN/PT_BR + hook).
+  'translate',
+  'mergeMessages',
+  'I18nProvider',
+  'useT',
+  'EN',
+  'PT_BR',
 ].sort();
 
 describe('@buildtovalue/react public API surface', () => {

@@ -1,5 +1,6 @@
 import type { BpmnDiagram, BpmnDiff } from '@buildtovalue/core';
 import { isEmptyDiff } from '@buildtovalue/core';
+import { useT } from '../i18n/I18nContext.js';
 
 export interface DiffViewProps {
   diff: BpmnDiff;
@@ -9,16 +10,17 @@ export interface DiffViewProps {
 
 /** Human-readable, structured rendering of a diagram diff. */
 export function DiffView({ diff, diagram }: DiffViewProps) {
+  const t = useT();
   if (isEmptyDiff(diff)) {
-    return <p className="bpmnr-diff-empty">No changes.</p>;
+    return <p className="bpmnr-diff-empty">{t('diff.empty')}</p>;
   }
   const nodeLabel = (id: string) => diagram?.nodes[id]?.label ?? id;
 
   return (
-    <div className="bpmnr-diff" aria-label="Diagram changes">
+    <div className="bpmnr-diff" aria-label={t('diff.aria')}>
       {diff.nodes.length > 0 && (
         <section>
-          <h4>Nodes</h4>
+          <h4>{t('diff.nodes')}</h4>
           <ul>
             {diff.nodes.map((op, index) => (
               <li key={index} data-op={op.op}>
@@ -44,7 +46,7 @@ export function DiffView({ diff, diagram }: DiffViewProps) {
       )}
       {diff.edges.length > 0 && (
         <section>
-          <h4>Connections</h4>
+          <h4>{t('diff.connections')}</h4>
           <ul>
             {diff.edges.map((op, index) => (
               <li key={index} data-op={op.op}>
@@ -65,7 +67,7 @@ export function DiffView({ diff, diagram }: DiffViewProps) {
                 )}
                 {op.op === 'supersede' && (
                   <>
-                    <OpTag op="supersede" /> {op.edgeId} superseded by {op.newEdgeId}
+                    <OpTag op="supersede" /> {op.edgeId} {t('diff.supersededBy')} {op.newEdgeId}
                   </>
                 )}
               </li>
@@ -75,7 +77,7 @@ export function DiffView({ diff, diagram }: DiffViewProps) {
       )}
       {Object.keys(diff.metadata).length > 0 && (
         <section>
-          <h4>Metadata</h4>
+          <h4>{t('diff.metadata')}</h4>
           <ul>
             {Object.entries(diff.metadata).map(([key, change]) => (
               <li key={key}>

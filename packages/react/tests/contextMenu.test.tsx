@@ -8,7 +8,7 @@ import {
   type BpmnDiagram,
 } from '@buildtovalue/core';
 import type { BpmnPlugin } from '../src/index.js';
-import { BpmnDesigner } from '../src/index.js';
+import { BpmnDesigner, PT_BR } from '../src/index.js';
 
 /**
  * Handoff 11 N-5 — pluggable context menu: conditional built-ins (edge
@@ -50,14 +50,14 @@ function openEdgeMenu(container: HTMLElement) {
 
 describe('ContextMenu (N-5) — conditional built-ins', () => {
   it('a MANUAL edge offers "Voltar ao automático"; an auto edge does not (when condicional)', () => {
-    const manual = render(<BpmnDesigner diagram={diagramWith(true)} />);
+    const manual = render(<BpmnDesigner diagram={diagramWith(true)} messages={PT_BR} />);
     const menu = openEdgeMenu(manual.container)!;
     expect(menu.textContent).toContain('Voltar ao automático');
     expect(menu.textContent).toContain('Adicionar waypoint aqui');
     expect(menu.textContent).toContain('Editar rótulo');
     manual.unmount();
 
-    const auto = render(<BpmnDesigner diagram={diagramWith(false)} />);
+    const auto = render(<BpmnDesigner diagram={diagramWith(false)} messages={PT_BR} />);
     const autoMenu = openEdgeMenu(auto.container)!;
     expect(autoMenu.textContent).not.toContain('Voltar ao automático');
     expect(autoMenu.textContent).toContain('Adicionar waypoint aqui');

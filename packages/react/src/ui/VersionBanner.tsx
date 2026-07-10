@@ -1,5 +1,6 @@
 import { useCanvasState } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * Fixed top-left canvas banner (Handoff 5 §5, 5b mitigada; aceite 10.5.6):
@@ -10,6 +11,7 @@ import { useDiagram } from '../contexts/DiagramContext.js';
  * only, so this banner is the always-visible version context.
  */
 export function VersionBanner() {
+  const t = useT();
   const { diagram } = useDiagram();
   const readOnly = useCanvasState((s) => s.readOnly);
   const { status, semanticVersion } = diagram.version;
@@ -26,12 +28,11 @@ export function VersionBanner() {
     <div
       className="bpmnr-version-banner"
       role="note"
-      aria-label="Version context"
+      aria-label={t('version.banner.aria')}
       data-version-banner={status}
     >
-      <span aria-hidden>🔒</span> VISUALIZANDO v{semanticVersion} · somente leitura
-      {closedCount > 0 &&
-        ` · ${closedCount} ${closedCount === 1 ? 'elemento fechado' : 'elementos fechados'} nesta versão`}
+      <span aria-hidden>🔒</span> {t('version.banner.viewing', { version: semanticVersion })}
+      {closedCount > 0 && ` · ${t('version.banner.closed', { count: closedCount })}`}
     </div>
   );
 }

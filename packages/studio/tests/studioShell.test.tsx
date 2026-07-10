@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AuditLedger, LifecycleEngine, type UserContext } from '@buildtovalue/core';
 import { createRecipeAdapter } from '@buildtovalue/adapters-bpmn';
+import { PT_BR } from '@buildtovalue/react';
 import { StudioShell } from '../src/index.js';
 import { candidateDiagram } from './fixtures.js';
 
@@ -15,6 +16,7 @@ const user: UserContext = { id: 'bruna', role: 'process-owner', name: 'Bruna' };
 function renderShell() {
   return render(
     <StudioShell
+      messages={PT_BR}
       user={user}
       library={{ adapters: [createRecipeAdapter()], onAction: () => {} }}
       review={{
@@ -61,6 +63,7 @@ describe('StudioShell — navegação por hash, sem router externo (§11)', () =
   it('without audit wiring the Auditoria shows the disconnected notice', async () => {
     render(
       <StudioShell
+        messages={PT_BR}
         user={user}
         library={{ adapters: [], onAction: () => {} }}
         review={{ candidates: [], engine: new LifecycleEngine(), ledger: new AuditLedger() }}

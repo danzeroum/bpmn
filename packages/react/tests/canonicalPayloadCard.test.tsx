@@ -1,6 +1,11 @@
+import type { ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { CanonicalPayloadCard } from '../src/index.js';
+import { CanonicalPayloadCard, I18nProvider, PT_BR } from '../src/index.js';
+
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <I18nProvider messages={PT_BR}>{children}</I18nProvider>
+);
 
 /**
  * The "what you sign" card (Handoff 8 §4.3) — renders the canonical payload
@@ -19,6 +24,7 @@ describe('CanonicalPayloadCard', () => {
           role: 'compliance',
         }}
       />,
+      { wrapper },
     );
     const card = screen.getByTestId('canonical-payload');
     expect(card).toHaveTextContent('O QUE VOCÊ ESTÁ ASSINANDO (PAYLOAD CANÔNICO)');
@@ -39,6 +45,7 @@ describe('CanonicalPayloadCard', () => {
           role: 'ops',
         }}
       />,
+      { wrapper },
     );
     expect(screen.getByTestId('canonical-payload')).toHaveTextContent('ledgerHead: ∅');
   });

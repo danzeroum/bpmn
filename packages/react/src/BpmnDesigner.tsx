@@ -7,6 +7,8 @@ import { BpmnCanvas } from './canvas/Canvas.js';
 import { ResilienceLayer } from './canvas/ResilienceLayer.js';
 import { VersionBanner } from './ui/VersionBanner.js';
 import { ContextMenu } from './ui/ContextMenu.js';
+import { I18nProvider } from './i18n/I18nContext.js';
+import type { Messages } from './i18n/messages.js';
 import type { BpmnPlugin } from './plugins/types.js';
 
 export interface BpmnDesignerProps {
@@ -25,6 +27,12 @@ export interface BpmnDesignerProps {
   overlay?: ReactNode;
   /** Render closed (removedInVersion) elements. Default true. */
   showClosed?: boolean;
+  /**
+   * Injected UI dictionary (Handoff 11 N-6). Omitted → English. The host owns
+   * locale choice: pass `PT_BR` (or a custom dictionary) to switch languages;
+   * missing keys fall back to English. There is no automatic locale detection.
+   */
+  messages?: Messages;
 }
 
 function DesignerBody({
@@ -34,7 +42,7 @@ function DesignerBody({
   children,
   overlay,
   showClosed,
-}: Omit<BpmnDesignerProps, 'plugins'>) {
+}: Omit<BpmnDesignerProps, 'plugins' | 'messages'>) {
   const config = useEditorConfig();
   return (
     <DiagramProvider
@@ -63,12 +71,18 @@ function DesignerBody({
  * Compose UI panels as children, or use `<BpmnEditor>` for the batteries-
  * included arrangement.
  */
-export function BpmnDesigner({ plugins, ...rest }: BpmnDesignerProps) {
-  return (
+export function BpmnDesigner({ plugins, messages, ...rest }: BpmnDesignerProps) {
+  const body = (
     <EditorConfigProvider plugins={plugins}>
       <DesignerBody {...rest} />
     </EditorConfigProvider>
   );
+  // Compose, don't shadow (N-6): only mount our own dictionary provider when a
+  // `messages` prop is given. Without one, defer to an outer <I18nProvider>
+  // (e.g. a host wrapping <BpmnSimulator>/<BpmnReplay>) — or the English default
+  // when there is none. Unconditionally re-providing here would reset any outer
+  // dictionary to English for the whole editor subtree.
+  return messages !== undefined ? <I18nProvider messages={messages}>{body}</I18nProvider> : body;
 }
 
 export interface BpmnViewerProps {
@@ -76,10 +90,12 @@ export interface BpmnViewerProps {
   plugins?: BpmnPlugin[];
   overlay?: ReactNode;
   showClosed?: boolean;
+  /** Injected UI dictionary (Handoff 11 N-6). Omitted → English. */
+  messages?: Messages;
 }
 
 /** Read-only rendering of a diagram (no gestures that mutate state). */
-export function BpmnViewer({ diagram, plugins, overlay, showClosed }: BpmnViewerProps) {
+export function BpmnViewer({ diagram, plugins, overlay, showClosed, messages }: BpmnViewerProps) {
   return (
     <BpmnDesigner
       diagram={diagram}
@@ -87,6 +103,7 @@ export function BpmnViewer({ diagram, plugins, overlay, showClosed }: BpmnViewer
       readOnly
       overlay={overlay}
       showClosed={showClosed}
+      messages={messages}
     />
   );
 }

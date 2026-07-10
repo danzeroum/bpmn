@@ -14,7 +14,7 @@ import {
   type Signer,
 } from '@buildtovalue/identity';
 import type { BpmnPlugin, PromotionPanelProps } from '../src/index.js';
-import { BpmnDesigner, PromotionPanel } from '../src/index.js';
+import { BpmnDesigner, PromotionPanel, PT_BR } from '../src/index.js';
 
 /** A host-style Signer with a keypair generated in the TEST (never in the lib). */
 async function makeSigner(subject: string, role: string) {
@@ -51,7 +51,7 @@ function renderPanel(
 ) {
   const baseline = structuredClone(diagram);
   return render(
-    <BpmnDesigner diagram={diagram} plugins={plugins}>
+    <BpmnDesigner diagram={diagram} plugins={plugins} messages={PT_BR}>
       <PromotionPanel
         open
         onClose={() => {}}
@@ -352,7 +352,7 @@ describe('PromotionPanel — C4 change_summary sugerido (Handoff 9 CP-3)', () =>
     diagram.version.changeSummary = '';
     let latest: BpmnDiagram = diagram;
     const { container } = render(
-      <BpmnDesigner diagram={diagram} onChange={(d) => (latest = d)}>
+      <BpmnDesigner diagram={diagram} onChange={(d) => (latest = d)} messages={PT_BR}>
         <PromotionPanel
           open
           onClose={() => {}}

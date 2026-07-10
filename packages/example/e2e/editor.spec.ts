@@ -32,17 +32,17 @@ test('renders the sample diagram with domain shapes', async ({ page }) => {
   // F7-3: call activity and data store render with their BPMN notation.
   await expect(page.locator('[data-node-type="callActivity"]')).toBeVisible();
   await expect(page.locator('[data-node-type="dataStore"]')).toBeVisible();
-  await expect(page.getByRole('status', { name: /Version/ })).toContainText('RASCUNHO');
+  await expect(page.getByRole('status', { name: /Versão/ })).toContainText('RASCUNHO');
 });
 
 test('creates a node from the palette and undoes/redoes it', async ({ page }) => {
   const before = await nodeCount(page);
-  await page.getByRole('button', { name: 'Add User Task' }).click();
+  await page.getByRole('button', { name: 'Adicionar User Task' }).click();
   await expect(page.locator('[data-node-id]')).toHaveCount(before + 1);
 
-  await page.getByRole('button', { name: 'Undo' }).click();
+  await page.getByRole('button', { name: 'Desfazer' }).click();
   await expect(page.locator('[data-node-id]')).toHaveCount(before);
-  await page.getByRole('button', { name: 'Redo' }).click();
+  await page.getByRole('button', { name: 'Refazer' }).click();
   await expect(page.locator('[data-node-id]')).toHaveCount(before + 1);
 });
 
@@ -63,7 +63,7 @@ test('renders a boundary event that rides along when its host moves', async ({ p
 });
 
 test('adds a typed timer event from the palette', async ({ page }) => {
-  await page.getByRole('button', { name: 'Add Timer Event' }).click();
+  await page.getByRole('button', { name: 'Adicionar Timer Event' }).click();
   const timer = page.locator('[data-node-type="intermediateCatchEvent"]');
   await expect(timer).toHaveCount(1);
   await expect(timer).toBeVisible();
@@ -93,7 +93,7 @@ test('edits a node label inline via double-click', async ({ page }) => {
   await expect(node).toContainText('Senior Writer');
 
   // Undo restores the original label.
-  await page.getByRole('button', { name: 'Undo' }).click();
+  await page.getByRole('button', { name: 'Desfazer' }).click();
   await expect(node).not.toContainText('Senior Writer');
 });
 
@@ -141,17 +141,17 @@ test('blocks self-connections with a live veto message', async ({ page }) => {
 test('zooms with toolbar controls', async ({ page }) => {
   const zoom = page.locator('.bpmnr-toolbar-zoom');
   const initial = await zoom.textContent();
-  await page.getByRole('button', { name: 'Zoom in' }).click();
-  await page.getByRole('button', { name: 'Zoom in' }).click();
+  await page.getByRole('button', { name: 'Aproximar' }).click();
+  await page.getByRole('button', { name: 'Aproximar' }).click();
   await expect(zoom).not.toHaveText(initial!);
-  await page.getByRole('button', { name: 'Fit diagram' }).click();
+  await page.getByRole('button', { name: 'Ajustar diagrama' }).click();
   await expect(page.locator('svg.bpmnr-canvas')).toBeVisible();
 });
 
 test('promotes through the lifecycle with multi-role approval and locks active diagrams', async ({
   page,
 }) => {
-  const badge = page.getByRole('status', { name: /Version/ });
+  const badge = page.getByRole('status', { name: /Versão/ });
 
   // draft → test → candidate
   await page.getByRole('button', { name: '→ test' }).click();
@@ -193,7 +193,7 @@ test('promotes through the lifecycle with multi-role approval and locks active d
   await expect(page.locator('.bpmnr-timeline')).toContainText('vigente desde');
 
   // Editing an active diagram is vetoed
-  await page.getByRole('button', { name: 'Add Task' }).click();
+  await page.getByRole('button', { name: 'Adicionar Task' }).click();
   await expect(page.locator('.bpmnr-toolbar-veto')).toContainText('immutable');
 
   // Cloning restores editability with a bumped version
@@ -203,15 +203,15 @@ test('promotes through the lifecycle with multi-role approval and locks active d
 });
 
 test('records audit entries with a verifiable hash chain', async ({ page }) => {
-  await page.getByRole('button', { name: 'Add Task' }).click();
+  await page.getByRole('button', { name: 'Adicionar Task' }).click();
   await expect(page.locator('.demo-audit li code').first()).toHaveText('NODE_ADDED');
   await page.getByRole('button', { name: 'verify' }).click();
   await expect(page.locator('.demo-audit')).toContainText('chain intact');
 });
 
 test('validates the diagram from the toolbar', async ({ page }) => {
-  await page.getByRole('button', { name: 'Validate diagram' }).click();
-  const panel = page.getByRole('status', { name: 'Validation result' });
+  await page.getByRole('button', { name: 'Validar diagrama' }).click();
+  const panel = page.getByRole('status', { name: 'Resultado da validação' });
   // Sample flow has no start event (domain diagram) → warnings listed. The
   // ONLY error is intentional (F-A): the shared-billing call activity is not
   // registered in the demo registry (CALL_REF_MISSING).
@@ -222,7 +222,7 @@ test('validates the diagram from the toolbar', async ({ page }) => {
 
 test('exports BPMN XML with DI', async ({ page }) => {
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export BPMN XML' }).click();
+  await page.getByRole('button', { name: 'Exportar BPMN XML' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.bpmn\.xml$/);
   const stream = await download.createReadStream();
@@ -237,7 +237,7 @@ test('exports BPMN XML with DI', async ({ page }) => {
 
 test('exports SVG', async ({ page }) => {
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export SVG' }).click();
+  await page.getByRole('button', { name: 'Exportar SVG' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.svg$/);
   const stream = await download.createReadStream();
@@ -252,7 +252,7 @@ test('exports SVG', async ({ page }) => {
 
 test('exports PNG', async ({ page }) => {
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export PNG' }).click();
+  await page.getByRole('button', { name: 'Exportar PNG' }).click();
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(/\.png$/);
   const stream = await download.createReadStream();
@@ -291,11 +291,11 @@ test('businessRuleTask shows the decision-link badge; broken call ref shows its 
 
   // Validate: the demo registry is empty, so 'Billing (shared)' resolves to
   // CALL_REF_MISSING — error badge + stable code below the shape.
-  await page.getByRole('button', { name: 'Validate diagram' }).click();
+  await page.getByRole('button', { name: 'Validar diagrama' }).click();
   const call = page.locator('[data-node-id="billing"]');
   await expect(call).toHaveAttribute('data-node-issue-state', 'error');
   await expect(call.locator('[data-node-issue-code]')).toHaveText('CALL_REF_MISSING');
-  await page.getByRole('button', { name: 'Close validation' }).click();
+  await page.getByRole('button', { name: 'Fechar validação' }).click();
   await expect(page.locator('[data-node-issue]')).toHaveCount(0);
 });
 

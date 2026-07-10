@@ -1,0 +1,88 @@
+import type { Messages } from '../messages.js';
+
+/**
+ * Toolbar dictionary fragment (Handoff 11 N-6). Each migrated surface owns one
+ * fragment holding both official dictionaries side by side; `en.ts` / `ptBR.ts`
+ * spread the fragments into the flat lookup tables. Keys are namespaced by
+ * surface (`toolbar.*`); plural pairs use `_one` / `_other`.
+ */
+export const toolbar: { en: Messages; ptBR: Messages } = {
+  en: {
+    'toolbar.aria': 'Editor toolbar',
+    'toolbar.undo': 'Undo',
+    'toolbar.undo.title': 'Undo (Ctrl+Z)',
+    'toolbar.redo': 'Redo',
+    'toolbar.redo.title': 'Redo (Ctrl+Shift+Z)',
+    'toolbar.zoomIn': 'Zoom in',
+    'toolbar.zoomOut': 'Zoom out',
+    'toolbar.fit': 'Fit diagram',
+    'toolbar.snap.title': 'Snap to grid',
+    'toolbar.subnav.aria': 'Sub-process navigation',
+    'toolbar.validate': 'Validate',
+    'toolbar.validate.aria': 'Validate diagram',
+    'toolbar.exportXml': 'XML',
+    'toolbar.exportXml.aria': 'Export BPMN XML',
+    'toolbar.exportJson': 'JSON',
+    'toolbar.exportJson.aria': 'Export JSON',
+    'toolbar.exportSvg': 'SVG',
+    'toolbar.exportSvg.aria': 'Export SVG',
+    'toolbar.exportPng': 'PNG',
+    'toolbar.exportPng.aria': 'Export PNG',
+    'toolbar.clearRouting': 'Routes',
+    'toolbar.clearRouting.aria': 'Clear routing',
+    'toolbar.clearRouting.title': 'Re-optimize automatic routes (manual routes preserved)',
+    'toolbar.clearRoutingAll.aria': 'Reset all routes',
+    'toolbar.clearRoutingAll.title':
+      'Reset all routes to automatic, including manual ones (asks for confirmation)',
+    'toolbar.clearRoutingAll.confirm':
+      'Reset ALL routes to automatic, including manual ones? This action is undoable.',
+    'toolbar.routing.noneToReoptimize': 'No automatic routes to re-optimize',
+    'toolbar.routing.reoptimized_one': '{count} edge re-optimized',
+    'toolbar.routing.reoptimized_other': '{count} edges re-optimized',
+    'toolbar.routing.manualPreserved_one': '{count} manual route preserved',
+    'toolbar.routing.manualPreserved_other': '{count} manual routes preserved',
+    'toolbar.routing.undoable': 'undoable',
+    'toolbar.issues.aria': 'Validation result',
+    'toolbar.issues.none': 'No issues found',
+    'toolbar.issues.close': 'Close validation',
+  },
+  ptBR: {
+    'toolbar.aria': 'Barra de ferramentas',
+    'toolbar.undo': 'Desfazer',
+    'toolbar.undo.title': 'Desfazer (Ctrl+Z)',
+    'toolbar.redo': 'Refazer',
+    'toolbar.redo.title': 'Refazer (Ctrl+Shift+Z)',
+    'toolbar.zoomIn': 'Aproximar',
+    'toolbar.zoomOut': 'Afastar',
+    'toolbar.fit': 'Ajustar diagrama',
+    'toolbar.snap.title': 'Alinhar à grade',
+    'toolbar.subnav.aria': 'Navegação de subprocessos',
+    'toolbar.validate': 'Validar',
+    'toolbar.validate.aria': 'Validar diagrama',
+    'toolbar.exportXml': 'XML',
+    'toolbar.exportXml.aria': 'Exportar BPMN XML',
+    'toolbar.exportJson': 'JSON',
+    'toolbar.exportJson.aria': 'Exportar JSON',
+    'toolbar.exportSvg': 'SVG',
+    'toolbar.exportSvg.aria': 'Exportar SVG',
+    'toolbar.exportPng': 'PNG',
+    'toolbar.exportPng.aria': 'Exportar PNG',
+    'toolbar.clearRouting': 'Rotas',
+    'toolbar.clearRouting.aria': 'Limpar roteamento',
+    'toolbar.clearRouting.title': 'Re-otimiza as rotas automáticas (preserva rotas manuais)',
+    'toolbar.clearRoutingAll.aria': 'Resetar todas as rotas',
+    'toolbar.clearRoutingAll.title':
+      'Reseta todas as rotas ao automático, incluindo as manuais (pede confirmação)',
+    'toolbar.clearRoutingAll.confirm':
+      'Resetar TODAS as rotas ao automático, incluindo as manuais? Esta ação é desfazível.',
+    'toolbar.routing.noneToReoptimize': 'Nenhuma rota automática para re-otimizar',
+    'toolbar.routing.reoptimized_one': '{count} aresta re-otimizada',
+    'toolbar.routing.reoptimized_other': '{count} arestas re-otimizadas',
+    'toolbar.routing.manualPreserved_one': '{count} rota manual preservada',
+    'toolbar.routing.manualPreserved_other': '{count} rotas manuais preservadas',
+    'toolbar.routing.undoable': 'desfazível',
+    'toolbar.issues.aria': 'Resultado da validação',
+    'toolbar.issues.none': 'Nenhum problema encontrado',
+    'toolbar.issues.close': 'Fechar validação',
+  },
+};

@@ -1,8 +1,14 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuditLedger } from '@buildtovalue/core';
 import { anchorRecordedEntry } from '@buildtovalue/audit';
+import { I18nProvider, PT_BR } from '@buildtovalue/react';
 import { categorizeEntry, LedgerExplorer } from '../src/index.js';
+
+/** Wrap every render in the Brazilian-Portuguese dictionary (Handoff 11 N-6). */
+const render = (ui: ReactElement) =>
+  rtlRender(ui, { wrapper: ({ children }) => <I18nProvider messages={PT_BR}>{children}</I18nProvider> });
 
 afterEach(cleanup);
 

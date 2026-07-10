@@ -24,7 +24,7 @@ test('deadlock blocks promotion with SND_DEADLOCK_JOIN visible in the modal', as
 
   // The soundness section is red with the stable code, and the core gate
   // (promotion rule) keeps activation disabled.
-  await expect(dialog).toContainText('Soundness · 1 erro(s)');
+  await expect(dialog).toContainText('Soundness · 1 erro');
   await expect(dialog).toContainText('SND_DEADLOCK_JOIN');
   await expect(dialog.getByRole('button', { name: /^Ativar v/ })).toBeDisabled();
 
@@ -42,10 +42,10 @@ test('a sound diagram shows a green soundness section and node badges from Valid
 
   // The demo sample is warnings-only: Validate lists issues, but no SND
   // error badges appear (badges track error/warning-level node issues).
-  await page.getByRole('button', { name: 'Validate diagram' }).click();
+  await page.getByRole('button', { name: 'Validar diagrama' }).click();
   await expect(page.locator('.bpmnr-issues')).toContainText('warning');
   // Closing the panel clears any badges.
-  await page.getByRole('button', { name: 'Close validation' }).click();
+  await page.getByRole('button', { name: 'Fechar validação' }).click();
   await expect(page.locator('[data-node-issue]')).toHaveCount(0);
 
   // The promotion modal's soundness section is green for the sound sample.

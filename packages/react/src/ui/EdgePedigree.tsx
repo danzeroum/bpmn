@@ -10,6 +10,7 @@ import {
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { useDismissal } from '../gestures/useDismissal.js';
+import { useT } from '../i18n/I18nContext.js';
 import { DefaultShape } from '../shapes/index.js';
 import { DiffView } from './DiffView.js';
 import { SEAL_LABELS } from './StatusBadge.js';
@@ -38,6 +39,7 @@ const CARD_H = 48;
  * DiffView of the two adjacent versions; hover surfaces the ledger hash.
  */
 export function EdgePedigreeStrip({ edgeId, onClose, ledgerHash }: EdgePedigreeStripProps) {
+  const t = useT();
   const { diagram } = useDiagram();
   const chain = useMemo(() => getEdgeChain(diagram, edgeId), [diagram, edgeId]);
   const [diffIndex, setDiffIndex] = useState<number | null>(null);
@@ -59,11 +61,11 @@ export function EdgePedigreeStrip({ edgeId, onClose, ledgerHash }: EdgePedigreeS
       : null;
 
   return (
-    <aside className="bpmnr-pedigree" aria-label="Edge pedigree" data-edge-pedigree={edgeId}>
+    <aside className="bpmnr-pedigree" aria-label={t('pedigree.aria')} data-edge-pedigree={edgeId}>
       <header className="bpmnr-pedigree-head">
-        <span className="bpmnr-pedigree-kicker">PEDIGREE · CADEIA DE SUPERSESSÃO</span>
+        <span className="bpmnr-pedigree-kicker">{t('pedigree.kicker')}</span>
         {onClose && (
-          <button type="button" aria-label="Fechar pedigree" onClick={onClose}>
+          <button type="button" aria-label={t('pedigree.close')} onClick={onClose}>
             ✕
           </button>
         )}
@@ -101,7 +103,7 @@ export function EdgePedigreeStrip({ edgeId, onClose, ledgerHash }: EdgePedigreeS
               <li key={edge.id} className="bpmnr-pedigree-step">
                 {index > 0 && (
                   <span className="bpmnr-pedigree-supersede" aria-hidden>
-                    supersede ▸
+                    {t('pedigree.supersede')} ▸
                   </span>
                 )}
                 <span className="bpmnr-pedigree-entry">
@@ -111,8 +113,8 @@ export function EdgePedigreeStrip({ edgeId, onClose, ledgerHash }: EdgePedigreeS
                     data-pedigree-card={edge.id}
                     data-pedigree-closed={closed || undefined}
                     data-pedigree-current={current || undefined}
-                    title={hash ? `ledger #${hash.slice(0, 7)}` : undefined}
-                    aria-label={`Versão ${versionTag(edge)} da conexão`}
+                    title={hash ? `${t('pedigree.ledger')} #${hash.slice(0, 7)}` : undefined}
+                    aria-label={t('pedigree.cardAria', { version: versionTag(edge) })}
                     disabled={index === 0}
                     onClick={() => index > 0 && setDiffIndex(index)}
                   >
@@ -134,12 +136,12 @@ export function EdgePedigreeStrip({ edgeId, onClose, ledgerHash }: EdgePedigreeS
           })}
         </ol>
         {diff && diffIndex !== null && (
-          <div className="bpmnr-pedigree-diff" data-pedigree-diff role="dialog" aria-label="Diff">
+          <div className="bpmnr-pedigree-diff" data-pedigree-diff role="dialog" aria-label={t('pedigree.diffAria')}>
             <header>
               <strong>
                 {versionTag(chain[diffIndex - 1])} ⇄ {versionTag(chain[diffIndex])}
               </strong>
-              <button type="button" aria-label="Fechar diff" onClick={() => setDiffIndex(null)}>
+              <button type="button" aria-label={t('pedigree.closeDiff')} onClick={() => setDiffIndex(null)}>
                 ✕
               </button>
             </header>

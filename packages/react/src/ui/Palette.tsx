@@ -3,6 +3,7 @@ import { addNodeCommand, createNode } from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
+import { useT } from '../i18n/I18nContext.js';
 import type { PaletteGroup, PaletteItem } from '../plugins/types.js';
 
 /**
@@ -14,6 +15,7 @@ export function Palette() {
   const { diagram } = useDiagram();
   const store = useCanvasStore();
   const config = useEditorConfig();
+  const t = useT();
   const readOnly = store.getState().readOnly;
   if (readOnly) return null;
 
@@ -62,7 +64,7 @@ export function Palette() {
       type="button"
       className="bpmnr-palette-item"
       title={item.label}
-      aria-label={`Add ${item.label}`}
+      aria-label={t('palette.itemAria', { label: item.label })}
       data-palette-item={item.id}
       onClick={() => createAt(item.nodeType, item.defaultProperties)}
     >
@@ -74,7 +76,7 @@ export function Palette() {
   );
 
   return (
-    <nav className="bpmnr-palette" aria-label="Element palette">
+    <nav className="bpmnr-palette" aria-label={t('palette.aria')}>
       {config.paletteGroups.map((group) => {
         const items = byGroup.get(group.id);
         if (!items?.length) return null;

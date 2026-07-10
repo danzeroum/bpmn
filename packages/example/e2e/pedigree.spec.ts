@@ -35,7 +35,7 @@ test('edge pedigree strip renders the chain and opens the adjacent DiffView', as
   await strip.locator('[data-pedigree-card="e6b"]').click();
   const diff = page.locator('[data-pedigree-diff]');
   await expect(diff).toBeVisible();
-  await expect(diff).toContainText('e6a superseded by e6b');
+  await expect(diff).toContainText('e6a substituída por e6b');
 
   // Esc: diff first, strip second, selection third.
   await page.keyboard.press('Escape');

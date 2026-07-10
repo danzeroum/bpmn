@@ -13,6 +13,7 @@ import {
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
+import { useT } from '../i18n/I18nContext.js';
 import { fitViewport, zoomViewportAt } from '../canvas/viewport.js';
 import { clearRoutingCommands } from '../canvas/routeEdge.js';
 import { downloadFile, exportPng, exportSvg } from './exporters.js';
@@ -32,6 +33,7 @@ export function Toolbar({ extra }: ToolbarProps) {
   const { diagram, execute, undo, redo, canUndo, canRedo, lastVeto } = useDiagram();
   const store = useCanvasStore();
   const config = useEditorConfig();
+  const t = useT();
   const snapEnabled = useCanvasState((s) => s.snapEnabled);
   const viewportWidth = useCanvasState((s) => s.viewport.width);
   const drillId = useCanvasState((s) => s.drillId);
@@ -54,15 +56,15 @@ export function Toolbar({ extra }: ToolbarProps) {
       includeManual,
     });
     if (commands.length === 0) {
-      setToast('Nenhuma rota automática para re-otimizar');
+      setToast(t('toolbar.routing.noneToReoptimize'));
       return;
     }
     execute(compositeCommand('Clear routing', commands));
-    const parts = [`${reoptimized} ${reoptimized === 1 ? 'aresta re-otimizada' : 'arestas re-otimizadas'}`];
+    const parts = [t('toolbar.routing.reoptimized', { count: reoptimized })];
     if (!includeManual && preserved > 0) {
-      parts.push(`${preserved} ${preserved === 1 ? 'rota manual preservada' : 'rotas manuais preservadas'}`);
+      parts.push(t('toolbar.routing.manualPreserved', { count: preserved }));
     }
-    parts.push('desfazível');
+    parts.push(t('toolbar.routing.undoable'));
     setToast(parts.join(' · '));
   };
 
@@ -175,21 +177,21 @@ export function Toolbar({ extra }: ToolbarProps) {
   };
 
   return (
-    <div className="bpmnr-toolbar" role="toolbar" aria-label="Editor toolbar">
-      <button type="button" onClick={undo} disabled={!canUndo} aria-label="Undo" title="Undo (Ctrl+Z)">
+    <div className="bpmnr-toolbar" role="toolbar" aria-label={t('toolbar.aria')}>
+      <button type="button" onClick={undo} disabled={!canUndo} aria-label={t('toolbar.undo')} title={t('toolbar.undo.title')}>
         ↩
       </button>
-      <button type="button" onClick={redo} disabled={!canRedo} aria-label="Redo" title="Redo (Ctrl+Shift+Z)">
+      <button type="button" onClick={redo} disabled={!canRedo} aria-label={t('toolbar.redo')} title={t('toolbar.redo.title')}>
         ↪
       </button>
       <span className="bpmnr-toolbar-sep" />
-      <button type="button" onClick={() => zoomBy(0.8)} aria-label="Zoom in" title="Zoom in">
+      <button type="button" onClick={() => zoomBy(0.8)} aria-label={t('toolbar.zoomIn')} title={t('toolbar.zoomIn')}>
         +
       </button>
-      <button type="button" onClick={() => zoomBy(1.25)} aria-label="Zoom out" title="Zoom out">
+      <button type="button" onClick={() => zoomBy(1.25)} aria-label={t('toolbar.zoomOut')} title={t('toolbar.zoomOut')}>
         −
       </button>
-      <button type="button" onClick={fit} aria-label="Fit diagram" title="Fit diagram">
+      <button type="button" onClick={fit} aria-label={t('toolbar.fit')} title={t('toolbar.fit')}>
         ⛶
       </button>
       <span className="bpmnr-toolbar-zoom" aria-live="polite">
@@ -199,7 +201,7 @@ export function Toolbar({ extra }: ToolbarProps) {
         type="button"
         aria-pressed={snapEnabled}
         onClick={() => store.setState({ snapEnabled: !snapEnabled })}
-        title="Snap to grid"
+        title={t('toolbar.snap.title')}
       >
         ⌗
       </button>
@@ -209,20 +211,21 @@ export function Toolbar({ extra }: ToolbarProps) {
           <GovernanceBreadcrumb
             levels={breadcrumbLevels}
             onNavigate={(id) => drillTo(id)}
-            ariaLabel="Sub-process navigation"
+            ariaLabel={t('toolbar.subnav.aria')}
           />
         </>
       )}
       <span className="bpmnr-toolbar-sep" />
-      <button type="button" onClick={validate} aria-label="Validate diagram">
-        ✓ Validate
+      <button type="button" onClick={validate} aria-label={t('toolbar.validate.aria')}>
+        {'✓ '}
+        {t('toolbar.validate')}
       </button>
       <span className="bpmnr-toolbar-sep" />
-      <button type="button" onClick={exportXml} aria-label="Export BPMN XML">
-        XML
+      <button type="button" onClick={exportXml} aria-label={t('toolbar.exportXml.aria')}>
+        {t('toolbar.exportXml')}
       </button>
-      <button type="button" onClick={exportJson} aria-label="Export JSON">
-        JSON
+      <button type="button" onClick={exportJson} aria-label={t('toolbar.exportJson.aria')}>
+        {t('toolbar.exportJson')}
       </button>
       <button
         type="button"
@@ -230,9 +233,9 @@ export function Toolbar({ extra }: ToolbarProps) {
           const svg = findSvg();
           if (svg) void exportSvg(svg, `${slug(diagram.name)}.svg`);
         }}
-        aria-label="Export SVG"
+        aria-label={t('toolbar.exportSvg.aria')}
       >
-        SVG
+        {t('toolbar.exportSvg')}
       </button>
       <button
         type="button"
@@ -240,9 +243,9 @@ export function Toolbar({ extra }: ToolbarProps) {
           const svg = findSvg();
           if (svg) void exportPng(svg, `${slug(diagram.name)}.png`);
         }}
-        aria-label="Export PNG"
+        aria-label={t('toolbar.exportPng.aria')}
       >
-        PNG
+        {t('toolbar.exportPng')}
       </button>
       {!readOnly && (
         <>
@@ -251,10 +254,11 @@ export function Toolbar({ extra }: ToolbarProps) {
             type="button"
             data-action="clear-routing"
             onClick={() => clearRouting(false)}
-            aria-label="Limpar roteamento"
-            title="Re-otimiza as rotas automáticas (preserva rotas manuais)"
+            aria-label={t('toolbar.clearRouting.aria')}
+            title={t('toolbar.clearRouting.title')}
           >
-            ⟲ Rotas
+            {'⟲ '}
+            {t('toolbar.clearRouting')}
           </button>
           <button
             type="button"
@@ -263,13 +267,11 @@ export function Toolbar({ extra }: ToolbarProps) {
               const ok =
                 typeof window === 'undefined' ||
                 typeof window.confirm !== 'function' ||
-                window.confirm(
-                  'Resetar TODAS as rotas ao automático, incluindo as manuais? Esta ação é desfazível.',
-                );
+                window.confirm(t('toolbar.clearRoutingAll.confirm'));
               if (ok) clearRouting(true);
             }}
-            aria-label="Resetar todas as rotas"
-            title="Reseta todas as rotas ao automático, incluindo as manuais (pede confirmação)"
+            aria-label={t('toolbar.clearRoutingAll.aria')}
+            title={t('toolbar.clearRoutingAll.title')}
           >
             ⟲⟲
           </button>
@@ -287,9 +289,9 @@ export function Toolbar({ extra }: ToolbarProps) {
         </span>
       )}
       {issues !== null && (
-        <div ref={issuesRef} className="bpmnr-issues" role="status" aria-label="Validation result">
+        <div ref={issuesRef} className="bpmnr-issues" role="status" aria-label={t('toolbar.issues.aria')}>
           {issues.length === 0 ? (
-            <span className="bpmnr-issues-ok">No issues found</span>
+            <span className="bpmnr-issues-ok">{t('toolbar.issues.none')}</span>
           ) : (
             <ul>
               {issues.map((issue, index) => (
@@ -299,7 +301,7 @@ export function Toolbar({ extra }: ToolbarProps) {
               ))}
             </ul>
           )}
-          <button type="button" onClick={closeIssues} aria-label="Close validation">
+          <button type="button" onClick={closeIssues} aria-label={t('toolbar.issues.close')}>
             ×
           </button>
         </div>

@@ -75,3 +75,9 @@ export * from './ui/exporters.js';
 export * from './copilot/CopilotPanel.js';
 export * from './ui/ContextMenu.js';
 export * from './canvas/EdgeLabelEditor.js';
+
+// i18n (Handoff 11 N-6): injected dictionary, EN fallback, useT/t.
+export * from './i18n/messages.js';
+export * from './i18n/I18nContext.js';
+export { EN } from './i18n/en.js';
+export { PT_BR } from './i18n/ptBR.js';

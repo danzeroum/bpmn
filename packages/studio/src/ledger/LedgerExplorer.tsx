@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { AuditEntry } from '@buildtovalue/core';
+import { useT } from '@buildtovalue/react';
 import { toXES, verifyLedger, type LedgerLike, type VerificationReport } from '@buildtovalue/audit';
 import { parseLedgerAnswer, type LedgerQueryResult } from '@buildtovalue/copilot';
 import type { AnchorAdapter, AnchorReceipt } from '@buildtovalue/identity';
@@ -89,6 +90,7 @@ function formatWhen(iso: string): string {
  * navigation only — the chain is never mutated here.
  */
 export function LedgerExplorer({ ledger, registry, onAction, onDownload, initialFilter, query, anchor }: LedgerExplorerProps) {
+  const t = useT();
   const [filter, setFilter] = useState<LedgerFilter>(initialFilter ?? {});
   const [selectedSeq, setSelectedSeq] = useState<number>();
   const [report, setReport] = useState<VerificationReport>();
@@ -186,14 +188,14 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
   return (
     <div className="btv-studio-ledger" data-testid="ledger-explorer">
       <div className="btv-studio-ledger-toolbar">
-        <div className="btv-studio-chip-row" aria-label="Filtro por categoria">
+        <div className="btv-studio-chip-row" aria-label={t('ledger.filter.aria')}>
           <button
             type="button"
             className="btv-studio-chip"
             aria-pressed={!filter.categories?.length}
             onClick={() => setFilter({ ...filter, categories: [] })}
           >
-            Todos <span className="btv-studio-chip-count">{counts.total}</span>
+            {t('ledger.filter.all')} <span className="btv-studio-chip-count">{counts.total}</span>
           </button>
           {LEDGER_CATEGORIES.map((category) => (
             <button
@@ -213,16 +215,20 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
               className="btv-studio-chip btv-studio-chip-context"
               onClick={() => setFilter({ ...filter, artifactId: undefined } as LedgerFilter)}
             >
-              artefato: {filter.artifactId} ✕
+              {t('ledger.filter.artifact', { id: filter.artifactId })} ✕
             </button>
           )}
         </div>
         <span className="btv-studio-spacer" />
         <button type="button" className="btv-studio-ledger-verify" data-intact={report?.intact} onClick={() => void verify()}>
-          {report ? (report.intact ? `✓ Cadeia íntegra (${report.entries}/${report.entries})` : '✕ Cadeia quebrada') : 'Verificar cadeia'}
+          {report
+            ? report.intact
+              ? `✓ ${t('ledger.verify.intact', { total: report.entries })}`
+              : `✕ ${t('ledger.verify.broken')}`
+            : t('ledger.verify.action')}
         </button>
         <button type="button" className="btv-studio-ledger-export" onClick={exportXes}>
-          Exportar XES
+          {t('ledger.export.xes')}
         </button>
       </div>
 
@@ -230,17 +236,14 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
         <div className="btv-studio-ledger-banner" data-intact={report.intact} role="status">
           {report.intact ? (
             <>
-              <strong>Cadeia íntegra ({report.entries}/{report.entries})</strong>
-              <span className="btv-studio-mono">head {headHash}</span>
-              <span>SHA-256 · verificado em {formatWhen(report.verifiedAt)}</span>
+              <strong>{t('ledger.verify.intact', { total: report.entries })}</strong>
+              <span className="btv-studio-mono">{t('ledger.banner.head', { hash: headHash })}</span>
+              <span>{t('ledger.banner.verifiedAt', { when: formatWhen(report.verifiedAt) })}</span>
             </>
           ) : (
             <>
-              <strong>Cadeia quebrada na entrada {report.firstBreak?.index}</strong>
-              <span>
-                Esta entrada e todas as posteriores não são confiáveis — o hash declarado diverge do
-                recomputado.
-              </span>
+              <strong>{t('ledger.banner.broken', { index: report.firstBreak?.index ?? '' })}</strong>
+              <span>{t('ledger.banner.brokenDetail')}</span>
             </>
           )}
           <button
@@ -248,7 +251,7 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
             className="btv-studio-link"
             onClick={() => download('VerificationReport.json', JSON.stringify(report, null, 2), 'application/json')}
           >
-            baixar VerificationReport.json
+            {t('ledger.download.report')}
           </button>
         </div>
       )}
@@ -262,41 +265,41 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
         >
           {anchorResult.status === 'anchored' && (
             <>
-              <strong>Ancorada</strong>
+              <strong>{t('ledger.anchor.anchored')}</strong>
               <span>
-                head local = âncora · {anchorResult.receipt!.adapterId} ·{' '}
-                {formatWhen(anchorResult.receipt!.anchoredAt)}
+                {t('ledger.anchor.anchoredDetail', {
+                  adapter: anchorResult.receipt!.adapterId,
+                  when: formatWhen(anchorResult.receipt!.anchoredAt),
+                })}
               </span>
               <span className="btv-studio-mono">{headHash.slice(0, 12)}…</span>
             </>
           )}
           {anchorResult.status === 'pending' && (
             <>
-              <strong>Ancoragem pendente</strong>
-              <span>
-                garantia vigente: a verificação da CADEIA acima — a âncora externa ainda não
-                cobre este head.
-              </span>
+              <strong>{t('ledger.anchor.pending')}</strong>
+              <span>{t('ledger.anchor.pendingDetail')}</span>
               <button
                 type="button"
                 className="btv-studio-ledger-retry-anchor"
                 disabled={anchorRetrying}
                 onClick={() => void retryAnchor()}
               >
-                {anchorRetrying ? 'Ancorando…' : 'Retentar âncora'}
+                {anchorRetrying ? t('ledger.anchor.anchoring') : t('ledger.anchor.retry')}
               </button>
             </>
           )}
           {anchorResult.status === 'mismatch' && (
             <>
-              <strong>CADEIA ≠ ÂNCORA</strong>
+              <strong>{t('ledger.anchor.mismatch')}</strong>
               <span className="btv-studio-mono">
-                local {headHash.slice(0, 12)}… ≠ ancorado{' '}
-                {anchorResult.receipt!.head.hash.slice(0, 12)}…
+                {t('ledger.anchor.mismatchHashes', {
+                  local: headHash.slice(0, 12),
+                  anchored: anchorResult.receipt!.head.hash.slice(0, 12),
+                })}
               </span>
               <span>
-                divergência a partir da entrada #{anchorResult.receipt!.head.seq} — esta e todas
-                as posteriores não são confiáveis.
+                {t('ledger.anchor.mismatchDetail', { seq: anchorResult.receipt!.head.seq })}
               </span>
             </>
           )}
@@ -306,10 +309,10 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
       {query && (
         <div className="btv-studio-ledger-query" data-testid="ledger-query">
           <input
-            aria-label="Pergunta ao ledger"
+            aria-label={t('ledger.query.aria')}
             data-testid="ledger-query-input"
             value={question}
-            placeholder="ex.: quem aprovou a v2.0.0?"
+            placeholder={t('ledger.query.placeholder')}
             onChange={(event) => setQuestion(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') void askLedger();
@@ -321,7 +324,7 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
             disabled={asking || question.trim() === ''}
             onClick={() => void askLedger()}
           >
-            ✦ Perguntar
+            ✦ {t('ledger.query.ask')}
           </button>
           {queryResult &&
             (queryResult.ok ? (
@@ -346,7 +349,7 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
               </div>
             ) : (
               <div className="btv-studio-ledger-answer" data-testid="ledger-query-norecord">
-                não encontrei registro
+                {t('ledger.query.noRecord')}
                 <span className="btv-studio-muted"> · {queryResult.reason}</span>
               </div>
             ))}
@@ -357,7 +360,7 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
         <ol
           className="btv-studio-ledger-trail"
           role="listbox"
-          aria-label="Trilha do ledger"
+          aria-label={t('ledger.trail.aria')}
           tabIndex={0}
           onKeyDown={(e) => {
             if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
@@ -401,7 +404,7 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
                       {entry.userId} · {formatWhen(entry.timestamp)} ·{' '}
                       <span className="btv-studio-mono">{entry.hash.slice(0, 12)}…</span>
                       {anchorUntrusted(entry) && (
-                        <span className="btv-studio-ledger-untrusted-flag"> · não-confiável</span>
+                        <span className="btv-studio-ledger-untrusted-flag"> · {t('ledger.trail.untrusted')}</span>
                       )}
                     </span>
                   </span>
@@ -409,27 +412,31 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
               </li>
             );
           })}
-          {entries.length === 0 && <p className="btv-studio-muted">Nenhum evento nos filtros atuais.</p>}
+          {entries.length === 0 && <p className="btv-studio-muted">{t('ledger.trail.empty')}</p>}
         </ol>
 
         {selected && (
-          <aside className="btv-studio-ledger-detail" aria-label="Detalhe da entrada">
+          <aside className="btv-studio-ledger-detail" aria-label={t('ledger.detail.aria')}>
             <div className="btv-studio-ledger-hashblock btv-studio-mono">
-              <div>index: {selected.seq}</div>
-              <div>hash: {selected.hash}</div>
-              <div>prev: {selected.previousHash || '(gênese)'}</div>
-              <div>autor: {selected.userId}</div>
-              <div>quando: {formatWhen(selected.timestamp)}</div>
+              <div>{t('ledger.detail.index', { seq: selected.seq })}</div>
+              <div>{t('ledger.detail.hash', { hash: selected.hash })}</div>
+              <div>
+                {t('ledger.detail.prev', {
+                  hash: selected.previousHash || t('ledger.detail.genesis'),
+                })}
+              </div>
+              <div>{t('ledger.detail.author', { author: selected.userId })}</div>
+              <div>{t('ledger.detail.when', { when: formatWhen(selected.timestamp) })}</div>
               <div data-testid="entry-trust">
                 {report
                   ? untrusted(selected)
-                    ? 'não-confiável ✕'
-                    : 'íntegra ✓'
-                  : 'não verificada'}
+                    ? `${t('ledger.detail.trust.untrusted')} ✕`
+                    : `${t('ledger.detail.trust.intact')} ✓`
+                  : t('ledger.detail.trust.unverified')}
               </div>
             </div>
             <section className="btv-studio-ledger-payload">
-              <span className="btv-studio-kicker">PAYLOAD</span>
+              <span className="btv-studio-kicker">{t('ledger.detail.payload')}</span>
               {describeEntry(selected).map((line) => (
                 <p key={line} className="btv-studio-box-line">
                   {line}
@@ -438,7 +445,7 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
             </section>
             {attestation && (
               <section className="btv-studio-ledger-attestation">
-                <span className="btv-studio-kicker">ATTESTATION</span>
+                <span className="btv-studio-kicker">{t('ledger.detail.attestation')}</span>
                 {['xmlHash', 'ledgerHeadHash', 'effectiveFrom'].map((key) =>
                   attestation[key] !== undefined ? (
                     <p key={key} className="btv-studio-box-line btv-studio-mono">
@@ -448,10 +455,11 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
                 )}
                 {Array.isArray(attestation['approvers']) && (
                   <p className="btv-studio-box-line">
-                    aprovadores:{' '}
-                    {(attestation['approvers'] as Array<{ userId?: string } | string>)
-                      .map((a) => (typeof a === 'string' ? a : (a.userId ?? '?')))
-                      .join(', ')}
+                    {t('ledger.detail.approvers', {
+                      list: (attestation['approvers'] as Array<{ userId?: string } | string>)
+                        .map((a) => (typeof a === 'string' ? a : (a.userId ?? '?')))
+                        .join(', '),
+                    })}
                   </p>
                 )}
                 <button
@@ -461,17 +469,17 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
                     download('attestation.json', JSON.stringify(attestation, null, 2), 'application/json')
                   }
                 >
-                  baixar attestation.json
+                  {t('ledger.download.attestation')}
                 </button>
               </section>
             )}
             {onAction && (
               <div className="btv-studio-ledger-actions">
                 <button type="button" onClick={() => onAction({ id: 'diff', entry: selected })}>
-                  Ver diff desta mudança
+                  {t('ledger.action.diff')}
                 </button>
                 <button type="button" onClick={() => onAction({ id: 'open-designer', entry: selected })}>
-                  Abrir versão no Designer (leitura)
+                  {t('ledger.action.openDesigner')}
                 </button>
               </div>
             )}
@@ -480,7 +488,7 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
               className="btv-studio-link"
               onClick={() => setFilter({ ...filter, artifactId: (selected.details['artifactId'] as string) ?? selected.versionId })}
             >
-              filtrar por este artefato
+              {t('ledger.action.filterArtifact')}
             </button>
           </aside>
         )}
