@@ -33,6 +33,10 @@
     "workflow",
     "bpmn"
   ],
+  "interop": {
+    "langgraph": ">=0.2",
+    "a2a": "1.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/danzeroum/bpmn.git",

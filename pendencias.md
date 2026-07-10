@@ -698,6 +698,21 @@ a re-otimização global sob demanda.
   do grafo como gate, shape `RuleVerdict` padrão). Ledger: `AGENT_SIMULATION_SESSION` categorizado em
   Simulações; ref@versão vira filtro por artefato (deep-link à ficha = navegação do host, mesmo item
   aberto do callActivity §1.2). `classifyDiagram` permanece BPMN-only (o agente não é um kind dele).
+- **A-7 — LangGraph JSON ≥0.2 (entregue; FECHA o Handoff 12):** `importLangGraph`/`exportLangGraph`
+  sobre um **subconjunto DOCUMENTADO** (README campo a campo: id/name/version, input/output_schema,
+  nodes id/type/config, edges source/target/data.{edgeType,when}). Import: campos fora do subconjunto
+  (`interrupts`/`checkpointer`/…) **ignorados e DECLARADOS** em `warnings`; nó de tipo não-mapeável →
+  `LangGraphImportError` **nomeando o nó** (nunca perda silenciosa). Export: só o subconjunto;
+  `autonomyLevel` (sempre), decoradores e arestas `delegate` (a2a:1.0) **declarados** como fora.
+  Round-trip do subconjunto = grafo equivalente (`autonomyLevel` recomputado por `minCoherentLevel`).
+  Zero deps (JSON puro). `interop` no package.json: `{ langgraph: ">=0.2", a2a: "1.0" }`.
+- **Extensões futuras registradas (Handoff 12):** Shadow/Live Mode (execução real via `AIProvider`
+  do H9) FORA da v1; editor de fixtures por nó no inspector do Studio (hoje via prop); gramática de
+  condição mais rica que o subconjunto `output.<path> <op> <literal>`; subconjunto LangGraph maior
+  (mapear mais construtos) se houver consumidor; namespace `btv:` dedicado no converter se exigido
+  (hoje `bpmnr:`); deep-link ledger→ficha do agente (navegação do host). Cortados em definitivo
+  (não reabrir sem novo parecer): OWL/SPARQL/RDF, CrewAI/GraphML, JSON-LD, memória/planner como nós,
+  A2A/MCP como protocolo, 4º tipo de nó.
 - **Shadow / Live Mode — FORA da v1 (§7):** a simulação da v1 é só mock client-side. Shadow/Live
   entra como evolução futura via `AIProvider` (H9), sob demanda — sem runtime de execução real de
   agente no código ainda.
