@@ -26,6 +26,7 @@ import {
   type GovernanceBreadcrumbLevel,
   type Messages,
 } from '@buildtovalue/react';
+import { BpmnViewer } from '@buildtovalue/react/viewer';
 import {
   createSfeelDecisionSupport,
   DecisionPeek,
@@ -316,6 +317,31 @@ export function App() {
   const sfeelMode = params.get('sfeel') !== null;
   // `?copilot=1` — governed copilot demo (Handoff 9 CP-2), fake provider.
   const copilotMode = params.get('copilot') !== null;
+  // `?viewer=1` — the lightweight, tree-shakeable read-only viewer (Handoff 11
+  // N-7), imported from the '@buildtovalue/react/viewer' entry point.
+  const viewerMode = params.get('viewer') !== null;
+  if (viewerMode) {
+    return (
+      <div className="demo-app" data-testid="viewer-surface">
+        <header className="demo-header">
+          <h1>bpmn-react viewer</h1>
+          <span className="demo-muted">read-only · tree-shakeable</span>
+          <span className="demo-spacer" />
+          <button
+            type="button"
+            data-testid="lang-toggle"
+            data-lang={lang}
+            onClick={() => setLang((l) => (l === 'pt' ? 'en' : 'pt'))}
+          >
+            {lang === 'pt' ? 'EN' : 'PT'}
+          </button>
+        </header>
+        <main className="demo-main">
+          <BpmnViewer diagram={diagram} plugins={PLUGINS} messages={messages} />
+        </main>
+      </div>
+    );
+  }
   if (studioMode) return <StudioSurface />;
   if (libraryMode) return <LibrarySurface />;
   if (replayMode) {

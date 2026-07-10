@@ -1,11 +1,4 @@
 import { useEffect, useMemo, useRef, type ReactNode, type WheelEvent } from 'react';
-import {
-  activeEdges,
-  activeNodes,
-  nodeParentId,
-  type BpmnDiagram,
-  type BpmnNode,
-} from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
@@ -18,8 +11,12 @@ import { BoundarySnapOverlay, ConnectionPreview, SelectionBoxOverlay } from './o
 import { SettlingOverlay } from './SettlingOverlay.js';
 import { EdgeLabelEditor } from './EdgeLabelEditor.js';
 import { hiddenNodeIds } from './visibility.js';
-import { cullToViewport } from './culling.js';
+import { selectRenderList, SEMANTIC_ZOOM_MIN } from './renderList.js';
 import { useKeyboardShortcuts } from '../gestures/useKeyboardShortcuts.js';
+
+// Re-exported for API compatibility; the source of truth is renderList.ts so
+// the lightweight ViewerCanvas can share it without importing this module.
+export { SEMANTIC_ZOOM_MIN };
 
 export interface CanvasProps {
   /** Extra SVG content rendered on the overlay layer (world coordinates). */
@@ -27,14 +24,6 @@ export interface CanvasProps {
   /** Show closed (removedInVersion) elements. Default true. */
   showClosed?: boolean;
 }
-
-/**
- * Semantic zoom (craft pack A5): below this zoom the canvas is stamped
- * `data-zoom-band="reduced"` and CSS fades out secondary ink — edge labels
- * and domain type tags ([data-shape-tag]). Same threshold as the purpose
- * chip in the EdgeRenderer.
- */
-export const SEMANTIC_ZOOM_MIN = 0.6;
 
 /**
  * The SVG canvas. Pan/zoom via the `viewBox` attribute (crisp text at every
@@ -104,20 +93,11 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
   // show — the container itself and everything outside it hide. Memoized by
   // diagram identity — the canvas re-renders per viewport frame.
   const hiddenIds = useMemo(() => hiddenNodeIds(diagram, drillId), [diagram, drillId]);
-  const visibleNodes = orderByZ(
-    (showClosed ? Object.values(diagram.nodes) : activeNodes(diagram)).filter(
-      (node) => !hiddenIds.has(node.id),
-    ),
-    diagram,
-  );
-  const visibleEdges = (showClosed ? Object.values(diagram.edges) : activeEdges(diagram)).filter(
-    (edge) => !hiddenIds.has(edge.sourceId) && !hiddenIds.has(edge.targetId),
-  );
-  // Virtualization: on large diagrams render only what intersects the viewport
-  // (plus a margin). A no-op below CULL_THRESHOLD, so small diagrams are
-  // unchanged. The canvas already re-renders per viewport frame, so this adds
-  // no re-renders — only fewer mounted node/edge components.
-  const { nodes, edges } = cullToViewport(visibleNodes, visibleEdges, diagram.nodes, viewport);
+  // Visible + z-ordered + viewport-culled — shared with the lightweight
+  // ViewerCanvas (N-7) so the two render paths can never drift. Virtualization
+  // is a no-op below CULL_THRESHOLD; the canvas already re-renders per viewport
+  // frame, so this adds no re-renders — only fewer mounted node/edge components.
+  const { nodes, edges } = selectRenderList(diagram, hiddenIds, viewport, showClosed);
 
   return (
     <svg
@@ -170,30 +150,5 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
 function swallowReactWheel(event: WheelEvent) {
   // Real handling happens in the non-passive native listener above.
   event.stopPropagation();
-}
-
-/**
- * Draws containers behind their contents so the flow always paints — and
- * stays clickable — on top: pools, then lanes, then flow nodes by containment
- * depth (an expanded sub-process paints before its children). Order within
- * each group is preserved (JS sort is stable).
- */
-function orderByZ(nodes: BpmnNode[], diagram: BpmnDiagram): BpmnNode[] {
-  const rank = (node: BpmnNode): number => {
-    if (node.type === 'pool') return 0;
-    if (node.type === 'lane') return 1;
-    let depth = 2;
-    const seen = new Set<string>();
-    let parentId = nodeParentId(node);
-    while (parentId !== undefined && !seen.has(parentId)) {
-      seen.add(parentId);
-      depth += 1;
-      const parent: BpmnNode | undefined = diagram.nodes[parentId];
-      parentId = parent ? nodeParentId(parent) : undefined;
-    }
-    return depth;
-  };
-  const ranks = new Map(nodes.map((node) => [node.id, rank(node)]));
-  return [...nodes].sort((a, b) => (ranks.get(a.id) ?? 2) - (ranks.get(b.id) ?? 2));
 }
 

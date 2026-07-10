@@ -25,6 +25,7 @@ const EXPECTED_EXPORTS = [
   'BpmnSimulator',
   'BpmnReplay',
   'BpmnViewer',
+  'ViewerCanvas',
   'BusinessRuleTaskShape',
   'GatewayChoiceCard',
   'SimulationOverlaySvg',
