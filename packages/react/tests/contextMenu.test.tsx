@@ -4,6 +4,7 @@ import {
   createDiagram,
   createEdge,
   createNode,
+  nodeParentId,
   updateNodeCommand,
   type BpmnDiagram,
 } from '@buildtovalue/core';
@@ -158,6 +159,108 @@ describe('ContextMenu (N-5) — plugin section contract', () => {
 
     expect(onChange).toHaveBeenCalledTimes(1); // exactly one command, zero direct mutation
     expect((onChange.mock.lastCall![0] as BpmnDiagram).nodes.a.label).toBe('Via menu');
+  });
+});
+
+describe('ContextMenu (N-5) — sub-process reparent built-ins (F7)', () => {
+  // Expanded sub-process 'sub' (100..500 × 100..400) with one child; a node
+  // overlapping it but not yet a child; a node fully outside.
+  function reparentDiagram(): BpmnDiagram {
+    const diagram = createDiagram({ name: 'Reparent menu' });
+    diagram.nodes = {
+      sub: createNode({
+        type: 'subProcess', id: 'sub', label: 'Fulfil',
+        x: 100, y: 100, width: 400, height: 300, properties: { isExpanded: true },
+      }),
+      inside: createNode({ type: 'task', id: 'inside', label: 'Over', x: 200, y: 200 }),
+      child: createNode({
+        type: 'task', id: 'child', label: 'Kid', x: 200, y: 300, properties: { parentId: 'sub' },
+      }),
+      outside: createNode({ type: 'task', id: 'outside', label: 'Far', x: 700, y: 200 }),
+    };
+    return diagram;
+  }
+
+  function openNodeMenu(container: HTMLElement, id: string) {
+    fireEvent.contextMenu(container.querySelector(`[data-node-id="${id}"]`)!, {
+      clientX: 0, clientY: 0,
+    });
+    return container.querySelector('[data-testid="context-menu"]')!;
+  }
+
+  it('offers "move into" only when a non-child node overlaps an expanded sub-process', () => {
+    const { container } = render(<BpmnDesigner diagram={reparentDiagram()} />);
+    // Overlapping, not a child → move-into named after the container.
+    const overMenu = openNodeMenu(container, 'inside');
+    expect(overMenu.querySelector('[data-menu-item="node.move-into-subprocess"]')).not.toBeNull();
+    expect(overMenu.textContent).toContain('Fulfil');
+    expect(overMenu.querySelector('[data-menu-item="node.remove-from-subprocess"]')).toBeNull();
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    // Fully outside → neither reparent action, just edit-label.
+    const outMenu = openNodeMenu(container, 'outside');
+    expect(outMenu.querySelector('[data-menu-item="node.move-into-subprocess"]')).toBeNull();
+    expect(outMenu.querySelector('[data-menu-item="node.remove-from-subprocess"]')).toBeNull();
+  });
+
+  it('offers "remove from" only when the node is a sub-process child (the inverse)', () => {
+    const { container } = render(<BpmnDesigner diagram={reparentDiagram()} />);
+    const menu = openNodeMenu(container, 'child');
+    expect(menu.querySelector('[data-menu-item="node.remove-from-subprocess"]')).not.toBeNull();
+    // A child already in its deepest container is not offered "move into".
+    expect(menu.querySelector('[data-menu-item="node.move-into-subprocess"]')).toBeNull();
+  });
+
+  it('"move into" dispatches ONE command setting parentId; menu closes', () => {
+    const onChange = vi.fn();
+    const { container } = render(<BpmnDesigner diagram={reparentDiagram()} onChange={onChange} />);
+    openNodeMenu(container, 'inside');
+    expect(onChange).not.toHaveBeenCalled(); // opening mutates nothing
+    fireEvent.click(container.querySelector('[data-menu-item="node.move-into-subprocess"]')!);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(nodeParentId((onChange.mock.lastCall![0] as BpmnDiagram).nodes.inside)).toBe('sub');
+    expect(container.querySelector('[data-testid="context-menu"]')).toBeNull();
+  });
+
+  it('"remove from" dispatches ONE command clearing parentId', () => {
+    const onChange = vi.fn();
+    const { container } = render(<BpmnDesigner diagram={reparentDiagram()} onChange={onChange} />);
+    openNodeMenu(container, 'child');
+    fireEvent.click(container.querySelector('[data-menu-item="node.remove-from-subprocess"]')!);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(nodeParentId((onChange.mock.lastCall![0] as BpmnDiagram).nodes.child)).toBeUndefined();
+  });
+
+  it('is fully keyboard operable (a11y path for the inaccessible drag)', async () => {
+    const onChange = vi.fn();
+    const { container } = render(<BpmnDesigner diagram={reparentDiagram()} onChange={onChange} />);
+    // Select the overlapping node, open the menu via keyboard, run move-into.
+    fireEvent.pointerDown(container.querySelector('[data-node-id="inside"]')!, {
+      button: 0, clientX: 260, clientY: 230,
+    });
+    fireEvent.pointerUp(container.querySelector('svg.bpmnr-canvas')!, {
+      button: 0, clientX: 260, clientY: 230,
+    });
+    fireEvent.keyDown(window, { key: 'F10', shiftKey: true });
+    const menu = container.querySelector('[data-testid="context-menu"]')!;
+    // Arrow down from edit-label to move-into, then Enter.
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    fireEvent.keyDown(menu, { key: 'Enter' });
+    await waitFor(() => expect(onChange).toHaveBeenCalledTimes(1));
+    expect(nodeParentId((onChange.mock.lastCall![0] as BpmnDiagram).nodes.inside)).toBe('sub');
+  });
+
+  it('never reparents a swimlane container or a boundary event', () => {
+    const diagram = reparentDiagram();
+    diagram.nodes.pool = createNode({
+      type: 'pool', id: 'pool', label: 'Pool', x: 120, y: 120, width: 200, height: 120,
+    });
+    const { container } = render(<BpmnDesigner diagram={diagram} />);
+    const menu = openNodeMenu(container, 'pool');
+    expect(menu.querySelector('[data-menu-item="node.move-into-subprocess"]')).toBeNull();
+    expect(menu.querySelector('[data-menu-item="node.remove-from-subprocess"]')).toBeNull();
   });
 });
 

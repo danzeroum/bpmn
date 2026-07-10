@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getAnchorPoint, rectCenter, updateEdgeCommand, type BpmnDiagram, type BpmnEdge, type Point } from '@buildtovalue/core';
+import {
+  descendantIdsOf,
+  getAnchorPoint,
+  isContainerType,
+  nodeParentId,
+  rectCenter,
+  subProcessContainerAt,
+  updateEdgeCommand,
+  updateNodeCommand,
+  type BpmnDiagram,
+  type BpmnEdge,
+  type Point,
+} from '@buildtovalue/core';
 import { useCanvasStore, useCanvasState } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
@@ -100,11 +112,38 @@ export function ContextMenu() {
       }
     }
     if (menu.kind === 'node' && menu.targetId && diagram.nodes[menu.targetId]) {
+      const node = diagram.nodes[menu.targetId];
       rendered.push({
         id: 'node.edit-label',
         label: t('contextMenu.editLabel'),
         run: () => store.setState({ editingNodeId: menu.targetId!, selectedIds: [menu.targetId!] }),
       });
+      // F7 reparent — the keyboard/touch path for drag reparent-on-drop (a drag
+      // is not accessible). Swimlane containers and boundary events (which follow
+      // their host, not a parentId) never reparent this way.
+      if (!isContainerType(node.type) && node.type !== 'boundaryEvent') {
+        const currentParent = nodeParentId(node);
+        // Exclude self + subtree so a container never adopts itself; the deepest
+        // expanded sub-process the node's center sits in is the move target.
+        const exclude = new Set<string>([node.id, ...descendantIdsOf(diagram, node.id)]);
+        const container = subProcessContainerAt(diagram, rectCenter(node), exclude);
+        if (container && container.id !== currentParent) {
+          rendered.push({
+            id: 'node.move-into-subprocess',
+            label: t('contextMenu.moveIntoSubprocess', { name: container.label }),
+            run: () =>
+              void execute(updateNodeCommand(node.id, { properties: { parentId: container.id } })),
+          });
+        }
+        if (currentParent) {
+          rendered.push({
+            id: 'node.remove-from-subprocess',
+            label: t('contextMenu.removeFromSubprocess'),
+            run: () =>
+              void execute(updateNodeCommand(node.id, { properties: { parentId: undefined } })),
+          });
+        }
+      }
     }
 
     // PLUGIN sections (contract §N-5): when() decides presence; run() only

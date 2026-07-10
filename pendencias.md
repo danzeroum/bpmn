@@ -253,6 +253,29 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   - **Canário de FPS:** o hit-test novo no `onPointerMove` é O(n) sobre os subprocessos; `perf.spec`
     segue verde (nenhuma regressão de FPS no drag).
 
+- **Menu de contexto "Mover para dentro / Remover do subprocesso" — PR 3 (10/07/2026):**
+  built-in condicional de nó no contrato N-5 (`ContextMenu.tsx`), o caminho de teclado/a11y e
+  touch para o reparent (o drag não é acessível). Decisões:
+  - **`when` condicional:** "Mover para dentro de {nome}" aparece quando o nó sobrepõe um
+    subprocesso expandido do qual **não** é filho (`subProcessContainerAt` com o centro do nó,
+    excluindo self+subárvore, e `container.id !== parentId atual`); "Remover do subprocesso"
+    aparece no caso inverso (o nó tem `parentId`). O nome do container vai no rótulo por
+    interpolação i18n.
+  - **Ações = comandos.** Ambas despacham `updateNodeCommand({properties:{parentId}})` via
+    `execute` — undoáveis, e os eventos do catálogo (`command.executed`/`element.changed`) saem de
+    graça pelo pipeline de comando. O menu nunca muta o diagrama direto (regra N-5).
+  - **Elegibilidade:** exclui swimlanes (pool/lane) e boundary events (seguem o host, não usam
+    parentId). Intermediários e subprocessos são elegíveis (nós de fluxo normais). Nuance vs. o
+    drag: o drag trata evento intermediário solto perto de borda como boundary-attach; o menu, por
+    ser explícito e sem ambiguidade de proximidade, oferece o reparent direto — o caminho do menu
+    é o mais permissivo/correto de propósito.
+  - **i18n:** rótulos só nos fragments (`menus.ts`, en+ptBR); zero hardcoded (cerca N-6 verde,
+    373 keys).
+  - **Cobertura:** unit react (presença condicional + inverso, um comando por ação, operação por
+    teclado, exclusão de container/boundary); e2e cobre o "Remover do subprocesso" por teclado no
+    demo (o "Mover para dentro" fica no unit determinístico — na demo um nó só sobrepõe um
+    subprocesso expandido transitoriamente, então o e2e usaria o próprio drag para criar o estado).
+
 ## 8.0.1 Handoff 5 F-B2 — decisões de escopo (editor de decision table)
 
 - **Reordenação de regras por arrasto (spec §4.2 "arrasto reordena"):** implementada como
