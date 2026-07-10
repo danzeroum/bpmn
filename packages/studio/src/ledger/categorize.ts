@@ -30,8 +30,12 @@ const PROMOTION_TYPES = new Set([
   'VERSION_PUBLISHED',
 ]);
 const APPROVAL_TYPES = new Set(['APPROVAL_RECORDED', 'PROMOTION_REJECTED']);
-// Registered simulation sessions (Handoff 7A-3) — their own chip/kind.
-const SIMULATION_TYPES = new Set(['SIMULATION_SESSION']);
+// Registered simulation sessions (Handoff 7A-3) + agent-simulation sessions
+// (Handoff 12 A-5/A-6) — both under the Simulações chip. The agent session
+// carries the sub-workflow ref@version (`versionId`) + bare id
+// (`details.artifactId`), so the existing artifact filter makes it clickable
+// straight to the agent's Library card.
+const SIMULATION_TYPES = new Set(['SIMULATION_SESSION', 'AGENT_SIMULATION_SESSION']);
 // Replay analyses attached to a promotion (Handoff 7B-3).
 const REPLAY_TYPES = new Set(['REPLAY_ANALYSIS_ATTACHED']);
 

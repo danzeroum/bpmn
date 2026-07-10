@@ -62,6 +62,9 @@ importers:
 
   packages/adapters-bpmn:
     dependencies:
+      '@buildtovalue/agentflow':
+        specifier: workspace:*
+        version: link:../agentflow
       '@buildtovalue/copilot':
         specifier: workspace:*
         version: link:../copilot

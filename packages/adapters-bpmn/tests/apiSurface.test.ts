@@ -33,6 +33,11 @@ const EXPECTED_EXPORTS = [
   // Agent Lane (Handoff 12 A-5) — agent-simulation ledger session (additive).
   'AGENT_SIMULATION_SESSION_TYPE',
   'agentSimulationSessionEntry',
+  // Agent Lane (Handoff 12 A-6) — AGENTE adapter + governance glue.
+  'agentWorkflowAdapter',
+  'groupAgentVersions',
+  'agentPromotionGate',
+  'agentReferenceCurrencyWarnings',
   // Handoff 9 CP-5 — copilot prompt-template adapter (dogfooding §1.5).
   'activeCopilotPromptVersion',
   'copilotPromptAdapter',

@@ -42,3 +42,12 @@ export {
 export type { AttachedReplayAnalysis } from './replayLedger.js';
 export { agentSimulationSessionEntry, AGENT_SIMULATION_SESSION_TYPE } from './agentSimulationLedger.js';
 export type { AgentSimulationSession } from './agentSimulationLedger.js';
+export { agentWorkflowAdapter, groupAgentVersions } from './agentWorkflowAdapter.js';
+export type {
+  AgentArtifactAdapter,
+  AgentArtifactSource,
+  AgentArtifactVersion,
+  AgentWorkflowAdapterOptions,
+} from './agentWorkflowAdapter.js';
+export { agentPromotionGate, agentReferenceCurrencyWarnings } from './agentGovernance.js';
+export type { AgentReferenceWarning } from './agentGovernance.js';
