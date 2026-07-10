@@ -120,6 +120,25 @@ export function LifecyclePanel({
       return draft;
     });
 
+  // Handoff 9 CP-3 (C4): DETERMINISTIC fake copilot summary computed from the
+  // REAL diff (§8.6: CI never calls the network). The text only PRE-FILLS the
+  // PromotionPanel field — committing stays a human act, and the commit
+  // records the text co-authorship (ia.copilot@… + template).
+  const suggestChangeSummary = async () => {
+    const diff = computeDiff(baseline, diagram);
+    const added = diff.nodes.filter((op) => op.op === 'add').length;
+    const updated = diff.nodes.filter((op) => op.op === 'update').length;
+    const removed = diff.nodes.filter((op) => op.op === 'remove').length;
+    return {
+      text:
+        `Rascunho da IA sobre o diff real: ${added} nó(s) adicionado(s), ` +
+        `${updated} alterado(s), ${removed} removido(s) e ${diff.edges.length} ` +
+        `mudança(s) de fluxo desde a baseline.`,
+      author: 'ia.copilot@claude-4',
+      promptTemplateRef: { id: 'copilot-summary', version: '1.0.0' },
+    };
+  };
+
   return (
     <aside className="demo-lifecycle" aria-label="Lifecycle governance">
       <h3>Governance</h3>
@@ -226,6 +245,7 @@ export function LifecyclePanel({
         baseline={baseline}
         previousActive={lastActive ?? undefined}
         ledger={ledger}
+        suggestChangeSummary={suggestChangeSummary}
         onActivated={({ diagram: promoted }) => {
           setBaseline(promoted);
           setLastActive({ semanticVersion: promoted.version.semanticVersion });

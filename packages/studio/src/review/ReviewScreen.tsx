@@ -55,6 +55,12 @@ export interface ReviewScreenProps {
    * a value, the review shows an "ANÁLISE DE REPLAY" block; absent → no block.
    */
   replayAnalysisFor?: (diagram: BpmnDiagram) => ReviewReplayAnalysis | undefined;
+  /**
+   * C3 (Handoff 9): natural-language explanation of the candidate — READ-ONLY
+   * ABSOLUTO: generates no commands and touches no ledger (not even as a
+   * recorded query). The only capability without a trail, by design.
+   */
+  explain?: (diagram: BpmnDiagram) => Promise<string>;
   now?: () => string;
   /**
    * Identity signing (Handoff 8 I-2, host injection — cerca §1.1: the host owns
@@ -99,13 +105,16 @@ function signatureFingerprintOf(signed: SignedApproval): string {
  * Approving NEVER activates (§11): a solicitante executa a promoção final.
  */
 export function ReviewScreen(props: ReviewScreenProps) {
-  const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onOpenInDesigner, replayAnalysisFor, now, signer, anchor } =
+  const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onOpenInDesigner, replayAnalysisFor, explain, now, signer, anchor } =
     props;
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
   const [checks, setChecks] = useState<ReviewCheck[]>();
   const [decisions, setDecisions] = useState<Record<string, DecisionResult>>({});
   const [rejecting, setRejecting] = useState(false);
+  // C3: read-only explanations by candidate id — no ledger, no commands.
+  const [explanations, setExplanations] = useState<Record<string, string>>({});
+  const [explaining, setExplaining] = useState(false);
   const [reason, setReason] = useState('');
   const [payloadPreview, setPayloadPreview] = useState<CanonicalApprovalPayload>();
 
@@ -321,6 +330,33 @@ export function ReviewScreen(props: ReviewScreenProps) {
                   meta: approvalsProgress(selected),
                 }}
               />
+              {explain && (
+                <div className="btv-studio-explain">
+                  <button
+                    type="button"
+                    data-testid="review-explain"
+                    disabled={explaining}
+                    onClick={() => {
+                      void (async () => {
+                        setExplaining(true);
+                        try {
+                          const text = await explain(selected.diagram);
+                          setExplanations((m) => ({ ...m, [selected.diagram.id]: text }));
+                        } finally {
+                          setExplaining(false);
+                        }
+                      })();
+                    }}
+                  >
+                    ✦ Explicar
+                  </button>
+                  {explanations[selected.diagram.id] && (
+                    <p className="btv-studio-explain-text" data-testid="review-explanation">
+                      {explanations[selected.diagram.id]}
+                    </p>
+                  )}
+                </div>
+              )}
             </section>
 
             <section className="btv-studio-block">

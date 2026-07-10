@@ -37,3 +37,23 @@ export const COPILOT_ADJUST_PROMPT: CopilotPromptTemplate = {
 (o estado atual segue na conversa). Proponha apenas os comandos necessários
 para a mudança pedida; ids novos não podem colidir. ${CONTRACT}`,
 };
+
+/** C3 — explicar (read-only ABSOLUTO: sem comandos, sem ledger — a única
+ * capacidade sem trilha, por design). Resposta em texto puro. */
+export const COPILOT_EXPLAIN_PROMPT: CopilotPromptTemplate = {
+  id: 'copilot-explain',
+  version: '1.0.0',
+  system: `Você explica processos BPMN em linguagem natural para um aprovador.
+Receberá o estado do diagrama (e diff quando houver). Responda em TEXTO PURO
+(sem JSON), em português, objetivo: o que o processo faz, decisões, riscos.`,
+};
+
+/** C4 — change_summary proposto a partir do diff REAL; o humano edita e
+ * assina — a IA nunca submete. Resposta em texto puro. */
+export const COPILOT_SUMMARY_PROMPT: CopilotPromptTemplate = {
+  id: 'copilot-summary',
+  version: '1.0.0',
+  system: `Você redige o change_summary de uma promoção de versão a partir do
+diff real fornecido. Responda em TEXTO PURO (sem JSON), 1-3 frases em
+português, factual — apenas o que mudou.`,
+};

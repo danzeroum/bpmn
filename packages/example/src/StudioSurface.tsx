@@ -358,6 +358,17 @@ export function StudioSurface() {
       // Handoff 7B-3: surface the attached replay analysis for the candidate.
       replayAnalysisFor: (diagram: BpmnDiagram) =>
         latestReplayAnalysis(world.replayLedger.getEntries(), diagram.version.id),
+      // Handoff 9 CP-3 (C3): host-injected explanation with a DETERMINISTIC
+      // fake (§8.6). Read-only absoluto: generates zero commands and touches
+      // no ledger — not even as a "recorded query" (the only capability
+      // without a trail, by design).
+      explain: async (diagram: BpmnDiagram) => {
+        const labels = Object.values(diagram.nodes).map((node) => node.label);
+        return (
+          `O fluxo "${diagram.name}" (v${diagram.version.semanticVersion}) tem ` +
+          `${labels.length} elementos: ${labels.join(', ')}.`
+        );
+      },
       // Handoff 8 I-2/I-3: sign approvals and anchor the head when wired.
       ...(signer ? { signer } : {}),
       ...(anchor ? { anchor } : {}),

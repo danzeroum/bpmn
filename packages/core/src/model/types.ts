@@ -101,6 +101,17 @@ export interface BpmnVersion {
   approvedBy: ApprovalRecord[];
   /** Human-readable changelog. Required (min length) for promotion to 'active'. */
   changeSummary: string;
+  /**
+   * Text co-authorship (Handoff 9 C4): set when the summary was PRE-FILLED by
+   * the copilot and then committed by a human interaction with the field —
+   * `edited` says whether the human changed the AI text. Rides into the
+   * VERSION_ACTIVATED ledger entry; absent = fully human text.
+   */
+  changeSummaryOrigin?: {
+    author: string;
+    promptTemplateRef: { id: string; version: string };
+    edited: boolean;
+  };
   createdBy: string;
   createdAt: string;
   /** SHA-256 of the normalized diagram content at version creation. */
