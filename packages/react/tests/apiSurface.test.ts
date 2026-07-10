@@ -178,6 +178,8 @@ const EXPECTED_EXPORTS = [
   'CopilotPanel',
   // Handoff 11 N-1 — boundary drag-to-attach snap highlight.
   'BoundarySnapOverlay',
+  // F7 — reparent-on-drop container highlight.
+  'ReparentTargetOverlay',
   // Handoff 11 N-3 — public event catalog + deprecation aliases.
   'EDITOR_EVENTS',
   'DEPRECATED_EVENT_ALIASES',

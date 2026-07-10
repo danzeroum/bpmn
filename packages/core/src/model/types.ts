@@ -266,6 +266,58 @@ export function isSubProcessExpanded(node: BpmnNode): boolean {
   return node.type === 'subProcess' && node.properties.isExpanded === true;
 }
 
+/** Nesting depth of a node (0 = top level), by its parentId chain. */
+function containmentDepth(diagram: BpmnDiagram, nodeId: string): number {
+  let depth = 0;
+  const seen = new Set<string>([nodeId]);
+  let parentId = nodeParentId(diagram.nodes[nodeId] ?? ({} as BpmnNode));
+  while (parentId !== undefined && !seen.has(parentId)) {
+    depth += 1;
+    seen.add(parentId);
+    parentId = nodeParentId(diagram.nodes[parentId] ?? ({} as BpmnNode));
+  }
+  return depth;
+}
+
+/**
+ * Hierarchical hit-test for reparent-on-drop (F7): the DEEPEST expanded
+ * sub-process whose rect contains `point`, skipping any id in `exclude` — the
+ * dragged nodes and their own descendants, since a node can never reparent
+ * into itself or its subtree. Nested containers resolve to the innermost match
+ * so a drop lands where the cursor visually is (ties on depth break to the
+ * smaller rect). Collapsed sub-processes are ignored — their interior is not
+ * on the canvas to drop into. Returns undefined when the point is over no
+ * eligible container (a plain move, or a drop at the top level).
+ */
+export function subProcessContainerAt(
+  diagram: BpmnDiagram,
+  point: Point,
+  exclude: ReadonlySet<string> = new Set<string>(),
+): BpmnNode | undefined {
+  let best: BpmnNode | undefined;
+  let bestDepth = -1;
+  for (const node of Object.values(diagram.nodes)) {
+    if (node.removedInVersion !== undefined) continue;
+    if (node.type !== 'subProcess' || !isSubProcessExpanded(node)) continue;
+    if (exclude.has(node.id)) continue;
+    const inside =
+      point.x >= node.x &&
+      point.x <= node.x + node.width &&
+      point.y >= node.y &&
+      point.y <= node.y + node.height;
+    if (!inside) continue;
+    const depth = containmentDepth(diagram, node.id);
+    const deeper = depth > bestDepth;
+    const tie = depth === bestDepth && best !== undefined &&
+      node.width * node.height < best.width * best.height;
+    if (deeper || tie) {
+      best = node;
+      bestDepth = depth;
+    }
+  }
+  return best;
+}
+
 /**
  * A call activity invokes another process by id (`properties.calledElement`,
  * the standard BPMN attribute). The id is expected to match a registered

@@ -224,6 +224,35 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   autorada do PR 2 nunca pode regredir o serializer silenciosamente. A ordem vinculante dos 3 PRs
   é mantida — o PR 1 só deixou de "corrigir" para "travar".
 
+- **Reparent-on-drop em subprocesso expandido — PR 2 (10/07/2026):** o gesto que faltava (nenhuma
+  UI escrevia `properties.parentId`). Decisões de escopo:
+  - **Hit-test no core, precedência na composição.** `subProcessContainerAt(diagram, point,
+    exclude)` (em `model/types.ts`) devolve o subprocesso expandido MAIS PROFUNDO sob o cursor,
+    excluindo os nós arrastados + subárvore (sem auto-reparent); testado em `model.test.ts`
+    (aninhamento, exclusão, colapsado/removido ignorados). A **precedência do boundary snap** vive
+    na ordem do `onPointerMove` (só arma reparent quando `boundarySnap === null`) e no drop (os
+    ramos de boundary dão early-return antes do caminho genérico) — testada no react
+    (`reparentOnDrop.test.tsx`), não no core, porque é composição de dois sinais (o de boundary
+    depende de `registry`/`drillId`, que são de UI). Não quebra o gesto da N-1.
+  - **Reparent + move = 1 comando composto** (`reparentCommands` no padrão de
+    `laneMembershipCommands`, dentro do mesmo `compositeCommand('Move nodes')`). Só os nós
+    GRABBED (roots) reparentam; descendentes que vão de carona mantêm o parentId interno; boundary
+    events seguem o host, nunca reparentam por parentId. `rootIds` foi adicionado ao `DragState`.
+  - **DI absoluto reusado (decisão §8.0):** reparent NÃO translada coordenadas — só muda parentId.
+    Colapso/drill/visibilidade e `crossScopeEdgeRule` já são keyed por parentId, então "valem"
+    para os novos filhos sem código novo (re-assertado em unit + e2e).
+  - **Arestas cruzando a fronteira (ponto 5):** o reparent nunca deleta nem silencia a aresta; a
+    validação existente `crossScopeEdgeRule` (`CROSS_SCOPE_EDGE`) passa a acusá-la — coberto em
+    `reparentOnDrop.test.tsx`.
+  - **Reparent durante drag multi-seleção: MANTIDO, não cortado.** Todos os roots selecionados
+    reparentam para o mesmo alvo — é o caminho natural do `reparentCommands(rootIds, …)` e
+    reproduz o sintoma original (dois nós conectados arrastados para dentro; o fluxo entre eles
+    continua interno e visível). Coberto pelo teste "the original symptom".
+  - **Highlight condicional:** `ReparentTargetOverlay` reusa o padrão do `BoundarySnapOverlay`
+    (stroke selected 2px, transição 120ms). Sem highlight ⇒ sem reparent no drop.
+  - **Canário de FPS:** o hit-test novo no `onPointerMove` é O(n) sobre os subprocessos; `perf.spec`
+    segue verde (nenhuma regressão de FPS no drag).
+
 ## 8.0.1 Handoff 5 F-B2 — decisões de escopo (editor de decision table)
 
 - **Reordenação de regras por arrasto (spec §4.2 "arrasto reordena"):** implementada como

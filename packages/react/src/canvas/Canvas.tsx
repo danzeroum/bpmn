@@ -7,7 +7,12 @@ import { useInteractions } from './useInteractions.js';
 import { Defs, GridLayer } from './Defs.js';
 import { ConnectedNode } from './NodeRenderer.js';
 import { ConnectedEdge } from './EdgeRenderer.js';
-import { BoundarySnapOverlay, ConnectionPreview, SelectionBoxOverlay } from './overlays.js';
+import {
+  BoundarySnapOverlay,
+  ConnectionPreview,
+  ReparentTargetOverlay,
+  SelectionBoxOverlay,
+} from './overlays.js';
 import { SettlingOverlay } from './SettlingOverlay.js';
 import { EdgeLabelEditor } from './EdgeLabelEditor.js';
 import { hiddenNodeIds } from './visibility.js';
@@ -139,6 +144,7 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
         <SettlingOverlay />
         <ConnectionPreview />
         <BoundarySnapOverlay />
+        <ReparentTargetOverlay />
         <SelectionBoxOverlay />
         <EdgeLabelEditor />
         {overlay}

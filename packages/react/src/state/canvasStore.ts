@@ -10,6 +10,13 @@ export interface Viewport {
 
 export interface DragState {
   nodeIds: string[];
+  /**
+   * The nodes the user actually grabbed (before folding in ride-along
+   * descendants and attached boundary events). Only these reparent on drop —
+   * their descendants keep their parentId, which points inside the moved
+   * subtree.
+   */
+  rootIds: string[];
   /** World-space pointer position when the gesture started. */
   origin: Point;
   /** Current world-space offset applied visually to the dragged nodes. */
@@ -19,6 +26,14 @@ export interface DragState {
   active: boolean;
   /** Lane currently under the dragged node — the drop target for membership. */
   dropLaneId?: string | null;
+  /**
+   * Expanded sub-process currently under the cursor — the reparent-on-drop
+   * target (F7). Its border highlights; the drop sets the grabbed nodes'
+   * parentId. `null` means no container (a plain move, or a drag to top level
+   * that clears parentId). Boundary snap takes precedence: while a boundary
+   * snap is armed this stays null, so the two gestures never both light up.
+   */
+  reparentTargetId?: string | null;
 }
 
 export interface ConnectState {

@@ -66,6 +66,35 @@ export function BoundarySnapOverlay() {
   );
 }
 
+/**
+ * Border highlight while a node drags over an expanded sub-process that would
+ * adopt it on drop (F7 reparent-on-drop). Reuses the boundary-snap affordance
+ * — the candidate container strokes selected/2px with the same 120ms fade — so
+ * "highlight now, reparent on drop" reads identically to "highlight now, attach
+ * on drop". No highlight ⇒ no reparent. Boundary snap has precedence, so this
+ * and the boundary highlight are never armed at once.
+ */
+export function ReparentTargetOverlay() {
+  const targetId = useCanvasState((s) => (s.dragState?.active ? s.dragState.reparentTargetId : null));
+  const { diagram } = useDiagram();
+  const container = targetId ? diagram.nodes[targetId] : undefined;
+  if (!container) return null;
+  return (
+    <g pointerEvents="none" data-testid="reparent-target-highlight">
+      <rect
+        x={container.x}
+        y={container.y}
+        width={container.width}
+        height={container.height}
+        fill="none"
+        stroke={theme.strokeSelected}
+        strokeWidth={2}
+        style={{ transition: 'opacity 120ms ease-out' }}
+      />
+    </g>
+  );
+}
+
 /** Lasso rectangle during box selection. */
 export function SelectionBoxOverlay() {
   const box = useCanvasState((s) => s.selectionBox);

@@ -19,11 +19,13 @@ import {
   isSubProcessExpanded,
   laneFlowNodeRefs,
   moveNodeCommand,
+  nodeParentId,
   nearestBoundaryAnchor,
   resizeNodeCommand,
   rectCenter,
   rectsIntersect,
   snapToGrid,
+  subProcessContainerAt,
   updateEdgeCommand,
   updateNodeCommand,
   type BpmnDiagram,
@@ -144,6 +146,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
         selectedIds,
         dragState: {
           nodeIds,
+          rootIds: base,
           origin,
           dx: 0,
           dy: 0,
@@ -396,7 +399,22 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
               boundarySnap = findBoundarySnap(dragged, point);
             }
           }
-          store.setState({ dragState: { ...state.dragState, dx, dy, active, dropLaneId }, boundarySnap });
+          // F7 reparent-on-drop: the deepest expanded sub-process under the
+          // cursor arms the container highlight. Boundary snap has precedence —
+          // while it is armed (event near an activity border) no reparent
+          // target lights up, so the N-1 gesture is never hijacked.
+          const reparentTargetId =
+            active && !boundarySnap
+              ? (subProcessContainerAt(
+                  diagramRef.current,
+                  point,
+                  new Set(state.dragState.nodeIds),
+                )?.id ?? null)
+              : null;
+          store.setState({
+            dragState: { ...state.dragState, dx, dy, active, dropLaneId, reparentTargetId },
+            boundarySnap,
+          });
           return;
         }
 
@@ -549,7 +567,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
       }
 
       if (state.dragState) {
-        const { nodeIds, dx, dy, active } = state.dragState;
+        const { nodeIds, rootIds, dx, dy, active, reparentTargetId } = state.dragState;
         const snap = state.boundarySnap;
         store.setState({ dragState: null, boundarySnap: null });
         if (active && (dx !== 0 || dy !== 0)) {
@@ -607,6 +625,14 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
             ),
           );
           commands.push(...laneMembershipCommands(diagramRef.current, moved, dx, dy));
+          // F7 reparent-on-drop: the grabbed nodes join the highlighted
+          // container (or leave their current one when dropped outside). Part
+          // of the SAME composite as the move — reparent + move undo together.
+          // Coordinates are NOT translated (DI absolute); ride-along children
+          // and cross-boundary flow validation follow from the parentId alone.
+          commands.push(
+            ...reparentCommands(diagramRef.current, rootIds, reparentTargetId ?? null),
+          );
           // Re-route the auto A* edges touching the moved nodes and cache their
           // fresh waypoints INSIDE this same move (one atomic, undoable unit —
           // Handoff 10 R-2b). Unrelated / non-astar edges are never recomputed.
@@ -1044,6 +1070,35 @@ function laneMembershipCommands(
     if (changed) {
       commands.push(updateNodeCommand(lane.id, { properties: { flowNodeRefs: next } }));
     }
+  }
+  return commands;
+}
+
+/**
+ * Sub-process reparent updates for a completed drag (F7): each GRABBED node
+ * (roots only — ride-along descendants keep their in-subtree parentId, and
+ * boundary events follow their host, not a parentId) adopts `targetParentId`,
+ * or clears its parentId when dropped outside any container. Returned as
+ * commands so reparent rides in the same composite as the move — one undoable
+ * unit. Coordinates are untouched (DI absolute): only parentId changes, which
+ * is what collapse/drill/visibility and the cross-scope-edge validation key
+ * off. Containers (lanes/pools) and boundary events never reparent this way.
+ */
+function reparentCommands(
+  diagram: BpmnDiagram,
+  rootIds: string[],
+  targetParentId: string | null,
+): Command[] {
+  const commands: Command[] = [];
+  for (const id of rootIds) {
+    const node = diagram.nodes[id];
+    if (!node) continue;
+    if (isContainerType(node.type) || isAttachableEvent(node)) continue;
+    // A node can never become its own ancestor's child target — the hit-test
+    // already excludes the dragged subtree, so target is never a descendant.
+    const desired = targetParentId ?? undefined;
+    if (nodeParentId(node) === desired) continue; // no-op move within the same scope
+    commands.push(updateNodeCommand(id, { properties: { parentId: desired } }));
   }
   return commands;
 }

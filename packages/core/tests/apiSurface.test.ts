@@ -126,6 +126,7 @@ const EXPECTED_EXPORTS = [
   'childrenOf',
   'descendantIdsOf',
   'isSubProcessExpanded',
+  'subProcessContainerAt',
   'calledElementOf',
   'computeEntryHash',
   'DATA_ASSOCIATION_EDGE_TYPE',
