@@ -50,6 +50,12 @@ const EXPECTED_EXPORTS = [
   'activityMarkerOf',
   'addEdgeCommand',
   'addNodeCommand',
+  // Agent Lane (Handoff 12 A-3) — agentTask helpers, autonomy→gate rule,
+  // snapshot-fallback resolver.
+  'agentAutonomyGateRule',
+  'agentAutonomyLevelOf',
+  'agentGateViolations',
+  'agentTasksOf',
   'attachedBoundaryEventIds',
   'boundaryAttachedTo',
   // Handoff 11 N-1 — parametric boundary anchoring + atomic attach/detach.
@@ -110,6 +116,8 @@ const EXPECTED_EXPORTS = [
   'rectContains',
   'rectsIntersect',
   'registerDefaultRules',
+  'reachableGateFrom',
+  'resolveAgentWorkflow',
   'removeEdgeCommand',
   'removeNodeCommand',
   'resizeNodeCommand',

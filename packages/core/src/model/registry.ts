@@ -96,6 +96,12 @@ export const BUILT_IN_NODE_TYPES: NodeTypeDefinition[] = [
   { type: 'eventBasedGateway', label: 'Event-based Gateway', category: 'gateway', defaultSize: { width: 50, height: 50 }, xml: { tag: 'eventBasedGateway' } },
   { type: 'subProcess', label: 'Sub-Process', category: 'activity', defaultSize: { width: 300, height: 160 }, xml: { tag: 'subProcess' } },
   { type: 'callActivity', label: 'Call Activity', category: 'activity', defaultSize: { width: 120, height: 60 }, xml: { tag: 'callActivity' } },
+  // Agent Lane (Handoff 12): a governed AI-agent sub-workflow. Maps onto the
+  // standard `task` tag so external editors read it as a plain task (graceful
+  // degradation); its identity + agentWorkflowRef/autonomyLevel/mappings ride
+  // in extensionElements (bpmnr:meta type + bpmnr:property), same as every
+  // other custom type. The Agent Studio opens on the referenced AgentWorkflow.
+  { type: 'agentTask', label: 'Agent Task', category: 'activity', defaultSize: { width: 120, height: 60 }, xml: { tag: 'task' } },
   { type: 'dataObject', label: 'Data Object', category: 'data', defaultSize: { width: 36, height: 50 }, xml: { tag: 'dataObjectReference' } },
   { type: 'dataStore', label: 'Data Store', category: 'data', defaultSize: { width: 50, height: 50 }, xml: { tag: 'dataStoreReference' } },
   { type: 'textAnnotation', label: 'Text Annotation', category: 'artifact', defaultSize: { width: 120, height: 40 }, xml: { tag: 'textAnnotation' } },

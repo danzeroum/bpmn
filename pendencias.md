@@ -638,12 +638,25 @@ a re-otimização global sob demanda.
   predicado puro `gateRequirement`). A metade que precisa do processo BPMN — "nível ≤3 sem `btv:gate`
   alcançável a jusante = erro que bloqueia promoção" — é do **core (A-3)**, que conhece `btv:gate` e
   alcançabilidade e consome `gateRequirement`. O `agentflow` nunca importa core.
-- **Fronteira A-3 (a decidir na PR A-3):** o §5 mostra elementos XML literais `<btv:agentTask>` /
-  `<btv:agentWorkflowSnapshot>`, mas o converter só conhece o namespace `bpmnr:` e o
-  `readExtensionElements` **descarta** filhos de extensão desconhecidos (com warning). `pendencias`
-  §1 fixa que o prefixo `bpmnr:` NÃO muda (quebraria round-trip). A-3 adiciona read/write explícito
-  desses filhos — decisão: namespace `btv:` dedicado vs. atributos em `bpmnr:meta`. Registrar aqui a
-  escolha quando feita, mais a fixture `degraded-elements` do corpus com `btv:agentTask` desconhecido.
+- **Fronteira A-3 — RESOLVIDO (namespace do agentTask):** decidido **reusar o namespace `bpmnr:`
+  existente**, NÃO introduzir um `btv:` dedicado. O §5 do handoff mostra `<btv:agentTask>` /
+  `<btv:agentWorkflowSnapshot>` como XML ilustrativo; a implementação segue a convenção de extensão
+  única do repo (restrição inviolável honrada: o prefixo `bpmnr:` já exportado NÃO muda). Concreto:
+  o agentTask exporta como `<bpmn:task>` + `bpmnr:meta type="agentTask"` (identidade) + os campos
+  (`agentWorkflowRef`/`autonomyLevel`/`inputMapping`/`outputMapping`) como `bpmnr:property` — tudo já
+  round-trip pelo mecanismo existente, zero código novo. O **snapshot** é o único elemento novo: um
+  `bpmnr:agentWorkflowSnapshot` dedicado (atributo `snapshot` com o JSON escapado), fora do bag de
+  propriedades, escrito só quando presente e lido simetricamente (byte-estável nos dois sentidos —
+  teste `agentTask.test.ts`). Degradação: editor externo lê `<bpmn:task>` e ignora a extensão
+  `bpmnr:` desconhecida (comportamento provado por `NodeTypeRegistry` sem `agentTask` → tipo `task`,
+  e pela fixture do corpus `58-agent-task-v1.bpmn`). Se um `btv:` dedicado for exigido depois, é uma
+  migração aditiva de namespace — sob demanda.
+- **Regra autonomia→gate no core — por injeção (A-3):** `agentAutonomyGateRule({ requiresGate,
+  isGate })` — `requiresGate` é o `requiresDownstreamGate` puro do agentflow, `isGate` é o predicado
+  de domínio (`btv:gate`). O core faz a alcançabilidade a jusante (BFS de sequenceFlow) e NÃO importa
+  agentflow nem domain-example. Bloqueia promoção a `active` via `evaluateGates` (template
+  `soundnessPromotionRule`), com remediação exata. `resolveAgentWorkflow` faz o fallback de snapshot
+  (registry = fonte de verdade; snapshot = leitura degradada com aviso; nunca fonte de verdade).
 - **Fronteira A-6 (a decidir na PR A-6):** um `AgentWorkflow` é JSON, não `BpmnDiagram`, então o
   adapter "AGENTE" da Biblioteca NÃO é um `kindAdapter` sobre `VersionRegistry<BpmnDiagram>` como os
   demais; A-6 decide entre registrar o JSON do agente como snapshot no registry ou escrever um adapter

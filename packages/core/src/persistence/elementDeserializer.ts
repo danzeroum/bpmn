@@ -170,7 +170,14 @@ export class ElementDeserializer {
 
   readNode(el: XmlElement, warnings: string[]): BpmnNode | undefined {
     const tag = localName(el.tag);
-    const { properties, meta } = this.ext.readExtensionElements(el);
+    const { properties, meta, elements } = this.ext.readExtensionElements(el);
+    // Agent Lane (Handoff 12 §5): a dedicated bpmnr:agentWorkflowSnapshot child
+    // round-trips the read-degraded sub-workflow snapshot. It lives outside the
+    // property soup, so read it back symmetrically (byte-stable both ways).
+    const snapshotEl = elements.find((c) => localName(c.tag) === 'agentWorkflowSnapshot');
+    if (typeof snapshotEl?.attributes.snapshot === 'string') {
+      properties.agentWorkflowSnapshot = snapshotEl.attributes.snapshot;
+    }
 
     let type: string | undefined;
     if (meta.type && this.registry.has(meta.type)) {
