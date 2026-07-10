@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #faf9f6; }
+  a { color: #9a7b1e; } a:hover { color: #7a611e; }
+</style>
+</helmet>
+<div style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; height: 100vh; display: flex; flex-direction: column; background: #faf9f6; overflow: hidden;">
+
+  <!-- ============ HEADER ============ -->
+  <header data-screen-label="Header" style="height: 58px; flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2ddd3; display: flex; align-items: center; gap: 14px; padding: 0 16px; z-index: 6;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 26px; height: 26px; border-radius: 7px; background: #9a7b1e; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">B</div>
+      <div style="font-weight: 600; font-size: 14px;">BuildToValue <span style="color: #6f675a; font-weight: 400;">Designer</span></div>
+    </div>
+    <div style="width: 1px; height: 22px; background: #e2ddd3;"></div>
+    <div style="font-size: 13.5px; font-weight: 500;">Reembolso de Despesas</div>
+    <sc-if value="{{ hasDraft }}" hint-placeholder-val="{{ false }}">
+      <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #d5d0c5; border-radius: 999px; padding: 4px 12px 4px 5px; background: #faf9f6;">
+        <span style="background: #faf9f6; color: #44403a; border: 1px dashed #a49c8f; font-size: 10px; font-weight: 700; letter-spacing: 1px; border-radius: 999px; padding: 2px 9px;">◌ RASCUNHO</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px;">v0.1.0</span>
+        <span style="font-size: 11px; color: #6f675a;">autoria: <strong style="color: #33567e;">ia.copilot@claude-4</strong> + ana.ruiz</span>
+      </div>
+    </sc-if>
+    <div style="flex: 1;"></div>
+    <button style="border: 1px solid #e2ddd3; background: transparent; border-radius: 8px; height: 32px; padding: 0 14px; font-family: inherit; font-size: 12.5px; color: #262220; cursor: pointer;" style-hover="background: #f2efe8;">Simular</button>
+    <button disabled="{{ noDraft }}" style="border: none; background: {{ promoteBg }}; color: #ffffff; border-radius: 8px; height: 32px; padding: 0 16px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: {{ promoteCursor }};">Promover…</button>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0;">
+
+    <!-- ============ CANVAS ============ -->
+    <main data-screen-label="Canvas" style="flex: 1; min-width: 0; position: relative; background-color: #faf9f6; background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; overflow: auto;">
+      <sc-if value="{{ noDraft }}" hint-placeholder-val="{{ true }}">
+        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+          <div style="text-align: center; color: #a49c8f; font-size: 13px; line-height: 1.7;">Canvas vazio<br><span style="font-size: 11.5px;">descreva o processo no Copiloto →</span></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ hasDraft }}" hint-placeholder-val="{{ false }}">
+        <svg width="960" height="430" viewBox="0 0 960 430" style="display: block; margin: 10px auto;">
+          <!-- pool -->
+          <rect x="20" y="14" width="920" height="400" fill="none" stroke="#44403a" stroke-width="1.5"></rect>
+          <rect x="20" y="14" width="30" height="400" fill="#f2f0ec"></rect>
+          <line x1="50" y1="14" x2="50" y2="414" stroke="#44403a" stroke-width="1"></line>
+          <line x1="50" y1="214" x2="940" y2="214" stroke="#44403a" stroke-width="0.75"></line>
+          <text x="35" y="214" transform="rotate(-90, 35, 214)" text-anchor="middle" font-size="11.5" fill="#262220" font-family="inherit">Reembolso</text>
+          <text x="62" y="114" transform="rotate(-90, 62, 114)" text-anchor="middle" font-size="9.5" fill="#6f675a" font-family="inherit">Colaborador</text>
+          <text x="62" y="322" transform="rotate(-90, 62, 322)" text-anchor="middle" font-size="9.5" fill="#6f675a" font-family="inherit">Financeiro</text>
+
+          <!-- edges -->
+          <path d="M 148 110 H 186" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+          <polygon points="194,110 184,105.5 184,114.5" fill="#44403a"></polygon>
+          <path d="M 340 110 H 384" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+          <polygon points="392,110 382,105.5 382,114.5" fill="#44403a"></polygon>
+          <!-- brt outputs -->
+          <path d="M 560 110 H 596 Q 604 110 604 118 V 152" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+          <polygon points="604,160 599.5,150 608.5,150" fill="#44403a"></polygon>
+          <text x="590" y="100" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="#1a6a54" style="paint-order: stroke; stroke: #faf9f6; stroke-width: 3px;">gestor</text>
+          <path d="M 476 152 V 262 Q 476 270 484 270 H 518" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+          <polygon points="526,270 516,265.5 516,274.5" fill="#44403a"></polygon>
+          <text x="452" y="238" font-size="9.5" font-family="IBM Plex Mono, monospace" fill="#33567e" style="paint-order: stroke; stroke: #faf9f6; stroke-width: 3px;">financeiro</text>
+          <path d="M 686 194 H 712 Q 720 194 720 202 V 258 Q 720 266 728 266 H 748" fill="none" stroke="#44403a" stroke-width="1.5"></path>
+          <polygon points="756,266 746,261.5 746,270.5" fill="#44403a"></polygon>
+          <path d="M 654 270 H 740" fill="none" stroke="#44403a" stroke-width="1.5" display="none"></path>
+          <path d="M 862 302 H 878" fill="none" stroke="#44403a" stroke-width="1.5" display="none"></path>
+
+          <!-- nós -->
+          <circle cx="130" cy="110" r="18" fill="#eef4f0" stroke="#44403a" stroke-width="1.5"></circle>
+          <text x="130" y="143" text-anchor="middle" font-size="9.5" fill="#6f675a" font-family="inherit">Pedido</text>
+
+          <rect x="194" y="76" width="146" height="68" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+          <text x="267" y="114" text-anchor="middle" font-size="11.5" fill="#262220" font-family="inherit">Registrar despesa</text>
+
+          <!-- businessRuleTask com S-FEEL -->
+          <g onClick="{{ pickBrt }}" style="cursor: pointer;">
+            <sc-if value="{{ brtSelected }}" hint-placeholder-val="{{ true }}">
+              <rect x="389" y="73" width="176" height="80" rx="11" fill="none" stroke="#1a6a54" stroke-width="1.2" opacity="0.35"></rect>
+              <rect x="392" y="76" width="170" height="74" rx="8" fill="none" stroke="#1a6a54" stroke-width="2.5"></rect>
+            </sc-if>
+            <rect x="392" y="76" width="170" height="74" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+            <g transform="translate(402, 84)" fill="none" stroke="#6f675a" stroke-width="1.2">
+              <rect width="16" height="12" rx="1.5"></rect>
+              <path d="M 0 3.5 H 16 M 5.5 3.5 V 12"></path>
+            </g>
+            <text x="477" y="112" text-anchor="middle" font-size="11.5" fill="#262220" font-family="inherit">Classificar alçada</text>
+            <rect x="412" y="124" width="130" height="16" rx="8" fill="#f3eef7" stroke="#7a4f9a" stroke-width="1"></rect>
+            <text x="477" y="135" text-anchor="middle" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="#7a4f9a">DMN: Alçada v0.1 · S-FEEL ✓</text>
+          </g>
+
+          <rect x="604" y="160" width="164" height="68" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5" transform="translate(-82, 0)"></rect>
+          <text x="604" y="198" text-anchor="middle" font-size="11.5" fill="#262220" font-family="inherit">Aprovação do gestor</text>
+
+          <rect x="526" y="240" width="128" height="60" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+          <text x="590" y="274" text-anchor="middle" font-size="11.5" fill="#262220" font-family="inherit">Análise financeiro</text>
+
+          <path d="M 756 238 H 862 V 283 L 809 300 L 756 283 Z" fill="#e3efe4" stroke="#3b7d4f" stroke-width="1.5"></path>
+          <text x="809" y="264" text-anchor="middle" font-size="10.5" fill="#262220" font-family="inherit">Pagamento em 3 dias</text>
+        </svg>
+      </sc-if>
+    </main>
+
+    <!-- ============ PAINEL COPILOTO ============ -->
+    <aside data-screen-label="Copiloto" style="width: 372px; flex-shrink: 0; background: #ffffff; border-left: 1px solid #e2ddd3; display: flex; flex-direction: column; min-height: 0;">
+      <div style="padding: 12px 14px; border-bottom: 1px solid #e2ddd3; display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div style="width: 24px; height: 24px; border-radius: 7px; background: #33567e; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">✦</div>
+          <div>
+            <div style="font-size: 13px; font-weight: 600;">Copiloto</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #6f675a;">provider: claude-4 (injetado) · prompt: copilot-draft v1.2.0 ativa</div>
+          </div>
+        </div>
+        <span style="background: #e3ecf7; color: #33567e; font-size: 9px; font-weight: 700; letter-spacing: 0.6px; border-radius: 999px; padding: 2px 8px;">SÓ RASCUNHA</span>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+        <!-- msg do usuário -->
+        <div style="align-self: flex-end; max-width: 88%; background: #f6edd4; border-radius: 12px 12px 4px 12px; padding: 10px 12px; font-size: 12.5px; line-height: 1.55;">
+          Processo de reembolso: colaborador registra a despesa, até R$ 500 aprova o gestor, acima disso vai ao financeiro, pagamento em até 3 dias.
+        </div>
+
+        <sc-if value="{{ hasDraft }}" hint-placeholder-val="{{ false }}">
+          <!-- resposta -->
+          <div style="align-self: flex-start; max-width: 92%; background: #faf9f6; border: 1px solid #efece6; border-radius: 12px 12px 12px 4px; padding: 11px 13px; font-size: 12.5px; line-height: 1.6;">
+            Rascunho criado no canvas: 1 pool, 2 lanes, 5 nós — a decisão de alçada virou <strong>businessRuleTask com tabela DMN</strong> (2 regras S-FEEL) em vez de gateway com condição solta, para a regra ficar versionável e simulável.
+            <div style="margin-top: 8px; border-top: 1px solid #efece6; padding-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a; line-height: 1.8;">
+              autoria: ia.copilot@claude-4 · ledger #d21a…8e<br>
+              soundness: 9 regras · 0 erros ✓ · aplicado como 7 comandos undoáveis
+            </div>
+          </div>
+
+          <!-- tabela DMN gerada -->
+          <div style="border: 1px solid #e2ddd3; border-radius: 10px; overflow: hidden;">
+            <div style="background: #f3eef7; padding: 7px 12px; display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #7a4f9a;">DECISÃO "ALÇADA" · HIT: FIRST · S-FEEL ✓</span>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+              <thead>
+                <tr style="background: #faf9f6;">
+                  <th style="text-align: left; padding: 5px 10px; border-bottom: 1px solid #e2ddd3; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #6f675a;">valor (number)</th>
+                  <th style="text-align: left; padding: 5px 10px; border-bottom: 1px solid #e2ddd3; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #6f675a;">→ rota (string)</th>
+                  <th style="width: 30px; border-bottom: 1px solid #e2ddd3;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding: 5px 10px; font-family: 'IBM Plex Mono', monospace;">&lt;= 500</td>
+                  <td style="padding: 5px 10px; font-family: 'IBM Plex Mono', monospace;">"gestor"</td>
+                  <td style="text-align: center; color: #1a6a54; font-size: 10px;">✓</td>
+                </tr>
+                <tr>
+                  <td style="padding: 5px 10px; font-family: 'IBM Plex Mono', monospace; border-top: 1px solid #efece6;">&gt; 500</td>
+                  <td style="padding: 5px 10px; font-family: 'IBM Plex Mono', monospace; border-top: 1px solid #efece6;">"financeiro"</td>
+                  <td style="text-align: center; color: #1a6a54; font-size: 10px; border-top: 1px solid #efece6;">✓</td>
+                </tr>
+              </tbody>
+            </table>
+            <div style="padding: 6px 12px; background: #faf9f6; border-top: 1px solid #efece6; font-size: 10px; color: #6f675a;">✓ = dentro do subconjunto S-FEEL — o simulador roteia de verdade por estas células</div>
+          </div>
+
+          <!-- ações do rascunho -->
+          <div style="display: flex; gap: 8px;">
+            <button style="flex: 1; border: 1px solid #e2ddd3; background: transparent; border-radius: 8px; height: 34px; font-family: inherit; font-size: 12px; font-weight: 600; color: #262220; cursor: pointer;" style-hover="background: #f2efe8;">↩ Desfazer tudo</button>
+            <button onClick="{{ askChange }}" style="flex: 1; border: 1px solid #33567e; background: transparent; border-radius: 8px; height: 34px; font-family: inherit; font-size: 12px; font-weight: 600; color: #33567e; cursor: pointer;" style-hover="background: #eef3f9;">Pedir ajuste…</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ asked }}" hint-placeholder-val="{{ false }}">
+          <div style="align-self: flex-end; max-width: 88%; background: #f6edd4; border-radius: 12px 12px 4px 12px; padding: 10px 12px; font-size: 12.5px;">
+            Acima de R$ 5.000 precisa passar pelos dois, com prazo de 5 dias.
+          </div>
+          <div style="align-self: flex-start; max-width: 92%; background: #faf9f6; border: 1px solid #efece6; border-radius: 12px 12px 12px 4px; padding: 11px 13px; font-size: 12.5px; line-height: 1.6;">
+            Ajustado: 3ª regra <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;">&gt; 5000 → "ambos"</span> na tabela + caminho paralelo (AND) gestor∥financeiro + timer de 5 dias. <strong>Atenção:</strong> a regra 3 usa rota "ambos" que exige o AND-join — o soundness validou a sincronização ✓. Tudo aplicado como comandos undoáveis; autoria ia.copilot mantida no ledger.
+          </div>
+        </sc-if>
+
+        <!-- honestidade S-FEEL -->
+        <div style="border: 1px solid #e8d9ae; background: #fdfaf1; border-radius: 10px; padding: 10px 12px; font-size: 11px; line-height: 1.6; color: #7a611e;">
+          <strong>Célula fora do S-FEEL?</strong> A decisão vira "não-simulável" declarada — o token para com aviso honesto; nunca avaliação silenciosamente errada. Subconjunto: comparações, ranges [a..b], listas, "-". Excluídos: funções, for/some/every, contextos, data/duração.
+        </div>
+      </div>
+
+      <!-- input -->
+      <div style="padding: 12px 14px; border-top: 1px solid #e2ddd3; display: flex; gap: 8px;">
+        <sc-if value="{{ noDraft }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ generate }}" style="flex: 1; border: none; background: #33567e; color: #ffffff; border-radius: 9px; height: 40px; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;" style-hover="background: #274565;">✦ Gerar rascunho do processo</button>
+        </sc-if>
+        <sc-if value="{{ hasDraft }}" hint-placeholder-val="{{ false }}">
+          <div style="flex: 1; border: 1px solid #e2ddd3; border-radius: 9px; height: 40px; display: flex; align-items: center; padding: 0 12px; font-size: 12px; color: #a49c8f;">Descreva um ajuste…</div>
+        </sc-if>
+      </div>
+    </aside>
+  </div>
+
+  <footer style="height: 30px; flex-shrink: 0; background: #ffffff; border-top: 1px solid #e2ddd3; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a;">
+    <span>IA rascunha · humanos assinam · toda contribuição = comandos undoáveis com autoria no ledger</span>
+    <span>AIProvider injetado · degradável: sem provider, tudo funciona</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { draft: false, asked: false, brtSel: true };
+
+  renderVals() {
+    const s = this.state;
+    return {
+      noDraft: !s.draft,
+      hasDraft: s.draft,
+      asked: s.asked,
+      generate: () => this.setState({ draft: true }),
+      askChange: () => this.setState({ asked: true }),
+      brtSelected: s.brtSel,
+      pickBrt: () => this.setState({ brtSel: !s.brtSel }),
+      promoteBg: s.draft ? '#9a7b1e' : '#c9c4ba',
+      promoteCursor: s.draft ? 'pointer' : 'not-allowed',
+    };
+  }
+}
+</script>
+</body>
+</html>
