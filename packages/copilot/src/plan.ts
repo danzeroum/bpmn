@@ -94,6 +94,14 @@ export function validateProposal(
   return errors.length > 0 ? { ok: false, errors } : { ok: true };
 }
 
+/** Who/what produced the accepted proposal (cerca §1.2 — immutable AI authorship). */
+export interface CopilotAttribution {
+  /** The injected provider's id, e.g. "claude-4" → author "ia.copilot@claude-4". */
+  providerId: string;
+  /** Conversation id recorded with every applied proposal. */
+  conversationId: string;
+}
+
 export interface CopilotPlan {
   /** ONE undoable composite — "Desfazer tudo" is a single undo (§8.3). */
   command: Command;
@@ -110,7 +118,11 @@ export interface CopilotPlan {
  * analysis over the projection. Call {@link validateProposal} first; this
  * throws on an invalid proposal rather than applying it partially.
  */
-export function buildPlan(diagram: BpmnDiagram, proposal: CopilotProposal): CopilotPlan {
+export function buildPlan(
+  diagram: BpmnDiagram,
+  proposal: CopilotProposal,
+  attribution?: CopilotAttribution,
+): CopilotPlan {
   const verdict = validateProposal(diagram, proposal);
   if (!verdict.ok) {
     throw new Error(
@@ -118,7 +130,25 @@ export function buildPlan(diagram: BpmnDiagram, proposal: CopilotProposal): Copi
     );
   }
   const commands = proposal.commands.map((c) => COMMAND_WHITELIST[c.type].materialize(c.params, diagram));
-  const command = compositeCommand('Proposta do copiloto', commands);
+  const composite = compositeCommand('Proposta do copiloto', commands);
+  // AI authorship is explicit and immutable (cerca §1.2): the ledger entry for
+  // the applied proposal names the model, the prompt-template version and the
+  // conversation — never presented as human work.
+  const command: Command = attribution
+    ? {
+        ...composite,
+        toAuditEvent: () => ({
+          type: 'COPILOT_PROPOSAL_APPLIED',
+          details: {
+            author: `ia.copilot@${attribution.providerId}`,
+            promptTemplateRef: { ...proposal.promptTemplateRef },
+            conversationId: attribution.conversationId,
+            rationale: proposal.rationale,
+            commandCount: proposal.commands.length,
+          },
+        }),
+      }
+    : composite;
 
   // Projection on a scratch stack — no interceptor, no ledger, no mutation of
   // the caller's state. The same composite is what the host later executes.

@@ -6,6 +6,8 @@ const EXPECTED_EXPORTS = [
   'COMMAND_WHITELIST',
   'WHITELISTED_COMMANDS',
   'buildPlan',
+  'COPILOT_ADJUST_PROMPT',
+  'COPILOT_DRAFT_PROMPT',
   'parseProposal',
   'validateProposal',
 ].sort();

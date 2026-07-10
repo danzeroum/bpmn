@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react';
-import { AuditLedger, BpmnXmlConverter, getEdgeChain, type BpmnDiagram } from '@buildtovalue/core';
+import { AuditLedger, BpmnXmlConverter, createDiagram, getEdgeChain, type BpmnDiagram } from '@buildtovalue/core';
 import {
   astarConnection,
+  CopilotPanel,
   BpmnEditor,
   BpmnReplay,
   BpmnSimulator,
@@ -27,6 +28,7 @@ import { healthcarePlugin } from '@buildtovalue/healthcare';
 import { callActivityBindingRule, VersionRegistry } from '@buildtovalue/registry';
 import { soundnessPromotionRule, soundnessRules } from '@buildtovalue/soundness';
 import { replayAnalysisEntry, simulationSessionEntry } from '@buildtovalue/adapters-bpmn';
+import type { AIProvider } from '@buildtovalue/copilot';
 import {
   buildClosedDiagram,
   buildDeadlockDiagram,
@@ -141,6 +143,62 @@ const REPLAY_VERSIONS = [
 /** Ledger the `?replay` demo attaches its comparative analysis into (7B-3). */
 const replayDemoLedger = new AuditLedger();
 
+/**
+ * Deterministic FAKE provider for the `?copilot=1` demo/e2e (§8.6 — CI never
+ * calls the network): first completion returns the reimbursement draft,
+ * later ones an incremental adjust.
+ */
+function makeFakeCopilotProvider(): AIProvider {
+  const draft = JSON.stringify({
+    commands: [
+      { type: 'addNode', params: { id: 's', type: 'startEvent', label: 'Início', x: 60, y: 160 } },
+      { type: 'addNode', params: { id: 'analisar', type: 'userTask', label: 'Analisar pedido', x: 180, y: 140 } },
+      { type: 'addNode', params: { id: 'decidir', type: 'exclusiveGateway', label: 'Aprovado?', x: 400, y: 150 } },
+      { type: 'addNode', params: { id: 'pagar', type: 'serviceTask', label: 'Pagar reembolso', x: 540, y: 60 } },
+      { type: 'addNode', params: { id: 'negar', type: 'task', label: 'Comunicar negativa', x: 540, y: 240 } },
+      { type: 'addNode', params: { id: 'fim1', type: 'endEvent', label: 'Fim', x: 760, y: 80 } },
+      { type: 'addNode', params: { id: 'fim2', type: 'endEvent', label: 'Fim', x: 760, y: 260 } },
+      { type: 'addEdge', params: { id: 'c1', sourceId: 's', targetId: 'analisar' } },
+      { type: 'addEdge', params: { id: 'c2', sourceId: 'analisar', targetId: 'decidir' } },
+      { type: 'addEdge', params: { id: 'c3', sourceId: 'decidir', targetId: 'pagar', label: 'sim' } },
+      { type: 'addEdge', params: { id: 'c4', sourceId: 'decidir', targetId: 'negar', label: 'não' } },
+      { type: 'addEdge', params: { id: 'c5', sourceId: 'pagar', targetId: 'fim1' } },
+      { type: 'addEdge', params: { id: 'c6', sourceId: 'negar', targetId: 'fim2' } },
+    ],
+    rationale: 'Rascunho: reembolso com análise e decisão de aprovação.',
+    promptTemplateRef: { id: 'copilot-draft', version: '1.0.0' },
+  });
+  const adjust = JSON.stringify({
+    commands: [{ type: 'updateNode', params: { id: 'analisar', label: 'Analisar pedido (SLA 48h)' } }],
+    rationale: 'Ajuste: SLA explícito na análise.',
+    promptTemplateRef: { id: 'copilot-adjust', version: '1.0.0' },
+  });
+  let calls = 0;
+  return { id: 'claude-4', complete: async () => (calls++ === 0 ? draft : adjust) };
+}
+const fakeCopilotProvider = makeFakeCopilotProvider();
+
+/** Ledger-wired copilot surface: real AuditLedger over the editor stack, hash
+ * resolved into the response footer. */
+function CopilotDemo() {
+  const { stack } = useDiagram();
+  const ledgerRef = useRef<AuditLedger | null>(null);
+  if (!ledgerRef.current) {
+    ledgerRef.current = new AuditLedger();
+    ledgerRef.current.connectCommandStack(stack, { id: 'ana.ruiz', role: 'editor' });
+  }
+  return (
+    <CopilotPanel
+      provider={fakeCopilotProvider}
+      author="ana.ruiz"
+      resolveLedgerHash={async () => {
+        await ledgerRef.current!.flush();
+        return ledgerRef.current!.getEntries().at(-1)?.hash;
+      }}
+    />
+  );
+}
+
 export function App() {
   const [diagram, setDiagram] = useState<BpmnDiagram>(() => {
     // `?stress=350` loads the synthetic perf grid (see perf.spec.ts / NFR);
@@ -179,6 +237,8 @@ export function App() {
   // `?sfeel=1` — S-FEEL decision demo (Handoff 9 SF-2); `&bad=1` uses a table
   // with a date() cell, outside the subset (honest ⚠ stop).
   const sfeelMode = params.get('sfeel') !== null;
+  // `?copilot=1` — governed copilot demo (Handoff 9 CP-2), fake provider.
+  const copilotMode = params.get('copilot') !== null;
   if (studioMode) return <StudioSurface />;
   if (libraryMode) return <LibrarySurface />;
   if (replayMode) {
@@ -199,6 +259,13 @@ export function App() {
           window.location.search = '?simulate=1';
         }}
       />
+    );
+  }
+  if (copilotMode) {
+    return (
+      <BpmnEditor diagram={createDiagram({ id: 'demo-copilot', name: 'Copiloto', createdBy: 'demo' })} plugins={PLUGINS}>
+        <CopilotDemo />
+      </BpmnEditor>
     );
   }
   if (sfeelMode) {
