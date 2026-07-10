@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #faf9f6; }
+  a { color: #9a7b1e; } a:hover { color: #7a611e; }
+</style>
+</helmet>
+<div style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; height: 100vh; display: flex; flex-direction: column; background: #faf9f6; overflow: hidden;">
+
+  <!-- ============ HEADER ============ -->
+  <header data-screen-label="Header" style="height: 58px; flex-shrink: 0; background: #ffffff; border-bottom: 1px solid #e2ddd3; display: flex; align-items: center; gap: 14px; padding: 0 16px; z-index: 6;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <div style="width: 26px; height: 26px; border-radius: 7px; background: #9a7b1e; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">B</div>
+      <div style="font-weight: 600; font-size: 14px;">BuildToValue <span style="color: #6f675a; font-weight: 400;">· Handoff 11 — superfícies novas</span></div>
+    </div>
+    <div style="flex: 1;"></div>
+    <nav style="display: flex; gap: 4px; font-size: 12.5px;">
+      <button onClick="{{ tab1 }}" style="border: none; padding: 6px 12px; border-radius: 8px; background: {{ t1Bg }}; color: {{ t1Fg }}; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;">Banner âncora</button>
+      <button onClick="{{ tab2 }}" style="border: none; padding: 6px 12px; border-radius: 8px; background: {{ t2Bg }}; color: {{ t2Fg }}; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;">Menu de contexto</button>
+      <button onClick="{{ tab3 }}" style="border: none; padding: 6px 12px; border-radius: 8px; background: {{ t3Bg }}; color: {{ t3Fg }}; font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;">Modo viewer</button>
+    </nav>
+  </header>
+
+  <main style="flex: 1; overflow-y: auto; padding: 22px 28px;">
+
+    <!-- ============ TAB 1: BANNER CADEIA ≠ ÂNCORA ============ -->
+    <sc-if value="{{ on1 }}" hint-placeholder-val="{{ true }}">
+    <div data-screen-label="Banner âncora" style="max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px;">
+      <div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 2px; color: #9a7b1e; margin-bottom: 4px;">N-4 · LEDGER EXPLORER · SUPERFÍCIE DA DETECÇÃO JÁ ENTREGUE</div>
+        <h1 style="margin: 0; font-size: 20px; font-weight: 700;">Banner "CADEIA ≠ ÂNCORA" — os 3 resultados da verificação</h1>
+      </div>
+
+      <!-- resultado 1: íntegra + ancorada -->
+      <div style="background: #f2f9f4; border: 1px solid #bcdcc9; border-radius: 12px; padding: 11px 16px; display: flex; align-items: center; gap: 10px;">
+        <span style="color: #1a6a54; font-weight: 700;">✓ Cadeia íntegra e ancorada</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #44403a;">47/47 · head #a3f9…e1 = âncora git (07/07 16:41)</span>
+        <a href="#" style="font-size: 11.5px; font-weight: 600; margin-left: auto;">VerificationReport.json</a>
+      </div>
+
+      <!-- resultado 2: íntegra mas não ancorada -->
+      <div style="background: #fdfaf1; border: 1px solid #e8d9ae; border-radius: 12px; padding: 11px 16px; display: flex; align-items: center; gap: 10px;">
+        <span style="color: #7a611e; font-weight: 700;">⏳ Íntegra · ancoragem pendente</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #44403a;">47/47 · garantia vigente: assinaturas + hash-chain local</span>
+        <button style="border: 1px solid #9a7b1e; background: transparent; color: #7a611e; border-radius: 7px; padding: 4px 12px; font-family: inherit; font-size: 11px; font-weight: 600; cursor: pointer; margin-left: auto;">↻ Retentar</button>
+      </div>
+
+      <!-- resultado 3: rompida -->
+      <div style="background: #fffbfa; border: 1.5px solid #b3372f; border-radius: 12px; padding: 12px 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="background: #b3372f; color: #ffffff; font-size: 10px; font-weight: 700; letter-spacing: 0.8px; border-radius: 999px; padding: 3px 10px;">✕ CADEIA ≠ ÂNCORA</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #b3372f;">local #77aa…02 ≠ ancorado #a3f9…e1 · divergência a partir da entrada #43</span>
+        </div>
+        <div style="font-size: 11.5px; color: #44403a; margin-top: 8px; line-height: 1.6;">A cadeia local foi regenerada após a ancoragem. As entradas #43–#47 não são confiáveis — marcadas na trilha abaixo. Exporte o VerificationReport e investigue com a âncora.</div>
+      </div>
+
+      <!-- trilha com entradas não-confiáveis -->
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #ffffff; overflow: hidden;">
+        <div style="padding: 8px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 1.5px; color: #9a7b1e; border-bottom: 1px solid #efece6;">TRILHA COM CADEIA ROMPIDA (A PARTIR DE #43)</div>
+        <div style="padding: 8px 14px; display: flex; gap: 10px; align-items: center; font-size: 12px;">
+          <span style="width: 9px; height: 9px; border-radius: 50%; background: #1a6a54;"></span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #1a6a54;">#42 ✓</span> aprovação · operação · íntegra
+        </div>
+        <div style="padding: 8px 14px; display: flex; gap: 10px; align-items: center; font-size: 12px; background: #f7e6e0;">
+          <span style="width: 9px; height: 9px; border-radius: 50%; background: #b3372f;"></span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #b3372f;">#43 ✕</span> comando · edge e-07 · <strong style="color: #b3372f;">não-confiável</strong>
+        </div>
+        <div style="padding: 8px 14px; display: flex; gap: 10px; align-items: center; font-size: 12px; background: #f7e6e0;">
+          <span style="width: 9px; height: 9px; border-radius: 50%; background: #b3372f;"></span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #b3372f;">#44 ✕</span> promoção · v2.1.0 · <strong style="color: #b3372f;">não-confiável</strong>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ TAB 2: MENU DE CONTEXTO ============ -->
+    <sc-if value="{{ on2 }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Menu de contexto" style="max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px;">
+      <div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 2px; color: #9a7b1e; margin-bottom: 4px;">N-5 · SURFACE PLUGÁVEL · CONTEXTMENU NO CONTRATO DE PLUGIN</div>
+        <h1 style="margin: 0; font-size: 20px; font-weight: 700;">Menu de contexto de aresta — built-ins + itens de plugin</h1>
+      </div>
+      <div style="position: relative; background-color: #faf9f6; background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; border: 1px solid #e2ddd3; border-radius: 12px; height: 300px;">
+        <svg width="420" height="120" viewBox="0 0 420 120" style="position: absolute; left: 30px; top: 60px;">
+          <rect x="2" y="30" width="120" height="56" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+          <text x="62" y="62" text-anchor="middle" font-size="11" fill="#262220" font-family="inherit">Coletar briefing</text>
+          <path d="M 122 58 H 280" fill="none" stroke="#9a7b1e" stroke-width="2.5"></path>
+          <polygon points="288,58 278,53.5 278,62.5" fill="#9a7b1e"></polygon>
+          <circle cx="200" cy="58" r="5" fill="#9a7b1e" stroke="#ffffff" stroke-width="1.5"></circle>
+          <rect x="290" y="30" width="120" height="56" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.5"></rect>
+          <text x="350" y="62" text-anchor="middle" font-size="11" fill="#262220" font-family="inherit">Aprovar</text>
+        </svg>
+        <!-- menu -->
+        <div style="position: absolute; left: 240px; top: 128px; width: 224px; background: #ffffff; border: 1px solid #e2ddd3; border-radius: 10px; box-shadow: 0 8px 24px rgba(68,64,58,0.16); padding: 5px; font-size: 12.5px;">
+          <div style="padding: 7px 10px; border-radius: 7px; cursor: pointer; display: flex; justify-content: space-between;" style-hover="background: #f2efe8;">Voltar ao automático <span style="color: #a49c8f; font-family: 'IBM Plex Mono', monospace; font-size: 10px;">manual</span></div>
+          <div style="padding: 7px 10px; border-radius: 7px; cursor: pointer;" style-hover="background: #f2efe8;">Adicionar waypoint aqui</div>
+          <div style="padding: 7px 10px; border-radius: 7px; cursor: pointer;" style-hover="background: #f2efe8;">Editar rótulo</div>
+          <div style="height: 1px; background: #efece6; margin: 4px 6px;"></div>
+          <div style="padding: 4px 10px 2px; font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.2px; color: #9a7b1e;">PLUGIN · BTV</div>
+          <div style="padding: 7px 10px; border-radius: 7px; cursor: pointer;" style-hover="background: #f2efe8;">Ver pedigree da edge…</div>
+          <div style="padding: 7px 10px; border-radius: 7px; cursor: pointer; color: #b3372f;" style-hover="background: #fdf3f1;">Encerrar via supersede…</div>
+        </div>
+        <div style="position: absolute; right: 14px; bottom: 12px; font-size: 10.5px; color: #6f675a; max-width: 220px; text-align: right; line-height: 1.5;">built-ins condicionais ao estado da aresta + seção por plugin (registrada via contrato) · Esc fecha · teclado navegável</div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ TAB 3: MODO VIEWER ============ -->
+    <sc-if value="{{ on3 }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Modo viewer" style="max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px;">
+      <div>
+        <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; letter-spacing: 2px; color: #9a7b1e; margin-bottom: 4px;">N-7 · LIGHTWEIGHT · &lt;BpmnViewer&gt; SEM EDIÇÃO</div>
+        <h1 style="margin: 0; font-size: 20px; font-weight: 700;">Modo viewer — para dashboards e docs</h1>
+      </div>
+      <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #ffffff; overflow: hidden;">
+        <div style="height: 40px; border-bottom: 1px solid #efece6; display: flex; align-items: center; gap: 10px; padding: 0 12px;">
+          <span style="font-size: 12.5px; font-weight: 600;">Onboarding de Cliente</span>
+          <span style="background: #dff0e6; color: #1a6a54; font-size: 9.5px; font-weight: 700; letter-spacing: 0.6px; border-radius: 999px; padding: 2px 9px;">● ATIVA</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6f675a;">v2.1.0</span>
+          <div style="flex: 1;"></div>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a;">zoom · fit · export PNG</span>
+        </div>
+        <div style="height: 190px; background-color: #faf9f6; background-image: radial-gradient(#d8d3c8 1px, transparent 1px); background-size: 16px 16px; display: flex; align-items: center; justify-content: center;">
+          <svg width="470" height="90" viewBox="0 0 470 90">
+            <circle cx="24" cy="45" r="15" fill="#eef4f0" stroke="#44403a" stroke-width="1.4"></circle>
+            <path d="M 39 45 H 68" stroke="#44403a" stroke-width="1.4"></path>
+            <polygon points="76,45 66,40.5 66,49.5" fill="#44403a"></polygon>
+            <rect x="78" y="18" width="112" height="54" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.4"></rect>
+            <text x="134" y="49" text-anchor="middle" font-size="10.5" fill="#262220" font-family="inherit">Coletar briefing</text>
+            <path d="M 190 45 H 218" stroke="#44403a" stroke-width="1.4"></path>
+            <polygon points="226,45 216,40.5 216,49.5" fill="#44403a"></polygon>
+            <polygon points="252,19 278,45 252,71 226,45" fill="#f6edd4" stroke="#9a7b1e" stroke-width="1.4"></polygon>
+            <path d="M 278 45 H 308" stroke="#44403a" stroke-width="1.4"></path>
+            <polygon points="316,45 306,40.5 306,49.5" fill="#44403a"></polygon>
+            <rect x="318" y="18" width="100" height="54" rx="8" fill="#f8f7f4" stroke="#44403a" stroke-width="1.4"></rect>
+            <text x="368" y="49" text-anchor="middle" font-size="10.5" fill="#262220" font-family="inherit">Gerar plano</text>
+            <path d="M 418 45 H 440" stroke="#44403a" stroke-width="1.4"></path>
+            <circle cx="452" cy="45" r="14" fill="#eef4f0" stroke="#44403a" stroke-width="2.6"></circle>
+          </svg>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11.5px; line-height: 1.6;">
+        <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 10px 12px; background: #ffffff;"><strong>Tem:</strong> pan/zoom/fit, seleção read-only com tooltip, selo de vigência, export PNG/SVG, overlays injetáveis (heatmap do replay).</div>
+        <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 10px 12px; background: #ffffff;"><strong>Não tem (nem carrega):</strong> paleta, inspector, command bus de edição, undo, drag — entry point separado, tree-shakeable.</div>
+      </div>
+    </div>
+    </sc-if>
+  </main>
+
+  <footer style="height: 30px; flex-shrink: 0; background: #ffffff; border-top: 1px solid #e2ddd3; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6f675a;">
+    <span>handoff 11 · biblioteca como produto npm · superfícies novas (N-4 / N-5 / N-7)</span>
+    <span>demais itens: sem UI nova — spec no README</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { tab: 1 };
+  renderVals() {
+    const s = this.state;
+    const bg = (n) => (s.tab === n ? '#f6edd4' : 'transparent');
+    const fg = (n) => (s.tab === n ? '#7a611e' : '#6f675a');
+    return {
+      on1: s.tab === 1, on2: s.tab === 2, on3: s.tab === 3,
+      tab1: () => this.setState({ tab: 1 }),
+      tab2: () => this.setState({ tab: 2 }),
+      tab3: () => this.setState({ tab: 3 }),
+      t1Bg: bg(1), t1Fg: fg(1), t2Bg: bg(2), t2Fg: fg(2), t3Bg: bg(3), t3Fg: fg(3),
+    };
+  }
+}
+</script>
+</body>
+</html>
