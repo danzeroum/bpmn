@@ -803,6 +803,138 @@ describe('BpmnXmlConverter — nested sub-processes (F7)', () => {
   });
 });
 
+describe('BpmnXmlConverter — reparent export contract (F7 · pre-PR2)', () => {
+  const converter = () => new BpmnXmlConverter();
+
+  // A flat diagram: an expanded (already populated) sub-process alongside two
+  // top-level tasks joined by a flow. This is the pre-reparent state — nothing
+  // belongs to the sub-process yet. Reparent-on-drop (PR2) will set the two
+  // tasks' properties.parentId to the sub-process; these tests pin the export
+  // contract that gesture relies on. The round-trip is already correct on main,
+  // so this is a regression trap: PR2's authored output can never silently
+  // start exporting broken (children left at the process level, coordinates
+  // translated, or parentId leaking as a bpmnr:property).
+  function flatDiagram(): BpmnDiagram {
+    const diagram = createDiagram({ name: 'Fulfilment', id: 'reparent-flow' });
+    const v = diagram.version.id;
+    diagram.nodes = {
+      sub: createNode({
+        type: 'subProcess', id: 'sub', label: 'Handle order', x: 200, y: 80,
+        width: 400, height: 260, properties: { isExpanded: true }, versionId: v,
+      }),
+      // Seed child so the sub-process starts populated (as after an IMPORT).
+      s0: createNode({
+        type: 'startEvent', id: 's0', x: 240, y: 180,
+        properties: { parentId: 'sub' }, versionId: v,
+      }),
+      A: createNode({ type: 'task', id: 'A', label: 'Pick', x: 700, y: 160, versionId: v }),
+      B: createNode({ type: 'task', id: 'B', label: 'Pack', x: 860, y: 160, versionId: v }),
+    };
+    diagram.edges = {
+      F: createEdge({ id: 'F', sourceId: 'A', targetId: 'B', versionId: v }),
+    };
+    return diagram;
+  }
+
+  /** Slice of the serialized <subProcess id="sub"> element (its own children). */
+  function subBody(xml: string): string {
+    return xml.slice(xml.indexOf('<bpmn:subProcess id="sub"'), xml.indexOf('</bpmn:subProcess>'));
+  }
+
+  it('leaves un-reparented nodes at the process level (baseline)', () => {
+    const xml = converter().toXml(flatDiagram());
+    const body = subBody(xml);
+    expect(body).not.toContain('id="A"');
+    expect(body).not.toContain('id="B"');
+    // The flow between two top-level nodes stays at the process level.
+    expect(body).not.toContain('<bpmn:sequenceFlow id="F"');
+  });
+
+  it('nests a formerly top-level node once its parentId is set (the reparent gesture)', () => {
+    const diagram = flatDiagram();
+    const beforeA = { x: diagram.nodes.A.x, y: diagram.nodes.A.y };
+    // Exactly what reparent-on-drop writes: parentId onto existing nodes. Both
+    // endpoints join the sub-process, so their flow scopes into it too.
+    diagram.nodes.A.properties.parentId = 'sub';
+    diagram.nodes.B.properties.parentId = 'sub';
+
+    const xml = converter().toXml(diagram);
+    const body = subBody(xml);
+    expect(body).toContain('<bpmn:task id="A"');
+    expect(body).toContain('<bpmn:task id="B"');
+    expect(body).toContain('<bpmn:sequenceFlow id="F"');
+    // parentId is structural, never a bpmnr:property.
+    expect(xml).not.toContain('name="parentId"');
+    // DI is absolute — reparent does NOT translate coordinates (pendencias 8.0).
+    // A's bounds (unique x) prove the shape kept its pre-reparent position.
+    expect(xml).toContain(`bpmnElement="A">`);
+    expect(xml).toContain(`<dc:Bounds x="${beforeA.x}" y="${beforeA.y}" width="120" height="60" />`);
+  });
+
+  it('round-trips the reparented result losslessly and byte-stable', () => {
+    const diagram = flatDiagram();
+    diagram.nodes.A.properties.parentId = 'sub';
+    diagram.nodes.B.properties.parentId = 'sub';
+
+    const xml = converter().toXml(diagram);
+    const first = converter().fromXml(xml);
+    expect(first.warnings).toEqual([]);
+    expect(nodeParentId(first.diagram.nodes.A)).toBe('sub');
+    expect(nodeParentId(first.diagram.nodes.B)).toBe('sub');
+    expect(childrenOf(first.diagram, 'sub').map((n) => n.id).sort()).toEqual(['A', 'B', 's0']);
+    // The internal flow survives with its endpoints intact.
+    expect(first.diagram.edges.F).toMatchObject({ sourceId: 'A', targetId: 'B' });
+
+    expect(normalizeForDiff(converter().fromXml(xml).diagram)).toEqual(
+      normalizeForDiff(first.diagram),
+    );
+    expect(converter().toXml(first.diagram)).toBe(xml);
+  });
+
+  it('nests recursively when parentId points at a nested sub-process (hit-test edge case)', () => {
+    // The PR2 hierarchical hit-test can drop a node into the DEEPEST container:
+    // outer ⊃ inner ⊃ deep. Authored purely via parentId chains — the export
+    // must recurse, not flatten.
+    const diagram = createDiagram({ name: 'Nested', id: 'nested-reparent' });
+    const v = diagram.version.id;
+    diagram.nodes = {
+      outer: createNode({
+        type: 'subProcess', id: 'outer', label: 'Outer', x: 100, y: 80,
+        width: 460, height: 300, properties: { isExpanded: true }, versionId: v,
+      }),
+      inner: createNode({
+        type: 'subProcess', id: 'inner', label: 'Inner', x: 160, y: 150,
+        width: 320, height: 180,
+        properties: { isExpanded: true, parentId: 'outer' }, versionId: v,
+      }),
+      deep: createNode({
+        type: 'task', id: 'deep', label: 'Inspect', x: 220, y: 210,
+        properties: { parentId: 'inner' }, versionId: v,
+      }),
+    };
+
+    const xml = converter().toXml(diagram);
+    // deep nests inside inner, which nests inside outer.
+    const outerBody = xml.slice(
+      xml.indexOf('<bpmn:subProcess id="outer"'),
+      xml.lastIndexOf('</bpmn:subProcess>'),
+    );
+    const innerBody = outerBody.slice(
+      outerBody.indexOf('<bpmn:subProcess id="inner"'),
+      outerBody.indexOf('</bpmn:subProcess>'),
+    );
+    expect(innerBody).toContain('<bpmn:task id="deep"');
+
+    const back = converter().fromXml(xml);
+    expect(back.warnings).toEqual([]);
+    expect(nodeParentId(back.diagram.nodes.deep)).toBe('inner');
+    expect(nodeParentId(back.diagram.nodes.inner)).toBe('outer');
+    expect(descendantIdsOf(back.diagram, 'outer').sort()).toEqual(['deep', 'inner']);
+    expect(normalizeForDiff(back.diagram)).toEqual(normalizeForDiff(diagram));
+    expect(converter().toXml(back.diagram)).toBe(xml);
+  });
+});
+
 describe('BpmnXmlConverter — call activities & data elements (F7-3)', () => {
   function dataDiagram(): BpmnDiagram {
     const diagram = createDiagram({ name: 'Data flow', id: 'data-flow' });

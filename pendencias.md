@@ -207,6 +207,23 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   drill-down (§7.6); duplo-clique no CORPO = rename inline; campo Label no inspector
   garante descobribilidade. Coberto por e2e.
 
+- **Round-trip de filhos de subProcess — PR 1 virou trava de contrato (10/07/2026):** um
+  diagnóstico externo apontava round-trip **defeituoso** de filhos de subprocesso (supostamente
+  documentado num `docs/known-issues.md`) como pré-requisito do reparent-on-drop. A triagem no
+  código **não confirmou o defeito**: `docs/known-issues.md` não existe; o export já aninha
+  filhos (`ElementSerializer.writeNode` recursiona `childrenOf`, `edgeScopeOf` escopa os flows
+  internos, `parentId` é reservado e nunca vaza como `bpmnr:property`); o DI escreve shape por nó
+  e re-lê por `bpmnElement`. Corpus (`25/26/27-subprocess`, `52/53/54-nested-subprocess`) e unit
+  (`converter.test.ts` — import + export autorado) já cobrem e passam. Reproduzi o cenário exato
+  do reparent (escrever `parentId` em nós antes top-level → export aninhado → re-import
+  equivalente) e ele round-tripa limpo. **Decisão:** não fabricar um bug nem uma entrada de
+  known-issues falsa. O PR 1 fica **fino**, como *trava de contrato*: `converter.test.ts` ganha o
+  grupo "reparent export contract (F7 · pre-PR2)" — reparent de nó top-level (nível 1),
+  round-trip byte-estável do resultado, DI absoluto sem translação, e o caso ANINHADO de 2 níveis
+  (`outer ⊃ inner ⊃ deep`, o caso de borda do hit-test hierárquico do PR 2). Assim a saída
+  autorada do PR 2 nunca pode regredir o serializer silenciosamente. A ordem vinculante dos 3 PRs
+  é mantida — o PR 1 só deixou de "corrigir" para "travar".
+
 ## 8.0.1 Handoff 5 F-B2 — decisões de escopo (editor de decision table)
 
 - **Reordenação de regras por arrasto (spec §4.2 "arrasto reordena"):** implementada como
