@@ -145,12 +145,19 @@ export function LibraryView({
       <div className="btv-lib-body">
         <div className="btv-lib-grid" role="list" aria-label="Artefatos">
           {result?.items.map((item) => (
-            <ArtifactCard
+            // role="listitem" satisfies the list's required-children contract
+            // (a11y, N-8); display:contents keeps the card as the real grid item.
+            <div
               key={`${item.ref.adapterId}:${item.ref.artifactId}`}
-              item={item}
-              selected={isSelected(item.ref)}
-              onSelect={() => select(isSelected(item.ref) ? undefined : item.ref)}
-            />
+              role="listitem"
+              style={{ display: 'contents' }}
+            >
+              <ArtifactCard
+                item={item}
+                selected={isSelected(item.ref)}
+                onSelect={() => select(isSelected(item.ref) ? undefined : item.ref)}
+              />
+            </div>
           ))}
           {result && result.items.length === 0 && (
             <p className="btv-lib-empty">Nenhum artefato corresponde aos filtros.</p>

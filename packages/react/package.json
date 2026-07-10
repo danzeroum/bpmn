@@ -22,6 +22,11 @@
       "import": "./dist/esm/viewer.js",
       "require": "./dist/cjs/viewer.js"
     },
+    "./worker": {
+      "types": "./dist/esm/workers/worker.d.ts",
+      "import": "./dist/esm/workers/worker.js",
+      "require": "./dist/cjs/workers/worker.js"
+    },
     "./styles.css": "./styles.css"
   },
   "files": [

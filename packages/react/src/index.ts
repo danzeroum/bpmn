@@ -86,3 +86,7 @@ export * from './i18n/messages.js';
 export * from './i18n/I18nContext.js';
 export { EN } from './i18n/en.js';
 export { PT_BR } from './i18n/ptBR.js';
+
+// Optional off-thread compute (Handoff 11 N-8): sync default + worker opt-in.
+export * from './workers/executor.js';
+export * from './workers/jobs.js';

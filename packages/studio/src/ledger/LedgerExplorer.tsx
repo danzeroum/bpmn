@@ -357,8 +357,15 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
       )}
 
       <div className="btv-studio-ledger-body">
+        {entries.length === 0 && (
+          <p className="btv-studio-muted">{t('ledger.trail.empty')}</p>
+        )}
+        {entries.length > 0 && (
         <ol
           className="btv-studio-ledger-trail"
+          // A listbox must contain options and a list only <li> children (a11y,
+          // N-8): the whole <ol> renders only when the trail has entries; the
+          // empty state is the plain <p> above.
           role="listbox"
           aria-label={t('ledger.trail.aria')}
           tabIndex={0}
@@ -412,8 +419,8 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
               </li>
             );
           })}
-          {entries.length === 0 && <p className="btv-studio-muted">{t('ledger.trail.empty')}</p>}
         </ol>
+        )}
 
         {selected && (
           <aside className="btv-studio-ledger-detail" aria-label={t('ledger.detail.aria')}>

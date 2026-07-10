@@ -257,9 +257,11 @@ export function ReviewScreen(props: ReviewScreenProps) {
         </header>
         <div
           className="btv-studio-queue-list"
-          role="listbox"
-          aria-label={t('review.queue.list.aria')}
-          tabIndex={0}
+          // A listbox must contain options (a11y, N-8): only take the role when
+          // there are requests; the empty state is a plain container + message.
+          role={queue.length > 0 ? 'listbox' : undefined}
+          aria-label={queue.length > 0 ? t('review.queue.list.aria') : undefined}
+          tabIndex={queue.length > 0 ? 0 : undefined}
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') {
               e.preventDefault();
@@ -313,7 +315,10 @@ export function ReviewScreen(props: ReviewScreenProps) {
         </div>
       </aside>
 
-      <main className="btv-studio-review-area">
+      {/* section, not main: StudioShell owns the single top-level <main>
+          landmark; a nested main would duplicate it. A nameless section is a
+          generic container, not another landmark (a11y, N-8). */}
+      <section className="btv-studio-review-area">
         {selected && (
           <>
             <section className="btv-studio-block">
@@ -537,7 +542,7 @@ export function ReviewScreen(props: ReviewScreenProps) {
           </>
         )}
         {!selected && <p className="btv-studio-muted">{t('review.empty')}</p>}
-      </main>
+      </section>
     </div>
   );
 }

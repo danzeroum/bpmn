@@ -29,6 +29,9 @@ jobs:
       - run: pnpm lint
       - run: pnpm build
       - run: pnpm typecheck
+      # API-docs freshness (N-8): regenerate TypeDoc from the public types and
+      # fail if the committed docs/api drifted (same pattern as CONFORMANCE.md).
+      - run: pnpm check:docs-fresh
       # Download the real-world BPMN corpus (bpmn-js-examples / Camunda,
       # MIT+Apache-2.0) for the conformance round-trip. Never committed; the
       # tests skip when it's absent, so a network hiccup must not fail the build.
