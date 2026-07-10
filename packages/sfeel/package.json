@@ -1,0 +1,44 @@
+{
+  "name": "@buildtovalue/sfeel",
+  "version": "1.0.0",
+  "description": "Minimal S-FEEL subset parser + evaluator for decision tables (Handoff 9 SF-1): input unary tests (comparisons, ranges, value lists, not(), '-'), literal outputs, number/string/boolean, hit policies U and F. Everything outside the documented subset returns a declared nonSimulable {cell, reason} — never a silently wrong evaluation. Operates on plain string cells + a {variable: value} context; imports NOTHING from the ecosystem. Zero dependencies.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "dmn",
+    "sfeel",
+    "feel",
+    "decision-table",
+    "bpmn"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/sfeel"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

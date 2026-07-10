@@ -34,6 +34,7 @@ export default defineConfig({
         'packages/soundness/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
         'packages/simulation/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
         'packages/replay/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
+        'packages/sfeel/src/**': { statements: 95, branches: 90, functions: 95, lines: 95 },
         'packages/audit/src/**': { statements: 95, branches: 85, functions: 95, lines: 95 },
         'packages/identity/src/**': { statements: 95, branches: 90, functions: 95, lines: 95 },
         'packages/anchor-git/src/**': { statements: 95, branches: 90, functions: 95, lines: 95 },

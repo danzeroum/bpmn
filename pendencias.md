@@ -533,6 +533,23 @@ unit + integração + e2e (`?fallback=1` recuperação + toast, `?fanout=1` corr
 individual (hoje só no batch); re-ranqueamento em idle das arestas que cruzam a área antiga/nova de
 um nó movido (§3) — o "Limpar roteamento" cobre a re-otimização global sob demanda.
 
+## 12. Handoff 9 (Copiloto + S-FEEL) — decisões registradas (SF-1)
+
+1. **Hit policies A/P/R/O/C não são avaliadas (§5 do handoff).** O `@buildtovalue/sfeel` avalia
+   **U** (Unique, com violação declarada quando 2+ regras casam) e **F** (First). As demais
+   permanecem metadado do editor DMN; `evaluate` sobre uma tabela A/P/R/O/C retorna `nonSimulable`
+   declarado ("only U and F are simulable"). Implementar a avaliação delas é demanda futura — só
+   mediante caso de uso do simulador.
+2. **Expressões de input NÃO são avaliadas.** O `expression` da coluna de input é usado **verbatim
+   como chave do contexto** (`context[expression]`); uma expressão que precise de avaliação
+   (aritmética, path) está fora do subconjunto — variável ausente do contexto é falha declarada.
+3. **Honestidade dinâmica ampliada (além da cerca §1.6 estática):** variável ausente, mismatch de
+   tipo entre teste e valor, e violação de Unique também retornam `nonSimulable {cell, reason}` —
+   as três alternativas silenciosas produziriam resultado errado. Sem terceiro estado.
+4. **Listas OR aceitam qualquer teste do subconjunto** (`< 3, > 10`, `[1..3], 7`) — S-FEEL padrão
+   de "positive unary tests"; a §5 lista o caso de valores, o parser aceita o geral (documentado no
+   README do pacote). `not(…)` segue estrito à §5: só lista de literais.
+
 ## Resolvidas (para histórico)
 
 - ~~Lane membership manual/data-only~~ → interativa na Fase 5a.

@@ -275,6 +275,8 @@ importers:
 
   packages/replay: {}
 
+  packages/sfeel: {}
+
   packages/simulation:
     dependencies:
       '@buildtovalue/core':
