@@ -1,10 +1,12 @@
 import type { BpmnDiagram, BpmnEdge } from '../model/types.js';
 import {
   DATA_ASSOCIATION_EDGE_TYPE,
+  boundaryAttachedTo,
   isContainerType,
   laneFlowNodeRefs,
   nodeParentId,
 } from '../model/types.js';
+import { boundaryAnchorOf } from '../geometry/boundary.js';
 import { BpmnParseError } from '../model/errors.js';
 import { createDefaultRegistry, type NodeTypeRegistry } from '../model/registry.js';
 import { generateId } from '../model/factory.js';
@@ -225,6 +227,17 @@ export class BpmnXmlConverter {
     }
 
     this.di.applyDi(root, diagram, warnings);
+
+    // Handoff 11 N-1: regain the parametric boundary anchor (side + t) from
+    // the DI geometry. The pair is editor-only state — it never travels in
+    // the XML, so every import derives it back from the absolute coordinates.
+    for (const node of Object.values(diagram.nodes)) {
+      const hostId = boundaryAttachedTo(node);
+      const host = hostId ? diagram.nodes[hostId] : undefined;
+      if (!host) continue;
+      const { side, t } = boundaryAnchorOf(host, node);
+      node.properties = { ...node.properties, boundarySide: side, boundaryT: t };
+    }
     return { diagram, warnings };
   }
 }

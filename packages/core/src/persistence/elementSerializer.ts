@@ -95,7 +95,10 @@ export class ElementSerializer {
     const nestedNodes = isSubProcess ? childrenOf(diagram, node.id) : [];
     const nestedEdges = isSubProcess ? (edgesByScope.get(node.id) ?? []) : [];
     const dataAssocs = dataAssocsByActivity.get(node.id) ?? [];
-    const reserved = new Set<string>(['parentId']);
+    // The parametric boundary anchor (Handoff 11 N-1) is editor-only state,
+    // re-derived from the DI geometry on import — like parentId, it never
+    // appears as a bpmnr:property (the XML profile stays intact).
+    const reserved = new Set<string>(['parentId', 'boundarySide', 'boundaryT']);
     if (eventDef) reserved.add('eventDefinition');
     if (marker) reserved.add('marker');
     if (attachedToRef !== undefined) reserved.add('attachedToRef');

@@ -89,6 +89,102 @@ export function resizeNodeCommand(
   };
 }
 
+/** Full node snapshot the boundary attach/detach commands restore on undo. */
+interface BoundarySnapshot {
+  type: string;
+  x: number;
+  y: number;
+  properties: Record<string, unknown>;
+}
+
+/**
+ * Attaches an event to a host activity's border as a boundary event
+ * (Handoff 11 N-1, pendências §6): ONE atomic command — type becomes
+ * `boundaryEvent`, `attachedToRef` + the parametric anchor
+ * (`boundarySide`/`boundaryT`, editor-only — never XML) are written and the
+ * node moves onto the border, all in a single undoable step. Re-attaching an
+ * already-attached boundary (new host, or sliding to a new side/t) is the
+ * same command.
+ */
+export function attachBoundaryCommand(
+  nodeId: string,
+  hostId: string,
+  side: 'top' | 'right' | 'bottom' | 'left',
+  t: number,
+  position: Point,
+): Command {
+  let previous: BoundarySnapshot | undefined;
+  return {
+    id: generateId(),
+    description: 'Attach boundary event',
+    execute: (diagram) => {
+      const node = diagram.nodes[nodeId];
+      if (!node) return diagram;
+      previous = { type: node.type, x: node.x, y: node.y, properties: node.properties };
+      return withNode(diagram, {
+        ...node,
+        type: 'boundaryEvent',
+        x: position.x,
+        y: position.y,
+        properties: {
+          ...node.properties,
+          attachedToRef: hostId,
+          boundarySide: side,
+          boundaryT: t,
+        },
+      });
+    },
+    undo: (diagram) => {
+      const node = diagram.nodes[nodeId];
+      if (!node || !previous) return diagram;
+      return withNode(diagram, { ...node, ...previous });
+    },
+    toAuditEvent: () => ({
+      type: 'BOUNDARY_ATTACHED',
+      details: { nodeId, hostId, side, t },
+    }),
+  };
+}
+
+/**
+ * Detaches a boundary event from its host (the drag-out gesture): ONE atomic
+ * command — the parametric anchor and `attachedToRef` are cleared, the node
+ * becomes an intermediate catch event at the drop position. Undo restores the
+ * attachment whole.
+ */
+export function detachBoundaryCommand(nodeId: string, position: Point): Command {
+  let previous: BoundarySnapshot | undefined;
+  return {
+    id: generateId(),
+    description: 'Detach boundary event',
+    execute: (diagram) => {
+      const node = diagram.nodes[nodeId];
+      if (!node) return diagram;
+      previous = { type: node.type, x: node.x, y: node.y, properties: node.properties };
+      const properties = { ...node.properties };
+      delete properties.attachedToRef;
+      delete properties.boundarySide;
+      delete properties.boundaryT;
+      return withNode(diagram, {
+        ...node,
+        type: 'intermediateCatchEvent',
+        x: position.x,
+        y: position.y,
+        properties,
+      });
+    },
+    undo: (diagram) => {
+      const node = diagram.nodes[nodeId];
+      if (!node || !previous) return diagram;
+      return withNode(diagram, { ...node, ...previous });
+    },
+    toAuditEvent: () => ({
+      type: 'BOUNDARY_DETACHED',
+      details: { nodeId },
+    }),
+  };
+}
+
 export interface NodePatch {
   label?: string;
   properties?: Record<string, unknown>;

@@ -35,6 +35,7 @@ import {
 import type { AIProvider } from '@buildtovalue/copilot';
 import {
   buildClosedDiagram,
+  buildBoundaryDiagram,
   buildDeadlockDiagram,
   buildHealthcareDiagram,
   buildDrdDiagram,
@@ -241,6 +242,7 @@ export function App() {
     if (params.get('fallback')) return buildFallbackDiagram();
     if (params.get('fanout')) return buildFanoutDiagram();
     if (params.get('deadlock')) return buildDeadlockDiagram();
+    if (params.get('boundary')) return buildBoundaryDiagram();
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
     if (params.get('hc')) return buildHealthcareDiagram();
