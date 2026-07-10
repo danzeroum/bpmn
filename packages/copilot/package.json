@@ -1,0 +1,47 @@
+{
+  "name": "@buildtovalue/copilot",
+  "version": "1.0.0",
+  "description": "Headless governed-AI copilot layer (Handoff 9 CP-1): the HOST-injected AIProvider contract, proposal parsing/validation into whitelisted ProposedCommand[] (unknown command → INTEGRAL rejection, never partial application), one undoable composite plan, and a locally computed soundness preview BEFORE presenting. The AI never promotes, approves or signs — this package has no import path to identity or promotion rules (CI-enforced). Zero network, zero LLM SDK; consumes only @buildtovalue/core and @buildtovalue/soundness.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@buildtovalue/core": "workspace:*",
+    "@buildtovalue/soundness": "workspace:*"
+  },
+  "keywords": [
+    "bpmn",
+    "copilot",
+    "ai",
+    "governance"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/copilot"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
