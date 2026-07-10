@@ -43,6 +43,7 @@
     "react-dom": ">=18"
   },
   "dependencies": {
+    "@buildtovalue/agentflow": "workspace:*",
     "@buildtovalue/core": "workspace:*",
     "@buildtovalue/identity": "workspace:*",
     "@buildtovalue/replay": "workspace:*",

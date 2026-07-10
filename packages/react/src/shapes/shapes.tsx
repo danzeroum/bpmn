@@ -524,6 +524,45 @@ export function CallActivityShape({ node, selected }: ShapeProps) {
   );
 }
 
+/**
+ * Agent Lane (Handoff 12 §8): the agentTask reuses the standard activity
+ * geometry/tokens — NO call-activity double border (that identity is the call
+ * activity's). Its own marker is the 🤖 glyph (top-left, stroke 1.2) plus a
+ * mono footer with the resolved `agnt-rsch@2.1.0` ref. AI gets no new node
+ * color; autonomy/authorship live in the inspector and seals, never here. The
+ * unresolved state reuses the CALL_REF_MISSING badge (canvas issue overlay via
+ * the registry rule), exactly like the call activity.
+ */
+export function AgentTaskShape({ node, selected }: ShapeProps) {
+  const ref = typeof node.properties.agentWorkflowRef === 'string' ? node.properties.agentWorkflowRef : undefined;
+  return (
+    <ActivityBox node={node} selected={selected}>
+      {/* 🤖 own marker — a stroked robot head (traço 1.2), top-left. */}
+      <g transform="translate(8, 6)" fill="none" stroke={theme.textMuted} strokeWidth={1.2} strokeLinecap="round">
+        <rect x={0.5} y={2.5} width={11} height={9} rx={2} />
+        <path d="M 6 2.5 V 0.5" />
+        <circle cx={6} cy={0.5} r={0.9} fill={theme.textMuted} stroke="none" />
+        <circle cx={4} cy={6.5} r={0.9} fill={theme.textMuted} stroke="none" />
+        <circle cx={8} cy={6.5} r={0.9} fill={theme.textMuted} stroke="none" />
+        <path d="M 4 9 H 8" />
+      </g>
+      {ref && (
+        <text
+          x={node.width / 2}
+          y={node.height - 8}
+          textAnchor="middle"
+          fontSize={9}
+          fontFamily="ui-monospace, monospace"
+          fill={theme.textMuted}
+          pointerEvents="none"
+        >
+          {ref.length > 24 ? `${ref.slice(0, 23)}…` : ref}
+        </text>
+      )}
+    </ActivityBox>
+  );
+}
+
 /** Data store: the BPMN cylinder (top ellipse + body rings). */
 export function DataStoreShape({ node, selected }: ShapeProps) {
   const { width, height } = node;

@@ -48,6 +48,7 @@ const MIGRATED = [
   'packages/react/src/canvas/EdgeLabelEditor.tsx',
   'packages/react/src/canvas/NodeLabelEditor.tsx',
   'packages/react/src/copilot/CopilotPanel.tsx',
+  'packages/react/src/agent/AgentStudio.tsx',
   'packages/react/src/simulation/SimulationPanel.tsx',
   'packages/react/src/simulation/GatewayChoiceCard.tsx',
   'packages/react/src/simulation/DecisionInputCard.tsx',
