@@ -17,5 +17,6 @@ export {
   COPILOT_SUMMARY_PROMPT,
   COPILOT_FIX_PROMPT,
   COPILOT_QUERY_PROMPT,
+  COPILOT_PROMPTS,
   type CopilotPromptTemplate,
 } from './prompts.js';

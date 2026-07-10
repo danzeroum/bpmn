@@ -16,7 +16,11 @@ test('C1: draft → applied diagram + mixed authorship + local soundness footer'
   const panel = page.getByTestId('copilot-panel');
   await expect(panel).toBeVisible();
   await expect(page.getByTestId('copilot-pill')).toHaveText('SÓ RASCUNHA');
-  await expect(page.getByTestId('copilot-meta')).toContainText('claude-4 · prompt: copilot-draft v1.0.0');
+  // CP-5 (§1.5): the header reflects the ACTIVE version from the Biblioteca
+  // adapter — "prompt: copilot-draft v1.0.0 ativa".
+  await expect(page.getByTestId('copilot-meta')).toContainText(
+    'claude-4 · prompt: copilot-draft v1.0.0 ativa',
+  );
 
   await panel.locator('textarea').fill('processo de reembolso com aprovação');
   await page.getByTestId('copilot-generate').click();
@@ -125,6 +129,22 @@ test('C6: consulta ao ledger com citações reais; sem registro citável → nã
 
   // Read-only como a C3: a consulta não gerou NENHUMA entrada nova.
   await expect(page.locator('.btv-studio-chip-count').first()).toHaveText('4');
+});
+
+test('CP-5: os templates do copiloto aparecem na Biblioteca como PROMPT DO COPILOTO', async ({
+  page,
+}) => {
+  await page.goto('/?studio=1');
+  // The type chip proves the adapter registered like any other (§1.5).
+  const chip = page.locator('.btv-lib-chip-type[data-adapter="copilot-prompt"]');
+  await expect(chip).toBeVisible();
+  await chip.click();
+  // One card per capability, active shipped version, pt-BR names.
+  await expect(page.getByText('Rascunho do processo (C1)')).toBeVisible();
+  await expect(page.getByText('Consulta ao ledger (C6)')).toBeVisible();
+  await page.getByRole('button', { name: /Rascunho do processo \(C1\)/ }).click();
+  await expect(page.getByText('DETALHE · PROMPT DO COPILOTO')).toBeVisible();
+  await expect(page.getByText(/nova versão promovível/)).toBeVisible();
 });
 
 test('C4: AI text only PRE-FILLS the change_summary — the gate stays ○ until the human commits', async ({

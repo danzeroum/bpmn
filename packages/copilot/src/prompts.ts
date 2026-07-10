@@ -1,10 +1,11 @@
 import type { PromptTemplateRef } from './types.js';
 
 /**
- * The versioned prompt templates for C1/C2 (cerca §1.5 — dogfooding): each is
- * an artifact with an id + version shown in the panel header and recorded in
- * ledger authorship. The full Biblioteca adapter lands in CP-5; the constants
- * here are the single source the panel and the adapter share.
+ * The versioned prompt templates (cerca §1.5 — dogfooding): each is an
+ * artifact with an id + version shown in the panel header and recorded in
+ * ledger authorship. The Biblioteca adapter (CP-5) lists them from
+ * COPILOT_PROMPTS below — the single canonical source the panel, the tests
+ * and the adapter share.
  */
 export interface CopilotPromptTemplate extends PromptTemplateRef {
   /** System prompt sent to the provider. */
@@ -83,3 +84,19 @@ JSON: {"answer": string, "citations": [hash, ...]} — cada afirmação deve ser
 sustentada por hashes de entradas reais do contexto. Se nenhuma entrada
 sustenta a resposta, retorne "citations": [].`,
 };
+
+/**
+ * The canonical registry of every versioned copilot template (cerca §1.5 —
+ * dogfooding): one entry per capability, in the C1..C6 order of §4. This is
+ * the single source the panel, the tests and the Biblioteca adapter (CP-5)
+ * share — a new capability template MUST be added here, and the shipped
+ * version of each entry is, by definition, the ACTIVE one.
+ */
+export const COPILOT_PROMPTS: readonly CopilotPromptTemplate[] = [
+  COPILOT_DRAFT_PROMPT,
+  COPILOT_ADJUST_PROMPT,
+  COPILOT_EXPLAIN_PROMPT,
+  COPILOT_SUMMARY_PROMPT,
+  COPILOT_FIX_PROMPT,
+  COPILOT_QUERY_PROMPT,
+];

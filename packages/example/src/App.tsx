@@ -27,7 +27,11 @@ import { domainExamplePlugin } from '@buildtovalue/domain-example';
 import { healthcarePlugin } from '@buildtovalue/healthcare';
 import { callActivityBindingRule, VersionRegistry } from '@buildtovalue/registry';
 import { soundnessPromotionRule, soundnessRules } from '@buildtovalue/soundness';
-import { replayAnalysisEntry, simulationSessionEntry } from '@buildtovalue/adapters-bpmn';
+import {
+  activeCopilotPromptVersion,
+  replayAnalysisEntry,
+  simulationSessionEntry,
+} from '@buildtovalue/adapters-bpmn';
 import type { AIProvider } from '@buildtovalue/copilot';
 import {
   buildClosedDiagram,
@@ -216,6 +220,11 @@ function CopilotDemo() {
         await ledgerRef.current!.flush();
         return ledgerRef.current!.getEntries().at(-1)?.hash;
       }}
+      // CP-5 (§1.5): the header reflects what the Biblioteca adapter says is
+      // the ACTIVE template version — the same canonical registry.
+      promptStatus={(template) =>
+        activeCopilotPromptVersion(template.id) === template.version ? 'ativa' : undefined
+      }
     />
   );
 }

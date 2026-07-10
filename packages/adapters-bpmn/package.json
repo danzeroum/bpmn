@@ -27,6 +27,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@buildtovalue/copilot": "workspace:*",
     "@buildtovalue/core": "workspace:*",
     "@buildtovalue/library": "workspace:*",
     "@buildtovalue/registry": "workspace:*",

@@ -13,6 +13,7 @@ import { VersionRegistry } from '@buildtovalue/registry';
 import {
   bpmnDiagramAdapter,
   connectorAdapter,
+  copilotPromptAdapter,
   createRecipeAdapter,
   dmnDecisionAdapter,
   latestReplayAnalysis,
@@ -234,6 +235,9 @@ async function buildWorld(): Promise<StudioWorld> {
       policyAdapter(registry),
       dmnDecisionAdapter(registry),
       createRecipeAdapter(),
+      // Handoff 9 CP-5 (§1.5 dogfooding): the copilot's own prompt templates
+      // as "mais um adapter" — type PROMPT DO COPILOTO, shipped version active.
+      copilotPromptAdapter(),
     ],
     candidates: [candidate],
     baseline,
