@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AuditLedger } from '@bpmn-react/core';
+import { AuditLedger } from '@buildtovalue/core';
 import { categorizeEntry, describeEntry, filterEntries } from '../src/index.js';
 
 async function seeded(): Promise<AuditLedger> {

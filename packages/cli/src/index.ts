@@ -7,8 +7,8 @@ import {
   ValidationEngine,
   type BpmnDiff,
   type ValidationResult,
-} from '@bpmn-react/core';
-import { soundnessRules } from '@bpmn-react/soundness';
+} from '@buildtovalue/core';
+import { soundnessRules } from '@buildtovalue/soundness';
 import { loadDiagram } from './io.js';
 
 export * from './io.js';

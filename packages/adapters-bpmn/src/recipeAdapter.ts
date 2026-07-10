@@ -3,12 +3,12 @@ import type {
   ArtifactDetail,
   ArtifactSummary,
   LifecycleStatus,
-} from '@bpmn-react/library';
+} from '@buildtovalue/library';
 
 /**
  * The acid-test fixture (Handoff 6 §1/§9-S2/§10.1): a fake adapter for
  * cooking recipes — an artifact with NO relation to BPMN whatsoever. It
- * imports ONLY from @bpmn-react/library. If the whole Biblioteca works with
+ * imports ONLY from @buildtovalue/library. If the whole Biblioteca works with
  * this adapter alone, without touching library/library-react, the generic
  * architecture holds; any violation is an architecture bug.
  *

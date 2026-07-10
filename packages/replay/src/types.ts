@@ -2,7 +2,7 @@
  * Public value types for the headless replay engine.
  *
  * The engine reasons over an **abstract graph injected by the caller** — it
- * imports nothing from the ecosystem (not even `@bpmn-react/core`), so the same
+ * imports nothing from the ecosystem (not even `@buildtovalue/core`), so the same
  * fitness/heatmap machinery works on any `{ nodes, edges }` (a BPMN model, a
  * future DMN DRD, a fake graph in a test). Everything here is plain JSON.
  */

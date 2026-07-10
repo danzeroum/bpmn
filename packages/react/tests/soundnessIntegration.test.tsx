@@ -6,14 +6,14 @@ import {
   createNode,
   type BpmnDiagram,
   type ValidationRule,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { BpmnDesigner, PromotionPanel, Toolbar } from '../src/index.js';
 
 /**
  * Handoff 4 §C2 — the react side of soundness: the PromotionPanel "Soundness"
  * section and the node issue badges. The tests stub SND_* issues through a
  * plain validation rule (the plugin contract) so this package never depends
- * on @bpmn-react/soundness.
+ * on @buildtovalue/soundness.
  */
 function diagramWithJoin(): BpmnDiagram {
   const diagram = createDiagram({ name: 'Trap' });

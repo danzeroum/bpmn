@@ -1,4 +1,4 @@
-import { computeEntryHash, type AuditEntry, type AuditLedger } from '@bpmn-react/core';
+import { computeEntryHash, type AuditEntry, type AuditLedger } from '@buildtovalue/core';
 
 /**
  * Full re-verification of a hash-chained audit ledger (Handoff 4 §B1).

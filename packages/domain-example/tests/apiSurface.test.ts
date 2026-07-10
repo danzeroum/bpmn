@@ -3,7 +3,7 @@ import * as api from '../src/index.js';
 
 /**
  * Contract test: freezes the runtime public API surface of
- * @bpmn-react/domain-example. See core/tests/apiSurface.test.ts for
+ * @buildtovalue/domain-example. See core/tests/apiSurface.test.ts for
  * rationale.
  */
 const EXPECTED_EXPORTS = [
@@ -24,7 +24,7 @@ const EXPECTED_EXPORTS = [
   'squadNeedsPersonaRule',
 ].sort();
 
-describe('@bpmn-react/domain-example public API surface', () => {
+describe('@buildtovalue/domain-example public API surface', () => {
   it('exports exactly the expected runtime members', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });

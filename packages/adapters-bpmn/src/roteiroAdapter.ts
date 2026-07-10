@@ -3,8 +3,8 @@ import type {
   ArtifactDetail,
   ArtifactSummary,
   LifecycleStatus,
-} from '@bpmn-react/library';
-import { coveragePercent, type SimulationSession } from '@bpmn-react/simulation';
+} from '@buildtovalue/library';
+import { coveragePercent, type SimulationSession } from '@buildtovalue/simulation';
 
 /**
  * A recorded simulation session offered to the Biblioteca as a versioned
@@ -38,7 +38,7 @@ const TOKEN_SVG =
  * Builds a ROTEIRO adapter over a live list of recorded sessions. Pass a getter
  * so the catalog reflects registrations as they happen; call `notifyChanged`
  * after the list grows. Mirrors `recipeAdapter` (self-contained, imports only
- * from `@bpmn-react/library` + the neutral session type).
+ * from `@buildtovalue/library` + the neutral session type).
  */
 export function createRoteiroAdapter(source: () => RoteiroRecord[]): RoteiroAdapter {
   const listeners = new Set<() => void>();

@@ -4,7 +4,7 @@ import {
   createDiagram,
   createNode,
   type BpmnDiagram,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { callActivityBindingRule, resolveCallActivities, VersionRegistry } from '../src/index.js';
 
 async function versionedProcess(

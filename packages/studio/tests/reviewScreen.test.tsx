@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AuditLedger, LifecycleEngine, type UserContext } from '@bpmn-react/core';
-import type { AnchorAdapter, Signer } from '@bpmn-react/identity';
+import { AuditLedger, LifecycleEngine, type UserContext } from '@buildtovalue/core';
+import type { AnchorAdapter, Signer } from '@buildtovalue/identity';
 import { ReviewScreen } from '../src/index.js';
 import { candidateDiagram } from './fixtures.js';
 

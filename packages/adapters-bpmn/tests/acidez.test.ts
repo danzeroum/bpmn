@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
-import { createLibraryCatalog } from '@bpmn-react/library';
+import { createLibraryCatalog } from '@buildtovalue/library';
 import { createRecipeAdapter } from '../src/index.js';
 
 /**
@@ -19,14 +19,14 @@ describe('acid test §10.1 — the library works with the recipe adapter alone',
     const here = dirname(fileURLToPath(import.meta.url));
     const source = readFileSync(join(here, '..', 'src', 'recipeAdapter.ts'), 'utf8');
     for (const match of source.matchAll(/from\s+['"]([^'"]+)['"]/g)) {
-      expect(match[1], `recipeAdapter imports "${match[1]}"`).toBe('@bpmn-react/library');
+      expect(match[1], `recipeAdapter imports "${match[1]}"`).toBe('@buildtovalue/library');
     }
     // apart from comments and the library import specifier, no BPMN
     // vocabulary leaks into the fixture's code
     const code = source
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/\/\/.*$/gm, '')
-      .replaceAll('@bpmn-react/library', '');
+      .replaceAll('@buildtovalue/library', '');
     expect(code).not.toMatch(/bpmn|diagram|registry/i);
   });
 

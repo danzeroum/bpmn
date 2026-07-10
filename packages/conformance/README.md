@@ -1,4 +1,4 @@
-# @bpmn-react/conformance
+# @buildtovalue/conformance
 
 OMG BPMN 2.0 conformance tooling for [bpmn-react](https://github.com/danzeroum/bpmn):
 
@@ -18,4 +18,4 @@ OMG BPMN 2.0 conformance tooling for [bpmn-react](https://github.com/danzeroum/b
   deterministically; CI fails when the committed file goes stale
   (regenerate with `node scripts/gen-conformance.mjs`).
 
-Headless, zero runtime dependencies (consumes only `@bpmn-react/core`). License: Apache-2.0.
+Headless, zero runtime dependencies (consumes only `@buildtovalue/core`). License: Apache-2.0.

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, fireEvent, cleanup } from '@testing-library/react';
-import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@bpmn-react/core';
-import type { Trace } from '@bpmn-react/replay';
+import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@buildtovalue/core';
+import type { Trace } from '@buildtovalue/replay';
 import { BpmnReplay } from '../src/replay/BpmnReplay.js';
 import { diagramToReplayGraph } from '../src/replay/diagramToReplayGraph.js';
 import { formatDuration, heatWidth } from '../src/replay/format.js';

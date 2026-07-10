@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
-import { createDiagram, createNode, type BpmnDiagram } from '@bpmn-react/core';
+import { createDiagram, createNode, type BpmnDiagram } from '@buildtovalue/core';
 import { BpmnDesigner, BpmnViewer, CLOSED_HATCH_PATTERN_ID } from '../src/index.js';
 
 /** Sample with two closed nodes (one closed in the loaded version). */

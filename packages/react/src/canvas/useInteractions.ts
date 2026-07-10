@@ -24,7 +24,7 @@ import {
   type Command,
   type ConnectPayload,
   type Point,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import type { ResizeCorner, SettlingEntry } from '../state/canvasStore.js';

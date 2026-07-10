@@ -1,7 +1,7 @@
 {
-  "name": "@bpmn-react/library",
+  "name": "@buildtovalue/library",
   "version": "1.0.0",
-  "description": "Generic, ecosystem-independent artifact catalog for BuildToValue Studio (Handoff 6 S-1): the ArtifactAdapter contract plus headless search/filter/sort/count logic. Knows nothing about BPMN, DMN or any concrete artifact type — adapters plug in. Workspace-only — the publish scope awaits pendencias.md §1. Zero dependencies, including @bpmn-react/*.",
+  "description": "Generic, ecosystem-independent artifact catalog for BuildToValue Studio (Handoff 6 S-1): the ArtifactAdapter contract plus headless search/filter/sort/count logic. Knows nothing about BPMN, DMN or any concrete artifact type — adapters plug in. Zero dependencies, including @buildtovalue/*.",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
@@ -40,6 +40,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "private": true
+  }
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
-import { createDiagram, createNode } from '@bpmn-react/core';
+import { createDiagram, createNode } from '@buildtovalue/core';
 import { BpmnViewer } from '../src/index.js';
 
 /**

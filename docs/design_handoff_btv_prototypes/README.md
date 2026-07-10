@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-Dois protótipos **interativos e navegáveis** que materializam os handoffs anteriores em cenários reais de uso. Eles são a referência de UX para as PRs 4–8 (Handoff 2) e para a futura camada de aplicação sobre `@bpmn-react/react` + `@bpmn-react/registry`:
+Dois protótipos **interativos e navegáveis** que materializam os handoffs anteriores em cenários reais de uso. Eles são a referência de UX para as PRs 4–8 (Handoff 2) e para a futura camada de aplicação sobre `@buildtovalue/react` + `@buildtovalue/registry`:
 
 1. **Designer** (`Prototipo Designer BTV.dc.html`) — o editor com processo real "Onboarding de Cliente": pool/lanes humano × IA, shapes btv, boundary timer (F6), os 4 edges do domínio, selo de vigência, fluxo de promoção com gates e integração conceitual com as specs OMG vizinhas (DMN, BMM, VDML, PPMN).
 2. **Biblioteca** (`Biblioteca de Templates BTV.dc.html`) — a galeria de artefatos versionáveis com selos de vigência por versão, filtros por status, e drawer de detalhe com linha do tempo, proveniência e execuções presas.
@@ -117,7 +117,7 @@ Fluxos: Onboarding (candidata·piloto), Renovação de Contrato (ativa·geral·1
 | Halo de seleção + portas + sombras | `NodeRenderer`/`overlays` + `Defs` (PR4) |
 | Boundary timer | F6 (PR8+) — ancoragem paramétrica |
 | Caixas DMN/VDML/BMM/PPMN do inspector | `PropertiesPanel` — seções plugáveis por tipo (novo ponto de extensão no plugin: `inspectorSections?`) |
-| Biblioteca inteira | camada de aplicação sobre `@bpmn-react/registry` (fora de packages/react; demo em `packages/example` serve de host) |
+| Biblioteca inteira | camada de aplicação sobre `@buildtovalue/registry` (fora de packages/react; demo em `packages/example` serve de host) |
 
 ## 7. Tokens usados (além dos handoffs 1–2)
 Toast: fundo `#262220`, texto `#ECE8E1`, check `#57B895`, hash `#CBA84B`. Aviso âmbar: `#FDF6E8` borda `#E8D9AE` texto `#7A611E`. Fontes: Space Grotesk (UI) + IBM Plex Mono (semver, hashes, kickers, specs). Kickers: mono 9–10px, letter-spacing 1.5–2px, cor `#9A7B1E`.

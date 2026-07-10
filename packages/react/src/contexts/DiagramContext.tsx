@@ -15,7 +15,7 @@ import {
   type Command,
   type RuleEngine,
   type RuleVerdict,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { deriveAstarRoutes } from '../canvas/routeEdge.js';
 import type { EdgeRouterFn } from '../plugins/types.js';
 

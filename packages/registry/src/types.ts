@@ -1,4 +1,4 @@
-import type { BpmnDiagram, BpmnVersion, VersionStatus } from '@bpmn-react/core';
+import type { BpmnDiagram, BpmnVersion, VersionStatus } from '@buildtovalue/core';
 
 export type DateInput = Date | string;
 

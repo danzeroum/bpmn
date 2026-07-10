@@ -7,7 +7,7 @@ import {
   ValidationEngine,
   type BpmnDiagram,
   type ValidationIssue,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { analyzeSoundness, soundnessPromotionRule, soundnessRules, SOUNDNESS_RULES } from '../src/index.js';
 
 /** Terse builder: nodes as `id:type`, edges as `source->target`. */

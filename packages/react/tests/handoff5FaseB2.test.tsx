@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
-import { createDiagram, createNode, type BpmnDiagram, type BpmnNode } from '@bpmn-react/core';
+import { createDiagram, createNode, type BpmnDiagram, type BpmnNode } from '@buildtovalue/core';
 import { BpmnDesigner, PropertiesPanel, useDismissal } from '../src/index.js';
 
 function twoTasksDiagram(): BpmnDiagram {

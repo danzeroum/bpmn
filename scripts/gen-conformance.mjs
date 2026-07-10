@@ -1,6 +1,6 @@
 /**
- * Regenerates CONFORMANCE.md from the matrix in @bpmn-react/conformance.
- * Requires the package to be built first (pnpm --filter @bpmn-react/conformance build).
+ * Regenerates CONFORMANCE.md from the matrix in @buildtovalue/conformance.
+ * Requires the package to be built first (pnpm --filter @buildtovalue/conformance build).
  *
  *   node scripts/gen-conformance.mjs
  *

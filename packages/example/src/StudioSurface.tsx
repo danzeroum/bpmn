@@ -8,8 +8,8 @@ import {
   type BpmnEdge,
   type BpmnNode,
   type UserContext,
-} from '@bpmn-react/core';
-import { VersionRegistry } from '@bpmn-react/registry';
+} from '@buildtovalue/core';
+import { VersionRegistry } from '@buildtovalue/registry';
 import {
   bpmnDiagramAdapter,
   connectorAdapter,
@@ -20,13 +20,13 @@ import {
   policyAdapter,
   promptAdapter,
   replayAnalysisEntry,
-} from '@bpmn-react/adapters-bpmn';
-import type { ArtifactAction, ArtifactAdapter, ArtifactRef, LibraryQuery, LifecycleStatus, LibrarySort } from '@bpmn-react/library';
-import type { Signer } from '@bpmn-react/identity';
-import { createGitAnchor, type GitAnchorTransport } from '@bpmn-react/anchor-git';
-import { StudioShell } from '@bpmn-react/studio';
-import '@bpmn-react/library-react/styles.css';
-import '@bpmn-react/studio/styles.css';
+} from '@buildtovalue/adapters-bpmn';
+import type { ArtifactAction, ArtifactAdapter, ArtifactRef, LibraryQuery, LifecycleStatus, LibrarySort } from '@buildtovalue/library';
+import type { Signer } from '@buildtovalue/identity';
+import { createGitAnchor, type GitAnchorTransport } from '@buildtovalue/anchor-git';
+import { StudioShell } from '@buildtovalue/studio';
+import '@buildtovalue/library-react/styles.css';
+import '@buildtovalue/studio/styles.css';
 
 /**
  * `?studio=1` — the full BuildToValue Studio (Handoff 6 S-4/S-5/S-6):

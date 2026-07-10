@@ -3,7 +3,7 @@ import * as api from '../src/index.js';
 
 /**
  * Contract test: freezes the *runtime* public API surface of
- * @bpmn-react/core (classes, functions, consts — type-only exports are
+ * @buildtovalue/core (classes, functions, consts — type-only exports are
  * erased at compile time and never appear here, so type-level breaks are
  * caught separately by `tsc` in consuming packages).
  *
@@ -132,7 +132,7 @@ const EXPECTED_EXPORTS = [
   'waypointsToPath',
 ].sort();
 
-describe('@bpmn-react/core public API surface', () => {
+describe('@buildtovalue/core public API surface', () => {
   it('exports exactly the expected runtime members', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });

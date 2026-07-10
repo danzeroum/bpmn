@@ -6,7 +6,7 @@ import {
   BpmnXmlConverter,
   createDefaultRegistry,
   normalizeForDiff,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 
 /**
  * Round-trips a corpus of **real** third-party BPMN exports (bpmn-js-examples,

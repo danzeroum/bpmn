@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LifecycleEngine, type UserContext } from '@bpmn-react/core';
+import { LifecycleEngine, type UserContext } from '@buildtovalue/core';
 import { approvalsProgress, pendingPromotions } from '../src/index.js';
 import { candidateDiagram } from './fixtures.js';
 

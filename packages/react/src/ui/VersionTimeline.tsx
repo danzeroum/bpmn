@@ -1,9 +1,9 @@
-import type { VersionStatus } from '@bpmn-react/core';
+import type { VersionStatus } from '@buildtovalue/core';
 import { SEAL_LABELS } from './StatusBadge.js';
 
 /**
  * One entry on the timeline. Deliberately a plain, self-contained shape —
- * the component does **not** import `@bpmn-react/registry`, so the React
+ * the component does **not** import `@buildtovalue/registry`, so the React
  * layer stays decoupled from governance storage. A host maps its registry
  * entries (or any version source) to this shape.
  */

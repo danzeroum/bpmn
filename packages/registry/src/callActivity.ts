@@ -1,4 +1,4 @@
-import { calledElementOf, type BpmnDiagram, type ValidationRule } from '@bpmn-react/core';
+import { calledElementOf, type BpmnDiagram, type ValidationRule } from '@buildtovalue/core';
 import type { VersionRegistry } from './VersionRegistry.js';
 import type { DateInput, PublicationTarget, RegistryEntry } from './types.js';
 

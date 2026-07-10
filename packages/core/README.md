@@ -1,4 +1,4 @@
-# @bpmn-react/core
+# @buildtovalue/core
 
 Zero-dependency BPMN domain engine (pure TypeScript, browser/Node/worker):
 
@@ -15,7 +15,7 @@ Zero-dependency BPMN domain engine (pure TypeScript, browser/Node/worker):
   (XXE-safe bundled XML parser)
 
 ```ts
-import { createDiagram, CommandStack, addNodeCommand, createNode } from '@bpmn-react/core';
+import { createDiagram, CommandStack, addNodeCommand, createNode } from '@buildtovalue/core';
 
 const stack = new CommandStack(createDiagram({ name: 'Flow' }));
 stack.execute(addNodeCommand(createNode({ type: 'startEvent' })));

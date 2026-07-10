@@ -1,4 +1,4 @@
-import type { BpmnDiagram, LifecycleEngine, PromotionGate, UserContext } from '@bpmn-react/core';
+import type { BpmnDiagram, LifecycleEngine, PromotionGate, UserContext } from '@buildtovalue/core';
 
 /**
  * One pending promotion request in the approver's queue (Handoff 6 §5).

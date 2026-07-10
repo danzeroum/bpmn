@@ -6,7 +6,7 @@ import {
   createEdge,
   createNode,
   type BpmnDiagram,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { BpmnEditor, DiffView, StatusBadge, BpmnDesigner } from '../src/index.js';
 
 function buildDiagram(): BpmnDiagram {

@@ -1,5 +1,5 @@
 /**
- * Public contracts for `@bpmn-react/identity` (Handoff 8 §3). These interfaces
+ * Public contracts for `@buildtovalue/identity` (Handoff 8 §3). These interfaces
  * ARE the public API — pinned by `tests/apiSurface.test.ts`.
  *
  * Cerca §1.1 (nunca PKI): the library never generates, stores or manages keys.

@@ -1,4 +1,4 @@
-import { ShapeLabel, theme, type ShapeProps } from '@bpmn-react/react';
+import { ShapeLabel, theme, type ShapeProps } from '@buildtovalue/react';
 
 /**
  * DRD shapes (Handoff 5 §4.1) — the DMN family claims the 185° teal step of

@@ -1,5 +1,5 @@
-import type { AuditEntry, AuditEntryInput, UserContext } from '@bpmn-react/core';
-import type { ReplayAnalysis } from '@bpmn-react/replay';
+import type { AuditEntry, AuditEntryInput, UserContext } from '@buildtovalue/core';
+import type { ReplayAnalysis } from '@buildtovalue/replay';
 
 /**
  * Host adapters connecting a headless replay {@link ReplayAnalysis} to

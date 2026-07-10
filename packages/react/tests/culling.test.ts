@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { BpmnEdge, BpmnNode } from '@bpmn-react/core';
+import type { BpmnEdge, BpmnNode } from '@buildtovalue/core';
 import type { Viewport } from '../src/state/canvasStore.js';
 import { CULL_THRESHOLD, cullToViewport } from '../src/canvas/culling.js';
 

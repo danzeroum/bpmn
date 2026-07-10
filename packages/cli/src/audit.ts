@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import type { AuditEntry } from '@bpmn-react/core';
-import { toXES, verifyLedger, type VerificationReport } from '@bpmn-react/audit';
+import type { AuditEntry } from '@buildtovalue/core';
+import { toXES, verifyLedger, type VerificationReport } from '@buildtovalue/audit';
 import { loadRegistry } from './registry.js';
 
 /**

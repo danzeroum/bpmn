@@ -4,10 +4,10 @@ import {
   createEdge,
   createNode,
   type BpmnDiagram,
-} from '@bpmn-react/core';
-import { DOMAIN_NODE_TYPES } from '@bpmn-react/domain-example';
-import { DMN_NODE_TYPES, type DecisionTable } from '@bpmn-react/dmn';
-import { HC_NODE_TYPES } from '@bpmn-react/healthcare';
+} from '@buildtovalue/core';
+import { DOMAIN_NODE_TYPES } from '@buildtovalue/domain-example';
+import { DMN_NODE_TYPES, type DecisionTable } from '@buildtovalue/dmn';
+import { HC_NODE_TYPES } from '@buildtovalue/healthcare';
 
 /**
  * The demo credit decision ("First · 4 regras · 2→1"), owned by the DRD

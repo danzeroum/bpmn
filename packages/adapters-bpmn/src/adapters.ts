@@ -1,4 +1,4 @@
-import type { VersionRegistry } from '@bpmn-react/registry';
+import type { VersionRegistry } from '@buildtovalue/registry';
 import { classifyDiagram } from './classify.js';
 import {
   createRegistryAdapter,

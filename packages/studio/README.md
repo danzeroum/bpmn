@@ -1,4 +1,4 @@
-# @bpmn-react/studio
+# @buildtovalue/studio
 
 BuildToValue Studio — the application layer for the three no-screen personas
 (Handoff 6, S-4/S-5): shell + the generic Biblioteca screen + the Revisão do
@@ -62,9 +62,9 @@ filter bar + vertical trail (max 720px) + detail column (340px):
 ## Styles
 
 ```ts
-import '@bpmn-react/react/styles.css';
-import '@bpmn-react/library-react/styles.css';
-import '@bpmn-react/studio/styles.css';
+import '@buildtovalue/react/styles.css';
+import '@buildtovalue/library-react/styles.css';
+import '@buildtovalue/studio/styles.css';
 ```
 
 Seal colors come exclusively from the canonical `--bpmnr-status-*` tokens

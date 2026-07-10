@@ -1,4 +1,4 @@
-# @bpmn-react/library-react
+# @buildtovalue/library-react
 
 React UI for the generic artifact library — the visible half of the
 BuildToValue Studio Biblioteca (Handoff 6, S-3; visual spec Handoff 3 §5).
@@ -10,7 +10,7 @@ BuildToValue Studio Biblioteca (Handoff 6, S-3; visual spec Handoff 3 §5).
 
 `<LibraryView adapters={...} onAction={...} initialQuery? onQueryChange? />` —
 a gallery driven exclusively by the `ArtifactAdapter` contract from
-`@bpmn-react/library`:
+`@buildtovalue/library`:
 
 - **status chips**: the fixed six-state `LifecycleStatus` vocabulary, with
   live counts;
@@ -32,13 +32,13 @@ No prop knows concrete artifact types. The same acid-test fixture from S-2
 ## Seals
 
 Cards, drawer and timeline use the SAME `StatusBadge` from
-`@bpmn-react/react` in its standalone mode (`seal` prop — Handoff 6 §10.6)
+`@buildtovalue/react` in its standalone mode (`seal` prop — Handoff 6 §10.6)
 and the canonical `--bpmnr-status-*` tokens. Import the stylesheets in
 order:
 
 ```ts
-import '@bpmn-react/react/styles.css';
-import '@bpmn-react/library-react/styles.css';
+import '@buildtovalue/react/styles.css';
+import '@buildtovalue/library-react/styles.css';
 ```
 
 ## URL state (§10.7)

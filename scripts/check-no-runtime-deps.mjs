@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Enforces the zero-runtime-dependencies policy: publishable packages must
- * declare no `dependencies` other than workspace-internal @bpmn-react/* links.
+ * declare no `dependencies` other than workspace-internal @buildtovalue/* links.
  * `react`/`react-dom` are allowed only as peerDependencies.
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
@@ -16,7 +16,7 @@ for (const name of readdirSync(packagesDir)) {
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
   if (pkg.private) continue; // example app is exempt
   const deps = Object.keys(pkg.dependencies ?? {});
-  const external = deps.filter((d) => !d.startsWith('@bpmn-react/'));
+  const external = deps.filter((d) => !d.startsWith('@buildtovalue/'));
   if (external.length > 0) {
     failures.push(`${pkg.name}: forbidden runtime dependencies: ${external.join(', ')}`);
   }

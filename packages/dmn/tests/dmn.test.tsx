@@ -7,8 +7,8 @@ import {
   createDefaultRegistry,
   normalizeForDiff,
   type BpmnDiagram,
-} from '@bpmn-react/core';
-import { BpmnDesigner, BpmnViewer, Palette, resolveEditorConfig } from '@bpmn-react/react';
+} from '@buildtovalue/core';
+import { BpmnDesigner, BpmnViewer, Palette, resolveEditorConfig } from '@buildtovalue/react';
 import {
   DMN_NODE_TYPES,
   DmnXmlConverter,

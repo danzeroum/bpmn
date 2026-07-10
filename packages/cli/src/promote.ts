@@ -5,7 +5,7 @@ import {
   LifecycleEngine,
   type BpmnDiagram,
   type VersionStatus,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { loadDiagram } from './io.js';
 import { loadRegistry, saveRegistry } from './registry.js';
 

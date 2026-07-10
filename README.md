@@ -29,31 +29,31 @@ What makes it different from generic BPMN editors:
 
 | Package | Description |
 |---|---|
-| [`@bpmn-react/core`](packages/core) | Domain engine: model, events, commands, lifecycle, rules, validation, diff, audit, geometry, XML. Pure TypeScript, runs headless (browser, Node, workers). |
-| [`@bpmn-react/react`](packages/react) | React layer: SVG canvas, shapes, gestures (drag/connect/zoom/pan), palette, inspector, minimap, diff view. Peer deps: `react`, `react-dom`. |
-| [`@bpmn-react/registry`](packages/registry) | Headless version governance: queryable registry with temporal validity (`activeAt`), publication channels/environments, diff/lineage, dual changelog and execution pinning (`bindRun`). |
-| [`@bpmn-react/domain-example`](packages/domain-example) | Example domain plugin (squads, personas, gates, prompts, connectors, deliverables) showing how to extend the core. |
-| [`@bpmn-react/conformance`](packages/conformance) | OMG conformance tooling: interoperability corpus (50+ files), element-by-element matrix, `certifyXml`. |
-| [`@bpmn-react/soundness`](packages/soundness) | Structural soundness analysis: deadlock/livelock/dead-branch rules over the process graph (O(V+E), scope-aware), plugin-compatible. |
-| [`@bpmn-react/audit`](packages/audit) | Demonstrable integrity: hash-chain ledger verification (`verifyLedger`), canonical promotion attestations (`attestVersion`), XES 2.0 export for process mining (`toXES`). |
-| [`@bpmn-react/dmn`](packages/dmn) | DMN family (wheel step 185°): DRD node types/shapes, requirement edges (straight routing) and a DMN 1.3+ XML converter. Workspace-only until the npm-scope decision (pendências §1). |
-| [`@bpmn-react/healthcare`](packages/healthcare) | Healthcare pack (wheel step 305°): clinical vocabulary mapped to interoperable BPMN (`bpmnr:meta` preserves identity) with visible validation for unlinked clinical decisions. Workspace-only until the npm-scope decision (pendências §1). |
-| [`@bpmn-react/library`](packages/library) | Generic artifact catalog for BuildToValue Studio: `ArtifactAdapter` contract + headless search/filter/sort — knows nothing about BPMN; adapters plug in. Workspace-only until the npm-scope decision (pendências §1). |
-| [`@bpmn-react/library-react`](packages/library-react) | React UI for the generic library: gallery with status/type chips, search, cards and detail drawer — driven exclusively by the adapter contract. Workspace-only until the npm-scope decision (pendências §1). |
-| [`@bpmn-react/adapters-bpmn`](packages/adapters-bpmn) | Concrete `ArtifactAdapter`s over the registry (flow, persona, prompt, connector, policy, DMN decision) + headless SVG thumbnails + the "recipe" acid-test fixture. Workspace-only until the npm-scope decision (pendências §1). |
-| [`@bpmn-react/studio`](packages/studio) | BuildToValue Studio: shell with hash navigation + Revisão do Aprovador (engine-derived queue, real verification calls, immutable ledger decisions — approving never activates). Workspace-only until the npm-scope decision (pendências §1). |
-| [`@bpmn-react/cli`](packages/cli) | Headless CLI: `validate`, `certify`, `export`, `diff`, registry/governance commands. |
-| [`@bpmn-react/example`](packages/example) | Demo app (Vite) with the full designer. |
+| [`@buildtovalue/core`](packages/core) | Domain engine: model, events, commands, lifecycle, rules, validation, diff, audit, geometry, XML. Pure TypeScript, runs headless (browser, Node, workers). |
+| [`@buildtovalue/react`](packages/react) | React layer: SVG canvas, shapes, gestures (drag/connect/zoom/pan), palette, inspector, minimap, diff view. Peer deps: `react`, `react-dom`. |
+| [`@buildtovalue/registry`](packages/registry) | Headless version governance: queryable registry with temporal validity (`activeAt`), publication channels/environments, diff/lineage, dual changelog and execution pinning (`bindRun`). |
+| [`@buildtovalue/domain-example`](packages/domain-example) | Example domain plugin (squads, personas, gates, prompts, connectors, deliverables) showing how to extend the core. |
+| [`@buildtovalue/conformance`](packages/conformance) | OMG conformance tooling: interoperability corpus (50+ files), element-by-element matrix, `certifyXml`. |
+| [`@buildtovalue/soundness`](packages/soundness) | Structural soundness analysis: deadlock/livelock/dead-branch rules over the process graph (O(V+E), scope-aware), plugin-compatible. |
+| [`@buildtovalue/audit`](packages/audit) | Demonstrable integrity: hash-chain ledger verification (`verifyLedger`), canonical promotion attestations (`attestVersion`), XES 2.0 export for process mining (`toXES`). |
+| [`@buildtovalue/dmn`](packages/dmn) | DMN family (wheel step 185°): DRD node types/shapes, requirement edges (straight routing) and a DMN 1.3+ XML converter. Workspace-only until the npm-scope decision (pendências §1). |
+| [`@buildtovalue/healthcare`](packages/healthcare) | Healthcare pack (wheel step 305°): clinical vocabulary mapped to interoperable BPMN (`bpmnr:meta` preserves identity) with visible validation for unlinked clinical decisions. Workspace-only until the npm-scope decision (pendências §1). |
+| [`@buildtovalue/library`](packages/library) | Generic artifact catalog for BuildToValue Studio: `ArtifactAdapter` contract + headless search/filter/sort — knows nothing about BPMN; adapters plug in. Workspace-only until the npm-scope decision (pendências §1). |
+| [`@buildtovalue/library-react`](packages/library-react) | React UI for the generic library: gallery with status/type chips, search, cards and detail drawer — driven exclusively by the adapter contract. Workspace-only until the npm-scope decision (pendências §1). |
+| [`@buildtovalue/adapters-bpmn`](packages/adapters-bpmn) | Concrete `ArtifactAdapter`s over the registry (flow, persona, prompt, connector, policy, DMN decision) + headless SVG thumbnails + the "recipe" acid-test fixture. Workspace-only until the npm-scope decision (pendências §1). |
+| [`@buildtovalue/studio`](packages/studio) | BuildToValue Studio: shell with hash navigation + Revisão do Aprovador (engine-derived queue, real verification calls, immutable ledger decisions — approving never activates). Workspace-only until the npm-scope decision (pendências §1). |
+| [`@buildtovalue/cli`](packages/cli) | Headless CLI: `validate`, `certify`, `export`, `diff`, registry/governance commands. |
+| [`@buildtovalue/example`](packages/example) | Demo app (Vite) with the full designer. |
 
 ## Quick start
 
 ```bash
-pnpm add @bpmn-react/core @bpmn-react/react
+pnpm add @buildtovalue/core @buildtovalue/react
 ```
 
 ```tsx
-import { createDiagram } from '@bpmn-react/core';
-import { BpmnDesigner } from '@bpmn-react/react';
+import { createDiagram } from '@buildtovalue/core';
+import { BpmnDesigner } from '@buildtovalue/react';
 
 const diagram = createDiagram({ name: 'Order fulfilment' });
 
@@ -65,7 +65,7 @@ export function App() {
 Read-only rendering:
 
 ```tsx
-import { BpmnViewer } from '@bpmn-react/react';
+import { BpmnViewer } from '@buildtovalue/react';
 
 <BpmnViewer diagram={diagram} />;
 ```
@@ -78,7 +78,7 @@ pnpm build          # build all packages
 pnpm test           # unit tests (Vitest)
 pnpm typecheck
 pnpm lint
-pnpm --filter @bpmn-react/example dev   # run the demo app
+pnpm --filter @buildtovalue/example dev   # run the demo app
 ```
 
 ## Documentation

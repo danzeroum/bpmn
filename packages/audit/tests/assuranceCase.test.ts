@@ -6,7 +6,7 @@ import {
   createDiagram,
   createNode,
   type BpmnDiagram,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import {
   buildAssuranceCase,
   EVIDENCE_COLLAPSE_THRESHOLD,

@@ -39,7 +39,7 @@ export interface AuditSink {
 
 /**
  * The chain's hash recipe — exported so external verifiers (e.g.
- * `@bpmn-react/audit`'s `verifyLedger`) recompute entries against the exact
+ * `@buildtovalue/audit`'s `verifyLedger`) recompute entries against the exact
  * same bytes the ledger signed. Changing this breaks every existing chain.
  */
 export async function computeEntryHash(entry: Omit<AuditEntry, 'hash'>): Promise<string> {

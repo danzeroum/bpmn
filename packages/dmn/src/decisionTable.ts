@@ -4,7 +4,7 @@ import {
   updateNodeCommand,
   type BpmnNode,
   type Command,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 
 /** DMN hit policies with their effect phrases (Handoff 5 §4.2 menu). */
 export const HIT_POLICIES = {

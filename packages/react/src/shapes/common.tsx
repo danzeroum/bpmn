@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { activityMarkerOf } from '@bpmn-react/core';
+import { activityMarkerOf } from '@buildtovalue/core';
 import type { ShapeProps } from '../plugins/types.js';
 
 /**

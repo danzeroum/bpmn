@@ -1,7 +1,7 @@
 {
-  "name": "@bpmn-react/library-react",
+  "name": "@buildtovalue/library-react",
   "version": "1.0.0",
-  "description": "React UI for the generic BuildToValue library (Handoff 6 S-3): gallery with status/type filter chips, search, artifact cards and the detail drawer — all generic, driven exclusively by the ArtifactAdapter contract. Workspace-only — the publish scope awaits pendencias.md §1. Zero runtime dependencies beyond @bpmn-react/*.",
+  "description": "React UI for the generic BuildToValue library (Handoff 6 S-3): gallery with status/type filter chips, search, artifact cards and the detail drawer — all generic, driven exclusively by the ArtifactAdapter contract. Zero runtime dependencies beyond @buildtovalue/*.",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
@@ -32,11 +32,11 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@bpmn-react/library": "workspace:*",
-    "@bpmn-react/react": "workspace:*"
+    "@buildtovalue/library": "workspace:*",
+    "@buildtovalue/react": "workspace:*"
   },
   "devDependencies": {
-    "@bpmn-react/adapters-bpmn": "workspace:*"
+    "@buildtovalue/adapters-bpmn": "workspace:*"
   },
   "keywords": [
     "catalog",
@@ -52,6 +52,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "private": true
+  }
 }

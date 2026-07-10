@@ -4,8 +4,8 @@ import {
   type ApprovalRecord,
   type AuditEntry,
   type BpmnDiagram,
-} from '@bpmn-react/core';
-import { verificationState, type AnchorState, type VerificationState } from '@bpmn-react/identity';
+} from '@buildtovalue/core';
+import { verificationState, type AnchorState, type VerificationState } from '@buildtovalue/identity';
 import { verifyLedger, type LedgerLike, type VerificationReport } from './verify.js';
 import { collectSignedApprovals, type PublicKeyResolver } from './signatures.js';
 

@@ -7,8 +7,8 @@ import {
   createDiagram,
   createNode,
   type BpmnDiagram,
-} from '@bpmn-react/core';
-import { BpmnDesigner, PropertiesPanel } from '@bpmn-react/react';
+} from '@buildtovalue/core';
+import { BpmnDesigner, PropertiesPanel } from '@buildtovalue/react';
 import {
   createDecisionCommand,
   createDecisionTable,

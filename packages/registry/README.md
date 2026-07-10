@@ -1,7 +1,7 @@
-# @bpmn-react/registry
+# @buildtovalue/registry
 
 Headless **version governance** for bpmn-react — the queryable layer over the core lifecycle.
-Zero runtime dependencies (depends only on `@bpmn-react/core`).
+Zero runtime dependencies (depends only on `@buildtovalue/core`).
 
 The core `LifecycleEngine` governs *how* a version moves through
 `draft → test → candidate → active → deprecated → retired`. This package records the resulting
@@ -13,7 +13,7 @@ immutable versions and answers the audit questions the lifecycle alone can't:
 - **"Which exact version produced this delivery?"** — execution pinning (`bindRun`).
 
 ```ts
-import { VersionRegistry, bindRun } from '@bpmn-react/registry';
+import { VersionRegistry, bindRun } from '@buildtovalue/registry';
 
 const registry = new VersionRegistry({ sink: myDatabaseSink }); // sink optional
 

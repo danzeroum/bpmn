@@ -1,6 +1,6 @@
-import type { BpmnNode } from '@bpmn-react/core';
-import type { ArtifactDetail, ArtifactSummary } from '@bpmn-react/library';
-import type { VersionRegistry } from '@bpmn-react/registry';
+import type { BpmnNode } from '@buildtovalue/core';
+import type { ArtifactDetail, ArtifactSummary } from '@buildtovalue/library';
+import type { VersionRegistry } from '@buildtovalue/registry';
 import {
   logicalArtifacts,
   relevantEntry,
@@ -17,7 +17,7 @@ import { decisionThumbnail } from './thumbnails.js';
  * `<diagramId>::<nodeId>`.
  *
  * Deliberately duck-typed on the DMN vocabulary (`dmn:decision` +
- * `properties.decisionTable`) instead of importing @bpmn-react/dmn: the dmn
+ * `properties.decisionTable`) instead of importing @buildtovalue/dmn: the dmn
  * package bundles React components, and this adapter must stay headless.
  * When the npm-scope decision lands, this file can move into the dmn package
  * — the end state the handoff describes ("<scope>/dmn entrega seu próprio

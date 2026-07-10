@@ -4,8 +4,8 @@ import {
   waypointsToPath,
   type BpmnDiagram,
   type BpmnNode,
-} from '@bpmn-react/core';
-import type { ThumbnailSpec } from '@bpmn-react/library';
+} from '@buildtovalue/core';
+import type { ThumbnailSpec } from '@buildtovalue/library';
 
 /**
  * Headless mini-flow renderer: the adapter draws (Handoff 6 §3.1), the

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { AuditLedger, LifecycleEngine, type UserContext } from '@bpmn-react/core';
-import type { SignedApproval } from '@bpmn-react/identity';
+import { AuditLedger, LifecycleEngine, type UserContext } from '@buildtovalue/core';
+import type { SignedApproval } from '@buildtovalue/identity';
 import {
   APPROVAL_RECORDED,
   PROMOTION_REJECTED,

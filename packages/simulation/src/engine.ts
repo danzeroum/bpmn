@@ -1,4 +1,4 @@
-import type { BpmnDiagram } from '@bpmn-react/core';
+import type { BpmnDiagram } from '@buildtovalue/core';
 import { buildSimGraph, type SimGraph } from './graph.js';
 import { computeDominators, dominates } from './dominators.js';
 import type {

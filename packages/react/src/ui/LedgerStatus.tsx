@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 /**
- * Structural mirror of `@bpmn-react/audit`'s VerificationReport — kept as a
+ * Structural mirror of `@buildtovalue/audit`'s VerificationReport — kept as a
  * local type so the react layer depends only on core; the host passes the
  * verifier in (same inversion as the registry in the PromotionPanel).
  */

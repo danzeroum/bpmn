@@ -4,7 +4,7 @@ import type { AggregatedLog } from './types.js';
  * A serializable governance summary of a replay (Handoff 7B-3): the real
  * bottleneck, fitness and the top deviation for one version, plus a
  * ready-to-render `headline`. Neutral JSON — the host attaches it to a
- * promotion request and writes it to the ledger by injection; `@bpmn-react/
+ * promotion request and writes it to the ledger by injection; `@buildtovalue/
  * replay` never imports audit/registry.
  */
 export interface ReplayAnalysis {

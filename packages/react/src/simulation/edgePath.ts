@@ -3,7 +3,7 @@ import {
   type BpmnEdge,
   type BpmnNode,
   type EdgeGeometry,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import type { EdgeRouterFn } from '../plugins/types.js';
 import { EDGE_CORNER_RADIUS } from '../shapes/common.js';
 

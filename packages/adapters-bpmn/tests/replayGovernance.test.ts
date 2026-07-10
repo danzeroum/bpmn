@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { AuditLedger } from '@bpmn-react/core';
-import type { ReplayAnalysis } from '@bpmn-react/replay';
+import { AuditLedger } from '@buildtovalue/core';
+import type { ReplayAnalysis } from '@buildtovalue/replay';
 import {
   latestReplayAnalysis,
   replayAnalysisEntry,

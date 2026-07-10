@@ -1,7 +1,7 @@
 {
-  "name": "@bpmn-react/dmn",
+  "name": "@buildtovalue/dmn",
   "version": "1.0.0",
-  "description": "DMN family for bpmn-react (Handoff 5, wheel degree 185): DRD node types and shapes (decision, inputData, knowledgeSource, businessKnowledgeModel), requirement edges (straight routing) and a DMN 1.4 XML converter. Workspace-only \u2014 the publish scope awaits pendencias.md \u00a71. Zero runtime dependencies beyond @bpmn-react/*.",
+  "description": "DMN family for bpmn-react (Handoff 5, wheel degree 185): DRD node types and shapes (decision, inputData, knowledgeSource, businessKnowledgeModel), requirement edges (straight routing) and a DMN 1.4 XML converter. Zero runtime dependencies beyond @buildtovalue/*.",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
@@ -30,8 +30,8 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@bpmn-react/core": "workspace:*",
-    "@bpmn-react/react": "workspace:*"
+    "@buildtovalue/core": "workspace:*",
+    "@buildtovalue/react": "workspace:*"
   },
   "repository": {
     "type": "git",
@@ -47,6 +47,5 @@
     "decision-model",
     "bpmn",
     "omg"
-  ],
-  "private": true
+  ]
 }

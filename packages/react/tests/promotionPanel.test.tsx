@@ -6,13 +6,13 @@ import {
   createNode,
   type BpmnDiagram,
   type UserContext,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import {
   buildApprovalPayload,
   signApproval,
   type SignedApproval,
   type Signer,
-} from '@bpmn-react/identity';
+} from '@buildtovalue/identity';
 import type { BpmnPlugin, PromotionPanelProps } from '../src/index.js';
 import { BpmnDesigner, PromotionPanel } from '../src/index.js';
 

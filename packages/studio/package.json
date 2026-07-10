@@ -1,7 +1,7 @@
 {
-  "name": "@bpmn-react/studio",
+  "name": "@buildtovalue/studio",
   "version": "1.0.0",
-  "description": "BuildToValue Studio (Handoff 6 S-4): the application layer for the no-screen personas — shell with hash navigation (no external router), the generic Biblioteca screen and the Revisão do Aprovador (engine-derived queue, real verification calls, immutable ledger decisions; approving never activates). Workspace-only — the publish scope awaits pendencias.md §1. Zero runtime dependencies beyond @bpmn-react/*.",
+  "description": "BuildToValue Studio (Handoff 6 S-4): the application layer for the no-screen personas — shell with hash navigation (no external router), the generic Biblioteca screen and the Revisão do Aprovador (engine-derived queue, real verification calls, immutable ledger decisions; approving never activates). Zero runtime dependencies beyond @buildtovalue/*.",
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
@@ -32,18 +32,18 @@
     "react": ">=18"
   },
   "dependencies": {
-    "@bpmn-react/audit": "workspace:*",
-    "@bpmn-react/conformance": "workspace:*",
-    "@bpmn-react/core": "workspace:*",
-    "@bpmn-react/identity": "workspace:*",
-    "@bpmn-react/library": "workspace:*",
-    "@bpmn-react/library-react": "workspace:*",
-    "@bpmn-react/react": "workspace:*",
-    "@bpmn-react/registry": "workspace:*",
-    "@bpmn-react/soundness": "workspace:*"
+    "@buildtovalue/audit": "workspace:*",
+    "@buildtovalue/conformance": "workspace:*",
+    "@buildtovalue/core": "workspace:*",
+    "@buildtovalue/identity": "workspace:*",
+    "@buildtovalue/library": "workspace:*",
+    "@buildtovalue/library-react": "workspace:*",
+    "@buildtovalue/react": "workspace:*",
+    "@buildtovalue/registry": "workspace:*",
+    "@buildtovalue/soundness": "workspace:*"
   },
   "devDependencies": {
-    "@bpmn-react/adapters-bpmn": "workspace:*"
+    "@buildtovalue/adapters-bpmn": "workspace:*"
   },
   "keywords": [
     "governance",
@@ -59,6 +59,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "private": true
+  }
 }

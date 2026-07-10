@@ -1,4 +1,4 @@
-import type { VerificationState } from '@bpmn-react/identity';
+import type { VerificationState } from '@buildtovalue/identity';
 import {
   EVIDENCE_COLLAPSE_THRESHOLD,
   type AssuranceAnchor,

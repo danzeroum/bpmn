@@ -6,7 +6,7 @@ import {
   BpmnXmlConverter,
   createDefaultRegistry,
   normalizeForDiff,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 
 const CORPUS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'corpus');
 const SNAPSHOT_PATH = join(dirname(fileURLToPath(import.meta.url)), '..', 'corpus-warnings.json');

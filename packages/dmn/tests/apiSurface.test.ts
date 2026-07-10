@@ -3,7 +3,7 @@ import * as api from '../src/index.js';
 
 /**
  * Contract test: freezes the runtime public API surface of
- * @bpmn-react/dmn (type-only exports erase at compile time and don't
+ * @buildtovalue/dmn (type-only exports erase at compile time and don't
  * appear here). See core/tests/apiSurface.test.ts for rationale — a failing
  * diff means an export was added, renamed, or removed.
  */
@@ -33,7 +33,7 @@ const EXPECTED_EXPORTS = [
   'validateDecisionTable',
 ].sort();
 
-describe('@bpmn-react/dmn public API surface', () => {
+describe('@buildtovalue/dmn public API surface', () => {
   it('exports exactly the expected runtime members', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });

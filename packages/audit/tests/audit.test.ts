@@ -6,8 +6,8 @@ import {
   createNode,
   type AuditEntry,
   type BpmnDiagram,
-} from '@bpmn-react/core';
-import { VersionRegistry } from '@bpmn-react/registry';
+} from '@buildtovalue/core';
+import { VersionRegistry } from '@buildtovalue/registry';
 import {
   attestationHash,
   attestVersion,

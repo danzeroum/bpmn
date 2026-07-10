@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import type { AnchorAdapter } from '@bpmn-react/identity';
+import type { AnchorAdapter } from '@buildtovalue/identity';
 import { useAnchorCycle } from '../src/index.js';
 
 const HEAD = { hash: 'aaaa1111', seq: 3 };

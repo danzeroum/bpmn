@@ -1,4 +1,4 @@
-import type { SignerIdentity, VerificationState } from '@bpmn-react/identity';
+import type { SignerIdentity, VerificationState } from '@buildtovalue/identity';
 
 /**
  * Identity badge (Handoff 8 §4.1): replaces the loose approver name with a
@@ -33,7 +33,7 @@ export interface SignatureBadgeProps {
 
 /**
  * Renders one of the three identity states (`valid` | `legacy` | `invalid`)
- * produced by `verificationState()` in `@bpmn-react/identity`.
+ * produced by `verificationState()` in `@buildtovalue/identity`.
  */
 export function SignatureBadge({
   state,

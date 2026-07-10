@@ -1,4 +1,4 @@
-import type { ThumbnailSpec } from '@bpmn-react/library';
+import type { ThumbnailSpec } from '@buildtovalue/library';
 
 /**
  * Places the thumbnail the adapter provided (§3.1): SVG string, named icon,

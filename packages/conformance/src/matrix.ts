@@ -37,7 +37,7 @@ export const CONFORMANCE_MATRIX: ConformanceEntry[] = [
   { element: 'bpmn:manualTask', status: 'supported', conformanceClass: 'analytic', mappedTo: 'manualTask' },
   { element: 'bpmn:businessRuleTask', status: 'supported', conformanceClass: 'analytic', mappedTo: 'businessRuleTask', notes: 'DMN table glyph + decision-link badge (properties.decisionRef); decision table editor lands with Handoff 5 F-B.' },
   { element: 'bpmn:subProcess', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'subProcess', notes: 'Nested children as first-class nodes (lossless round-trip, DI isExpanded); expand/collapse and drill-down in the editor.' },
-  { element: 'bpmn:callActivity', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'callActivity', notes: 'Native calledElement; @bpmn-react/registry resolves the called process version (resolveCallActivities/activeAt).' },
+  { element: 'bpmn:callActivity', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'callActivity', notes: 'Native calledElement; @buildtovalue/registry resolves the called process version (resolveCallActivities/activeAt).' },
   { element: 'bpmn:transaction', status: 'unsupported', conformanceClass: 'extended', notes: 'Deliberately out of scope before v2.x.' },
   { element: 'bpmn:adHocSubProcess', status: 'unsupported', conformanceClass: 'extended' },
   { element: 'loopCharacteristics (standard)', status: 'supported', conformanceClass: 'analytic', mappedTo: 'activity marker' },

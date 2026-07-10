@@ -1,4 +1,4 @@
-import type { VersionStatus } from '@bpmn-react/core';
+import type { VersionStatus } from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 

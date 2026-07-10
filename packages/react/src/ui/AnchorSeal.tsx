@@ -1,4 +1,4 @@
-import type { AnchorState } from '@bpmn-react/identity';
+import type { AnchorState } from '@buildtovalue/identity';
 
 /**
  * Anchor seal (Handoff 8 §4.2): the external-anchor state of the chain head.

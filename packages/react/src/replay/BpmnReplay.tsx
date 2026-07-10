@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import type { BpmnDiagram } from '@bpmn-react/core';
-import { summarizeReplay, type ReplayAnalysis, type Trace } from '@bpmn-react/replay';
+import type { BpmnDiagram } from '@buildtovalue/core';
+import { summarizeReplay, type ReplayAnalysis, type Trace } from '@buildtovalue/replay';
 import { BpmnEditor } from '../BpmnEditor.js';
 import type { BpmnPlugin } from '../plugins/types.js';
 import { useReplay } from './useReplay.js';

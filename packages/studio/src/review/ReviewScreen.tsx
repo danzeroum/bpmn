@@ -5,8 +5,8 @@ import {
   type BpmnDiagram,
   type LifecycleEngine,
   type UserContext,
-} from '@bpmn-react/core';
-import type { VersionRegistry } from '@bpmn-react/registry';
+} from '@buildtovalue/core';
+import type { VersionRegistry } from '@buildtovalue/registry';
 import {
   AnchorSeal,
   buildApprovalPayloadFor,
@@ -15,7 +15,7 @@ import {
   SignatureBadge,
   StatusBadge,
   useAnchorCycle,
-} from '@bpmn-react/react';
+} from '@buildtovalue/react';
 import {
   signApproval,
   type AnchorAdapter,
@@ -23,7 +23,7 @@ import {
   type CanonicalApprovalPayload,
   type SignedApproval,
   type Signer,
-} from '@bpmn-react/identity';
+} from '@buildtovalue/identity';
 import { approvalsProgress, pendingPromotions, type PromotionRequest } from './queue.js';
 import { runReviewChecks, type ReviewCheck } from './checks.js';
 import {

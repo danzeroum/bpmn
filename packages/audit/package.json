@@ -1,5 +1,5 @@
 {
-  "name": "@bpmn-react/audit",
+  "name": "@buildtovalue/audit",
   "version": "1.0.0",
   "description": "Demonstrable integrity for bpmn-react governance: hash-chain ledger verification (verifyLedger), canonical promotion attestations (attestVersion) and XES export for process mining. Zero runtime dependencies.",
   "license": "Apache-2.0",
@@ -27,9 +27,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@bpmn-react/core": "workspace:*",
-    "@bpmn-react/identity": "workspace:*",
-    "@bpmn-react/registry": "workspace:*"
+    "@buildtovalue/core": "workspace:*",
+    "@buildtovalue/identity": "workspace:*",
+    "@buildtovalue/registry": "workspace:*"
   },
   "keywords": [
     "bpmn",

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ArtifactAdapter, ArtifactDetail, ArtifactSummary } from '@bpmn-react/library';
-import { createRecipeAdapter } from '@bpmn-react/adapters-bpmn';
+import type { ArtifactAdapter, ArtifactDetail, ArtifactSummary } from '@buildtovalue/library';
+import { createRecipeAdapter } from '@buildtovalue/adapters-bpmn';
 import { LibraryView } from '../src/index.js';
 
 afterEach(cleanup);

@@ -1,4 +1,4 @@
-import type { AggregatedLog } from '@bpmn-react/replay';
+import type { AggregatedLog } from '@buildtovalue/replay';
 
 export interface ReplayComparison {
   headline: string;

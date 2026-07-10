@@ -3,8 +3,8 @@ import {
   canonicalJson,
   sha256Hex,
   type ApprovalRecord,
-} from '@bpmn-react/core';
-import type { VersionRegistry } from '@bpmn-react/registry';
+} from '@buildtovalue/core';
+import type { VersionRegistry } from '@buildtovalue/registry';
 import type { LedgerLike } from './verify.js';
 
 /**

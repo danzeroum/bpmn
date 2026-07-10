@@ -1,15 +1,15 @@
-import { activeEdges, activeNodes, isContainerType, type BpmnDiagram } from '@bpmn-react/core';
-import type { ReplayGraph } from '@bpmn-react/replay';
+import { activeEdges, activeNodes, isContainerType, type BpmnDiagram } from '@buildtovalue/core';
+import type { ReplayGraph } from '@buildtovalue/replay';
 
 const NON_FLOW_EDGE_TYPES = new Set(['messageFlow', 'association', 'dataAssociation']);
 const NON_FLOW_NODE_TYPES = new Set(['dataObject', 'dataStore', 'textAnnotation', 'group']);
 
 /**
  * Host adapter (injection, not import): projects a BPMN diagram onto the
- * abstract `{ nodes, edges }` the headless `@bpmn-react/replay` engine expects.
+ * abstract `{ nodes, edges }` the headless `@buildtovalue/replay` engine expects.
  * Node `name` is the label (matched against log activity names), `id` stays the
  * diagram id so heatmap stats map straight back onto edges/nodes on the canvas.
- * `@bpmn-react/replay` never sees this — it only ever gets the plain graph.
+ * `@buildtovalue/replay` never sees this — it only ever gets the plain graph.
  */
 export function diagramToReplayGraph(diagram: BpmnDiagram): ReplayGraph {
   const nodes = activeNodes(diagram)

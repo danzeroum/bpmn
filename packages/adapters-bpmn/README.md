@@ -1,8 +1,8 @@
-# @bpmn-react/adapters-bpmn
+# @buildtovalue/adapters-bpmn
 
 The concrete `ArtifactAdapter` implementations that connect the BPMN
 ecosystem to the generic library (Handoff 6, S-2). This package is the side
-of the boundary that KNOWS BPMN — `@bpmn-react/library` never does.
+of the boundary that KNOWS BPMN — `@buildtovalue/library` never does.
 
 > Workspace-only until the npm-scope decision (pendencias.md §1). The final
 > published name will be `<scope>/adapters-bpmn`.
@@ -57,7 +57,7 @@ library/library-react.
 ## The acid-test fixture
 
 `createRecipeAdapter()` — a fake adapter for cooking recipes, with no
-relation to BPMN, importing only `@bpmn-react/library`. It exists to prove
+relation to BPMN, importing only `@buildtovalue/library`. It exists to prove
 the architecture (Handoff 6 §10.1): the whole Biblioteca must work with it
 alone, without touching library/library-react. `tests/acidez.test.ts` runs
 the catalog only with this adapter; S-3 extends the same fixture to the UI.

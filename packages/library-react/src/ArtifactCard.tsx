@@ -1,5 +1,5 @@
-import type { ArtifactSummary } from '@bpmn-react/library';
-import { StatusBadge } from '@bpmn-react/react';
+import type { ArtifactSummary } from '@buildtovalue/library';
+import { StatusBadge } from '@buildtovalue/react';
 import { Thumbnail } from './Thumbnail.js';
 
 export interface ArtifactCardProps {

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { AuditLedger, BpmnXmlConverter, getEdgeChain, type BpmnDiagram } from '@bpmn-react/core';
+import { AuditLedger, BpmnXmlConverter, getEdgeChain, type BpmnDiagram } from '@buildtovalue/core';
 import {
   astarConnection,
   BpmnEditor,
@@ -13,19 +13,19 @@ import {
   type BpmnPlugin,
   type EdgeRouterContext,
   type GovernanceBreadcrumbLevel,
-} from '@bpmn-react/react';
+} from '@buildtovalue/react';
 import {
   DecisionPeek,
   DecisionTableEditor,
   decisionInspectorSection,
   dmnPlugin,
   type DecisionSummary,
-} from '@bpmn-react/dmn';
-import { domainExamplePlugin } from '@bpmn-react/domain-example';
-import { healthcarePlugin } from '@bpmn-react/healthcare';
-import { callActivityBindingRule, VersionRegistry } from '@bpmn-react/registry';
-import { soundnessPromotionRule, soundnessRules } from '@bpmn-react/soundness';
-import { replayAnalysisEntry, simulationSessionEntry } from '@bpmn-react/adapters-bpmn';
+} from '@buildtovalue/dmn';
+import { domainExamplePlugin } from '@buildtovalue/domain-example';
+import { healthcarePlugin } from '@buildtovalue/healthcare';
+import { callActivityBindingRule, VersionRegistry } from '@buildtovalue/registry';
+import { soundnessPromotionRule, soundnessRules } from '@buildtovalue/soundness';
+import { replayAnalysisEntry, simulationSessionEntry } from '@buildtovalue/adapters-bpmn';
 import {
   buildClosedDiagram,
   buildDeadlockDiagram,

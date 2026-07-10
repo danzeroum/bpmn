@@ -1,5 +1,5 @@
-import type { AuditEntry, AuditLedger, BpmnDiagram, LifecycleEngine, UserContext } from '@bpmn-react/core';
-import type { SignedApproval } from '@bpmn-react/identity';
+import type { AuditEntry, AuditLedger, BpmnDiagram, LifecycleEngine, UserContext } from '@buildtovalue/core';
+import type { SignedApproval } from '@buildtovalue/identity';
 
 /**
  * Decision commands of the Revisão (Handoff 6 §5). Both write a ledger entry

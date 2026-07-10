@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom/vitest';
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
-import { createDefaultRegistry, createDiagram, createEdge, createNode } from '@bpmn-react/core';
-import { BpmnViewer } from '@bpmn-react/react';
+import { createDefaultRegistry, createDiagram, createEdge, createNode } from '@buildtovalue/core';
+import { BpmnViewer } from '@buildtovalue/react';
 import { DOMAIN_NODE_TYPES, domainExamplePlugin } from '../src/index.js';
 
 /**

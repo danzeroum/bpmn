@@ -3,9 +3,9 @@ import {
   certifyXml,
   type CertifiableClass,
   type CertifyReport,
-} from '@bpmn-react/conformance';
-import { buildAssuranceCase, renderAssuranceCaseHtml } from '@bpmn-react/audit';
-import { BpmnXmlConverter, type AuditEntry } from '@bpmn-react/core';
+} from '@buildtovalue/conformance';
+import { buildAssuranceCase, renderAssuranceCaseHtml } from '@buildtovalue/audit';
+import { BpmnXmlConverter, type AuditEntry } from '@buildtovalue/core';
 
 export interface CertifyCommandOptions {
   require?: CertifiableClass;

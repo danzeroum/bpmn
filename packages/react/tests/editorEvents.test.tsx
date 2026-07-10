@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { createDiagram, createNode, type BpmnDiagram } from '@bpmn-react/core';
+import { createDiagram, createNode, type BpmnDiagram } from '@buildtovalue/core';
 import type { BpmnPlugin, EditorEvent } from '../src/index.js';
 import { BpmnEditor, resolveEditorConfig } from '../src/index.js';
 

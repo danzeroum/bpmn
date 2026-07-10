@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { BpmnLifecycleError, type VersionStatus } from '@bpmn-react/core';
+import { BpmnLifecycleError, type VersionStatus } from '@buildtovalue/core';
 import {
   approveCommand,
   assuranceCaseCommand,

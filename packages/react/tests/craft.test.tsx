@@ -7,7 +7,7 @@ import {
   createEdge,
   createNode,
   type BpmnDiagram,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import type { BpmnPlugin } from '../src/index.js';
 import { BpmnDesigner, BpmnEditor, SHADOW_FILTER_ID, useCanvasStore } from '../src/index.js';
 

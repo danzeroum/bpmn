@@ -1,4 +1,4 @@
-import type { AuditEntry } from '@bpmn-react/core';
+import type { AuditEntry } from '@buildtovalue/core';
 
 /**
  * Event categorization for the Ledger Explorer filter chips (Handoff 6 §6/§8

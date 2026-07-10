@@ -4,7 +4,7 @@ import {
   createDiagram,
   createNode,
   type BpmnDiagram,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { RegistryError, VersionRegistry, type RegistryEntry } from '../src/index.js';
 
 /**

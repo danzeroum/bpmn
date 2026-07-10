@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Handoff 8 §3 — the dependency-graph acid test for `@bpmn-react/identity`.
- * This headless package must consume ONLY `@bpmn-react/core` (canonicalJson +
+ * Handoff 8 §3 — the dependency-graph acid test for `@buildtovalue/identity`.
+ * This headless package must consume ONLY `@buildtovalue/core` (canonicalJson +
  * types). It must import NOTHING else from the ecosystem — no react, no anchor
  * adapters, no network module. Same enforcement shape as the replay/simulation
  * independence tests (Handoff 7 §2), tightened to allow exactly one workspace dep.
@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC_DIR = join(HERE, '..', 'src');
 
-const ALLOWED_ECOSYSTEM = new Set(['@bpmn-react/core']);
+const ALLOWED_ECOSYSTEM = new Set(['@buildtovalue/core']);
 
 function sourceFiles(dir: string): string[] {
   const files: string[] = [];
@@ -27,8 +27,8 @@ function sourceFiles(dir: string): string[] {
 
 const SPECIFIER_PATTERN = /(?:from\s+|import\s*\(\s*)['"]([^'"]+)['"]/g;
 
-describe('@bpmn-react/identity dependency graph (Handoff 8 §3)', () => {
-  it('src/ imports only relative paths and @bpmn-react/core', () => {
+describe('@buildtovalue/identity dependency graph (Handoff 8 §3)', () => {
+  it('src/ imports only relative paths and @buildtovalue/core', () => {
     const files = sourceFiles(SRC_DIR);
     expect(files.length).toBeGreaterThan(0);
     const violations: string[] = [];
@@ -45,9 +45,9 @@ describe('@bpmn-react/identity dependency graph (Handoff 8 §3)', () => {
     expect(violations).toEqual([]);
   });
 
-  it('declares @bpmn-react/core as its only runtime dependency', () => {
+  it('declares @buildtovalue/core as its only runtime dependency', () => {
     const pkg = JSON.parse(readFileSync(join(HERE, '..', 'package.json'), 'utf8'));
-    expect(Object.keys(pkg.dependencies ?? {})).toEqual(['@bpmn-react/core']);
+    expect(Object.keys(pkg.dependencies ?? {})).toEqual(['@buildtovalue/core']);
     expect(pkg.peerDependencies ?? {}).toEqual({});
   });
 });

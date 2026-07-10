@@ -7,7 +7,7 @@ import {
   type ArtifactRef,
   type LibraryQuery,
   type LibraryResult,
-} from '@bpmn-react/library';
+} from '@buildtovalue/library';
 
 export interface UseLibraryOptions {
   adapters: ArtifactAdapter[];
@@ -33,7 +33,7 @@ export interface UseLibraryState {
 /**
  * The headless-to-React seam of the Biblioteca: query state, catalog results,
  * selection + drawer detail, and adapter invalidation (subscribe → reload).
- * All catalog logic lives in @bpmn-react/library; this hook only wires state.
+ * All catalog logic lives in @buildtovalue/library; this hook only wires state.
  */
 export function useLibrary(options: UseLibraryOptions): UseLibraryState {
   const { adapters, initialQuery, onQueryChange, initialSelection, onSelectionChange, onWarning } = options;

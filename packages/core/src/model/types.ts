@@ -258,7 +258,7 @@ export function isSubProcessExpanded(node: BpmnNode): boolean {
 /**
  * A call activity invokes another process by id (`properties.calledElement`,
  * the standard BPMN attribute). The id is expected to match a registered
- * diagram — `@bpmn-react/registry` resolves it to the version in effect at a
+ * diagram — `@buildtovalue/registry` resolves it to the version in effect at a
  * given date (`resolveCallActivities`). Returns the called process id, if any.
  */
 export function calledElementOf(node: BpmnNode): string | undefined {

@@ -1,8 +1,8 @@
-# @bpmn-react/anchor-s3
+# @buildtovalue/anchor-s3
 
 S3 **object-lock anchor adapter** (Handoff 8): anchors the ledger chain head to a
 write-once object, implementing the `AnchorAdapter` contract from
-`@bpmn-react/identity`.
+`@buildtovalue/identity`.
 
 ## The host owns the S3 client (no network in the library)
 
@@ -10,7 +10,7 @@ You inject `put`/`get`; the library never talks to S3. Point `put` at an
 object-lock (WORM) bucket so anchors are immutable.
 
 ```ts
-import { createS3Anchor } from '@bpmn-react/anchor-s3';
+import { createS3Anchor } from '@buildtovalue/anchor-s3';
 
 const anchor = createS3Anchor({
   async put(key, body) {
@@ -26,5 +26,5 @@ await anchor.verify(receipt, currentHashAtSeq); // 'anchored' | 'mismatch' | 'un
 ```
 
 Derive the UI state from the result via `deriveAnchorState` in
-`@bpmn-react/identity`. Consumes only `@bpmn-react/identity` — pinned by
+`@buildtovalue/identity`. Consumes only `@buildtovalue/identity` — pinned by
 `tests/independence.test.ts`. **Zero runtime dependencies.**

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { verifyLedger } from '@bpmn-react/audit';
-import { AuditLedger, type AuditEntry } from '@bpmn-react/core';
-import { LedgerStatus, useDiagram } from '@bpmn-react/react';
+import { verifyLedger } from '@buildtovalue/audit';
+import { AuditLedger, type AuditEntry } from '@buildtovalue/core';
+import { LedgerStatus, useDiagram } from '@buildtovalue/react';
 
 /**
  * Live audit trail: every command on the stack is appended to a hash-chained

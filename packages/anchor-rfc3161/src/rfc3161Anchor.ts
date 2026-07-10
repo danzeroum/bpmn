@@ -1,4 +1,4 @@
-import type { AnchorAdapter, AnchorHead, AnchorReceipt } from '@bpmn-react/identity';
+import type { AnchorAdapter, AnchorHead, AnchorReceipt } from '@buildtovalue/identity';
 
 /**
  * RFC 3161 TSA transport the HOST injects — the library never talks to the TSA

@@ -9,7 +9,7 @@ import type {
   Rect,
   RuleEngine,
   ValidationRule,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 
 export interface ShapeProps {
   node: BpmnNode;

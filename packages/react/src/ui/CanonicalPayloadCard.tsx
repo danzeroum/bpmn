@@ -1,4 +1,4 @@
-import type { CanonicalApprovalPayload } from '@bpmn-react/identity';
+import type { CanonicalApprovalPayload } from '@buildtovalue/identity';
 
 /**
  * "O que você está assinando" card (Handoff 8 §4.3, design card C): shows the

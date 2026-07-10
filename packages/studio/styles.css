@@ -1,6 +1,6 @@
 /*
- * @bpmn-react/studio — shell + Revisão do Aprovador (Handoff 6 §2/§5).
- * Import AFTER @bpmn-react/react/styles.css (and library-react's, for the
+ * @buildtovalue/studio — shell + Revisão do Aprovador (Handoff 6 §2/§5).
+ * Import AFTER @buildtovalue/react/styles.css (and library-react's, for the
  * Biblioteca screen): seal colors come exclusively from the canonical
  * --bpmnr-status-* tokens; brand colors from --btv-* (§10.6).
  */

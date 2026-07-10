@@ -1,6 +1,6 @@
 /*
- * @bpmn-react/library-react — Biblioteca (Handoff 3 §5 / Handoff 6 §4).
- * Import AFTER @bpmn-react/react/styles.css: seal colors come exclusively
+ * @buildtovalue/library-react — Biblioteca (Handoff 3 §5 / Handoff 6 §4).
+ * Import AFTER @buildtovalue/react/styles.css: seal colors come exclusively
  * from the canonical --bpmnr-status-* tokens defined there (§10.6 — no seal
  * hex outside the tokens) and the --btv-* brand tokens.
  */

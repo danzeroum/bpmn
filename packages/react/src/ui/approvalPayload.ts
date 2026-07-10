@@ -1,5 +1,5 @@
-import { BpmnXmlConverter, sha256Hex, type AuditLedger, type BpmnDiagram } from '@bpmn-react/core';
-import { buildApprovalPayload, type CanonicalApprovalPayload } from '@bpmn-react/identity';
+import { BpmnXmlConverter, sha256Hex, type AuditLedger, type BpmnDiagram } from '@buildtovalue/core';
+import { buildApprovalPayload, type CanonicalApprovalPayload } from '@buildtovalue/identity';
 
 export interface ApprovalPayloadInput {
   diagram: BpmnDiagram;
@@ -21,7 +21,7 @@ export interface ApprovalPayloadInput {
  * `xmlHash` and `ledgerHead` the signature binds (Handoff 8 §3). Shared by the
  * PromotionPanel and the Studio ReviewScreen so both sign identical bytes.
  * `xmlHash` reuses core's `sha256Hex`; the payload shape comes from
- * `buildApprovalPayload` in `@bpmn-react/identity`.
+ * `buildApprovalPayload` in `@buildtovalue/identity`.
  */
 export async function buildApprovalPayloadFor(
   input: ApprovalPayloadInput,

@@ -3,9 +3,9 @@
 ## Install
 
 ```bash
-pnpm add @bpmn-react/core @bpmn-react/react
+pnpm add @buildtovalue/core @buildtovalue/react
 # optional: the example domain plugin, as a template for your own vocabulary
-pnpm add @bpmn-react/domain-example
+pnpm add @buildtovalue/domain-example
 ```
 
 Requirements: React ≥ 18, Node ≥ 20 (for the CLI / SSR usage — the browser build has no Node dependency).
@@ -14,9 +14,9 @@ Requirements: React ≥ 18, Node ≥ 20 (for the CLI / SSR usage — the browser
 
 ```tsx
 import { useState } from 'react';
-import { createDiagram } from '@bpmn-react/core';
-import { BpmnEditor } from '@bpmn-react/react';
-import '@bpmn-react/react/styles.css';
+import { createDiagram } from '@buildtovalue/core';
+import { BpmnEditor } from '@buildtovalue/react';
+import '@buildtovalue/react/styles.css';
 
 export function App() {
   const [diagram] = useState(() => createDiagram({ name: 'My process' }));
@@ -32,7 +32,7 @@ export function App() {
 badge). For full control compose the pieces yourself:
 
 ```tsx
-import { BpmnDesigner, Palette, Toolbar, PropertiesPanel, MiniMap } from '@bpmn-react/react';
+import { BpmnDesigner, Palette, Toolbar, PropertiesPanel, MiniMap } from '@buildtovalue/react';
 
 <BpmnDesigner diagram={diagram}>
   <div className="my-layout-top"><Toolbar /></div>
@@ -56,7 +56,7 @@ import {
   createDiagram,
   createEdge,
   createNode,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 
 const diagram = createDiagram({ name: 'Headless' });
 const stack = new CommandStack(diagram);
@@ -80,7 +80,7 @@ const { diagram, execute, undo, redo, canUndo, canRedo, replaceDiagram } = useDi
 ## BPMN 2.0 XML
 
 ```ts
-import { BpmnXmlConverter } from '@bpmn-react/core';
+import { BpmnXmlConverter } from '@buildtovalue/core';
 
 const converter = new BpmnXmlConverter();
 const xml = converter.toXml(diagram);            // includes BPMN DI (shapes + waypoints)
@@ -92,7 +92,7 @@ See [format-spec.md](format-spec.md) for the supported element profile.
 ## CLI
 
 ```bash
-pnpm add -g @bpmn-react/cli
+pnpm add -g @buildtovalue/cli
 bpmn-react validate flow.bpmn.xml
 bpmn-react export flow.json --to xml -o flow.bpmn.xml
 bpmn-react diff v1.json v2.json

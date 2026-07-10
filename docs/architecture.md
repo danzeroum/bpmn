@@ -4,12 +4,12 @@ bpmn-react follows a strict three-layer separation:
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│ @bpmn-react/react — presentation                           │
+│ @buildtovalue/react — presentation                           │
 │   SVG canvas (viewBox pan/zoom) · shapes · gestures        │
 │   granular external store (useSyncExternalStore)           │
 │   editor chrome (toolbar, palette, inspector, minimap)     │
 ├────────────────────────────────────────────────────────────┤
-│ @bpmn-react/core — domain engine (zero React, zero deps)   │
+│ @buildtovalue/core — domain engine (zero React, zero deps)   │
 │   model + registry · EventBus · CommandStack               │
 │   LifecycleEngine · RuleEngine · ValidationEngine          │
 │   diff · AuditLedger (SHA-256 chain) · geometry            │

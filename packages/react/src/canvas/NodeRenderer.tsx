@@ -5,7 +5,7 @@ import {
   isSubProcessExpanded,
   updateNodeCommand,
   type BpmnNode,
-} from '@bpmn-react/core';
+} from '@buildtovalue/core';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';

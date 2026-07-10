@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { BpmnDiagram } from '@bpmn-react/core';
+import type { BpmnDiagram } from '@buildtovalue/core';
 import {
   aggregate,
   normalizeName,
   type AggregatedLog,
   type ReplayGraph,
   type Trace,
-} from '@bpmn-react/replay';
+} from '@buildtovalue/replay';
 import { diagramToReplayGraph } from './diagramToReplayGraph.js';
 
 const STEP_MS = 650;

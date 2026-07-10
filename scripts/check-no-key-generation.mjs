@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Enforces cerca §1.1 (nunca PKI) for the identity layer: `@bpmn-react/identity`
+ * Enforces cerca §1.1 (nunca PKI) for the identity layer: `@buildtovalue/identity`
  * must never generate, store or export keys. This grep-based CI gate fails if
  * its `src/` references key generation, private-key persistence, or key export
  * (Handoff 8 aceite #2). The Signer is always injected by the host; the library
@@ -56,7 +56,7 @@ for (const file of sourceFiles(SRC)) {
 }
 
 if (failures.length > 0) {
-  console.error('Non-PKI policy violated in @bpmn-react/identity (cerca §1.1):\n' + failures.join('\n'));
+  console.error('Non-PKI policy violated in @buildtovalue/identity (cerca §1.1):\n' + failures.join('\n'));
   process.exit(1);
 }
-console.log('OK: @bpmn-react/identity generates/stores/exports no keys (verify + importKey only).');
+console.log('OK: @buildtovalue/identity generates/stores/exports no keys (verify + importKey only).');

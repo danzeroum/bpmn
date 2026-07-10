@@ -1,4 +1,4 @@
-# @bpmn-react/domain-example
+# @buildtovalue/domain-example
 
 A complete worked example of a **domain plugin** for bpmn-react — use it directly or copy it as a
 template for your own vocabulary.
@@ -11,8 +11,8 @@ Adds squads, personas, approval gates, prompts, connectors and deliverables:
 - a governance rule freezing approved gates (supersede instead of editing).
 
 ```tsx
-import { BpmnEditor } from '@bpmn-react/react';
-import { domainExamplePlugin } from '@bpmn-react/domain-example';
+import { BpmnEditor } from '@buildtovalue/react';
+import { domainExamplePlugin } from '@buildtovalue/domain-example';
 
 <BpmnEditor diagram={diagram} plugins={[domainExamplePlugin]} />;
 ```

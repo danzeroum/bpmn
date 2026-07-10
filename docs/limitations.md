@@ -37,19 +37,21 @@ Documented deliberately so expectations are managed — none of these fail silen
 - Dragging a pool/lane moves only the container, not the nodes inside it; lanes do not auto-reflow
   siblings when resized. Both are candidates for a post-1.0 "swimlane layout" pass.
 
-## Token simulation (`@bpmn-react/simulation`, Handoff 7A)
-- **OR (inclusive) gateways are approximate — declaredly (cerca §0.1).** The engine executes
-  **exact** token semantics only for **XOR (exclusive), AND (parallel) and event-based** gateways
-  and for boundary events (interrupting / non-interrupting). For inclusive gateways: the **split**
-  is a manual multi-select (the caller picks ≥1 outgoing flow), and the **join** uses a *local
-  approximation* — it fires once no other live token can still structurally reach it (i.e. it waits
-  for exactly the branches the matching split activated in this session), not a global
-  inclusive-merge analysis. Any run touching an OR gateway reports `hasApproximateSemantics = true`
-  and every OR-join transition is marked `approximate`, so the UI shows the notice. Exact OR-join
-  semantics are intentionally **not** implemented (registered in [`pendencias.md`](../pendencias.md)).
+## Token simulation (`@buildtovalue/simulation`, Handoff 7A)
+- **OR (inclusive) gateways use dominator-based structural convergence (upgraded in #65).** The
+  engine executes **exact** token semantics for **XOR (exclusive), AND (parallel) and event-based**
+  gateways and for boundary events (interrupting / non-interrupting). For inclusive gateways: the
+  **split** is a manual multi-select (the caller picks ≥1 outgoing flow), and the **join** fires
+  once no live token can still reach it *without having already passed through it* — decided by
+  dominator analysis (Cooper-Harvey-Kennedy) over the flow graph and re-settled to a fixpoint after
+  every step, so a branch that later diverges away from the join no longer strands it, and a
+  loop-back token (whose path is dominated by the join) doesn't hold it open. The `approximate`
+  flag and `hasApproximateSemantics` are **retained by design**: a fully token-state-exact OR-join
+  is undecidable in the general case, so runs touching an OR gateway still carry the notice — the
+  flag now signals this theoretical bound, not a heuristic shortcut.
 - **Path coverage** enumerates one route per XOR/event-based/inclusive branch and per boundary
-  event; inclusive splits are enumerated one branch at a time (not the power set), matching the
-  approximate OR semantics. Enumeration cuts cycles at the first repeated edge and caps at
+  event; inclusive splits are enumerated one branch at a time (not the power set) to keep the
+  checklist linear in branches. Enumeration cuts cycles at the first repeated edge and caps at
   `MAX_PATHS` (flagged as `truncated`).
 - **Sub-process token descent is not modelled in v1** — a sub-process is simulated as a single
   activity in its own scope; the engine does not step *into* it. The scope is selectable, so a
@@ -58,7 +60,7 @@ Documented deliberately so expectations are managed — none of these fail silen
   duplicated because `simulation` depends only on `core`, and pinned identical by
   `packages/simulation/tests/soundnessAgreement.test.ts`).
 
-## Replay / conformance (`@bpmn-react/replay`, Handoff 7B)
+## Replay / conformance (`@buildtovalue/replay`, Handoff 7B)
 - **Token-replay fitness only, never alignments (cerca §0.2).** Conformance means: a transition in
   the log with no corresponding edge in the model is a deviation; `fitness = fit moves / total
   moves`, and a case is conformant when it replays with zero deviations. Optimal alignments (A\*
@@ -78,11 +80,11 @@ Documented deliberately so expectations are managed — none of these fail silen
 
 ## Governance
 - **RBAC is verification, not enforcement (Handoff 8, cerca §1.2).** `evaluateRoleRequirement`
-  (`@bpmn-react/identity`) checks signatures against required roles — a statement any third party can
+  (`@buildtovalue/identity`) checks signatures against required roles — a statement any third party can
   re-verify — but it does **not** block actions: whoever controls the client can ignore local rules.
   Enforcement belongs to the anchor and whoever hosts it. A pentest flagging "RBAC bypass" is an
   architecture decision, not a bug.
-- **Signing never touches keys (cerca §1.1).** `@bpmn-react/identity` never generates, stores or
+- **Signing never touches keys (cerca §1.1).** `@buildtovalue/identity` never generates, stores or
   manages keys; the `Signer` is always injected by the host (SSO/YubiKey/git key) and the private key
   never enters the library. Enforced by `scripts/check-no-key-generation.mjs` in CI.
 - **WebCrypto Ed25519 support.** Signature verification uses WebCrypto Ed25519, stable in Node ≥ 20
@@ -94,4 +96,4 @@ Documented deliberately so expectations are managed — none of these fail silen
   `AuditSink` / `RegistrySink` seams.
 - `VersionTimeline` (React) is presentational and decoupled — it renders a plain
   `VersionTimelineItem[]`, so the host maps its registry (or any version source) to that shape and
-  the React layer never depends on `@bpmn-react/registry`.
+  the React layer never depends on `@buildtovalue/registry`.

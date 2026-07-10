@@ -10,22 +10,25 @@ o que já foi entregue.
 
 ## 1. Publicação no npm (ação sua, obrigatória para fechar a v1.0)
 
-O release está preparado no repositório (versões `1.0.0`, `CHANGELOG.md`, workflow de
-publicação), mas **publicar de fato exige duas ações que só você pode fazer**:
+**Escopo DECIDIDO e rename EXECUTADO (10/07/2026):** a organização `@buildtovalue` foi criada e
+testada no npm pelo dono; o rename global `@bpmn-react/*` → `@buildtovalue/*` foi aplicado ao
+monorepo inteiro em PR dedicada (nomes de pacote, dependências de workspace, imports, docs,
+CONFORMANCE, lockfile regenerado). Os flags `"private": true` provisórios foram removidos — agora
+só `example`, `domain-example` e `healthcare` permanecem privados (apps/demos, fora do release);
+todo o resto entra no `pnpm -r publish` do `release.yml`. Pacotes novos (`sfeel`, `copilot` do
+Handoff 9) já nascem `@buildtovalue/*`.
 
-1. **Reservar o escopo `@bpmn-react` no npm** (criar a organização em npmjs.com) — ou me dizer
-   qual escopo usar (`@buildtovalue/bpmn-*`? outro?). Se o escopo já estiver tomado por
-   terceiros, precisamos renomear os pacotes *antes* do primeiro publish.
-2. **Adicionar o secret `NPM_TOKEN`** no GitHub (Settings → Secrets → Actions) com um token de
-   automação do npm. O workflow `release.yml` roda em `workflow_dispatch` com `dry_run=true` por
-   padrão — dá para validar tudo sem publicar; desmarque o dry-run quando quiser soltar.
+**O que ainda depende de você para o primeiro publish (I-6 do Handoff 8):**
 
-**Atualização (Handoff 6 — decisão agora URGENTE):** o BuildToValue Studio adiciona **4 pacotes
-novos** que precisam do escopo definido antes de qualquer publish: `<scope>/library`,
-`<scope>/library-react`, `<scope>/studio` e `<scope>/adapters-bpmn`. Enquanto a decisão não sai,
-eles seguem o padrão do `dmn`/`healthcare`: nome provisório `@bpmn-react/<x>` + `"private": true`
-(workspace-only, isentos do release). Nada é publicado sem a sua decisão (Handoff 6 §11). A
-recomendação registrada no handoff continua sendo `@buildtovalue/*`.
+1. **Adicionar o secret `NPM_TOKEN`** no GitHub (Settings → Secrets → Actions) com um token de
+   automação do npm (ou configurar OIDC/provenance). O workflow `release.yml` roda em
+   `workflow_dispatch` com `dry_run=true` por padrão — dá para validar tudo sem publicar;
+   desmarque o dry-run quando quiser soltar.
+
+Notas de fronteira do rename: o namespace XML de extensão **`bpmnr:`** e os prefixos CSS
+**`bpmnr-`**/**`btv-`** NÃO mudam (mudá-los quebraria o round-trip de arquivos já exportados e o
+theming de hosts); o binário da CLI segue **`bpmn-react`** (`bpmn-react certify` etc.) — renomear o
+comando é decisão de produto separada, sem urgência.
 
 ## 1.1 Handoff 6 — "política" sem node type correspondente (decisão de produto)
 
@@ -103,7 +106,7 @@ de propósito:
   usa PT ("EVENTOS"). i18n da UI core é decisão de produto em aberto — a camada de aplicação pode
   registrar grupos com labels PT por cima se preferir.
 - **Export XES do ledger** — ✅ ENTREGUE (PR-B2, Handoff 4 §B2): `toXES(ledger, { registry })`
-  no `@bpmn-react/audit` + `bpmn-react export-xes` no CLI. Cada versão = trace; comandos,
+  no `@buildtovalue/audit` + `bpmn-react export-xes` no CLI. Cada versão = trace; comandos,
   promoções, attestations, registros e publicações = events com concept/time/org/lifecycle.
   Habilita *process mining* do "processo real de design" vs. o documentado (ProM, Celonis,
   Disco) — diferencial que ferramentas de modelagem puras não têm. Sinergia futura: os
@@ -140,13 +143,13 @@ Progresso desta rodada autônoma (todas as PRs com CI verde → merge):
   - Entregue: `sendTask`/`receiveTask`/`manualTask` + marcadores de loop/multi-instância
     (round-trip via `loopCharacteristics`).
   - **Falta (canvas-pesado, próximas PRs):** `subProcess` aninhado (expand/collapse, drill-down no
-    canvas, DI hierárquico), `callActivity` (sinergia com `@bpmn-react/registry` `activeAt`),
+    canvas, DI hierárquico), `callActivity` (sinergia com `@buildtovalue/registry` `activeAt`),
     `dataStore` + `dataAssociation`. Meta: classe OMG **Descriptive 100%**.
 
 ### Ainda no roadmap (F8→F10, intocado)
 - **F8** validação XSD opcional (CLI/Node), corpus de interop ≥50 arquivos externos, `CONFORMANCE.md`
   gerado, declarar classe **Analytic**.
-- **F9** DMN — novo pacote `@bpmn-react/dmn` (decision table + DRD mínimo).
+- **F9** DMN — novo pacote `@buildtovalue/dmn` (decision table + DRD mínimo).
 - **F10** VDML/BMM via `extensionElements`.
 
 ### Polimento pendente da F6
@@ -288,21 +291,21 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   Medições em software rendering (sem GPU): ~41fps em container dedicado, ~26fps no runner
   compartilhado do GitHub — por isso o piso no CI é 15fps, um canário de regressão (um re-render
   por frame de 350 nós cai abaixo de 10fps), não o NFR. O alvo de 60fps vale para hardware real:
-  rodar `pnpm --filter @bpmn-react/example dev` + `/?stress=350` numa máquina local com GPU para a
+  rodar `pnpm --filter @buildtovalue/example dev` + `/?stress=350` numa máquina local com GPU para a
   verificação final; o gate de zoom desliga sombras (<50%) e chips (<60%) para proteger a taxa em
   diagramas densos.
 
 ## 9. Handoff 7 (Simulação & Inteligência) — decisões registradas
 
 **Escopo dos pacotes novos (decisão sua, 08/07):** o rename para `@buildtovalue/*` **ainda não foi
-executado** — todos os pacotes seguem `@bpmn-react/*`. Decidido manter a convenção da §1: os pacotes
-novos do Handoff 7 (`<scope>/simulation`, e depois `<scope>/replay`) entram como `@bpmn-react/<x>` +
+executado** — todos os pacotes seguem `@buildtovalue/*`. Decidido manter a convenção da §1: os pacotes
+novos do Handoff 7 (`<scope>/simulation`, e depois `<scope>/replay`) entram como `@buildtovalue/<x>` +
 `"private": true` (workspace-only, isentos do release), sem rename agora. O rename vira uma PR única
 quando o escopo npm for confirmado. Recomendação continua `@buildtovalue/*`.
 
 **Cobertura de caminhos = mesma análise do soundness, por duplicação testada (aceite §7.2).** Como
-`@bpmn-react/simulation` só pode depender de `core` (cerca §2 de desacoplamento) e a construção do
-grafo de fluxo vive em `@bpmn-react/soundness`, a classificação flow-node/flow-edge foi **duplicada**
+`@buildtovalue/simulation` só pode depender de `core` (cerca §2 de desacoplamento) e a construção do
+grafo de fluxo vive em `@buildtovalue/soundness`, a classificação flow-node/flow-edge foi **duplicada**
 em `packages/simulation/src/graph.ts` e **pinada como idêntica** ao `buildScopeGraphs` do soundness
 em `tests/soundnessAgreement.test.ts` (mesmos nós + mesma adjacência de sequence flow, em 7 fixtures).
 Se um dia essa análise for promovida para `core`, os dois pacotes passam a importá-la de lá e a
@@ -313,7 +316,7 @@ forma aproximada (documentado em `limitations.md`: split multi-seleção manual,
 nenhum outro token vivo alcança o merge). Semântica inclusive exata (análise global de merge) fica
 FORA; registrar aqui se houver demanda concreta de um caso real que a aproximação erre.
 
-**Alignments ótimos (7B, cerca §0.2) — adiado, confirmado no 7B-1.** `@bpmn-react/replay` entrega
+**Alignments ótimos (7B, cerca §0.2) — adiado, confirmado no 7B-1.** `@buildtovalue/replay` entrega
 **token-replay fitness apenas** (`fitness = fit moves / total moves`, caso conformante = zero
 desvios). Alignments A\* sobre modelo×log (custo ótimo de alinhamento) ficam FORA, de propósito —
 é um subsistema de process mining com orçamento próprio. Registrar aqui se surgir demanda concreta
@@ -331,7 +334,7 @@ pacote `replay` continua sem importar audit/registry.
 
 ## 10. Handoff 8 (Identidade, Assinatura & Âncora) — decisões registradas
 
-**Escopo do pacote novo (I-1).** `@bpmn-react/identity` entrou como `@bpmn-react/<x>` + `"private":
+**Escopo do pacote novo (I-1).** `@buildtovalue/identity` entrou como `@buildtovalue/<x>` + `"private":
 true` (workspace-only, isento do release), **não** `@buildtovalue/identity` como o handoff §3 escreve.
 Segue a decisão do §1/§9: o rename `@buildtovalue/*` continua diferido para uma PR única quando o
 escopo npm for confirmado (I-6, com provenance OIDC). Recomendação continua `@buildtovalue/*`.
@@ -357,8 +360,8 @@ Ed25519 (mesmo padrão de injeção do Signer); nenhuma mudança na `identity`.
 - **Badges no SACM (§4.1)** são I-5 (SACM assinado).
 
 **I-3 — âncora + terceiro estado (decisões de escopo, 09/07).**
-- **Contrato `AnchorAdapter` em `@bpmn-react/identity`** (headless, §3), adapters em pacotes próprios
-  com transport injetado (`@bpmn-react/anchor-git` — o host provê `commit`/`read`, a lib nunca faz
+- **Contrato `AnchorAdapter` em `@buildtovalue/identity`** (headless, §3), adapters em pacotes próprios
+  com transport injetado (`@buildtovalue/anchor-git` — o host provê `commit`/`read`, a lib nunca faz
   rede nem shella `git`). `deriveAnchorState` deriva os 4 estados; o ciclo pendente→ancorada vive no
   hook `useAnchorCycle` (react) e o selo em `AnchorSeal`.
 - **Terceiro estado entregue** na Revisão do Aprovador (selo abaixo da confirmação de assinatura):
@@ -371,7 +374,7 @@ Ed25519 (mesmo padrão de injeção do Signer); nenhuma mudança na `identity`.
   `broken`); falta só a superfície do banner no explorer. `anchor-rfc3161`/`anchor-s3` são I-4.
 
 **I-5 — SACM assinado + gate de assinatura + verifyLedger estendido (decisões de escopo, 09/07).**
-- **Gate de assinatura** (`signaturePromotionRule` em `@bpmn-react/audit`) é um `PromotionRule` que o
+- **Gate de assinatura** (`signaturePromotionRule` em `@buildtovalue/audit`) é um `PromotionRule` que o
   host injeta em `lifecycleConfig.promotionRules` — ON por default quando a instalação configura
   identity (i.e., quando o host injeta a regra). Fecha só a promoção a `active`; papel sem assinatura
   válida bloqueia. Fica como injeção do host (não hard-coded no core, que não conhece identity).

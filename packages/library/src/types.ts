@@ -2,7 +2,7 @@
  * ArtifactAdapter contract — the heart of the generic library (Handoff 6 §3).
  *
  * This package deliberately imports NOTHING from the rest of the ecosystem
- * (no @bpmn-react/core, no @bpmn-react/registry, no react): the six-state
+ * (no @buildtovalue/core, no @buildtovalue/registry, no react): the six-state
  * LifecycleStatus below is the only shared vocabulary, structurally
  * compatible with core's VersionStatus without a nominal dependency.
  * Adapters that use a different lifecycle must map into these six states

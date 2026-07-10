@@ -1,5 +1,5 @@
 {
-  "name": "@bpmn-react/react",
+  "name": "@buildtovalue/react",
   "version": "1.0.0",
   "description": "React layer for bpmn-react: native SVG canvas, shapes, gestures, palette, inspector, minimap and diff view. Zero runtime dependencies (react/react-dom as peers).",
   "license": "Apache-2.0",
@@ -33,10 +33,10 @@
     "react-dom": ">=18"
   },
   "dependencies": {
-    "@bpmn-react/core": "workspace:*",
-    "@bpmn-react/identity": "workspace:*",
-    "@bpmn-react/replay": "workspace:*",
-    "@bpmn-react/simulation": "workspace:*"
+    "@buildtovalue/core": "workspace:*",
+    "@buildtovalue/identity": "workspace:*",
+    "@buildtovalue/replay": "workspace:*",
+    "@buildtovalue/simulation": "workspace:*"
   },
   "keywords": [
     "bpmn",

@@ -1,8 +1,8 @@
-# @bpmn-react/anchor-rfc3161
+# @buildtovalue/anchor-rfc3161
 
 RFC 3161 **timestamp anchor adapter** (Handoff 8): anchors the ledger chain head
 to a TSA timestamp token, implementing the `AnchorAdapter` contract from
-`@bpmn-react/identity`.
+`@buildtovalue/identity`.
 
 ## The host owns the TSA transport (no network in the library)
 
@@ -11,7 +11,7 @@ the package network- and dependency-free and lets the host use its own TSA,
 credentials and validation policy.
 
 ```ts
-import { createRfc3161Anchor } from '@bpmn-react/anchor-rfc3161';
+import { createRfc3161Anchor } from '@buildtovalue/anchor-rfc3161';
 
 const anchor = createRfc3161Anchor({
   async timestamp(digest) {
@@ -27,5 +27,5 @@ await anchor.verify(receipt, currentHashAtSeq); // 'anchored' | 'mismatch' | 'un
 ```
 
 Derive the UI state from the result via `deriveAnchorState` in
-`@bpmn-react/identity`. Consumes only `@bpmn-react/identity` — pinned by
+`@buildtovalue/identity`. Consumes only `@buildtovalue/identity` — pinned by
 `tests/independence.test.ts`. **Zero runtime dependencies.**

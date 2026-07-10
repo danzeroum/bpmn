@@ -1,8 +1,8 @@
-import { BpmnXmlConverter, type BpmnDiagram } from '@bpmn-react/core';
-import { verifyLedger, type LedgerLike } from '@bpmn-react/audit';
-import { certifyXml } from '@bpmn-react/conformance';
-import { resolveCallActivities, type VersionRegistry } from '@bpmn-react/registry';
-import { analyzeSoundness } from '@bpmn-react/soundness';
+import { BpmnXmlConverter, type BpmnDiagram } from '@buildtovalue/core';
+import { verifyLedger, type LedgerLike } from '@buildtovalue/audit';
+import { certifyXml } from '@buildtovalue/conformance';
+import { resolveCallActivities, type VersionRegistry } from '@buildtovalue/registry';
+import { analyzeSoundness } from '@buildtovalue/soundness';
 
 /**
  * The 2×2 "verificações automáticas" grid of the Revisão (Handoff 6 §5).

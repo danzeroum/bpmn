@@ -1,4 +1,4 @@
-# Publishes the @bpmn-react/* packages to npm.
+# Publishes the @buildtovalue/* packages to npm.
 #
 # Manual trigger only (workflow_dispatch). Defaults to a DRY RUN so the whole
 # pipeline can be validated without publishing; untick dry_run to release.

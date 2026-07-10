@@ -1,4 +1,4 @@
-# @bpmn-react/library
+# @buildtovalue/library
 
 Generic, ecosystem-independent artifact catalog — the headless half of the
 BuildToValue Studio Biblioteca (Handoff 6, S-1).
@@ -15,7 +15,7 @@ A catalog that **does not know what it catalogs**. This package defines:
   decision, recipe…) implements it and plugs in;
 - the shared **six-state `LifecycleStatus`** vocabulary
   (`draft | test | candidate | active | deprecated | retired`) — structurally
-  compatible with `@bpmn-react/core`'s `VersionStatus`, with no import;
+  compatible with `@buildtovalue/core`'s `VersionStatus`, with no import;
 - the **headless catalog logic**: `createLibraryCatalog(adapters)` aggregates
   registered adapters and implements text search, status/type filtering,
   sorting (`name | updated | status`) and chip counts — 100% testable without
@@ -37,7 +37,7 @@ never an acceptable exception.
 ## Usage
 
 ```ts
-import { createLibraryCatalog, type ArtifactAdapter } from '@bpmn-react/library';
+import { createLibraryCatalog, type ArtifactAdapter } from '@buildtovalue/library';
 
 const catalog = createLibraryCatalog([bpmnDiagramAdapter, promptAdapter], {
   onWarning: (w) => console.warn(`[library] ${w.adapterId}: ${w.message}`),

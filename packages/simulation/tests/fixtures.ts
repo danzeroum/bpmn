@@ -1,4 +1,4 @@
-import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@bpmn-react/core';
+import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@buildtovalue/core';
 
 /**
  * Terse diagram builder (same shape as the soundness fixtures so the two

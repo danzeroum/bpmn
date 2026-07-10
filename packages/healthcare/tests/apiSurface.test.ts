@@ -3,7 +3,7 @@ import * as api from '../src/index.js';
 
 /**
  * Contract test: freezes the runtime public API surface of
- * @bpmn-react/healthcare (type-only exports erase at compile time). See
+ * @buildtovalue/healthcare (type-only exports erase at compile time). See
  * core/tests/apiSurface.test.ts for rationale.
  */
 const EXPECTED_EXPORTS = [
@@ -17,7 +17,7 @@ const EXPECTED_EXPORTS = [
   'healthcarePlugin',
 ].sort();
 
-describe('@bpmn-react/healthcare public API surface', () => {
+describe('@buildtovalue/healthcare public API surface', () => {
   it('exports exactly the expected runtime members', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });

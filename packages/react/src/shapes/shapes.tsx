@@ -1,5 +1,5 @@
-import type { EventDefinitionKind } from '@bpmn-react/core';
-import { eventDefinitionOf, isNonInterrupting, isSubProcessExpanded } from '@bpmn-react/core';
+import type { EventDefinitionKind } from '@buildtovalue/core';
+import { eventDefinitionOf, isNonInterrupting, isSubProcessExpanded } from '@buildtovalue/core';
 import type { ShapeProps } from '../plugins/types.js';
 import { ActivityBox, ShapeLabel, strokeFor, strokeWidthFor, theme } from './common.js';
 
