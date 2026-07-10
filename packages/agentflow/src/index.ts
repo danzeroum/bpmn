@@ -62,3 +62,13 @@ export {
   type SimulateOptions,
 } from './simTypes.js';
 export { simulate } from './simulate.js';
+export {
+  type LangGraphNode,
+  type LangGraphEdge,
+  type LangGraphJson,
+  type LangGraphImportResult,
+  type LangGraphExportResult,
+  LangGraphImportError,
+  importLangGraph,
+  exportLangGraph,
+} from './langgraph.js';

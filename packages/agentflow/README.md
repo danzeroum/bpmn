@@ -49,6 +49,44 @@ the same trail components.
 The BPMN `agentTask` (A-3), the Agent Studio UI (A-4/A-5), the Library adapter
 (A-6) and LangGraph interop (A-7) build on this.
 
+## What's in A-7 — LangGraph JSON interop (≥0.2), a DOCUMENTED subset
+
+`importLangGraph(json)` / `exportLangGraph(workflow)` map a documented **subset**
+of LangGraph JSON. This is not "almost LangGraph" — the same honesty rule as
+S-FEEL: what maps is listed field-by-field; everything else is declared, never
+silently converted. Pure JSON, zero dependencies.
+
+### The subset that round-trips
+
+| AgentWorkflow | LangGraph JSON |
+|---|---|
+| `id` / `name` / `version` | `id` / `name` / `version` (identity) |
+| `inputSchema` / `outputSchema` | `input_schema` / `output_schema` |
+| `node.id` | `nodes[].id` |
+| `node.type` (`llm`/`tool`/`decision`) | `nodes[].type` |
+| `node.config` | `nodes[].data` |
+| `edge.from`/`to`/`edgeType`/`when` | `edges[].source`/`target`/`data.{edgeType,when}` |
+
+### Import — ignored is declared, unmappable fails loudly
+
+- Any top-level key outside the subset — `interrupts`, `checkpointer` /
+  `checkpoints`, and anything else — is **ignored and DECLARED** in
+  `result.warnings` (a list of dropped fields, never silence).
+- A node whose `type` is not `llm` / `tool` / `decision` **fails** the import
+  with a `LangGraphImportError` naming the node — never a silent lossy
+  conversion.
+- `autonomyLevel` is not in the subset; it is **recomputed** from the graph
+  (`minCoherentLevel`) on import.
+
+### Export — left out is declared
+
+The export carries only the subset; agentflow constructs with no LangGraph form
+are omitted and **declared** in `result.warnings`: `autonomyLevel` (always),
+node **decorators** (memory/planner/errorBoundary), and **`delegate`** edges
+(a2a:1.0 semantics, not a protocol).
+
+`package.json` `interop`: `{ "langgraph": ">=0.2", "a2a": "1.0" }`.
+
 ## AgentO / AIAO vocabulary alignment — WITHOUT a JSON-LD claim
 
 Property names follow the AgentO / AIAO agent-ontology vocabulary so the model is
