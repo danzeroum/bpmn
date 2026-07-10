@@ -28,7 +28,7 @@ const USAGE = `bpmn-react — headless BPMN diagram tooling
 
 Usage:
   bpmn-react validate <file.(json|xml|bpmn)>
-  bpmn-react certify <file.bpmn> [--json] [--require <descriptive|analytic>] [--report <path.json>]
+  bpmn-react certify <file.bpmn> [--json] [--strict] [--require <descriptive|analytic>] [--report <path.json>]
   bpmn-react certify <file.bpmn> --assurance-case <out.html> [--ledger <ledger.json>] [--sacm-version <label>]
   bpmn-react audit <ledger.json> [--json]
   bpmn-react export-xes <ledger.json> [--registry <registry.json>] [-o <log.xes>]
@@ -44,6 +44,12 @@ Usage:
   bpmn-react registry active <registry.json> --at <iso> [--channel <ch>] [--environment <env>]
   bpmn-react registry diff <registry.json> --from <versionId> --to <versionId>
   bpmn-react registry bind-run <registry.json> --version <id> [--channel <ch>] [--environment <env>] [--run-id <id>]
+
+certify --strict: turns the STRUCTURAL pass into a gate (exit 1 on violations).
+It validates against the structural manifest distilled from the official
+BPMN20/Semantic XSDs (required attributes + legal parents of the supported
+profile) — it is NOT full XSD validation (see CONFORMANCE.md). --xsd is
+reserved and rejected until a real XSD validator exists.
 
 Exit codes: 0 ok · 1 check failed (validation errors, differences, governance gate) · 2 usage/parse error`;
 
@@ -204,14 +210,26 @@ async function main(argv: string[]): Promise<number> {
           );
           return outcome.intact && outcome.supported ? 0 : 1;
         }
+        // N-2 honesty rule: --xsd would claim validation we do not perform.
+        if (rest.includes('--xsd')) {
+          console.error(
+            'certify: --xsd é reservado — não há validador XSD integral. Use --strict ' +
+              '(gate sobre o manifesto estrutural derivado dos XSDs oficiais); a diferença ' +
+              'está documentada no CONFORMANCE.md.',
+          );
+          return 2;
+        }
+        const strict = rest.includes('--strict');
         const reportPath = valueOf(rest, '--report');
         const report = await certifyCommand(file, {
           ...(require ? { require } : {}),
           ...(reportPath ? { report: reportPath } : {}),
         });
         if (rest.includes('--json')) console.log(JSON.stringify(report, null, 2));
-        else console.log(formatCertify(report, reportPath));
+        else console.log(formatCertify(report, reportPath, { strict }));
         if (!report.wellFormed) return 2;
+        // --strict: structural manifest violations gate the exit code (N-2).
+        if (strict && report.structuralIssues.length > 0) return 1;
         return report.requirementMet === false ? 1 : 0;
       }
       case 'audit': {

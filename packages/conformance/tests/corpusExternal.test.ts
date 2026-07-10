@@ -7,6 +7,7 @@ import {
   createDefaultRegistry,
   normalizeForDiff,
 } from '@buildtovalue/core';
+import { EXTERNAL_CORPUS_MAX, EXTERNAL_CORPUS_MIN } from '../src/index.js';
 
 /**
  * Round-trips a corpus of **real** third-party BPMN exports (bpmn-js-examples,
@@ -37,8 +38,9 @@ function converter() {
 }
 
 describe.skipIf(files.length === 0)('external interoperability corpus (real files)', () => {
-  it('has at least 20 real files when fetched', () => {
-    expect(files.length).toBeGreaterThanOrEqual(20);
+  it('respects the corpus policy bounds when fetched (N-2 single source)', () => {
+    expect(files.length).toBeGreaterThanOrEqual(EXTERNAL_CORPUS_MIN);
+    expect(files.length).toBeLessThanOrEqual(EXTERNAL_CORPUS_MAX);
   });
 
   for (const name of files) {

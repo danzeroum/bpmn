@@ -1,9 +1,10 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { createDefaultRegistry } from '@buildtovalue/core';
 import {
+  GENERATED_CORPUS_FILES,
   classCoverage,
   CONFORMANCE_MATRIX,
   renderConformanceMarkdown,
@@ -42,6 +43,12 @@ describe('conformance matrix', () => {
   it('CONFORMANCE.md is fresh (regenerate with scripts/gen-conformance.mjs)', () => {
     const committed = readFileSync(join(ROOT, 'CONFORMANCE.md'), 'utf8');
     expect(committed).toBe(renderConformanceMarkdown());
+  });
+
+  it('GENERATED_CORPUS_FILES matches the committed corpus (N-2 anti-drift)', () => {
+    const dir = join(ROOT, 'packages', 'conformance', 'corpus');
+    const count = readdirSync(dir).filter((name) => name.endsWith('.bpmn')).length;
+    expect(count).toBe(GENERATED_CORPUS_FILES);
   });
 
   it('classCoverage treats an empty class as fully covered', () => {

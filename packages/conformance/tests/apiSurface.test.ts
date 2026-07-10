@@ -11,6 +11,11 @@ const EXPECTED_EXPORTS = [
   'certifyXml',
   'classCoverage',
   'renderConformanceMarkdown',
+  // Handoff 11 N-2 — corpus policy (single source for CONFORMANCE.md + tests).
+  'EXTERNAL_CORPUS_MAX',
+  'EXTERNAL_CORPUS_MIN',
+  'EXTERNAL_CORPUS_SOURCES',
+  'GENERATED_CORPUS_FILES',
 ].sort();
 
 describe('@buildtovalue/conformance public API surface', () => {
