@@ -17,6 +17,8 @@ const EXPECTED_EXPORTS = [
   'COPILOT_QUERY_PROMPT',
   'parseLedgerAnswer',
   'soundnessErrors',
+  // Handoff 9 CP-5 — the canonical template registry (dogfooding §1.5).
+  'COPILOT_PROMPTS',
 ].sort();
 
 describe('@buildtovalue/copilot public API surface', () => {

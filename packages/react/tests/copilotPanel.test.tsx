@@ -92,6 +92,20 @@ describe('CopilotPanel (CP-2)', () => {
     expect(container.querySelector('[data-testid="copilot-pill"]')?.textContent).toBe('SÓ RASCUNHA');
   });
 
+  it('CP-5: header appends the Biblioteca lifecycle status of the template ("ativa")', () => {
+    const { container } = render(
+      <BpmnDesigner diagram={createDiagram({ name: 'C' })}>
+        <CopilotPanel
+          provider={fakeProvider([DRAFT])}
+          promptStatus={(template) => (template.version === '1.0.0' ? 'ativa' : undefined)}
+        />
+      </BpmnDesigner>,
+    );
+    expect(container.querySelector('[data-testid="copilot-meta"]')?.textContent).toBe(
+      'claude-4 · prompt: copilot-draft v1.0.0 ativa',
+    );
+  });
+
   it('C1: draft applies as ONE composite with AI authorship + local soundness footer', async () => {
     const onChange = vi.fn();
     const { container } = mount(fakeProvider([DRAFT]), onChange);

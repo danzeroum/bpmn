@@ -30,6 +30,9 @@ const EXPECTED_EXPORTS = [
   'REPLAY_ANALYSIS_TYPE',
   'SIMULATION_SESSION_TYPE',
   'simulationSessionEntry',
+  // Handoff 9 CP-5 — copilot prompt-template adapter (dogfooding §1.5).
+  'activeCopilotPromptVersion',
+  'copilotPromptAdapter',
 ].sort();
 
 describe('@buildtovalue/adapters-bpmn public API surface', () => {

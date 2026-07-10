@@ -10,6 +10,7 @@ import {
   type AIProvider,
   type CopilotPromptTemplate,
   type Msg,
+  type PromptTemplateRef,
   type SoundnessPreview,
 } from '@buildtovalue/copilot';
 import { generateId, type BpmnDiagram } from '@buildtovalue/core';
@@ -34,6 +35,13 @@ export interface CopilotPanelProps {
   resolveLedgerHash?: () => Promise<string | undefined>;
   /** Human co-author shown in the mixed-authorship seal (e.g. "ana.ruiz"). */
   author?: string;
+  /**
+   * CP-5 (cerca §1.5): lifecycle status of a template as the host's Biblioteca
+   * knows it — e.g. "ativa" when the shipped version is the active one. Shown
+   * after the version in the header ("prompt: copilot-draft v1.0.0 ativa").
+   * Omitted → header unchanged.
+   */
+  promptStatus?: (template: PromptTemplateRef) => string | undefined;
 }
 
 interface ChatEntry {
@@ -43,7 +51,12 @@ interface ChatEntry {
   error?: boolean;
 }
 
-export function CopilotPanel({ provider, resolveLedgerHash, author = 'anônimo' }: CopilotPanelProps) {
+export function CopilotPanel({
+  provider,
+  resolveLedgerHash,
+  author = 'anônimo',
+  promptStatus,
+}: CopilotPanelProps) {
   const { diagram, execute, undo, stack } = useDiagram();
   const [messages, setMessages] = useState<ChatEntry[]>([]);
   const [input, setInput] = useState('');
@@ -139,6 +152,7 @@ export function CopilotPanel({ provider, resolveLedgerHash, author = 'anônimo' 
         <strong>✦ Copiloto</strong>
         <span className="bpmnr-copilot-meta" data-testid="copilot-meta">
           {provider.id} · prompt: {template.id} v{template.version}
+          {promptStatus?.(template) ? ` ${promptStatus(template)}` : ''}
         </span>
         <span className="bpmnr-copilot-pill" data-testid="copilot-pill">
           SÓ RASCUNHA
