@@ -113,19 +113,17 @@ de propósito:
   critérios de aprovação do Gate btv são candidatos naturais a decision table quando a F9
   (DMN) chegar.
 
-## 6. Boundary events — interação de anexação (pós-F6 PR-B)
+## 6. Boundary events — interação de anexação — FECHADO (Handoff 11 N-1)
 
-O modelo, o round-trip XML (`attachedToRef` + `cancelActivity` + `eventDefinition`), o render
-(anel duplo sólido/tracejado) e o **ride-along** (arrastar o host move os boundary events
-anexados) já estão entregues. Ficaram para uma PR de interação dedicada:
-
-- **Anexar por drag-and-drop:** soltar um evento sobre a borda de uma activity define
-  `attachedToRef` e o posiciona na borda. Hoje o vínculo é criado por import ou via `properties`.
-- **Deslizar na borda e reflow no resize:** ancoragem por parâmetro `t ∈ [0,1]` por lado (§6.5 do
-  handoff) para o evento acompanhar o redimensionamento do host mantendo a posição relativa. Hoje o
-  boundary guarda coordenadas absolutas e só acompanha o *move* do host.
-- **Roteamento das saídas do boundary:** usar port-offset no roteador ortogonal (barato) antes do
-  A\* com desvio de obstáculos (já registrado no item 2).
+Entregue na N-1: **anexar por drag-and-drop** (zona de snap 12px com highlight da borda; soltar =
+UM comando atômico que grava `attachedToRef` + ancoragem paramétrica), **deslizar na borda**
+(re-attach com novo `t`), **desanexar arrastando para fora** (vira `intermediateCatchEvent`, um
+comando) e **reflow no resize do host** (`t` preservado dentro do MESMO comando do resize).
+Decisão de modelo (corrige o texto do handoff 11, que supunha o paramétrico já existente): `side +
+t` são estado **editor-only** em `properties.boundarySide`/`boundaryT` — nunca serializados; o XML
+continua DI absoluto padrão e o import re-deriva o par da geometria (`boundaryAnchorOf`).
+Evidência: `packages/core/tests/boundary.test.ts`, `packages/react/tests/boundaryAttach.test.tsx`,
+`packages/example/e2e/boundary.spec.ts`. O roteamento das saídas do boundary segue no item 2.
 
 ## 7. Status do roadmap OMG (onde parei)
 
@@ -549,6 +547,22 @@ um nó movido (§3) — o "Limpar roteamento" cobre a re-otimização global sob
 4. **Listas OR aceitam qualquer teste do subconjunto** (`< 3, > 10`, `[1..3], 7`) — S-FEEL padrão
    de "positive unary tests"; a §5 lista o caso de valores, o parser aceita o geral (documentado no
    README do pacote). `not(…)` segue estrito à §5: só lista de literais.
+
+## 13. Handoff 11 (Biblioteca como produto npm) — triagem e decisões registradas
+
+- **H9 §8.5 (nuance, sem urgência):** a *asserção literal* de que a resposta da C1 declara a
+  degradação sem-DMN não existe — a garantia é estrutural (o vocabulário do contrato de prompt só
+  exprime decisões como gateway XOR). Adicionar a frase ao fixture + e2e é uma linha, sob demanda.
+- **Triagem N-2 (corpus):** o corpus real já estava entregue (27 arquivos, `fetch:corpus` no CI,
+  `corpusExternal.test.ts` ≥20). Proveniência por arquivo fica no `MANIFEST.json` — **decidido**:
+  header em arquivo alteraria os bytes do round-trip; o MANIFEST é a fonte única, a documentar no
+  `CONFORMANCE.md`. Restante da N-2: proporção real/gerado no CONFORMANCE + flag do `certify`
+  (`--xsd` só se validar contra XSD de verdade; senão `--strict` documentado).
+- **Triagem N-3 (event bus):** renomear para o catálogo do handoff **com aliases deprecados** —
+  os nomes antigos (`node.created`) emitem junto por uma minor com warning único; `shape.render.error`
+  entra no catálogo documentado. O contrato de estabilidade semver nasce na N-3.
+- **Triagem N-7 (viewer):** o nome `BpmnViewer` já existe como wrapper readOnly do Designer; o
+  realinhamento para o entry point leve exige **teste de equivalência de render** antes de mexer.
 
 ## Resolvidas (para histórico)
 

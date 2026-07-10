@@ -205,6 +205,15 @@ describe('BpmnXmlConverter round-trip', () => {
     expect(imported.nodes.timeout.properties.attachedToRef).toBe('task');
     expect(imported.nodes.timeout.properties.cancelActivity).toBeUndefined(); // interrupting default
     expect(imported.nodes.msg.properties.cancelActivity).toBe(false);
+    // Handoff 11 N-1: the import DERIVES the parametric anchor from the DI
+    // geometry — editor-only state, outside the round-trip identity. Assert
+    // the derivation, then strip the pair before comparing.
+    expect(imported.nodes.timeout.properties.boundarySide).toBe('bottom');
+    expect(imported.nodes.msg.properties.boundarySide).toBe('right');
+    for (const node of Object.values(imported.nodes)) {
+      delete node.properties.boundarySide;
+      delete node.properties.boundaryT;
+    }
     const before = JSON.stringify(normalizeForDiff(diagram));
     const after = JSON.stringify(normalizeForDiff(imported));
     expect(after).toBe(before);

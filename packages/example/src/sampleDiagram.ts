@@ -678,3 +678,28 @@ export function buildDrdDiagram(): BpmnDiagram {
   };
   return diagram;
 }
+
+/**
+ * `?boundary=1` — Handoff 11 N-1: a host task + a LOOSE intermediate timer
+ * event, positioned for the drag-to-attach / detach / resize-reflow e2e.
+ */
+export function buildBoundaryDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-boundary', name: 'Boundary attach', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number) =>
+    createNode({ type, id, label, x, y, properties: {}, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 60, 150),
+    host: make('task', 'host', 'Processar pedido', 200, 120),
+    end: make('endEvent', 'end', 'Fim', 460, 150),
+    timer: make('intermediateCatchEvent', 'timer', 'Timeout', 520, 320),
+  };
+  const edge = (id: string, sourceId: string, targetId: string) =>
+    createEdge({ id, sourceId, targetId, type: 'sequenceFlow', versionId: v });
+  diagram.edges = {
+    f1: edge('f1', 'start', 'host'),
+    f2: edge('f2', 'host', 'end'),
+  };
+  return diagram;
+}

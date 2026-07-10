@@ -108,6 +108,21 @@ export interface CanvasState {
    * `prefers-reduced-motion`) means no crossfade is playing.
    */
   settling: SettlingEntry[] | null;
+  /**
+   * Live boundary snap target (Handoff 11 N-1): while an event node drags
+   * within the snap zone of an activity border, the host id + parametric
+   * anchor of the candidate attachment. Drives the border highlight; the
+   * drop commits ONE attach command.
+   */
+  boundarySnap: BoundarySnapTarget | null;
+}
+
+export interface BoundarySnapTarget {
+  hostId: string;
+  side: 'top' | 'right' | 'bottom' | 'left';
+  t: number;
+  /** The anchor point ON the border (world coordinates). */
+  point: Point;
 }
 
 export interface SettlingEntry {
@@ -160,6 +175,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     issueBadges: {},
     dismissals: [],
     settling: null,
+    boundarySnap: null,
     ...partial,
   });
 }

@@ -10,6 +10,7 @@ export * from './events/EventBus.js';
 // Geometry
 export * from './geometry/index.js';
 export * from './geometry/astar.js';
+export * from './geometry/boundary.js';
 
 // Commands
 export * from './commands/types.js';

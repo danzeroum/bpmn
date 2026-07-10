@@ -1,18 +1,25 @@
 import { useCallback, useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import {
+  BOUNDARY_SNAP_THRESHOLD,
   activeNodes,
   addEdgeCommand,
+  attachBoundaryCommand,
   attachedBoundaryEventIds,
+  boundaryAnchorOf,
+  boundaryAttachedTo,
+  boundaryNodePosition,
   childrenOf,
   descendantIdsOf,
   compositeCommand,
   createEdge,
+  detachBoundaryCommand,
   getAnchorPoint,
   getBoundingBox,
   isContainerType,
   isSubProcessExpanded,
   laneFlowNodeRefs,
   moveNodeCommand,
+  nearestBoundaryAnchor,
   resizeNodeCommand,
   rectCenter,
   rectsIntersect,
@@ -44,6 +51,10 @@ import { isNodeVisible } from './visibility.js';
 import { SUBPROCESS_TITLE_HEIGHT } from '../shapes/shapes.js';
 
 const DRAG_THRESHOLD = 4;
+
+/** Handoff 11 N-1: event types that can attach to an activity border. */
+const isAttachableEvent = (node: BpmnNode): boolean =>
+  node.type === 'boundaryEvent' || node.type.startsWith('intermediate');
 
 interface PanSession {
   startClient: Point;
@@ -363,7 +374,16 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
           const dropLaneId = active
             ? (dropTargetLane(diagramRef.current, state.dragState.nodeIds, dx, dy)?.id ?? null)
             : null;
-          store.setState({ dragState: { ...state.dragState, dx, dy, active, dropLaneId } });
+          // Handoff 11 N-1: a LONE event dragged near an activity border arms
+          // the snap target — border highlight now, attach on drop.
+          let boundarySnap = null as ReturnType<typeof findBoundarySnap>;
+          if (active && state.dragState.nodeIds.length === 1) {
+            const dragged = diagramRef.current.nodes[state.dragState.nodeIds[0]];
+            if (dragged && isAttachableEvent(dragged)) {
+              boundarySnap = findBoundarySnap(dragged, point);
+            }
+          }
+          store.setState({ dragState: { ...state.dragState, dx, dy, active, dropLaneId }, boundarySnap });
           return;
         }
 
@@ -424,6 +444,29 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
       });
     },
     [config.ruleEngine, schedule, store, svgRef, world],
+  );
+
+  /**
+   * Handoff 11 N-1: the best boundary-snap candidate for a dragged event —
+   * the nearest activity border anchor within the 12px snap zone, or null.
+   */
+  const findBoundarySnap = useCallback(
+    (dragged: BpmnNode, pointer: Point) => {
+      const { drillId } = store.getState();
+      let best: { hostId: string; side: 'top' | 'right' | 'bottom' | 'left'; t: number; point: Point; distance: number } | null = null;
+      for (const host of activeNodes(diagramRef.current)) {
+        if (host.id === dragged.id) continue;
+        if (!config.registry.has(host.type) || config.registry.get(host.type).category !== 'activity') continue;
+        if (!isNodeVisible(diagramRef.current, host, drillId)) continue;
+        const anchor = nearestBoundaryAnchor(host, pointer);
+        if (anchor.distance > BOUNDARY_SNAP_THRESHOLD) continue;
+        if (!best || anchor.distance < best.distance) {
+          best = { hostId: host.id, side: anchor.side, t: anchor.t, point: anchor.point, distance: anchor.distance };
+        }
+      }
+      return best ? { hostId: best.hostId, side: best.side, t: best.t, point: best.point } : null;
+    },
+    [config.registry, store],
   );
 
   const findNodeAt = useCallback(
@@ -493,8 +536,52 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
 
       if (state.dragState) {
         const { nodeIds, dx, dy, active } = state.dragState;
-        store.setState({ dragState: null });
+        const snap = state.boundarySnap;
+        store.setState({ dragState: null, boundarySnap: null });
         if (active && (dx !== 0 || dy !== 0)) {
+          const single = nodeIds.length === 1 ? diagramRef.current.nodes[nodeIds[0]] : undefined;
+          // Handoff 11 N-1: a lone event dropped inside the snap zone
+          // ATTACHES; a lone attached boundary dropped outside DETACHES.
+          // Each gesture is ONE undoable command (reroutes ride inside it).
+          if (single && snap && isAttachableEvent(single)) {
+            const host = diagramRef.current.nodes[snap.hostId];
+            if (host) {
+              const to = boundaryNodePosition(host, snap.side, snap.t, single);
+              const cmds: Command[] = [
+                attachBoundaryCommand(single.id, snap.hostId, snap.side, snap.t, to),
+              ];
+              const settling = appendRerouteCommands(
+                cmds,
+                diagramRef.current,
+                [single],
+                to.x - single.x,
+                to.y - single.y,
+                config.edgeRouter,
+              );
+              execute(cmds.length === 1 ? cmds[0] : compositeCommand('Attach boundary event', cmds));
+              store.setState({
+                settling: settling.length > 0 && !prefersReducedMotion() ? settling : null,
+              });
+              return;
+            }
+          }
+          if (single && !snap && boundaryAttachedTo(single)) {
+            const to = { x: single.x + dx, y: single.y + dy };
+            const cmds: Command[] = [detachBoundaryCommand(single.id, to)];
+            const settling = appendRerouteCommands(
+              cmds,
+              diagramRef.current,
+              [single],
+              dx,
+              dy,
+              config.edgeRouter,
+            );
+            execute(cmds.length === 1 ? cmds[0] : compositeCommand('Detach boundary event', cmds));
+            store.setState({
+              settling: settling.length > 0 && !prefersReducedMotion() ? settling : null,
+            });
+            return;
+          }
           const moved = nodeIds
             .map((id) => diagramRef.current.nodes[id])
             .filter((node): node is BpmnNode => Boolean(node));
@@ -537,7 +624,21 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
           current.width !== initial.width ||
           current.height !== initial.height
         ) {
-          execute(resizeNodeCommand(nodeId, initial, current));
+          const cmds: Command[] = [resizeNodeCommand(nodeId, initial, current)];
+          // Handoff 11 N-1: attached boundary events REFLOW proportionally —
+          // the parametric anchor (side + t, stored or derived from the
+          // pre-resize geometry) is re-projected onto the new rect INSIDE the
+          // same undoable command.
+          for (const boundaryId of attachedBoundaryEventIds(diagramRef.current, [nodeId])) {
+            const boundary = diagramRef.current.nodes[boundaryId];
+            if (!boundary) continue;
+            const { side, t } = boundaryAnchorOf(initial, boundary);
+            const to = boundaryNodePosition(current, side, t, boundary);
+            if (to.x !== boundary.x || to.y !== boundary.y) {
+              cmds.push(moveNodeCommand(boundaryId, { x: boundary.x, y: boundary.y }, to));
+            }
+          }
+          execute(cmds.length === 1 ? cmds[0] : compositeCommand('Resize node', cmds));
         }
         return;
       }

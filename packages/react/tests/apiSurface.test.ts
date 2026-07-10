@@ -162,6 +162,8 @@ const EXPECTED_EXPORTS = [
   'longestSegmentMidpoint',
   // Handoff 9 CP-2 — governed copilot panel.
   'CopilotPanel',
+  // Handoff 11 N-1 — boundary drag-to-attach snap highlight.
+  'BoundarySnapOverlay',
 ].sort();
 
 describe('@buildtovalue/react public API surface', () => {

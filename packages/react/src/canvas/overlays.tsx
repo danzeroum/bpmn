@@ -1,4 +1,5 @@
 import { useCanvasState } from '../contexts/CanvasContext.js';
+import { useDiagram } from '../contexts/DiagramContext.js';
 import { theme } from '../shapes/common.js';
 
 /** Dashed preview line while a connection gesture is in progress. */
@@ -34,6 +35,33 @@ export function ConnectionPreview() {
           {connect.invalidReason}
         </text>
       )}
+    </g>
+  );
+}
+
+/**
+ * Border highlight while an event drags inside an activity's boundary snap
+ * zone (Handoff 11 N-1): the host border strokes selected/2px with a 120ms
+ * fade, plus a dot on the exact parametric anchor the drop will attach to.
+ */
+export function BoundarySnapOverlay() {
+  const snap = useCanvasState((s) => s.boundarySnap);
+  const { diagram } = useDiagram();
+  const host = snap ? diagram.nodes[snap.hostId] : undefined;
+  if (!snap || !host) return null;
+  return (
+    <g pointerEvents="none" data-testid="boundary-snap-highlight">
+      <rect
+        x={host.x}
+        y={host.y}
+        width={host.width}
+        height={host.height}
+        fill="none"
+        stroke={theme.strokeSelected}
+        strokeWidth={2}
+        style={{ transition: 'opacity 120ms ease-out' }}
+      />
+      <circle cx={snap.point.x} cy={snap.point.y} r={5} fill={theme.strokeSelected} />
     </g>
   );
 }
