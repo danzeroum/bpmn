@@ -1,6 +1,7 @@
 import type { VersionStatus } from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * Canonical seal labels (Handoff 3 §5 — "usar em TODO o produto"). Labels are
@@ -50,14 +51,16 @@ export interface StatusBadgeProps {
  * "aguarda N aprovações" always reflects the engine config, never a constant.
  */
 export function StatusBadge({ channel, seal }: StatusBadgeProps) {
+  const t = useT();
   if (seal) {
-    const meta = seal.meta ?? (channel ? `canal: ${channel}` : undefined);
+    const meta = seal.meta ?? (channel ? t('status.channel', { channel }) : undefined);
     return <SealMarkup status={seal.status} semanticVersion={seal.semanticVersion} meta={meta} />;
   }
   return <EditorStatusBadge channel={channel} />;
 }
 
 function EditorStatusBadge({ channel }: { channel?: string }) {
+  const t = useT();
   const { diagram } = useDiagram();
   const { lifecycleEngine } = useEditorConfig();
   const { status, semanticVersion, approvedBy, effectiveFrom, effectiveUntil } = diagram.version;
@@ -66,18 +69,19 @@ function EditorStatusBadge({ channel }: { channel?: string }) {
   let meta: string | undefined;
   if (status === 'candidate') {
     const waiting = Math.max(0, lifecycleEngine.requiredApprovalRoles - distinctRoles.length);
-    const prefix = channel ? `canal: ${channel} · ` : '';
+    const prefix = channel ? `${t('status.channel', { channel })} · ` : '';
     meta =
       waiting === 0
-        ? `${prefix}pronta para ativação`
-        : `${prefix}aguarda ${waiting} ${waiting === 1 ? 'aprovação' : 'aprovações'}`;
+        ? `${prefix}${t('status.readyToActivate')}`
+        : `${prefix}${t('status.awaitingApprovals', { count: waiting })}`;
   } else if (status === 'active') {
     const parts: string[] = [];
-    if (effectiveFrom) parts.push(`vigente desde ${formatDate(effectiveFrom)}`);
-    if (distinctRoles.length > 0) parts.push(`aprovada por ${distinctRoles.join(', ')}`);
+    if (effectiveFrom) parts.push(t('status.effectiveSince', { date: formatDate(effectiveFrom) }));
+    if (distinctRoles.length > 0)
+      parts.push(t('status.approvedBy', { roles: distinctRoles.join(', ') }));
     meta = parts.length > 0 ? parts.join(' · ') : undefined;
   } else if ((status === 'deprecated' || status === 'retired') && effectiveUntil) {
-    meta = `vigente até ${formatDate(effectiveUntil)}`;
+    meta = t('status.effectiveUntil', { date: formatDate(effectiveUntil) });
   }
 
   return <SealMarkup status={status} semanticVersion={semanticVersion} meta={meta} />;
@@ -93,13 +97,14 @@ function SealMarkup({
   semanticVersion: string;
   meta?: string;
 }) {
-  const label = SEAL_LABELS[status] ?? SEAL_LABELS.draft;
+  const t = useT();
+  const label = t(`status.${status}`);
   return (
     <span
       className="bpmnr-status-badge"
       data-status={status}
       role="status"
-      aria-label={`Version ${semanticVersion}, status ${label}`}
+      aria-label={t('status.aria', { version: semanticVersion, status: label })}
     >
       <span className="bpmnr-status-pill">
         <span className="bpmnr-status-dot" aria-hidden />

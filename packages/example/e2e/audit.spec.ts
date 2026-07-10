@@ -19,7 +19,7 @@ test('activation records an attestation and the ledger chip verifies the chain',
   await dialog.getByRole('button', { name: 'Aprovar como Owner' }).click();
   await dialog.getByRole('button', { name: 'Aprovar como Compliance' }).click();
   await dialog.getByRole('button', { name: /^Ativar v/ }).click();
-  await expect(page.getByRole('status', { name: /Version/ })).toContainText('ATIVA');
+  await expect(page.getByRole('status', { name: /Versão/ })).toContainText('ATIVA');
 
   // The attestation is anchored in the same chain the AuditPanel shows.
   await expect(page.locator('.demo-audit')).toContainText('VERSION_ATTESTED');

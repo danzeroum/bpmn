@@ -26,7 +26,7 @@ test('clinical pathway renders the 305° family with visible validation', async 
   await expect(page.locator('[data-node-id="dose"] [data-hc-warning]')).toHaveCount(0);
 
   // The same fact reaches Validate as HC_DECISION_UNLINKED (warning).
-  await page.getByRole('button', { name: 'Validate' }).click();
+  await page.getByRole('button', { name: 'Validar diagrama' }).click();
   await expect(
     page.locator('li[data-severity="warning"]', { hasText: 'sem tabela DMN vinculada' }),
   ).toHaveCount(1);

@@ -12,7 +12,7 @@ test('PNG export produces a valid, non-empty raster (#27, §8.7)', async ({ page
 
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: 'Export PNG' }).click(),
+    page.getByRole('button', { name: 'Exportar PNG' }).click(),
   ]);
   const path = await download.path();
   const buf = readFileSync(path);
@@ -27,7 +27,7 @@ test('SVG export is well-formed and keeps the diagram content', async ({ page })
 
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    page.getByRole('button', { name: 'Export SVG' }).click(),
+    page.getByRole('button', { name: 'Exportar SVG' }).click(),
   ]);
   const svg = readFileSync(await download.path(), 'utf8');
   expect(svg).toContain('xmlns="http://www.w3.org/2000/svg"');

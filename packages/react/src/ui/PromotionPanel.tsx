@@ -25,6 +25,7 @@ import { DiffView } from './DiffView.js';
 import { SignatureBadge } from './SignatureBadge.js';
 import { CanonicalPayloadCard } from './CanonicalPayloadCard.js';
 import { buildApprovalPayloadFor } from './approvalPayload.js';
+import { useT } from '../i18n/I18nContext.js';
 
 export interface PromotionApprover {
   actor: UserContext;
@@ -140,6 +141,7 @@ export function PromotionPanel({
   const [payloads, setPayloads] = useState<Record<string, CanonicalApprovalPayload>>({});
   const [signedLocal, setSignedLocal] = useState<Record<string, SignedApproval>>({});
   const [badges, setBadges] = useState<Record<string, ApproverBadge>>({});
+  const t = useT();
 
   const version = diagram.version;
   const diff = useMemo(() => computeDiff(baseline, diagram), [baseline, diagram]);
@@ -312,9 +314,12 @@ export function PromotionPanel({
           },
         });
       }
-      const parts = [`v${promoted.version.semanticVersion} ativa`];
-      if (previousActive) parts.push(`v${previousActive.semanticVersion} → descontinuada`);
-      if (entry) parts.push(`ledger #${entry.hash.slice(0, 7)} gravado`);
+      const parts = [t('promotion.toast.activated', { version: promoted.version.semanticVersion })];
+      if (previousActive)
+        parts.push(
+          `v${previousActive.semanticVersion} → ${t('promotion.toast.deprecated')}`,
+        );
+      if (entry) parts.push(t('promotion.toast.ledger', { hash: entry.hash.slice(0, 7) }));
       setToast(parts.join(' · '));
       if (toastTimer.current) clearTimeout(toastTimer.current);
       toastTimer.current = setTimeout(() => setToast(null), 6000);
@@ -340,11 +345,13 @@ export function PromotionPanel({
             className="bpmnr-promotion"
             role="dialog"
             aria-modal="true"
-            aria-label={`Ativar v${version.semanticVersion}`}
+            aria-label={t('promotion.activate', { version: version.semanticVersion })}
           >
             <header>
-              <p className="bpmnr-promotion-kicker">PROMOÇÃO FORMAL · STATE MACHINE DO CORE</p>
-              <h2>Ativar v{version.semanticVersion}</h2>
+              <p className="bpmnr-promotion-kicker">
+                {t('promotion.kicker.mode')} · {t('promotion.kicker.engine')}
+              </p>
+              <h2>{t('promotion.activate', { version: version.semanticVersion })}</h2>
               <p className="bpmnr-promotion-trail">
                 {trail.map((step, index) => (
                   <span key={step} data-current={step === version.status || undefined}>
@@ -355,7 +362,9 @@ export function PromotionPanel({
               </p>
             </header>
 
-            {gates === null && <p className="bpmnr-promotion-pending">verificando gates…</p>}
+            {gates === null && (
+              <p className="bpmnr-promotion-pending">{t('promotion.pendingGates')}</p>
+            )}
 
             {gates?.map((gate) => (
               <div key={gate.id} className="bpmnr-promotion-gate" data-satisfied={gate.satisfied}>
@@ -371,10 +380,12 @@ export function PromotionPanel({
                       <textarea
                         ref={summaryRef}
                         className="bpmnr-promotion-summary"
-                        aria-label="change_summary"
+                        aria-label={t('promotion.changeSummary.aria')}
                         rows={2}
                         defaultValue={version.changeSummary}
-                        placeholder={`Descreva a mudança (mín. ${lifecycleEngine.requiredChangeSummaryLength} caracteres)`}
+                        placeholder={t('promotion.changeSummary.placeholder', {
+                          count: lifecycleEngine.requiredChangeSummaryLength,
+                        })}
                         onBlur={(event) => {
                           const value = event.target.value;
                           if (value === version.changeSummary) return;
@@ -419,7 +430,7 @@ export function PromotionPanel({
                             })();
                           }}
                         >
-                          ✦ Sugerir resumo
+                          ✦ {t('promotion.suggestSummary')}
                         </button>
                       )}
                     </>
@@ -456,10 +467,10 @@ export function PromotionPanel({
                                 onClick={() => void approve(approver)}
                               >
                                 {approved
-                                  ? `✓ ${label} aprovou`
+                                  ? `✓ ${t('promotion.approver.approved', { label })}`
                                   : canSign
-                                    ? `🔏 Assinar aprovação como ${label}`
-                                    : `Aprovar como ${label}`}
+                                    ? `🔏 ${t('promotion.approver.sign', { label })}`
+                                    : t('promotion.approver.approve', { label })}
                               </button>
                             )}
                           </div>
@@ -478,10 +489,8 @@ export function PromotionPanel({
               <span aria-hidden>{soundnessErrors.length === 0 ? '✓' : '○'}</span>
               <div>
                 <strong>
-                  Soundness ·{' '}
-                  {soundnessErrors.length === 0
-                    ? '0 erros'
-                    : `${soundnessErrors.length} erro(s)`}
+                  {t('promotion.soundness.label')} ·{' '}
+                  {t('promotion.soundness.errors', { count: soundnessErrors.length })}
                 </strong>
                 {soundnessErrors.length > 0 && (
                   <>
@@ -493,7 +502,7 @@ export function PromotionPanel({
                       ))}
                     </ul>
                     <button type="button" onClick={showOnCanvas}>
-                      ver no canvas
+                      {t('promotion.soundness.showOnCanvas')}
                     </button>
                   </>
                 )}
@@ -519,35 +528,46 @@ export function PromotionPanel({
                 </span>
                 <div>
                   <strong>
-                    Cobertura de caminhos · {coverage.covered}/{coverage.total}
+                    {t('promotion.coverage.label')} · {coverage.covered}/{coverage.total}
                     {coverage.minCoverage !== undefined
-                      ? ` · mín ${Math.round(coverage.minCoverage * 100)}%`
+                      ? ` · ${t('promotion.coverage.min', {
+                          pct: Math.round(coverage.minCoverage * 100),
+                        })}`
                       : ''}
                   </strong>
                   <div className="bpmnr-promotion-coverage-pct">
                     {coverage.total > 0
-                      ? `${Math.round((coverage.covered / coverage.total) * 100)}% exercitado`
-                      : 'nenhum roteiro registrado para esta versão'}
+                      ? t('promotion.coverage.exercised', {
+                          pct: Math.round((coverage.covered / coverage.total) * 100),
+                        })
+                      : t('promotion.coverage.noScenarios')}
                   </div>
                 </div>
               </div>
             )}
 
             <div className="bpmnr-promotion-diff">
-              <strong>Diff vs baseline</strong>
+              <strong>{t('promotion.diff.title')}</strong>
               <DiffView diff={diff} diagram={diagram} />
             </div>
 
             <p className="bpmnr-promotion-warning">
-              Ao ativar:{' '}
+              {t('promotion.warning.prefix')}{' '}
               {previousActive
-                ? `v${previousActive.semanticVersion} passa a Descontinuada (effective_until = hoje) · ${
+                ? `${t('promotion.warning.deprecates', {
+                    version: previousActive.semanticVersion,
+                  })} · ${
                     previousActive.runsPinned !== undefined
-                      ? `${previousActive.runsPinned} execuções em andamento permanecem presas à v${previousActive.semanticVersion}`
-                      : `execuções em andamento permanecem presas à v${previousActive.semanticVersion}`
+                      ? t('promotion.warning.runsPinned', {
+                          count: previousActive.runsPinned,
+                          version: previousActive.semanticVersion,
+                        })
+                      : t('promotion.warning.runsUnpinned', {
+                          version: previousActive.semanticVersion,
+                        })
                   } · `
-                : 'execuções em andamento permanecem presas às versões em que nasceram · '}
-              promoção gravada no ledger hash-chained.
+                : `${t('promotion.warning.runsNoActive')} · `}
+              {t('promotion.warning.ledger')}
             </p>
 
             {error && (
@@ -558,7 +578,7 @@ export function PromotionPanel({
 
             <footer>
               <button type="button" onClick={onClose}>
-                Cancelar
+                {t('promotion.cancel')}
               </button>
               <button
                 type="button"
@@ -566,7 +586,7 @@ export function PromotionPanel({
                 disabled={!canActivate}
                 onClick={() => void activate()}
               >
-                Ativar v{version.semanticVersion}
+                {t('promotion.activate', { version: version.semanticVersion })}
               </button>
             </footer>
           </section>

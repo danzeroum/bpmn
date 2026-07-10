@@ -103,8 +103,13 @@ de propósito:
   pack: `PaletteGroup` declarativo no plugin (`paletteGroups`), grupos Core BPMN / Events (badge
   F6) / BuildToValue, itens sem grupo continuam em lista plana (retrocompatível). Nota de idioma:
   os cabeçalhos core seguem o padrão EN da UI da biblioteca ("Core BPMN"/"Events"); o protótipo
-  usa PT ("EVENTOS"). i18n da UI core é decisão de produto em aberto — a camada de aplicação pode
-  registrar grupos com labels PT por cima se preferir.
+  usa PT ("EVENTOS"). ~~i18n da UI core é decisão de produto em aberto~~ → **RESOLVIDO (Handoff 11
+  N-6)**: dicionário injetado por prop (`<BpmnDesigner messages>` / `<StudioShell messages>`),
+  fallback EN completo embutido, `useT()`/`t('chave')` em TODAS as superfícies react/studio, e
+  `PT_BR` como segundo dicionário oficial. Cerca de CI `check:no-hardcoded-strings` proíbe literal
+  de UI nas superfícies migradas + verifica cobertura de chave. Labels autorais de plugin
+  (`item.label`, `group.label`, tipos de nó) seguem sendo conteúdo do plugin — traduzidos na
+  origem, não no dicionário do core (fronteira deliberada).
 - **Export XES do ledger** — ✅ ENTREGUE (PR-B2, Handoff 4 §B2): `toXES(ledger, { registry })`
   no `@buildtovalue/audit` + `bpmn-react export-xes` no CLI. Cada versão = trace; comandos,
   promoções, attestations, registros e publicações = events com concept/time/org/lifecycle.

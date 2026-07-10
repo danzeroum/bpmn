@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { BoundaryOption, CoverageSummary, TransitionRecord } from '@buildtovalue/simulation';
+import { useT } from '../i18n/I18nContext.js';
 
 export interface SimulationPanelProps {
   sessionNumber: number;
@@ -45,12 +46,13 @@ export function SimulationPanel(props: SimulationPanelProps) {
     canRecord,
     recordedInfo,
   } = props;
+  const t = useT();
   const pct = coverage.total > 0 ? Math.round((coverage.covered / coverage.total) * 100) : 0;
 
   return (
-    <aside className="bpmnr-sim-panel" aria-label="Painel de simulação" data-sim-panel>
+    <aside className="bpmnr-sim-panel" aria-label={t('sim.panel.aria')} data-sim-panel>
       <div>
-        <div className="bpmnr-sim-eyebrow">SIMULAÇÃO · SESSÃO #{sessionNumber}</div>
+        <div className="bpmnr-sim-eyebrow">{t('sim.eyebrow', { session: sessionNumber })}</div>
         <div className="bpmnr-sim-status" data-sim-status>
           {statusLine}
         </div>
@@ -67,7 +69,7 @@ export function SimulationPanel(props: SimulationPanelProps) {
           {advanceLabel}
         </button>
         <button type="button" data-sim-reset onClick={onReset} className="bpmnr-sim-btn">
-          ↺ Reiniciar
+          ↺ {t('sim.reset')}
         </button>
       </div>
 
@@ -79,8 +81,8 @@ export function SimulationPanel(props: SimulationPanelProps) {
           onClick={() => onFireBoundary(boundary.boundary)}
           className="bpmnr-sim-btn bpmnr-sim-btn-boundary"
         >
-          ⏱ Disparar boundary “{boundary.label}”
-          {boundary.interrupting ? '' : ' (não-interruptivo)'}
+          ⏱ {t('sim.boundary.fire', { label: boundary.label })}
+          {boundary.interrupting ? '' : t('sim.boundary.nonInterrupting')}
         </button>
       ))}
 
@@ -91,12 +93,12 @@ export function SimulationPanel(props: SimulationPanelProps) {
           data-sim-stepmode
           onChange={(event) => onToggleStepMode(event.target.checked)}
         />
-        Modo passo a passo sem animação (reduced motion)
+        {t('sim.stepMode')}
       </label>
 
       <div className="bpmnr-sim-card">
         <div className="bpmnr-sim-card-title">
-          COBERTURA DE CAMINHOS · {coverage.covered}/{coverage.total}
+          {t('sim.coverage.title', { covered: coverage.covered, total: coverage.total })}
         </div>
         <ul className="bpmnr-sim-coverage" data-sim-coverage>
           {coverage.paths.map((path) => (
@@ -114,15 +116,15 @@ export function SimulationPanel(props: SimulationPanelProps) {
       </div>
 
       <div className="bpmnr-sim-card bpmnr-sim-trail-card">
-        <div className="bpmnr-sim-card-title">TRILHA DA SESSÃO</div>
+        <div className="bpmnr-sim-card-title">{t('sim.trail.title')}</div>
         <div className="bpmnr-sim-trail" data-sim-trail>
           {trail.length === 0 ? (
-            <div className="bpmnr-sim-trail-empty">sessão iniciada</div>
+            <div className="bpmnr-sim-trail-empty">{t('sim.trail.empty')}</div>
           ) : (
             trail.map((entry) => (
               <div key={entry.step} data-approximate={entry.approximate || undefined}>
                 {entry.message}
-                {entry.approximate ? ' · ~aprox' : ''}
+                {entry.approximate ? t('sim.trail.approx') : ''}
               </div>
             ))
           )}
@@ -131,8 +133,9 @@ export function SimulationPanel(props: SimulationPanelProps) {
 
       {hasApproximateSemantics && (
         <div className="bpmnr-sim-notice" data-sim-approx-notice>
-          Este modelo usa gateway OR — semântica de join é <strong>aproximada</strong> (ver
-          limitations.md).
+          {t('sim.approxNotice.before')}
+          <strong>{t('sim.approxNotice.emphasis')}</strong>
+          {t('sim.approxNotice.after')}
         </div>
       )}
 
@@ -143,7 +146,7 @@ export function SimulationPanel(props: SimulationPanelProps) {
           onClick={onRecord}
           className="bpmnr-sim-btn bpmnr-sim-btn-record"
         >
-          Registrar sessão no ledger
+          {t('sim.record')}
         </button>
       )}
       {recordedInfo && (

@@ -1,4 +1,5 @@
 import type { AggregatedLog } from '@buildtovalue/replay';
+import { useT } from '../i18n/I18nContext.js';
 
 export interface ReplayComparison {
   headline: string;
@@ -36,25 +37,26 @@ function endpointLabel(id: string, nodeLabel: (id: string) => string): string {
  */
 export function ReplayPanel(props: ReplayPanelProps) {
   const { fileName, log, nodeLabel, selectedDeviation, onSelectDeviation, playingVariant, onPlayVariant, onStopVariant, comparison } = props;
+  const t = useT();
   const { fitness, deviations, variants } = log;
   const fitPct = fitness.totalMoves > 0 ? fitness.fitness * 100 : 0;
   const empty = log.totalCases === 0;
 
   return (
-    <aside className="bpmnr-replay-panel" aria-label="Painel de replay" data-replay-panel>
+    <aside className="bpmnr-replay-panel" aria-label={t('replay.panel.aria')} data-replay-panel>
       <div>
-        <div className="bpmnr-replay-eyebrow">EVENT LOG IMPORTADO</div>
+        <div className="bpmnr-replay-eyebrow">{t('replay.eventLog')}</div>
         <div className="bpmnr-replay-file" data-replay-file>{fileName}</div>
         <div className="bpmnr-replay-meta">
-          {int(log.totalCases)} casos · {int(log.totalEvents)} eventos · pré-agregado em 1 passada
-          {log.unmapped.length > 0 ? ` · ${log.unmapped.length} atividade(s) não mapeada(s)` : ''}
+          {t('replay.meta', { cases: int(log.totalCases), events: int(log.totalEvents) })}
+          {log.unmapped.length > 0 ? t('replay.meta.unmapped', { count: log.unmapped.length }) : ''}
         </div>
       </div>
 
       {/* Fitness */}
       <div className="bpmnr-replay-card">
         <div className="bpmnr-replay-card-head">
-          <span className="bpmnr-replay-card-title">TOKEN-REPLAY FITNESS</span>
+          <span className="bpmnr-replay-card-title">{t('replay.fitness.title')}</span>
           <span className="bpmnr-replay-fitness-value" data-replay-fitness>
             {empty ? '—' : pct(fitness.fitness)}
           </span>
@@ -64,12 +66,17 @@ export function ReplayPanel(props: ReplayPanelProps) {
         </div>
         <div className="bpmnr-replay-note">
           {empty ? (
-            'Sem execuções nesta versão — compare com uma versão que tenha runs para fundamentar a promoção.'
+            t('replay.fitness.empty')
           ) : (
             <>
-              {int(fitness.conformingCases)} de {int(fitness.totalCases)} casos reproduzem integralmente
-              no modelo. {int(fitness.totalCases - fitness.conformingCases)} caso(s) com eventos sem
-              caminho correspondente (desvios abaixo).
+              {t('replay.fitness.conforming', {
+                conforming: int(fitness.conformingCases),
+                total: int(fitness.totalCases),
+              })}
+              {t('replay.fitness.nonConforming', {
+                count: fitness.totalCases - fitness.conformingCases,
+                n: int(fitness.totalCases - fitness.conformingCases),
+              })}
             </>
           )}
         </div>
@@ -78,15 +85,14 @@ export function ReplayPanel(props: ReplayPanelProps) {
       {comparison && (
         <div className="bpmnr-replay-card bpmnr-replay-compare" data-replay-compare>
           <div className="bpmnr-replay-card-title">
-            ANTES DE APROVAR A v{comparison.candidateSemanticVersion}
+            {t('replay.compare.title', { version: comparison.candidateSemanticVersion })}
           </div>
           <p className="bpmnr-replay-compare-text" data-replay-compare-text>
             {comparison.headline}
           </p>
           {comparison.attached ? (
             <div className="bpmnr-replay-attached" data-replay-attached>
-              ✓ Análise anexada ao pedido de promoção — vira bloco na Revisão do Aprovador e entrada no
-              ledger.
+              ✓ {t('replay.compare.attached')}
             </div>
           ) : (
             comparison.onAttach && (
@@ -96,7 +102,7 @@ export function ReplayPanel(props: ReplayPanelProps) {
                 className="bpmnr-replay-attach"
                 onClick={comparison.onAttach}
               >
-                anexar esta análise ao pedido de promoção →
+                {t('replay.compare.attach')} →
               </button>
             )
           )}
@@ -105,9 +111,9 @@ export function ReplayPanel(props: ReplayPanelProps) {
 
       {/* Deviations */}
       <div className="bpmnr-replay-card bpmnr-replay-dev-card">
-        <div className="bpmnr-replay-card-title bpmnr-replay-dev-title">DESVIOS DO MODELO · {deviations.length}</div>
+        <div className="bpmnr-replay-card-title bpmnr-replay-dev-title">{t('replay.deviations.title', { n: deviations.length })}</div>
         {deviations.length === 0 ? (
-          <div className="bpmnr-replay-note">Nenhum desvio — o log adere integralmente ao modelo.</div>
+          <div className="bpmnr-replay-note">{t('replay.deviations.none')}</div>
         ) : (
           <ul className="bpmnr-replay-devlist" data-replay-devlist>
             {deviations.map((deviation, index) => (
@@ -118,7 +124,7 @@ export function ReplayPanel(props: ReplayPanelProps) {
                 onClick={() => onSelectDeviation(index)}
               >
                 <strong>▲ {endpointLabel(deviation.from, nodeLabel)} → {endpointLabel(deviation.to, nodeLabel)}</strong>
-                {' '}({int(deviation.cases)} casos · {pct(log.totalCases > 0 ? deviation.cases / log.totalCases : 0)})
+                {' '}({t('replay.cases', { count: deviation.cases, n: int(deviation.cases) })} · {pct(log.totalCases > 0 ? deviation.cases / log.totalCases : 0)})
               </li>
             ))}
           </ul>
@@ -127,14 +133,14 @@ export function ReplayPanel(props: ReplayPanelProps) {
 
       {/* Variants */}
       <div className="bpmnr-replay-card">
-        <div className="bpmnr-replay-card-title">VARIANTES · TOP {variants.length} (AMOSTRADAS)</div>
+        <div className="bpmnr-replay-card-title">{t('replay.variants.title', { n: variants.length })}</div>
         <ul className="bpmnr-replay-variants" data-replay-variants>
           {variants.map((variant, index) => {
             const playing = playingVariant === index;
             return (
               <li key={variant.signature}>
                 <span className="bpmnr-replay-variant-label">
-                  {index + 1} · {int(variant.count)} casos ({pct(variant.share)})
+                  {index + 1} · {t('replay.cases', { count: variant.count, n: int(variant.count) })} ({pct(variant.share)})
                 </span>
                 <button
                   type="button"
@@ -142,7 +148,7 @@ export function ReplayPanel(props: ReplayPanelProps) {
                   className="bpmnr-replay-play"
                   onClick={() => (playing ? onStopVariant() : onPlayVariant(index))}
                 >
-                  {playing ? '■ Parar' : '▶ Reproduzir'}
+                  {playing ? `■ ${t('replay.variant.stop')}` : `▶ ${t('replay.variant.play')}`}
                 </button>
               </li>
             );
@@ -151,8 +157,7 @@ export function ReplayPanel(props: ReplayPanelProps) {
       </div>
 
       <div className="bpmnr-replay-legend-note">
-        Import: XES 2.0 ou CSV (case, activity, timestamp). Heatmap pré-agregado — a animação
-        reproduz apenas traces amostrados, nunca 1 token por evento.
+        {t('replay.legend')}
       </div>
     </aside>
   );

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { updateNodeCommand, type BpmnNode } from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * Inline label editor rendered over a node via an SVG `<foreignObject>`, so
@@ -12,6 +13,7 @@ import { useCanvasStore } from '../contexts/CanvasContext.js';
 export function NodeLabelEditor({ node }: { node: BpmnNode }) {
   const { execute } = useDiagram();
   const store = useCanvasStore();
+  const t = useT();
   const [value, setValue] = useState(node.label);
   const inputRef = useRef<HTMLInputElement>(null);
   const committedRef = useRef(false);
@@ -44,7 +46,7 @@ export function NodeLabelEditor({ node }: { node: BpmnNode }) {
         ref={inputRef}
         type="text"
         value={value}
-        aria-label="Edit label"
+        aria-label={t('nodeLabel.aria')}
         data-node-label-editor={node.id}
         onChange={(e) => setValue(e.target.value)}
         onBlur={commit}

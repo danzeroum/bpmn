@@ -15,6 +15,8 @@ import {
   BpmnReplay,
   BpmnSimulator,
   EdgePedigreeStrip,
+  I18nProvider,
+  PT_BR,
   resolveEditorConfig,
   useCanvasState,
   useDiagram,
@@ -22,6 +24,7 @@ import {
   type BpmnPlugin,
   type EdgeRouterContext,
   type GovernanceBreadcrumbLevel,
+  type Messages,
 } from '@buildtovalue/react';
 import {
   createSfeelDecisionSupport,
@@ -286,6 +289,11 @@ export function App() {
     return buildSampleDiagram();
   });
   const [editorKey, setEditorKey] = useState(0);
+  // Runtime dictionary switch (Handoff 11 N-6): the host owns locale. `messages`
+  // is injected by prop — `undefined` → English fallback, `PT_BR` → the second
+  // official dictionary. Toggling re-renders in place, no remount.
+  const [lang, setLang] = useState<'en' | 'pt'>('pt');
+  const messages: Messages | undefined = lang === 'pt' ? PT_BR : undefined;
   const latestRef = useRef(diagram);
   // `?drd=1` shows the decision's own surface; `?decision=<ref>` opens its
   // table straight away (deep link used by "abrir →"/"editar tabela →").
@@ -311,23 +319,27 @@ export function App() {
   if (studioMode) return <StudioSurface />;
   if (libraryMode) return <LibrarySurface />;
   if (replayMode) {
+    // These read-only demo surfaces stay in pt-BR (their prior default); the
+    // dictionary is injected via the shared I18nProvider (N-6).
     return (
-      <BpmnReplay
-        diagram={buildSimulationDiagram()}
-        versions={REPLAY_VERSIONS}
-        candidate={{ semanticVersion: '2.1.0', change: 'boundary timer de 48h + escalation' }}
-        author="demo"
-        fileName="onboarding_prod_jun.xes"
-        plugins={PLUGINS}
-        // Handoff 7B-3: attach the comparative analysis to the candidate's
-        // promotion — a ledger entry (host injection) the Approver Review reads.
-        onAttachAnalysis={(analysis) => {
-          void replayDemoLedger.append(replayAnalysisEntry(analysis, { id: 'demo' }, 'v21'));
-        }}
-        onExit={() => {
-          window.location.search = '?simulate=1';
-        }}
-      />
+      <I18nProvider messages={PT_BR}>
+        <BpmnReplay
+          diagram={buildSimulationDiagram()}
+          versions={REPLAY_VERSIONS}
+          candidate={{ semanticVersion: '2.1.0', change: 'boundary timer de 48h + escalation' }}
+          author="demo"
+          fileName="onboarding_prod_jun.xes"
+          plugins={PLUGINS}
+          // Handoff 7B-3: attach the comparative analysis to the candidate's
+          // promotion — a ledger entry (host injection) the Approver Review reads.
+          onAttachAnalysis={(analysis) => {
+            void replayDemoLedger.append(replayAnalysisEntry(analysis, { id: 'demo' }, 'v21'));
+          }}
+          onExit={() => {
+            window.location.search = '?simulate=1';
+          }}
+        />
+      </I18nProvider>
     );
   }
   if (copilotMode) {
@@ -338,6 +350,7 @@ export function App() {
       <BpmnEditor
         diagram={fixMode ? buildDeadlockDiagram() : createDiagram({ id: 'demo-copilot', name: 'Copiloto', createdBy: 'demo' })}
         plugins={PLUGINS}
+        messages={PT_BR}
       >
         <CopilotDemo />
       </BpmnEditor>
@@ -346,33 +359,37 @@ export function App() {
   if (sfeelMode) {
     const sfeelDiagram = buildSfeelDiagram(params.get('bad') !== null);
     return (
-      <BpmnSimulator
-        diagram={sfeelDiagram}
-        plugins={PLUGINS}
-        author="demo"
-        decisions={createSfeelDecisionSupport(sfeelDiagram)}
-        onExit={() => {
-          window.location.search = '';
-        }}
-      />
+      <I18nProvider messages={PT_BR}>
+        <BpmnSimulator
+          diagram={sfeelDiagram}
+          plugins={PLUGINS}
+          author="demo"
+          decisions={createSfeelDecisionSupport(sfeelDiagram)}
+          onExit={() => {
+            window.location.search = '';
+          }}
+        />
+      </I18nProvider>
     );
   }
   if (simulateMode) {
     return (
-      <BpmnSimulator
-        diagram={buildSimulationDiagram()}
-        plugins={PLUGINS}
-        author="demo"
-        // Handoff 7A-3: register the session as an auditable ledger entry (host
-        // injection). The mapper lives in adapters-bpmn; the demo appends to an
-        // in-memory ledger, which certify would turn into SACM evidence.
-        onRecord={(session) => {
-          void simulationDemoLedger.append(simulationSessionEntry(session, { id: 'demo' }));
-        }}
-        onExit={() => {
-          window.location.search = '';
-        }}
-      />
+      <I18nProvider messages={PT_BR}>
+        <BpmnSimulator
+          diagram={buildSimulationDiagram()}
+          plugins={PLUGINS}
+          author="demo"
+          // Handoff 7A-3: register the session as an auditable ledger entry (host
+          // injection). The mapper lives in adapters-bpmn; the demo appends to an
+          // in-memory ledger, which certify would turn into SACM evidence.
+          onRecord={(session) => {
+            void simulationDemoLedger.append(simulationSessionEntry(session, { id: 'demo' }));
+          }}
+          onExit={() => {
+            window.location.search = '';
+          }}
+        />
+      </I18nProvider>
     );
   }
 
@@ -427,6 +444,14 @@ export function App() {
         <button type="button" onClick={() => replaceFromOutside(buildSampleDiagram())}>
           Reset sample
         </button>
+        <button
+          type="button"
+          data-testid="lang-toggle"
+          data-lang={lang}
+          onClick={() => setLang((l) => (l === 'pt' ? 'en' : 'pt'))}
+        >
+          {lang === 'pt' ? 'EN' : 'PT'}
+        </button>
       </header>
 
       <main className="demo-main">
@@ -434,6 +459,7 @@ export function App() {
           key={editorKey}
           diagram={diagram}
           plugins={astarMode ? ASTAR_PLUGINS : PLUGINS}
+          messages={messages}
           onChange={(next) => {
             latestRef.current = next;
           }}

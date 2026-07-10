@@ -1,6 +1,11 @@
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { VersionTimeline, type VersionTimelineItem } from '../src/index.js';
+import { I18nProvider, PT_BR, VersionTimeline, type VersionTimelineItem } from '../src/index.js';
+
+const wrapper = ({ children }: { children: ReactNode }) => (
+  <I18nProvider messages={PT_BR}>{children}</I18nProvider>
+);
 
 const ITEMS: VersionTimelineItem[] = [
   {
@@ -25,8 +30,8 @@ const ITEMS: VersionTimelineItem[] = [
 
 describe('VersionTimeline', () => {
   it('renders each version with canonical seal, vigência, channel and approvers', () => {
-    render(<VersionTimeline items={ITEMS} />);
-    const list = screen.getByRole('list', { name: 'Version history' });
+    render(<VersionTimeline items={ITEMS} />, { wrapper });
+    const list = screen.getByRole('list', { name: 'Histórico de versões' });
     const entries = within(list).getAllByRole('listitem');
     expect(entries).toHaveLength(2);
 
@@ -47,7 +52,7 @@ describe('VersionTimeline', () => {
       { id: 'v2', semanticVersion: '2.0.0', status: 'deprecated', effectiveFrom: '2026-03-01T00:00:00Z', effectiveUntil: '2026-06-01T00:00:00Z' },
       { id: 'v3', semanticVersion: '3.0.0', status: 'active', effectiveFrom: '2026-06-01T00:00:00Z', current: true },
     ];
-    const { container } = render(<VersionTimeline items={items} />);
+    const { container } = render(<VersionTimeline items={items} />, { wrapper });
     expect(container.querySelector('[data-version-id="v1"]')).toHaveTextContent(
       'vigente 2026-01-01 → 2026-03-01',
     );
@@ -65,7 +70,7 @@ describe('VersionTimeline', () => {
       { id: 'v2', semanticVersion: '2.0.0', status: 'active', pinnedRuns: 12 },
       { id: 'v3', semanticVersion: '3.0.0', status: 'draft', pinnedRuns: 0 },
     ];
-    const { container } = render(<VersionTimeline items={items} />);
+    const { container } = render(<VersionTimeline items={items} />, { wrapper });
     expect(container.querySelector('[data-version-id="v1"]')).toHaveTextContent('1 execução presa');
     expect(container.querySelector('[data-version-id="v2"]')).toHaveTextContent(
       '12 execuções presas',
@@ -74,7 +79,7 @@ describe('VersionTimeline', () => {
   });
 
   it('defaults to newest-first and flips with order="asc"', () => {
-    const { rerender, container } = render(<VersionTimeline items={ITEMS} />);
+    const { rerender, container } = render(<VersionTimeline items={ITEMS} />, { wrapper });
     let ids = [...container.querySelectorAll('[data-version-id]')].map((el) => el.getAttribute('data-version-id'));
     expect(ids).toEqual(['v2', 'v1']);
 
@@ -84,25 +89,25 @@ describe('VersionTimeline', () => {
   });
 
   it('marks the current entry with aria-current', () => {
-    const { container } = render(<VersionTimeline items={ITEMS} />);
+    const { container } = render(<VersionTimeline items={ITEMS} />, { wrapper });
     expect(container.querySelector('[data-version-id="v2"]')).toHaveAttribute('aria-current', 'true');
     expect(container.querySelector('[data-version-id="v1"]')).not.toHaveAttribute('aria-current');
   });
 
   it('reports selection through onSelect when interactive', () => {
     const onSelect = vi.fn();
-    const { container } = render(<VersionTimeline items={ITEMS} onSelect={onSelect} />);
+    const { container } = render(<VersionTimeline items={ITEMS} onSelect={onSelect} />, { wrapper });
     fireEvent.click(container.querySelector('[data-version-id="v1"] button')!);
     expect(onSelect).toHaveBeenCalledWith('v1');
   });
 
   it('disables the entries when no onSelect is given', () => {
-    const { container } = render(<VersionTimeline items={ITEMS} />);
+    const { container } = render(<VersionTimeline items={ITEMS} />, { wrapper });
     expect(container.querySelector('[data-version-id="v1"] button')).toBeDisabled();
   });
 
   it('renders an empty state', () => {
-    render(<VersionTimeline items={[]} />);
-    expect(screen.getByText('No versions yet')).toBeInTheDocument();
+    render(<VersionTimeline items={[]} />, { wrapper });
+    expect(screen.getByText('Nenhuma versão ainda')).toBeInTheDocument();
   });
 });

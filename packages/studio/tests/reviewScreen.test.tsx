@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuditLedger, LifecycleEngine, type UserContext } from '@buildtovalue/core';
 import type { AnchorAdapter, Signer } from '@buildtovalue/identity';
+import { I18nProvider, PT_BR } from '@buildtovalue/react';
 import { ReviewScreen } from '../src/index.js';
 import { candidateDiagram } from './fixtures.js';
 
@@ -55,7 +56,13 @@ function setup(overrides: Partial<Parameters<typeof ReviewScreen>[0]> = {}) {
     now: () => '2026-07-08T00:00:00.000Z',
     ...overrides,
   };
-  return { engine, ledger, ...render(<ReviewScreen {...props} />) };
+  return {
+    engine,
+    ledger,
+    ...render(<ReviewScreen {...props} />, {
+      wrapper: ({ children }) => <I18nProvider messages={PT_BR}>{children}</I18nProvider>,
+    }),
+  };
 }
 
 describe('ReviewScreen — TELA 2 (§5)', () => {

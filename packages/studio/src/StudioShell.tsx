@@ -1,16 +1,13 @@
 import { useEffect, useState } from 'react';
 import type { UserContext } from '@buildtovalue/core';
+import { useT, I18nProvider, type Messages } from '@buildtovalue/react';
 import { LibraryView, type LibraryViewProps } from '@buildtovalue/library-react';
 import { ReviewScreen, type ReviewScreenProps } from './review/ReviewScreen.js';
 import { LedgerExplorer, type LedgerExplorerProps } from './ledger/LedgerExplorer.js';
 
 export type StudioScreen = 'biblioteca' | 'revisao' | 'auditoria';
 
-const SCREENS: Array<{ id: StudioScreen; label: string }> = [
-  { id: 'biblioteca', label: 'Biblioteca' },
-  { id: 'revisao', label: 'Revisão' },
-  { id: 'auditoria', label: 'Auditoria' },
-];
+const SCREENS: StudioScreen[] = ['biblioteca', 'revisao', 'auditoria'];
 
 export interface StudioShellProps {
   user: UserContext;
@@ -21,11 +18,16 @@ export interface StudioShellProps {
   /** Wiring of the Auditoria screen (Ledger Explorer, S-5). */
   audit?: LedgerExplorerProps;
   footer?: string;
+  /**
+   * Injected UI dictionary (Handoff 11 N-6). Omitted → English. Missing keys
+   * fall back to English; the host owns locale choice.
+   */
+  messages?: Messages;
 }
 
 function screenFromHash(): StudioScreen {
   const hash = window.location.hash.replace(/^#\/?/, '');
-  return SCREENS.some((s) => s.id === hash) ? (hash as StudioScreen) : 'biblioteca';
+  return SCREENS.some((s) => s === hash) ? (hash as StudioScreen) : 'biblioteca';
 }
 
 /**
@@ -34,7 +36,16 @@ function screenFromHash(): StudioScreen {
  * router (§11) — and the user identity. Studio é leitura + decisões de
  * governança; edição é o Designer. Auditoria chega na S-5.
  */
-export function StudioShell({ user, library, review, audit, footer }: StudioShellProps) {
+export function StudioShell({ messages, ...rest }: StudioShellProps) {
+  return (
+    <I18nProvider messages={messages}>
+      <StudioShellBody {...rest} />
+    </I18nProvider>
+  );
+}
+
+function StudioShellBody({ user, library, review, audit, footer }: Omit<StudioShellProps, 'messages'>) {
+  const t = useT();
   const [screen, setScreen] = useState<StudioScreen>(() => screenFromHash());
 
   useEffect(() => {
@@ -54,18 +65,18 @@ export function StudioShell({ user, library, review, audit, footer }: StudioShel
         <span className="btv-studio-logo" aria-hidden>
           B
         </span>
-        <span className="btv-studio-brand">BuildToValue Studio</span>
+        <span className="btv-studio-brand">{t('studio.brand')}</span>
         <span className="btv-studio-divider" aria-hidden />
-        <nav className="btv-studio-nav" aria-label="Telas do Studio">
+        <nav className="btv-studio-nav" aria-label={t('studio.nav.aria')}>
           {SCREENS.map((s) => (
             <button
-              key={s.id}
+              key={s}
               type="button"
               className="btv-studio-nav-item"
-              aria-current={screen === s.id ? 'page' : undefined}
-              onClick={() => navigate(s.id)}
+              aria-current={screen === s ? 'page' : undefined}
+              onClick={() => navigate(s)}
             >
-              {s.label}
+              {t(`studio.nav.${s}`)}
             </button>
           ))}
         </nav>
@@ -83,15 +94,13 @@ export function StudioShell({ user, library, review, audit, footer }: StudioShel
             <LedgerExplorer {...audit} />
           ) : (
             <section className="btv-studio-block">
-              <span className="btv-studio-kicker">AUDITORIA</span>
-              <p className="btv-studio-muted">Ledger Explorer sem ledger conectado.</p>
+              <span className="btv-studio-kicker">{t('studio.audit.kicker')}</span>
+              <p className="btv-studio-muted">{t('studio.audit.noLedger')}</p>
             </section>
           ))}
       </main>
 
-      <footer className="btv-studio-footer">
-        {footer ?? 'BuildToValue Studio · leitura + decisões de governança — edição é o Designer'}
-      </footer>
+      <footer className="btv-studio-footer">{footer ?? t('studio.footer')}</footer>
     </div>
   );
 }

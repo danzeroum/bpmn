@@ -10,7 +10,7 @@ test('recovers an unsaved draft after a reload, and discard keeps the base diagr
   await expect(page.locator('svg.bpmnr-canvas')).toBeVisible();
   const before = await page.locator('[data-node-id]').count();
 
-  await page.getByRole('button', { name: 'Add Task' }).click();
+  await page.getByRole('button', { name: 'Adicionar Task' }).click();
   await expect(page.locator('[data-node-id]')).toHaveCount(before + 1);
   await page.waitForTimeout(2400); // autosave debounce (2s)
 
@@ -23,7 +23,7 @@ test('recovers an unsaved draft after a reload, and discard keeps the base diagr
 
   // Discard path: another change, another reload — Descartar keeps the base
   // diagram and clears the stored draft for good.
-  await page.getByRole('button', { name: 'Add Task' }).click();
+  await page.getByRole('button', { name: 'Adicionar Task' }).click();
   await page.waitForTimeout(2400);
   await page.reload();
   const banner2 = page.getByRole('alert').filter({ hasText: 'Rascunho não salvo' });
@@ -41,7 +41,7 @@ test('recovers an unsaved draft after a reload, and discard keeps the base diagr
 test('warns before leaving with unsaved changes', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('svg.bpmnr-canvas')).toBeVisible();
-  await page.getByRole('button', { name: 'Add Task' }).click();
+  await page.getByRole('button', { name: 'Adicionar Task' }).click();
 
   const dialogPromise = page.waitForEvent('dialog');
   const closed = page.close({ runBeforeUnload: true });

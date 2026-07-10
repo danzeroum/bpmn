@@ -9,6 +9,7 @@ import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { backToAutoPatch, isManualEdge } from '../canvas/routeEdge.js';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * Inspector for the selected element: label, purpose (edges) and free-form
@@ -19,12 +20,15 @@ export function PropertiesPanel() {
   const { inspectorSections } = useEditorConfig();
   const selectedIds = useCanvasState((s) => s.selectedIds);
   const readOnly = useCanvasState((s) => s.readOnly);
+  const t = useT();
 
   if (selectedIds.length !== 1) {
     return (
-      <aside className="bpmnr-inspector" aria-label="Properties">
+      <aside className="bpmnr-inspector" aria-label={t('properties.title')}>
         <p className="bpmnr-inspector-empty">
-          {selectedIds.length === 0 ? 'Nothing selected' : `${selectedIds.length} elements selected`}
+          {selectedIds.length === 0
+            ? t('properties.nothingSelected')
+            : t('properties.elementsSelected', { count: selectedIds.length })}
         </p>
       </aside>
     );
@@ -34,7 +38,7 @@ export function PropertiesPanel() {
   const node = diagram.nodes[id];
   const edge = diagram.edges[id];
   return (
-    <aside className="bpmnr-inspector" aria-label="Properties">
+    <aside className="bpmnr-inspector" aria-label={t('properties.title')}>
       {node && <NodeInspector node={node} readOnly={readOnly} />}
       {/* Plugin sections (Handoff 5, wireframe 2d) — e.g. DMN "Decisão". */}
       {node &&
@@ -42,18 +46,19 @@ export function PropertiesPanel() {
           .filter((section) => section.appliesTo(node))
           .map((section) => <section.component key={section.id} node={node} />)}
       {edge && <EdgeInspector edge={edge} readOnly={readOnly} />}
-      {!node && !edge && <p className="bpmnr-inspector-empty">Element not found</p>}
+      {!node && !edge && <p className="bpmnr-inspector-empty">{t('properties.elementNotFound')}</p>}
     </aside>
   );
 }
 
 function NodeInspector({ node, readOnly }: { node: BpmnNode; readOnly: boolean }) {
   const { execute } = useDiagram();
+  const t = useT();
   return (
     <div data-inspector-node={node.id}>
       <h3 className="bpmnr-inspector-title">{node.type}</h3>
       <Field
-        label="Label"
+        label={t('properties.label')}
         value={node.label}
         readOnly={readOnly}
         onCommit={(label) => execute(updateNodeCommand(node.id, { label }))}
@@ -64,11 +69,11 @@ function NodeInspector({ node, readOnly }: { node: BpmnNode; readOnly: boolean }
         onCommit={(properties) => execute(updateNodeCommand(node.id, { properties }))}
       />
       <dl className="bpmnr-inspector-meta">
-        <dt>Created in version</dt>
+        <dt>{t('properties.createdInVersion')}</dt>
         <dd>{node.createdInVersion}</dd>
         {node.removedInVersion && (
           <>
-            <dt>Closed in version</dt>
+            <dt>{t('properties.closedInVersion')}</dt>
             <dd>{node.removedInVersion}</dd>
           </>
         )}
@@ -81,20 +86,21 @@ function EdgeInspector({ edge, readOnly }: { edge: BpmnEdge; readOnly: boolean }
   const { diagram, execute } = useDiagram();
   const { edgeRouter } = useEditorConfig();
   const manual = isManualEdge(edge);
+  const t = useT();
   return (
     <div data-inspector-edge={edge.id}>
       <h3 className="bpmnr-inspector-title">{edge.type}</h3>
       <Field
-        label="Label"
+        label={t('properties.label')}
         value={edge.label ?? ''}
         readOnly={readOnly}
         onCommit={(label) => execute(updateEdgeCommand(edge.id, { label }))}
       />
       <Field
-        label="Purpose"
+        label={t('properties.purpose')}
         value={edge.purpose ?? ''}
         readOnly={readOnly}
-        placeholder="Why does this handoff exist?"
+        placeholder={t('properties.purposePlaceholder')}
         onCommit={(purpose) => execute(updateEdgeCommand(edge.id, { purpose }))}
       />
       {/* Manual routes (Handoff 10 R-3): reset to automatic in one undoable
@@ -109,21 +115,21 @@ function EdgeInspector({ edge, readOnly }: { edge: BpmnEdge; readOnly: boolean }
             execute(updateEdgeCommand(edge.id, backToAutoPatch(diagram, edge, edgeRouter)))
           }
         >
-          Voltar ao automático
+          {t('properties.backToAuto')}
         </button>
       )}
       <dl className="bpmnr-inspector-meta">
-        <dt>Created in version</dt>
+        <dt>{t('properties.createdInVersion')}</dt>
         <dd>{edge.createdInVersion}</dd>
         {edge.removedInVersion && (
           <>
-            <dt>Closed in version</dt>
+            <dt>{t('properties.closedInVersion')}</dt>
             <dd>{edge.removedInVersion}</dd>
           </>
         )}
         {edge.supersedesEdgeId && (
           <>
-            <dt>Supersedes</dt>
+            <dt>{t('properties.supersedes')}</dt>
             <dd>{edge.supersedesEdgeId}</dd>
           </>
         )}
@@ -176,11 +182,12 @@ function PropertiesEditor({
   readOnly: boolean;
 }) {
   const [newKey, setNewKey] = useState('');
+  const t = useT();
   const entries = Object.entries(properties);
   return (
     <div className="bpmnr-props">
-      <h4>Properties</h4>
-      {entries.length === 0 && <p className="bpmnr-inspector-empty">No properties</p>}
+      <h4>{t('properties.properties')}</h4>
+      {entries.length === 0 && <p className="bpmnr-inspector-empty">{t('properties.noProperties')}</p>}
       {entries.map(([key, value]) => (
         <Field
           key={key}
@@ -204,8 +211,8 @@ function PropertiesEditor({
           <input
             type="text"
             value={newKey}
-            placeholder="Add property…"
-            aria-label="New property name"
+            placeholder={t('properties.addProperty')}
+            aria-label={t('properties.newPropertyName')}
             onChange={(e) => setNewKey(e.target.value)}
           />
           <button type="submit">+</button>

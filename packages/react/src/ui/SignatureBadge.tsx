@@ -1,4 +1,5 @@
 import type { SignerIdentity, VerificationState } from '@buildtovalue/identity';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * Identity badge (Handoff 8 §4.1): replaces the loose approver name with a
@@ -42,13 +43,14 @@ export function SignatureBadge({
   expected,
   obtained,
 }: SignatureBadgeProps) {
-  const label = VERIFICATION_LABELS[state];
+  const t = useT();
+  const label = t(`signature.${state}`);
   return (
     <span
       className="bpmnr-signature-badge"
       data-verification={state}
       role="status"
-      aria-label={`Assinatura: ${label}`}
+      aria-label={t('signature.aria', { label })}
     >
       <span className="bpmnr-signature-pill">
         <span className="bpmnr-signature-glyph" aria-hidden>
@@ -66,7 +68,7 @@ export function SignatureBadge({
       )}
       {state === 'invalid' && (expected || obtained) && (
         <code className="bpmnr-signature-mismatch">
-          esperado {expected ?? '—'} · payload atual produz {obtained ?? '—'}
+          {t('signature.mismatch', { expected: expected ?? '—', obtained: obtained ?? '—' })}
         </code>
       )}
     </span>

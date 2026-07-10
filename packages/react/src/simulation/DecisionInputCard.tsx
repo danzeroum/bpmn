@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { BlockedDecision, Decision, PendingDecisionInput } from '@buildtovalue/simulation';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * Decision-input card (Handoff 9 SF-2): when the token rests on a
@@ -15,6 +16,7 @@ export function DecisionInputCard({
   pending: PendingDecisionInput;
   onDecide: (decision: Decision) => void;
 }) {
+  const t = useT();
   const [values, setValues] = useState<Record<string, string>>({});
   return (
     <form
@@ -27,7 +29,7 @@ export function DecisionInputCard({
         onDecide({ kind: 'decision', node: pending.nodeId, context });
       }}
     >
-      <strong>Decisão: {pending.label}</strong>
+      <strong>{t('sim.decision.label', { label: pending.label })}</strong>
       {pending.inputs.map((input) => (
         <label key={input} className="bpmnr-field">
           <span>{input}</span>
@@ -38,7 +40,7 @@ export function DecisionInputCard({
           />
         </label>
       ))}
-      <button type="submit">Avaliar tabela</button>
+      <button type="submit">{t('sim.decision.evaluate')}</button>
     </form>
   );
 }
@@ -49,15 +51,16 @@ export function DecisionInputCard({
  * stays where it is; there is no silent guess to continue with.
  */
 export function BlockedDecisionNotice({ blocked }: { blocked: BlockedDecision }) {
+  const t = useT();
   return (
     <div className="bpmnr-sim-decision-blocked" role="alert" data-testid="decision-blocked">
-      <strong>⚠ decisão não-simulável</strong>
+      <strong>⚠ {t('sim.decision.blocked')}</strong>
       <p>
-        {blocked.cell ? `célula '${blocked.cell}': ` : ''}
+        {blocked.cell ? t('sim.decision.cell', { cell: blocked.cell }) : ''}
         {blocked.reason}
       </p>
       <p>
-        Ver o subconjunto S-FEEL suportado em{' '}
+        {t('sim.decision.seeSubset')}
         <a href="https://github.com/danzeroum/bpmn/blob/main/docs/limitations.md" target="_blank" rel="noreferrer">
           limitations.md
         </a>

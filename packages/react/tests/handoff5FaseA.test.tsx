@@ -6,7 +6,7 @@ import {
   type BpmnDiagram,
   type ValidationRule,
 } from '@buildtovalue/core';
-import { BpmnDesigner, GovernanceBreadcrumb, Toolbar } from '../src/index.js';
+import { BpmnDesigner, GovernanceBreadcrumb, Toolbar, PT_BR, I18nProvider } from '../src/index.js';
 
 /** Expanded sub-process with children + a businessRuleTask, for F-A checks. */
 function faseADiagram(): BpmnDiagram {
@@ -119,7 +119,7 @@ describe('GovernanceBreadcrumb (F-A §10.3)', () => {
     diagram.version.semanticVersion = '2.3.0';
     diagram.version.status = 'candidate';
     const { container } = render(
-      <BpmnDesigner diagram={diagram}>
+      <BpmnDesigner diagram={diagram} messages={PT_BR}>
         <Toolbar />
       </BpmnDesigner>,
     );
@@ -127,7 +127,7 @@ describe('GovernanceBreadcrumb (F-A §10.3)', () => {
       clientX: 200,
       clientY: 110,
     });
-    const nav = screen.getByRole('navigation', { name: 'Sub-process navigation' });
+    const nav = screen.getByRole('navigation', { name: 'Navegação de subprocessos' });
     // Both levels (root + sub-process) carry the identity.
     expect(nav.querySelectorAll('.bpmnr-breadcrumb-semver')).toHaveLength(2);
     expect(nav.querySelectorAll('.bpmnr-breadcrumb-seal[data-status="candidate"]')).toHaveLength(2);
@@ -138,18 +138,20 @@ describe('GovernanceBreadcrumb (F-A §10.3)', () => {
   it('is one shared component: renders standalone with arbitrary levels', () => {
     const onNavigate = vi_fn();
     render(
-      <GovernanceBreadcrumb
-        levels={[
-          { id: null, label: 'Fluxo', semanticVersion: '1.0.0', status: 'active' },
-          { id: 'table-1', label: 'Tabela de decisão', semanticVersion: '0.2.0', status: 'draft' },
-        ]}
-        onNavigate={onNavigate.fn}
-      />,
+      <I18nProvider messages={PT_BR}>
+        <GovernanceBreadcrumb
+          levels={[
+            { id: null, label: 'Fluxo', semanticVersion: '1.0.0', status: 'active' },
+            { id: 'table-1', label: 'Tabela de decisão', semanticVersion: '0.2.0', status: 'draft' },
+          ]}
+          onNavigate={onNavigate.fn}
+        />
+      </I18nProvider>,
     );
-    const nav = screen.getByRole('navigation', { name: 'Governance breadcrumb' });
+    const nav = screen.getByRole('navigation', { name: 'Trilha de governança' });
     expect(nav).toHaveTextContent('ATIVA');
     expect(nav).toHaveTextContent('RASCUNHO');
-    fireEvent.click(screen.getByRole('button', { name: 'Back to process' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Voltar ao processo' }));
     expect(onNavigate.calls).toEqual([[null, 0]]);
   });
 });

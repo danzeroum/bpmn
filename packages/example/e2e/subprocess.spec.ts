@@ -20,7 +20,7 @@ test('expands and collapses a sub-process in place (undoable)', async ({ page })
   await expect(page.locator('[data-edge-id="r1"]')).toBeVisible();
 
   // The toggle went through the command stack: undo folds it back up.
-  await page.getByRole('button', { name: 'Undo' }).click();
+  await page.getByRole('button', { name: 'Desfazer' }).click();
   await expect(page.locator('[data-node-id="returnsInspect"]')).toHaveCount(0);
 });
 
@@ -33,10 +33,10 @@ test('drills into a sub-process and navigates back with the breadcrumb', async (
   await expect(page.locator('[data-node-id="returns"]')).toHaveCount(0);
   await expect(page.locator('[data-node-id="publish"]')).toHaveCount(0);
 
-  const breadcrumb = page.getByRole('navigation', { name: 'Sub-process navigation' });
+  const breadcrumb = page.getByRole('navigation', { name: 'Navegação de subprocessos' });
   await expect(breadcrumb).toContainText('Handle returns');
 
-  await breadcrumb.getByRole('button', { name: 'Back to process' }).click();
+  await breadcrumb.getByRole('button', { name: 'Voltar ao processo' }).click();
   await expect(page.locator('[data-node-id="returns"]')).toBeVisible();
   await expect(page.locator('[data-node-id="publish"]')).toBeVisible();
   await expect(page.locator('[data-node-id="returnsInspect"]')).toHaveCount(0);
@@ -79,14 +79,14 @@ test('double-click on the TITLE drills; double-click on the body edits (F-A)', a
   await page.mouse.dblclick(box.x + box.width / 2, box.y + 8);
   await expect(page.locator('[data-node-id="returns"]')).toHaveCount(0);
   await expect(page.locator('[data-node-id="returnsInspect"]')).toBeVisible();
-  const breadcrumb = page.getByRole('navigation', { name: 'Sub-process navigation' });
+  const breadcrumb = page.getByRole('navigation', { name: 'Navegação de subprocessos' });
   // Governance identity per level (Handoff 5 §10.3): semver + vigência seal.
   await expect(breadcrumb).toContainText('v0.1.0');
   await expect(breadcrumb).toContainText('RASCUNHO');
   await expect(page.locator('svg.bpmnr-canvas foreignObject input')).toHaveCount(0);
 
   // Back up; double-click the BODY: inline label editor, no drill.
-  await breadcrumb.getByRole('button', { name: 'Back to process' }).click();
+  await breadcrumb.getByRole('button', { name: 'Voltar ao processo' }).click();
   const again = (await page.locator('[data-node-id="returns"]').boundingBox())!;
   await page.mouse.dblclick(again.x + again.width / 2, again.y + again.height * 0.6);
   await expect(page.locator('[data-node-id="returns"]')).toBeVisible();

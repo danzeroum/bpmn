@@ -4,6 +4,7 @@ import { useCanvasStore, useCanvasState } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { useDismissal } from '../gestures/useDismissal.js';
+import { useT } from '../i18n/I18nContext.js';
 import {
   backToAutoPatch,
   computeRoutedWaypoints,
@@ -40,6 +41,7 @@ export function ContextMenu() {
   const menu = useCanvasState((s) => s.contextMenu);
   const { diagram, execute } = useDiagram();
   const config = useEditorConfig();
+  const t = useT();
   const [activeIndex, setActiveIndex] = useState(0);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -66,14 +68,14 @@ export function ContextMenu() {
         if (isManualEdge(edge)) {
           rendered.push({
             id: 'edge.back-to-auto',
-            label: 'Voltar ao automático',
+            label: t('contextMenu.backToAuto'),
             run: () =>
               void execute(updateEdgeCommand(edge.id, backToAutoPatch(diagram, edge, config.edgeRouter))),
           });
         }
         rendered.push({
           id: 'edge.add-waypoint',
-          label: 'Adicionar waypoint aqui',
+          label: t('contextMenu.addWaypoint'),
           run: () => {
             const route =
               edge.waypoints ??
@@ -92,7 +94,7 @@ export function ContextMenu() {
         });
         rendered.push({
           id: 'edge.edit-label',
-          label: 'Editar rótulo',
+          label: t('contextMenu.editLabel'),
           run: () => store.setState({ editingEdgeId: edge.id }),
         });
       }
@@ -100,7 +102,7 @@ export function ContextMenu() {
     if (menu.kind === 'node' && menu.targetId && diagram.nodes[menu.targetId]) {
       rendered.push({
         id: 'node.edit-label',
-        label: 'Editar rótulo',
+        label: t('contextMenu.editLabel'),
         run: () => store.setState({ editingNodeId: menu.targetId!, selectedIds: [menu.targetId!] }),
       });
     }
@@ -120,7 +122,7 @@ export function ContextMenu() {
       }
     }
     return rendered;
-  }, [menu, diagram, config, execute, store]);
+  }, [menu, diagram, config, execute, store, t]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -150,7 +152,7 @@ export function ContextMenu() {
       ref={menuRef}
       className="bpmnr-context-menu"
       role="menu"
-      aria-label="Menu de contexto"
+      aria-label={t('contextMenu.aria')}
       tabIndex={-1}
       data-testid="context-menu"
       style={{ left, top, width: MENU_WIDTH }}

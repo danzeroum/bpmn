@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { createDiagram, createNode, type BpmnDiagram } from '@buildtovalue/core';
-import { BpmnDesigner, BpmnViewer, CLOSED_HATCH_PATTERN_ID } from '../src/index.js';
+import { BpmnDesigner, BpmnViewer, CLOSED_HATCH_PATTERN_ID, PT_BR } from '../src/index.js';
 
 /** Sample with two closed nodes (one closed in the loaded version). */
 function snapshotDiagram(): BpmnDiagram {
@@ -73,7 +73,7 @@ describe('banner de versão (aceite 10.5.6)', () => {
   });
 
   it('renders in read-only views with version, lock and closed count', () => {
-    const { container } = render(<BpmnViewer diagram={snapshotDiagram()} />);
+    const { container } = render(<BpmnViewer diagram={snapshotDiagram()} messages={PT_BR} />);
     const banner = container.querySelector('[data-version-banner]')!;
     expect(banner).toBeInTheDocument();
     expect(banner.textContent).toContain('VISUALIZANDO v0.1.0');
@@ -85,7 +85,7 @@ describe('banner de versão (aceite 10.5.6)', () => {
     const diagram = snapshotDiagram();
     diagram.version = { ...diagram.version, status: 'deprecated', semanticVersion: '0.2.0' };
     delete diagram.nodes.old;
-    const { container } = render(<BpmnDesigner diagram={diagram} />);
+    const { container } = render(<BpmnDesigner diagram={diagram} messages={PT_BR} />);
     const banner = container.querySelector('[data-version-banner]')!;
     expect(banner.getAttribute('data-version-banner')).toBe('deprecated');
     expect(banner.textContent).toContain('VISUALIZANDO v0.2.0');

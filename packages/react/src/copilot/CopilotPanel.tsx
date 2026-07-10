@@ -15,6 +15,7 @@ import {
 } from '@buildtovalue/copilot';
 import { generateId, type BpmnDiagram } from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * Copilot panel (Handoff 9 CP-2, §6 UX): 372px chat surface where the AI
@@ -58,6 +59,7 @@ export function CopilotPanel({
   promptStatus,
 }: CopilotPanelProps) {
   const { diagram, execute, undo, stack } = useDiagram();
+  const t = useT();
   const [messages, setMessages] = useState<ChatEntry[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -149,24 +151,27 @@ export function CopilotPanel({
   return (
     <aside className="bpmnr-copilot" data-testid="copilot-panel" style={{ width: 372 }}>
       <header className="bpmnr-copilot-header">
-        <strong>✦ Copiloto</strong>
+        <strong>✦ {t('copilot.title')}</strong>
         <span className="bpmnr-copilot-meta" data-testid="copilot-meta">
-          {provider.id} · prompt: {template.id} v{template.version}
+          {provider.id} · {t('copilot.promptLabel')} {template.id} v{template.version}
           {promptStatus?.(template) ? ` ${promptStatus(template)}` : ''}
         </span>
         <span className="bpmnr-copilot-pill" data-testid="copilot-pill">
-          SÓ RASCUNHA
+          {t('copilot.pill')}
         </span>
       </header>
       {applied && (
         <div className="bpmnr-copilot-seal" data-testid="copilot-seal">
-          ◌ RASCUNHO · autoria: <span style={{ color: '#33567E' }}>ia.copilot@{provider.id}</span> +{' '}
+          ◌ {t('copilot.sealDraft')} · {t('copilot.sealAuthorship')}{' '}
+          <span style={{ color: '#33567E' }}>ia.copilot@{provider.id}</span> +{' '}
           {author}
         </div>
       )}
       {sndErrors.length > 0 && (
         <div className="bpmnr-copilot-snd" data-testid="copilot-snd-errors">
-          <strong>⚠ Soundness · {sndErrors.length} erro(s)</strong>
+          <strong>
+            ⚠ {t('copilot.soundness')} · {t('copilot.soundnessCount', { count: sndErrors.length })}
+          </strong>
           <ul>
             {sndErrors.map((issue, index) => (
               <li key={index}>
@@ -190,10 +195,10 @@ export function CopilotPanel({
               )
             }
           >
-            ✦ Sugerir correção
+            ✦ {t('copilot.suggestFix')}
           </button>
           <span className="bpmnr-copilot-meta">
-            prompt: {COPILOT_FIX_PROMPT.id} v{COPILOT_FIX_PROMPT.version}
+            {t('copilot.promptLabel')} {COPILOT_FIX_PROMPT.id} v{COPILOT_FIX_PROMPT.version}
           </span>
         </div>
       )}
@@ -219,7 +224,7 @@ export function CopilotPanel({
           onClick={() => void ask(input.trim())}
           data-testid="copilot-generate"
         >
-          ✦ Gerar rascunho do processo
+          ✦ {t('copilot.generate')}
         </button>
       ) : (
         <button
@@ -228,17 +233,17 @@ export function CopilotPanel({
           onClick={() => void ask(input.trim())}
           data-testid="copilot-adjust"
         >
-          Pedir ajuste
+          {t('copilot.adjust')}
         </button>
       )}
       <textarea
-        aria-label="Pedido ao copiloto"
+        aria-label={t('copilot.inputAria')}
         value={input}
         onChange={(event) => setInput(event.target.value)}
-        placeholder={empty ? 'Descreva o processo…' : 'Descreva o ajuste…'}
+        placeholder={empty ? t('copilot.placeholderProcess') : t('copilot.placeholderAdjust')}
       />
       <button type="button" disabled={!undoAllEnabled} onClick={undoAll} data-testid="copilot-undo-all">
-        Desfazer tudo
+        {t('copilot.undoAll')}
       </button>
     </aside>
   );

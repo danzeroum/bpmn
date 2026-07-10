@@ -1,4 +1,5 @@
 import type { CanonicalApprovalPayload } from '@buildtovalue/identity';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * "O que você está assinando" card (Handoff 8 §4.3, design card C): shows the
@@ -15,24 +16,23 @@ function shortHash(hash: string): string {
 }
 
 export function CanonicalPayloadCard({ payload }: CanonicalPayloadCardProps) {
+  const t = useT();
   return (
     <section className="bpmnr-canonical-payload" data-testid="canonical-payload">
-      <p className="bpmnr-canonical-payload-kicker">O QUE VOCÊ ESTÁ ASSINANDO (PAYLOAD CANÔNICO)</p>
+      <p className="bpmnr-canonical-payload-kicker">{t('payload.kicker')}</p>
       <div className="bpmnr-canonical-payload-box">
-        <div>
-          diagrama: {payload.diagramId} · versão: {payload.version}
-        </div>
+        <div>{t('payload.identity', { id: payload.diagramId, version: payload.version })}</div>
         <div>
           xmlHash: {shortHash(payload.xmlHash)} · ledgerHead: {shortHash(payload.ledgerHead)}
         </div>
         <div>
-          decisão: {payload.decision.toUpperCase()} (papel {payload.role})
+          {t('payload.decision', {
+            decision: payload.decision.toUpperCase(),
+            role: payload.role,
+          })}
         </div>
       </div>
-      <p className="bpmnr-canonical-payload-note">
-        A assinatura cobre o hash do XML + o head da cadeia — qualquer mudança posterior invalida a
-        verificação, detectável por qualquer terceiro.
-      </p>
+      <p className="bpmnr-canonical-payload-note">{t('payload.note')}</p>
     </section>
   );
 }

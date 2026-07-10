@@ -1,5 +1,5 @@
 import type { VersionStatus } from '@buildtovalue/core';
-import { SEAL_LABELS } from './StatusBadge.js';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * One entry on the timeline. Deliberately a plain, self-contained shape —
@@ -61,10 +61,13 @@ function formatDate(iso?: string): string | undefined {
  * reports selection through `onSelect`.
  */
 export function VersionTimeline({ items, onSelect, order = 'desc' }: VersionTimelineProps) {
+  const t = useT();
   const ordered = order === 'asc' ? items : [...items].reverse();
   return (
-    <ol className="bpmnr-timeline" aria-label="Version history">
-      {ordered.length === 0 && <li className="bpmnr-timeline-empty">No versions yet</li>}
+    <ol className="bpmnr-timeline" aria-label={t('version.timeline.aria')}>
+      {ordered.length === 0 && (
+        <li className="bpmnr-timeline-empty">{t('version.timeline.empty')}</li>
+      )}
       {ordered.map((item) => {
         const color = STATUS_COLOR[item.status] ?? STATUS_COLOR.draft;
         const interactive = Boolean(onSelect);
@@ -90,22 +93,25 @@ export function VersionTimeline({ items, onSelect, order = 'desc' }: VersionTime
                   data-status={item.status}
                   style={{ background: color.bg, color: color.fg }}
                 >
-                  {SEAL_LABELS[item.status] ?? item.status}
+                  {t(`status.${item.status}`)}
                 </span>
                 {item.channel && <span className="bpmnr-timeline-channel">{item.channel}</span>}
                 {typeof item.pinnedRuns === 'number' && item.pinnedRuns > 0 && (
                   <span className="bpmnr-timeline-runs">
-                    {item.pinnedRuns === 1
-                      ? '1 execução presa'
-                      : `${item.pinnedRuns} execuções presas`}
+                    {t('version.timeline.pinnedRuns', { count: item.pinnedRuns })}
                   </span>
                 )}
               </span>
               {item.effectiveFrom && (
                 <span className="bpmnr-timeline-validity">
                   {item.effectiveUntil
-                    ? `vigente ${formatDate(item.effectiveFrom)} → ${formatDate(item.effectiveUntil)}`
-                    : `vigente desde ${formatDate(item.effectiveFrom)}`}
+                    ? t('version.timeline.validityRange', {
+                        from: formatDate(item.effectiveFrom) ?? '',
+                        until: formatDate(item.effectiveUntil) ?? '',
+                      })
+                    : t('version.timeline.validityFrom', {
+                        from: formatDate(item.effectiveFrom) ?? '',
+                      })}
                 </span>
               )}
               {item.changeSummary && (

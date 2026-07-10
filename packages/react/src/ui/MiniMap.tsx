@@ -1,6 +1,7 @@
 import { activeNodes, getBoundingBox } from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
+import { useT } from '../i18n/I18nContext.js';
 import { theme } from '../shapes/common.js';
 
 const WIDTH = 180;
@@ -15,6 +16,7 @@ export function MiniMap() {
   const { diagram } = useDiagram();
   const store = useCanvasStore();
   const viewport = useCanvasState((s) => s.viewport);
+  const t = useT();
 
   const nodes = activeNodes(diagram);
   const world = getBoundingBox(
@@ -51,7 +53,7 @@ export function MiniMap() {
     <svg
       className="bpmnr-minimap"
       role="img"
-      aria-label="Diagram overview"
+      aria-label={t('minimap.aria')}
       width={WIDTH}
       height={HEIGHT}
       viewBox={`${mapped.x} ${mapped.y} ${mapped.width} ${mapped.height}`}

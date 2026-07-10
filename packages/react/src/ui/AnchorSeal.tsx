@@ -1,4 +1,5 @@
 import type { AnchorState } from '@buildtovalue/identity';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * Anchor seal (Handoff 8 §4.2): the external-anchor state of the chain head.
@@ -40,9 +41,10 @@ function short(hash: string | undefined): string {
 }
 
 export function AnchorSeal({ state, adapterId, head, anchoredHead, onRetry, retrying }: AnchorSealProps) {
-  const label = ANCHOR_LABELS[state];
+  const t = useT();
+  const label = t(`anchor.label.${state}`);
   return (
-    <div className="bpmnr-anchor-seal" data-anchor={state} role="status" aria-label={`Âncora: ${label}`}>
+    <div className="bpmnr-anchor-seal" data-anchor={state} role="status" aria-label={t('anchor.aria', { label })}>
       <span className="bpmnr-anchor-pill">
         <span className="bpmnr-anchor-glyph" aria-hidden>
           {ANCHOR_GLYPHS[state]}
@@ -51,14 +53,15 @@ export function AnchorSeal({ state, adapterId, head, anchoredHead, onRetry, retr
       </span>
       {state === 'anchored' && (
         <span className="bpmnr-anchor-detail">
-          ancorado: {adapterId ?? 'externo'} · head {short(head)}
+          {t('anchor.anchoredDetail', {
+            adapter: adapterId ?? t('anchor.external'),
+            head: short(head),
+          })}
         </span>
       )}
       {state === 'pending' && (
         <>
-          <span className="bpmnr-anchor-detail">
-            garantia vigente: assinaturas + hash-chain local
-          </span>
+          <span className="bpmnr-anchor-detail">{t('anchor.pendingDetail')}</span>
           {onRetry && (
             <button
               type="button"
@@ -66,14 +69,14 @@ export function AnchorSeal({ state, adapterId, head, anchoredHead, onRetry, retr
               disabled={retrying}
               onClick={onRetry}
             >
-              {retrying ? 'retentando…' : '↻ Retentar ancoragem'}
+              {retrying ? t('anchor.retrying') : <>↻ {t('anchor.retry')}</>}
             </button>
           )}
         </>
       )}
       {state === 'broken' && (
         <span className="bpmnr-anchor-detail">
-          local {short(head)} ≠ ancorado {short(anchoredHead)}
+          {t('anchor.brokenDetail', { head: short(head), anchored: short(anchoredHead) })}
         </span>
       )}
     </div>

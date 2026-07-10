@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import { createDiagram, type BpmnDiagram } from '@buildtovalue/core';
 import type { AIProvider } from '@buildtovalue/copilot';
-import { BpmnDesigner, CopilotPanel } from '../src/index.js';
+import { BpmnDesigner, CopilotPanel, PT_BR } from '../src/index.js';
 
 /**
  * Handoff 9 CP-2 — the governed copilot panel with a DETERMINISTIC FAKE
@@ -62,7 +62,7 @@ const REAL_FIX = JSON.stringify({
 
 function mount(provider: AIProvider | undefined, onChange?: (d: BpmnDiagram) => void) {
   return render(
-    <BpmnDesigner diagram={createDiagram({ name: 'C' })} onChange={onChange}>
+    <BpmnDesigner diagram={createDiagram({ name: 'C' })} onChange={onChange} messages={PT_BR}>
       <CopilotPanel
         provider={provider}
         author="ana.ruiz"

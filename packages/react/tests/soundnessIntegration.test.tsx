@@ -7,7 +7,7 @@ import {
   type BpmnDiagram,
   type ValidationRule,
 } from '@buildtovalue/core';
-import { BpmnDesigner, PromotionPanel, Toolbar } from '../src/index.js';
+import { BpmnDesigner, PromotionPanel, Toolbar, PT_BR } from '../src/index.js';
 
 /**
  * Handoff 4 §C2 — the react side of soundness: the PromotionPanel "Soundness"
@@ -42,7 +42,7 @@ const actor = { id: 'u0', name: 'Rita', role: 'Owner' };
 
 function renderPanel(plugins: { id: string; validationRules?: ValidationRule[] }[]) {
   return render(
-    <BpmnDesigner diagram={diagramWithJoin()} plugins={plugins}>
+    <BpmnDesigner diagram={diagramWithJoin()} plugins={plugins} messages={PT_BR}>
       <PromotionPanel
         open
         onClose={() => {}}
@@ -67,7 +67,7 @@ describe('PromotionPanel — Soundness section', () => {
     const { container } = renderPanel([{ id: 'snd', validationRules: [sndError] }]);
     const section = document.querySelector('.bpmnr-promotion-soundness')!;
     expect(section).toHaveAttribute('data-satisfied', 'false');
-    expect(section.textContent).toContain('Soundness · 1 erro(s)');
+    expect(section.textContent).toContain('Soundness · 1 erro');
     expect(section.textContent).toContain('SND_DEADLOCK_JOIN');
 
     fireEvent.click(screen.getByRole('button', { name: 'ver no canvas' }));

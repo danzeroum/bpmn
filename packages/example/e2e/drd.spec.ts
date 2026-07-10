@@ -30,7 +30,7 @@ test('renders the DRD with the 4 DMN nodes and form-coded requirement edges', as
   await expect(line('r1')).toHaveAttribute('d', /^M [\d.-]+ [\d.-]+ L [\d.-]+ [\d.-]+$/);
 
   // The DMN palette group is registered (185° family).
-  await expect(page.getByRole('button', { name: 'Add Decision' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Adicionar Decision' })).toBeVisible();
 });
 
 /**

@@ -7,7 +7,7 @@ import {
   createNode,
   type BpmnDiagram,
 } from '@buildtovalue/core';
-import { BpmnEditor, DiffView, StatusBadge, BpmnDesigner } from '../src/index.js';
+import { BpmnEditor, DiffView, StatusBadge, BpmnDesigner, PT_BR } from '../src/index.js';
 
 function buildDiagram(): BpmnDiagram {
   const diagram = createDiagram({ name: 'UI flow' });
@@ -20,12 +20,12 @@ function buildDiagram(): BpmnDiagram {
 
 describe('BpmnEditor chrome', () => {
   it('renders toolbar, palette, inspector, minimap and status badge', () => {
-    render(<BpmnEditor diagram={buildDiagram()} />);
+    render(<BpmnEditor diagram={buildDiagram()} messages={PT_BR} />);
     expect(screen.getByRole('toolbar')).toBeInTheDocument();
-    expect(screen.getByLabelText('Element palette')).toBeInTheDocument();
-    expect(screen.getByLabelText('Properties')).toBeInTheDocument();
-    expect(screen.getByLabelText('Diagram overview')).toBeInTheDocument();
-    expect(screen.getByRole('status', { name: /Version 0\.1\.0/ })).toHaveTextContent('RASCUNHO');
+    expect(screen.getByLabelText('Paleta de elementos')).toBeInTheDocument();
+    expect(screen.getByLabelText('Propriedades')).toBeInTheDocument();
+    expect(screen.getByLabelText('Visão geral do diagrama')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /Versão 0\.1\.0/ })).toHaveTextContent('RASCUNHO');
   });
 
   it('adds a node from the palette', () => {
@@ -97,7 +97,7 @@ describe('StatusBadge (vigência seal v2)', () => {
     const diagram = buildDiagram();
     mutate(diagram);
     render(
-      <BpmnDesigner diagram={diagram} plugins={plugins}>
+      <BpmnDesigner diagram={diagram} plugins={plugins} messages={PT_BR}>
         <StatusBadge {...props} />
       </BpmnDesigner>,
     );
@@ -118,7 +118,7 @@ describe('StatusBadge (vigência seal v2)', () => {
       diagram.version.status = status as BpmnDiagram['version']['status'];
       diagram.version.semanticVersion = '2.1.0';
       const { unmount } = render(
-        <BpmnDesigner diagram={diagram}>
+        <BpmnDesigner diagram={diagram} messages={PT_BR}>
           <StatusBadge />
         </BpmnDesigner>,
       );

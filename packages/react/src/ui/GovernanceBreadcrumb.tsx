@@ -1,5 +1,5 @@
 import type { VersionStatus } from '@buildtovalue/core';
-import { SEAL_LABELS } from './StatusBadge.js';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * One level of the governance breadcrumb (Handoff 5 §10.3): a name plus its
@@ -33,11 +33,12 @@ export interface GovernanceBreadcrumbProps {
 export function GovernanceBreadcrumb({
   levels,
   onNavigate,
-  ariaLabel = 'Governance breadcrumb',
+  ariaLabel,
 }: GovernanceBreadcrumbProps) {
+  const t = useT();
   if (levels.length === 0) return null;
   return (
-    <nav className="bpmnr-breadcrumb" aria-label={ariaLabel}>
+    <nav className="bpmnr-breadcrumb" aria-label={ariaLabel ?? t('breadcrumb.aria')}>
       {levels.map((level, index) => {
         const last = index === levels.length - 1;
         const identity = (
@@ -48,7 +49,7 @@ export function GovernanceBreadcrumb({
             )}
             {level.status && (
               <span className="bpmnr-breadcrumb-seal" data-status={level.status}>
-                {SEAL_LABELS[level.status]}
+                {t(`status.${level.status}`)}
               </span>
             )}
           </>
@@ -68,7 +69,7 @@ export function GovernanceBreadcrumb({
               <button
                 type="button"
                 onClick={() => onNavigate(level.id, index)}
-                aria-label={index === 0 ? 'Back to process' : undefined}
+                aria-label={index === 0 ? t('breadcrumb.back') : undefined}
               >
                 {identity}
               </button>

@@ -5,6 +5,7 @@ import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { computeRoutedWaypoints } from './routeEdge.js';
 import { longestSegmentMidpoint } from './EdgeRenderer.js';
+import { useT } from '../i18n/I18nContext.js';
 
 /**
  * Inline edge-label editor (Handoff 11 N-5, "Editar rótulo"): a foreignObject
@@ -17,6 +18,7 @@ export function EdgeLabelEditor() {
   const editingEdgeId = useCanvasState((s) => s.editingEdgeId);
   const { diagram, execute } = useDiagram();
   const config = useEditorConfig();
+  const t = useT();
   const edge = editingEdgeId ? diagram.edges[editingEdgeId] : undefined;
 
   const [value, setValue] = useState('');
@@ -58,7 +60,7 @@ export function EdgeLabelEditor() {
         ref={inputRef}
         type="text"
         value={value}
-        aria-label="Editar rótulo da aresta"
+        aria-label={t('edgeLabel.aria')}
         data-edge-label-editor={edge.id}
         onChange={(event) => setValue(event.target.value)}
         onBlur={commit}

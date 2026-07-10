@@ -23,6 +23,9 @@ jobs:
       - run: pnpm audit --audit-level=high
       - run: pnpm check:no-runtime-deps
       - run: pnpm check:no-key-generation
+      # i18n cerca (N-6): no hardcoded UI strings on migrated surfaces + every
+      # t() key resolves in the English fallback dictionary.
+      - run: pnpm check:no-hardcoded-strings
       - run: pnpm lint
       - run: pnpm build
       - run: pnpm typecheck

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@buildtovalue/core';
-import { BpmnDesigner, Toolbar } from '../src/index.js';
+import { BpmnDesigner, Toolbar, PT_BR } from '../src/index.js';
 
 /**
  * Handoff 10 R-4 — "Limpar roteamento". ONE undoable command re-optimizes the
@@ -56,7 +56,7 @@ describe('clear routing toolbar (Handoff 10 R-4)', () => {
   it('re-optimizes auto routes, preserves manual, and toasts the counts — undoable', () => {
     const onChange = vi.fn();
     const { container } = render(
-      <BpmnDesigner diagram={build()} onChange={onChange}>
+      <BpmnDesigner diagram={build()} onChange={onChange} messages={PT_BR}>
         <Toolbar />
       </BpmnDesigner>,
     );
