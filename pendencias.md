@@ -537,6 +537,14 @@ um nó movido (§3) — o "Limpar roteamento" cobre a re-otimização global sob
 - ~~Pools/lanes marcados como "unreachable" pela validação~~ → corrigido na Fase 5a.
 - ~~Exemplo sem raias / ícones de paleta~~ → paleta tem Pool/Lane; demo continua focado no
   domínio BTV (adicionar um exemplo com raias ao demo é trivial se você quiser).
+- ~~Export PNG/SVG frágil a assets externos (#27, §8.7)~~ → `exporters.ts` agora torna a saída
+  **auto-contida**: inlina as custom properties `--bpmnr-*`/`--btv-*` vivas (var() resolve ao valor
+  temático, não ao fallback), embute `<image>` como data URI (asset cross-origin não tinge o canvas
+  → `toBlob` deixa de retornar null) e embute `@font-face` same-origin. `exportSvg`/`exportPng`
+  passaram a ser assíncronos; assets inalcançáveis são deixados como estão (a saída ainda é
+  produzida, sem lançar). Unit (inline de imagem + falha graciosa) + e2e (`export.spec.ts`: PNG com
+  assinatura mágica válida, SVG bem-formado sem camadas transitórias). O menu de contexto de aresta
+  (§11.3) segue como única conveniência adiada do roteamento.
 
 *Se nada disto for prioridade agora, pode ignorar o arquivo — está aqui para não perder o
 contexto das decisões em aberto.*

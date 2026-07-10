@@ -222,7 +222,7 @@ export function Toolbar({ extra }: ToolbarProps) {
         type="button"
         onClick={() => {
           const svg = findSvg();
-          if (svg) exportSvg(svg, `${slug(diagram.name)}.svg`);
+          if (svg) void exportSvg(svg, `${slug(diagram.name)}.svg`);
         }}
         aria-label="Export SVG"
       >

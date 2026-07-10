@@ -3,6 +3,16 @@ import { downloadFile, exportSvg, svgToString } from '../src/index.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
+/** jsdom's Blob predates `Blob.text()`; read via FileReader (which our code
+ * also uses) for portability. */
+function readBlob(blob: Blob): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.readAsText(blob);
+  });
+}
+
 /**
  * jsdom does not implement `SVGSVGElement.viewBox` (the property is
  * `undefined`, not an SVGAnimatedRect), unlike every real browser. This
@@ -115,7 +125,7 @@ describe('exportSvg', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('downloads the serialized SVG under the requested filename with the svg mime type', () => {
+  it('downloads the serialized SVG under the requested filename with the svg mime type', async () => {
     let capturedDownload = '';
     vi.mocked(HTMLAnchorElement.prototype.click).mockImplementation(function (
       this: HTMLAnchorElement,
@@ -123,21 +133,54 @@ describe('exportSvg', () => {
       capturedDownload = this.download;
     });
 
-    exportSvg(makeSvg(), 'my-diagram.svg');
+    await exportSvg(makeSvg(), 'my-diagram.svg');
 
     const blobArg = vi.mocked(URL.createObjectURL).mock.calls[0][0] as Blob;
     expect(blobArg.type).toBe('image/svg+xml');
     expect(capturedDownload).toBe('my-diagram.svg');
   });
 
-  it('defaults the filename to diagram.svg', () => {
+  it('defaults the filename to diagram.svg', async () => {
     let capturedDownload = '';
     vi.mocked(HTMLAnchorElement.prototype.click).mockImplementation(function (
       this: HTMLAnchorElement,
     ) {
       capturedDownload = this.download;
     });
-    exportSvg(makeSvg());
+    await exportSvg(makeSvg());
     expect(capturedDownload).toBe('diagram.svg');
+  });
+
+  it('embeds a cross-origin <image> as a data URI so the raster cannot be tainted (#27)', async () => {
+    const pixel = Uint8Array.from([137, 80, 78, 71]);
+    global.fetch = vi.fn(async () => ({
+      ok: true,
+      blob: async () => new Blob([pixel], { type: 'image/png' }),
+    })) as unknown as typeof fetch;
+
+    const svg = makeSvg();
+    const image = document.createElementNS(SVG_NS, 'image');
+    image.setAttribute('href', 'https://cdn.example.com/logo.png');
+    svg.appendChild(image);
+
+    let captured: Blob | undefined;
+    vi.mocked(HTMLAnchorElement.prototype.click).mockImplementation(() => {
+      captured = vi.mocked(URL.createObjectURL).mock.calls.at(-1)?.[0] as Blob;
+    });
+    await exportSvg(svg);
+    const xml = await readBlob(captured!);
+    expect(xml).toContain('href="data:image/png;base64,');
+    expect(xml).not.toContain('https://cdn.example.com/logo.png');
+  });
+
+  it('leaves an unreachable <image> in place rather than throwing (#27)', async () => {
+    global.fetch = vi.fn(async () => {
+      throw new Error('CORS');
+    }) as unknown as typeof fetch;
+    const svg = makeSvg();
+    const image = document.createElementNS(SVG_NS, 'image');
+    image.setAttribute('href', 'https://blocked.example.com/x.png');
+    svg.appendChild(image);
+    await expect(exportSvg(svg)).resolves.toBeUndefined();
   });
 });
