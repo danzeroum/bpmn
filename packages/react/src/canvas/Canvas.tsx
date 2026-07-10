@@ -73,6 +73,19 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
     return () => cancelAnimationFrame(raf);
   }, [isPanning, config]);
 
+  // N-3 `selection.changed`: one event per distinct selection set.
+  useEffect(() => {
+    let previous = store.getState().selectedIds;
+    return store.subscribe(() => {
+      const next = store.getState().selectedIds;
+      if (next === previous) return;
+      const changed =
+        next.length !== previous.length || next.some((id, index) => id !== previous[index]);
+      previous = next;
+      if (changed) config.emitEditorEvent('selection.changed', { selectedIds: [...next] });
+    });
+  }, [store, config]);
+
   // Wheel zoom must be a non-passive listener to preventDefault scrolling.
   useEffect(() => {
     const svg = svgRef.current;

@@ -83,10 +83,83 @@ export type EdgeRouterFn = (
 ) => EdgeGeometry;
 
 /**
- * Editor observability event (Handoff 2 §2). The library emits a minimal
- * vocabulary — `node.created`, `edge.connected`, `promotion.completed`,
- * `import.warning`, `render.slow` — and the host decides what to do with it
- * (log, measure lead time, count import warnings). No telemetry, no deps.
+ * The PUBLIC editor event catalog (Handoff 11 N-3) — the complete, stable
+ * vocabulary the editor emits through the plugin `onEditorEvent` channel
+ * (same injected callback as always: no global emitter, zero deps).
+ *
+ * STABILITY CONTRACT (semver): adding an event = minor; changing an event's
+ * payload = MAJOR; renaming an event = the old name keeps emitting alongside
+ * the new one for at least one minor, with a single console deprecation
+ * warning (see {@link DEPRECATED_EVENT_ALIASES}), then is removed in the
+ * next major.
+ */
+export const EDITOR_EVENTS = [
+  'diagram.loaded',
+  'element.added',
+  'element.changed',
+  'element.removed',
+  'edge.connected',
+  'selection.changed',
+  'command.executed',
+  'command.undone',
+  'validation.changed',
+  'promotion.completed',
+  'import.warning',
+  'render.slow',
+  'shape.render.error',
+] as const;
+
+export type EditorEventName = (typeof EDITOR_EVENTS)[number];
+
+/**
+ * Typed payloads, one per catalog event. Hosts narrow `event.meta` by
+ * `event.type`; the emit side is typed against this map.
+ */
+export interface EditorEventPayloads {
+  /** A diagram entered the editor (mount or `replaceDiagram`/import). */
+  'diagram.loaded': { diagramId: string; name: string; nodes: number; edges: number };
+  /** A node/edge was added by a command. */
+  'element.added': { id?: string; elementType?: string; kind: 'node' | 'edge' };
+  /** A node/edge changed (update/move/resize/attach…); composites report coarse. */
+  'element.changed': { id?: string; elementType?: string; composite?: boolean; description?: string };
+  /** A node/edge was removed by a command. */
+  'element.removed': { id?: string; elementType?: string; kind: 'node' | 'edge' };
+  /** The connect gesture created an edge. */
+  'edge.connected': { edgeType: string; sourceId: string; targetId: string };
+  /** The canvas selection changed. */
+  'selection.changed': { selectedIds: string[] };
+  /** A command was applied (redo re-emits it — a redo re-executes). */
+  'command.executed': { commandId: string; description: string; auditType?: string };
+  /** The last command was undone. */
+  'command.undone': { description?: string };
+  /** A Validate pass produced a (possibly different) issue set. */
+  'validation.changed': { errors: number; warnings: number; codes: string[] };
+  /** The formal promotion flow activated a version. */
+  'promotion.completed': { semanticVersion: string; status: string; ledgerHash?: string };
+  /** The HOST's XML import produced a warning (hosts emit this one). */
+  'import.warning': { message: string };
+  /** A frame took longer than the render budget. */
+  'render.slow': { frameMs: number };
+  /** A shape component threw during render (error boundary caught it). */
+  'shape.render.error': { nodeId: string; nodeType: string; message: string };
+}
+
+/**
+ * Deprecated event names (N-3 rename to the public catalog): each old name
+ * keeps emitting ALONGSIDE its replacement for one minor, with a single
+ * console warning per session, and disappears in the next major.
+ */
+export const DEPRECATED_EVENT_ALIASES = {
+  /** Old palette-insert event — superseded by `element.added` (kind: 'node'). */
+  'node.created': 'element.added',
+} as const;
+
+/**
+ * Editor observability event (Handoff 2 §2, catalog completed in Handoff 11
+ * N-3). `type` is one of {@link EDITOR_EVENTS} — or a deprecated alias from
+ * {@link DEPRECATED_EVENT_ALIASES} during its grace minor. The host decides
+ * what to do with it (log, measure lead time, count import warnings). No
+ * telemetry, no deps.
  */
 export interface EditorEvent {
   type: string;

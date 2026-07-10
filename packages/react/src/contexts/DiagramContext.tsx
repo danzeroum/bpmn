@@ -17,7 +17,32 @@ import {
   type RuleVerdict,
 } from '@buildtovalue/core';
 import { deriveAstarRoutes } from '../canvas/routeEdge.js';
-import type { EdgeRouterFn } from '../plugins/types.js';
+import type { EdgeRouterFn, EditorEventName, EditorEventPayloads } from '../plugins/types.js';
+
+type EmitEditorEvent = <T extends EditorEventName>(type: T, meta?: EditorEventPayloads[T]) => void;
+
+/** N-3: audit event type → catalog element.* event (default: element.changed). */
+const ELEMENT_ADDED = new Set(['NODE_ADDED', 'EDGE_CREATED']);
+const ELEMENT_REMOVED = new Set(['NODE_REMOVED', 'EDGE_REMOVED']);
+
+function emitElementEvent(emit: EmitEditorEvent, command: Command): void {
+  const audit = command.toAuditEvent?.();
+  if (!audit) return;
+  const details = audit.details as { nodeId?: string; edgeId?: string; nodeType?: string };
+  const kind: 'node' | 'edge' = details.edgeId ? 'edge' : 'node';
+  const id = details.nodeId ?? details.edgeId;
+  if (ELEMENT_ADDED.has(audit.type)) {
+    emit('element.added', { ...(id ? { id } : {}), ...(details.nodeType ? { elementType: details.nodeType } : {}), kind });
+  } else if (ELEMENT_REMOVED.has(audit.type)) {
+    emit('element.removed', { ...(id ? { id } : {}), kind });
+  } else {
+    emit('element.changed', {
+      ...(id ? { id } : {}),
+      ...(audit.type === 'COMPOSITE' ? { composite: true } : {}),
+      description: command.description,
+    });
+  }
+}
 
 export interface DiagramContextValue {
   diagram: BpmnDiagram;
@@ -47,6 +72,12 @@ export interface DiagramProviderProps {
    */
   edgeRouter?: EdgeRouterFn;
   onChange?: (diagram: BpmnDiagram) => void;
+  /**
+   * N-3: the editor's typed event channel. When present, the provider emits
+   * `diagram.loaded`, `command.executed|undone` and the `element.*` family;
+   * omitted → no emissions (the channel stays an injected callback).
+   */
+  emitEditorEvent?: EmitEditorEvent;
   children: ReactNode;
 }
 
@@ -55,6 +86,7 @@ export function DiagramProvider({
   ruleEngine,
   edgeRouter,
   onChange,
+  emitEditorEvent,
   children,
 }: DiagramProviderProps) {
   // Presentation derivation, NOT an edit: seed the stack with cached A* routes
@@ -83,10 +115,36 @@ export function DiagramProvider({
     return stack.subscribe((next) => onChangeRef.current?.(next));
   }, [stack]);
 
+  const emitRef = useRef(emitEditorEvent);
+  emitRef.current = emitEditorEvent;
+  const emitLoaded = useCallback((loaded: BpmnDiagram) => {
+    emitRef.current?.('diagram.loaded', {
+      diagramId: loaded.id,
+      name: loaded.name,
+      nodes: Object.keys(loaded.nodes).length,
+      edges: Object.keys(loaded.edges).length,
+    });
+  }, []);
+  // N-3 `diagram.loaded`: once per mounted diagram (imports re-emit below).
+  const loadedOnce = useRef(false);
+  useEffect(() => {
+    if (loadedOnce.current) return;
+    loadedOnce.current = true;
+    emitLoaded(stack.current);
+  }, [emitLoaded, stack]);
+
   const execute = useCallback(
     (command: Command): RuleVerdict => {
       const verdict = stack.execute(command);
       setLastVeto(verdict.allowed ? null : (verdict.reason ?? 'Command rejected'));
+      if (verdict.allowed && emitRef.current) {
+        emitRef.current('command.executed', {
+          commandId: command.id,
+          description: command.description,
+          ...(command.toAuditEvent ? { auditType: command.toAuditEvent().type } : {}),
+        });
+        emitElementEvent(emitRef.current, command);
+      }
       return verdict;
     },
     [stack],
@@ -97,8 +155,9 @@ export function DiagramProvider({
       const router = edgeRouterRef.current;
       stack.reset(router ? deriveAstarRoutes(next, router) : next);
       setLastVeto(null);
+      emitLoaded(stack.current);
     },
-    [stack],
+    [emitLoaded, stack],
   );
 
   const value = useMemo<DiagramContextValue>(
@@ -106,7 +165,10 @@ export function DiagramProvider({
       diagram: current,
       stack,
       execute,
-      undo: () => stack.undo(),
+      undo: () => {
+        if (stack.canUndo) emitRef.current?.('command.undone', {});
+        stack.undo();
+      },
       redo: () => stack.redo(),
       canUndo: stack.canUndo,
       canRedo: stack.canRedo,

@@ -34,3 +34,25 @@ import '@buildtovalue/react/styles.css';
   domain type tags); below 50% it also drops activity shadows.
 
 Docs: https://github.com/danzeroum/bpmn/tree/main/docs — License: Apache-2.0.
+
+## Editor events (public catalog, Handoff 11 N-3)
+
+The editor emits observability events through the plugin `onEditorEvent`
+callback — an injected handler, never a global emitter, zero deps. The
+complete catalog lives in `EDITOR_EVENTS` with typed payloads in
+`EditorEventPayloads`:
+
+`diagram.loaded` · `element.added` · `element.changed` · `element.removed` ·
+`edge.connected` · `selection.changed` · `command.executed` ·
+`command.undone` · `validation.changed` · `promotion.completed` ·
+`import.warning` (host-emitted after XML import) · `render.slow` ·
+`shape.render.error`
+
+**Stability contract (semver):**
+
+- **adding an event = minor** — hosts must tolerate unknown `type`s;
+- **changing a payload = MAJOR**;
+- **renaming an event**: the old name keeps emitting alongside the new one
+  for at least one minor with a single console deprecation warning (see
+  `DEPRECATED_EVENT_ALIASES` — currently `node.created` → `element.added`),
+  then disappears in the next major.
