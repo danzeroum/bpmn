@@ -32,7 +32,8 @@ export * from './canvas/routers.js';
 export * from './canvas/routeEdge.js';
 
 // Agent Lane (Handoff 12) — Agent Studio
-export { AgentStudio, type AgentStudioProps } from './agent/AgentStudio.js';
+export { AgentStudio, type AgentStudioProps, type AgentSimulationRecord } from './agent/AgentStudio.js';
+export { proposeErrorBoundaryCommand } from './agent/agentBoundary.js';
 export * from './agent/agentEditor.js';
 
 // Simulation (Handoff 7A)

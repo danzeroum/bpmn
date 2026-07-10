@@ -40,3 +40,5 @@ export {
   REPLAY_ANALYSIS_TYPE,
 } from './replayLedger.js';
 export type { AttachedReplayAnalysis } from './replayLedger.js';
+export { agentSimulationSessionEntry, AGENT_SIMULATION_SESSION_TYPE } from './agentSimulationLedger.js';
+export type { AgentSimulationSession } from './agentSimulationLedger.js';

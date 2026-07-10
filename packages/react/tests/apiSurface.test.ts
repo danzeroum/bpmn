@@ -96,6 +96,7 @@ const EXPECTED_EXPORTS = [
   'initEditorState',
   'layoutWorkflow',
   'nextNodeId',
+  'proposeErrorBoundaryCommand',
   'removeNode',
   'toggleDecorator',
   'updateNodeConfig',

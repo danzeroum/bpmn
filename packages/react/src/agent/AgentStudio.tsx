@@ -1,18 +1,25 @@
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useRef, useReducer, useState } from 'react';
 import {
   AUTONOMY_SCALE,
+  DEFAULT_TEMPLATE_ID,
   minCoherentLevel,
   requiresDownstreamGate,
+  simulate,
   TEMPLATES,
   validateGraph,
   type AgentNode,
   type AgentWorkflow,
+  type Fixtures,
   type NodeType,
+  type SimulationState,
   type ValidationIssue,
 } from '@buildtovalue/agentflow';
 import { useDismissal } from '../gestures/useDismissal.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
+import { useDiagram } from '../contexts/DiagramContext.js';
 import { useT } from '../i18n/I18nContext.js';
+import { BlockedDecisionNotice } from '../simulation/DecisionInputCard.js';
+import { proposeErrorBoundaryCommand } from './agentBoundary.js';
 import {
   addNode,
   agentEditorReducer,
@@ -23,6 +30,27 @@ import {
   updateNodeConfig,
   type EditResult,
 } from './agentEditor.js';
+
+/** A finished agent-simulation session handed to the host for the ledger (§7). */
+export interface AgentSimulationRecord {
+  workflowRef: string;
+  steps: number;
+  complete: boolean;
+  blocked?: { nodeId: string; reason: string };
+  author: string;
+  timestamp: string;
+}
+
+/** Reduced-motion detection (SSR/jsdom-safe) — same signal as the H7 simulator. */
+function prefersReducedMotion(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  return mq ? mq.matches : false;
+}
+
+function hasErrorBoundary(wf: AgentWorkflow): boolean {
+  return wf.nodes.some((n) => (n.decorators ?? []).some((d) => d.type === 'errorBoundary'));
+}
 
 export interface AgentStudioProps {
   /** Whether the modal is open (registers on the Esc dismissal stack). */
@@ -39,6 +67,16 @@ export interface AgentStudioProps {
   onSave: (workflow: AgentWorkflow) => void;
   /** Close the modal (Esc routes here before any Designer dismissal). */
   onClose: () => void;
+  /** The macro agentTask node id — enables the error-boundary proposal (§5). */
+  agentTaskId?: string;
+  /** Per-node mock fixtures for the simulation (§7); default empty → the
+   * decision blocks honestly on absent structured output. */
+  simulationFixtures?: Fixtures;
+  /** Record a finished simulation session to the ledger (§7). Button hidden
+   * when absent. `author`/`timestamp` come from the host (clock-free). */
+  onRecordSimulation?: (record: AgentSimulationRecord) => void;
+  author?: string;
+  timestamp?: string;
 }
 
 const NODE_TYPES: { type: NodeType; labelKey: string; descKey: string; icon: string }[] = [
@@ -62,11 +100,31 @@ const EDGE_STROKE: Record<string, string> = {
  * Designer dismissal.
  */
 export function AgentStudio(props: AgentStudioProps) {
-  const { open, workflow, workflowRef, lifecycleStatus, openedFrom, onSave, onClose } = props;
+  const {
+    open,
+    workflow,
+    workflowRef,
+    lifecycleStatus,
+    openedFrom,
+    onSave,
+    onClose,
+    agentTaskId,
+    simulationFixtures,
+    onRecordSimulation,
+    author,
+    timestamp,
+  } = props;
   const t = useT();
   const { emitEditorEvent } = useEditorConfig();
+  const { diagram, execute } = useDiagram();
   const [state, dispatch] = useReducer(agentEditorReducer, workflow, initEditorState);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sim, setSim] = useState<SimulationState | null>(null);
+  const [simStep, setSimStep] = useState(0);
+  const [recorded, setRecorded] = useState(false);
+  const [boundaryResolved, setBoundaryResolved] = useState(false);
+  const [proposalOpen, setProposalOpen] = useState(false);
+  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useDismissal('agent-studio', open, onClose);
 
@@ -74,11 +132,77 @@ export function AgentStudio(props: AgentStudioProps) {
   useEffect(() => {
     dispatch({ type: 'reset', workflow });
     setSelectedId(null);
+    setSim(null);
+    setRecorded(false);
+    setBoundaryResolved(false);
+    setProposalOpen(false);
   }, [workflow]);
+
+  useEffect(() => () => { if (timer.current) clearInterval(timer.current); }, []);
 
   if (!open) return null;
 
   const wf = state.present;
+
+  const stopSim = (): void => {
+    if (timer.current) clearInterval(timer.current);
+    timer.current = null;
+    setSim(null);
+    setSimStep(0);
+    setRecorded(false);
+  };
+  const runSim = (): void => {
+    if (sim) return stopSim();
+    const result = simulate(wf, { fixtures: simulationFixtures ?? {} });
+    setSim(result);
+    setRecorded(false);
+    // Reduced-motion (§9.4): step through at 0ms — jump straight to the end.
+    if (prefersReducedMotion() || result.trail.length <= 1) {
+      setSimStep(Math.max(0, result.trail.length - 1));
+      return;
+    }
+    setSimStep(0);
+    let i = 0;
+    timer.current = setInterval(() => {
+      i += 1;
+      if (i >= result.trail.length) {
+        if (timer.current) clearInterval(timer.current);
+        timer.current = null;
+        return;
+      }
+      setSimStep(i);
+    }, 400);
+  };
+  const recordSession = (): void => {
+    if (!sim || !onRecordSimulation) return;
+    onRecordSimulation({
+      workflowRef: workflowRef ?? `${wf.id}@${wf.version}`,
+      steps: sim.trail.length,
+      complete: sim.complete,
+      ...(sim.blockedDecision ? { blocked: { nodeId: sim.blockedDecision.nodeId, reason: sim.blockedDecision.reason } } : {}),
+      author: author ?? `ia.copilot`,
+      timestamp: timestamp ?? '',
+    });
+    setRecorded(true);
+  };
+
+  const handleSave = (): void => {
+    onSave(wf);
+    // Boundary proposal (§5): NEVER silent — offer it, once per session.
+    if (!boundaryResolved && agentTaskId && hasErrorBoundary(wf)) setProposalOpen(true);
+  };
+  const acceptBoundary = (): void => {
+    if (agentTaskId) {
+      const command = proposeErrorBoundaryCommand(diagram, agentTaskId);
+      if (command) execute(command); // ONE undoable command on the macro stack
+    }
+    setBoundaryResolved(true);
+    setProposalOpen(false);
+  };
+  const refuseBoundary = (): void => {
+    setBoundaryResolved(true); // refusal does not re-ask this session
+    setProposalOpen(false);
+  };
 
   /** Apply an edit + emit its N-3 event from inside the modal. */
   const apply = (result: EditResult): void => {
@@ -105,6 +229,16 @@ export function AgentStudio(props: AgentStudioProps) {
   const pos = new Map(layout.map((l) => [l.id, l]));
   const width = Math.max(560, ...layout.map((l) => l.x + l.width + 24));
   const height = Math.max(300, ...layout.map((l) => l.y + l.height + 24));
+  const empty = wf.nodes.length === 0;
+  const tokNodeId = sim ? sim.trail[Math.min(simStep, Math.max(0, sim.trail.length - 1))]?.nodeId : undefined;
+  const tokenAt = tokNodeId ? pos.get(tokNodeId) : undefined;
+  const simStatus = sim
+    ? sim.blockedDecision
+      ? t('agent.sim.blocked')
+      : sim.complete
+        ? t('agent.sim.done', { steps: sim.trail.length })
+        : t('agent.sim.running', { step: simStep + 1, total: sim.trail.length })
+    : '';
 
   return (
     <div
@@ -133,7 +267,10 @@ export function AgentStudio(props: AgentStudioProps) {
           <div style={{ flex: 1 }} />
           <button type="button" style={btn} onClick={undo} disabled={state.past.length === 0} aria-label={t('agent.action.undo')}>↶</button>
           <button type="button" style={btn} onClick={redo} disabled={state.future.length === 0} aria-label={t('agent.action.redo')}>↷</button>
-          <button type="button" style={btnPrimary} onClick={() => onSave(wf)}>{t('agent.action.save')}</button>
+          <button type="button" style={{ ...btn, borderColor: 'var(--bpmnr-agent-tool, #33567e)', color: 'var(--bpmnr-agent-tool, #33567e)' }} onClick={runSim} data-agent-simulate>
+            {sim ? `■ ${t('agent.action.stop')}` : `▶ ${t('agent.action.simulate')}`}
+          </button>
+          <button type="button" style={btnPrimary} onClick={handleSave}>{t('agent.action.save')}</button>
           <button type="button" style={btn} onClick={onClose} aria-label={t('agent.action.close')}>✕</button>
         </header>
 
@@ -172,7 +309,7 @@ export function AgentStudio(props: AgentStudioProps) {
           </aside>
 
           {/* canvas */}
-          <main style={{ flex: 1, minWidth: 0, overflow: 'auto', background: 'var(--bpmnr-canvas-bg, #faf9f6)' }}>
+          <main style={{ position: 'relative', flex: 1, minWidth: 0, overflow: 'auto', background: 'var(--bpmnr-canvas-bg, #faf9f6)' }}>
             <svg width={width} height={height} role="group" aria-label={t('agent.canvas.aria')} style={{ display: 'block' }}>
               {wf.edges.map((edge, i) => {
                 const from = pos.get(edge.from);
@@ -231,16 +368,71 @@ export function AgentStudio(props: AgentStudioProps) {
                   </g>
                 );
               })}
+              {/* simulation token — 400ms/step (0ms under reduced-motion) */}
+              {tokenAt && (
+                <circle
+                  data-agent-token
+                  cx={tokenAt.x + tokenAt.width / 2}
+                  cy={tokenAt.y + tokenAt.height / 2}
+                  r={9}
+                  fill="var(--bpmnr-agent-tool, #33567e)"
+                  stroke="#fff"
+                  strokeWidth={2.5}
+                  style={{ transition: 'cx 400ms ease-in-out, cy 400ms ease-in-out' }}
+                />
+              )}
             </svg>
+            {/* empty canvas → template chooser (governance as first experience) */}
+            {empty && (
+              <div style={chooser} data-testid="agent-template-chooser">
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{t('agent.templates.pick')}</div>
+                {TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    style={{ ...paletteItem, minWidth: 240 }}
+                    onClick={() => apply({ workflow: tpl, effect: { event: 'element.added', kind: 'node' } })}
+                  >
+                    {tpl.name}
+                    {tpl.id === DEFAULT_TEMPLATE_ID ? t('agent.templates.default') : ''}
+                  </button>
+                ))}
+              </div>
+            )}
           </main>
 
-          {/* inspector */}
+          {/* inspector — the simulation trail replaces it in sim mode (§7) */}
           <aside style={inspector} aria-label={t('agent.inspector.aria')}>
-            <div style={eyebrow}>{t('agent.inspector.title')}</div>
-            {!selected && <div style={{ fontSize: 12, color: 'var(--bpmnr-text-muted)' }}>{t('agent.inspector.empty')}</div>}
-            {selected && <Inspector node={selected} t={t} onConfig={(patch) => apply(updateNodeConfig(wf, selected.id, patch))} onToggle={(d) => apply(toggleDecorator(wf, selected.id, d))} onRemove={() => { apply(removeNode(wf, selected.id)); setSelectedId(null); }} />}
+            {sim ? (
+              <SimulationView
+                t={t}
+                state={sim}
+                status={simStatus}
+                recorded={recorded}
+                canRecord={Boolean(onRecordSimulation)}
+                onRecord={recordSession}
+              />
+            ) : (
+              <>
+                <div style={eyebrow}>{t('agent.inspector.title')}</div>
+                {!selected && <div style={{ fontSize: 12, color: 'var(--bpmnr-text-muted)' }}>{t('agent.inspector.empty')}</div>}
+                {selected && <Inspector node={selected} t={t} onConfig={(patch) => apply(updateNodeConfig(wf, selected.id, patch))} onToggle={(d) => apply(toggleDecorator(wf, selected.id, d))} onRemove={() => { apply(removeNode(wf, selected.id)); setSelectedId(null); }} />}
+              </>
+            )}
           </aside>
         </div>
+
+        {/* error-boundary proposal — NEVER silent; accept = one undoable command */}
+        {proposalOpen && (
+          <div style={proposalCard} role="alertdialog" aria-label={t('agent.boundary.title')} data-testid="agent-boundary-proposal">
+            <strong style={{ fontSize: 12.5 }}>⛑ {t('agent.boundary.title')}</strong>
+            <p style={{ fontSize: 11, color: 'var(--bpmnr-text-muted)', margin: 0 }}>{t('agent.boundary.body')}</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="button" style={{ ...btnPrimary, minHeight: 36 }} onClick={acceptBoundary} data-testid="agent-boundary-accept">{t('agent.boundary.accept')}</button>
+              <button type="button" style={{ ...btn, minHeight: 36 }} onClick={refuseBoundary} data-testid="agent-boundary-refuse">{t('agent.boundary.refuse')}</button>
+            </div>
+          </div>
+        )}
 
         {/* footer — graph validation always visible */}
         <footer style={footer} aria-live="polite">
@@ -318,6 +510,57 @@ function Inspector({
   );
 }
 
+/**
+ * The simulation trail view — replaces the inspector in sim mode. It renders
+ * the agentflow engine's result via the SAME trail UI + the SAME block chip
+ * (BlockedDecisionNotice) as the H7 simulator, through the shared result shape
+ * — zero adapter, zero UI fork. BlockedDecision shows node + reason + count.
+ */
+function SimulationView({
+  t,
+  state,
+  status,
+  recorded,
+  canRecord,
+  onRecord,
+}: {
+  t: ReturnType<typeof useT>;
+  state: SimulationState;
+  status: string;
+  recorded: boolean;
+  canRecord: boolean;
+  onRecord: () => void;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }} data-agent-sim-view>
+      <div>
+        <div style={eyebrow}>{t('agent.sim.eyebrow')}</div>
+        <div style={{ fontSize: 12.5, fontWeight: 600 }} data-agent-sim-status>{status}</div>
+        <div style={{ fontSize: 10, color: 'var(--bpmnr-text-muted)' }}>{t('agent.sim.hint')}</div>
+      </div>
+      <div className="bpmnr-sim-card bpmnr-sim-trail-card">
+        <div className="bpmnr-sim-card-title">{t('agent.sim.trail')}</div>
+        <div className="bpmnr-sim-trail" data-sim-trail>
+          {state.trail.map((entry) => (
+            <div key={entry.step}>{entry.message}</div>
+          ))}
+        </div>
+      </div>
+      {state.blockedDecision && <BlockedDecisionNotice blocked={state.blockedDecision} />}
+      {canRecord && !recorded && (
+        <button type="button" style={{ ...btn, minHeight: 36 }} onClick={onRecord} data-testid="agent-record">
+          {t('agent.sim.record')}
+        </button>
+      )}
+      {recorded && (
+        <div style={{ fontSize: 11, color: 'var(--bpmnr-selected, #1a6a54)' }} data-testid="agent-recorded">
+          {t('agent.sim.recorded')}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11 }}>
@@ -329,7 +572,9 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 
 // ── inline styles (theme tokens; the notation gets no new AI color) ─────────
 const overlay: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(46,42,38,0.55)', display: 'flex', padding: 20, zIndex: 50 };
-const modal: React.CSSProperties = { margin: 'auto', width: 'min(1340px, 100%)', height: '100%', background: 'var(--bpmnr-canvas-bg, #faf9f6)', borderRadius: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', overflow: 'hidden' };
+const modal: React.CSSProperties = { position: 'relative', margin: 'auto', width: 'min(1340px, 100%)', height: '100%', background: 'var(--bpmnr-canvas-bg, #faf9f6)', borderRadius: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', overflow: 'hidden' };
+const chooser: React.CSSProperties = { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', justifyContent: 'center', background: 'var(--bpmnr-canvas-bg, #faf9f6)' };
+const proposalCard: React.CSSProperties = { position: 'absolute', right: 20, bottom: 44, width: 320, background: 'var(--bpmnr-fill, #fff)', border: '1px solid #e8d9ae', borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 5 };
 const headerStyle: React.CSSProperties = { height: 54, flexShrink: 0, background: 'var(--bpmnr-fill, #fff)', borderBottom: '1px solid var(--bpmnr-border, #e2ddd3)', display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px' };
 const seal: React.CSSProperties = { background: '#f6edd4', color: '#7a611e', fontSize: 10, fontWeight: 700, letterSpacing: 1, borderRadius: 999, padding: '3px 10px' };
 const autonomyPill: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, border: '1px solid var(--bpmnr-border, #e2ddd3)', borderRadius: 999, padding: '5px 12px', fontSize: 12 };

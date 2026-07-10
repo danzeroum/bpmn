@@ -669,6 +669,20 @@ a re-otimização global sob demanda.
   **Deferido para A-5 (declarado):** o botão Simular (trilha compartilhada), a PROPOSTA undoável do
   boundary event (o aviso já é renderizado no inspector; o comando `attachBoundaryCommand` é A-5) e
   a instância de templates com fixtures de simulação. A-4 entrega o SHELL (§8).
+- **A-5 — simulação + boundary proposto + templates (entregue):** **trilha compartilhada** — o
+  `SimulationState` do agentflow (paridade estrutural com o H7) é passado direto à mesma UI:
+  `BlockedDecisionNotice` (o chip de bloqueio existente) + as classes CSS `bpmnr-sim-trail` — zero
+  adaptador, zero fork; a `BlockedDecision` mostra nó (na trilha `⛔ dec-3`) + razão + contagem.
+  **Reduced-motion:** `prefersReducedMotion()` (mesmo sinal do H7) → passo a passo 0ms (sem
+  `setInterval`), fluxo completo operável. **Boundary PROPOSTO, nunca silencioso:** ao salvar com
+  errorBoundary, card accept/refuse; accept = UM comando undoável (`proposeErrorBoundaryCommand` =
+  `compositeCommand([addNodeCommand, attachBoundaryCommand])`, N-1) na pilha do macro (undo remove
+  tudo); refuse = nada muda e não re-pergunta na sessão (`boundaryResolved`). **Templates:** canvas
+  vazio → chooser com Approval Gate Agent ★ default. **Ledger:** `agentSimulationSessionEntry`
+  (`AGENT_SIMULATION_SESSION`, tipo aditivo em adapters-bpmn) com ref@versão + parada honesta.
+  **Deferido:** o editor de fixtures por nó no inspector (hoje as fixtures chegam por prop
+  `simulationFixtures`; default vazio → bloqueio honesto por campo ausente, que é o caminho §3) — UI
+  de edição de fixtures é incremento sob demanda; Shadow/Live Mode segue fora da v1.
 - **Fronteira A-6 (a decidir na PR A-6):** um `AgentWorkflow` é JSON, não `BpmnDiagram`, então o
   adapter "AGENTE" da Biblioteca NÃO é um `kindAdapter` sobre `VersionRegistry<BpmnDiagram>` como os
   demais; A-6 decide entre registrar o JSON do agente como snapshot no registry ou escrever um adapter

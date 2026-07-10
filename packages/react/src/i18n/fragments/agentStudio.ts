@@ -51,6 +51,24 @@ export const agentStudio: { en: Messages; ptBR: Messages } = {
     'agent.footer.errors_other': '{n} validation errors',
     'agent.footer.remediation': 'Fix: {remediation}',
     'agent.footer.source': '@buildtovalue/agentflow · source of truth: Library',
+    // simulation (A-5) — shared trail/stops UI
+    'agent.action.stop': 'Stop',
+    'agent.sim.eyebrow': 'SIMULATION · MOCK MODE',
+    'agent.sim.running': 'Running… step {step}/{total}',
+    'agent.sim.done': 'Done · {steps} steps',
+    'agent.sim.blocked': 'Blocked · honest stop',
+    'agent.sim.trail': 'TRAIL',
+    'agent.sim.hint': 'No API key — per-node fixtures · client-side',
+    'agent.sim.record': 'Record session to ledger',
+    'agent.sim.recorded': 'Session recorded to the ledger.',
+    // boundary proposal (A-5) — never silent
+    'agent.boundary.title': 'Propose an error boundary event?',
+    'agent.boundary.body': 'This agent has an ErrorBoundary. Add an error boundary event on the macro node (one undoable command)?',
+    'agent.boundary.accept': 'Add boundary event',
+    'agent.boundary.refuse': 'Not now',
+    // templates chooser (A-5) — governance as first experience
+    'agent.templates.pick': 'Choose a template to start',
+    'agent.templates.default': ' ★ default',
   },
   ptBR: {
     'agent.studio.aria': 'Agent Studio',
@@ -97,5 +115,23 @@ export const agentStudio: { en: Messages; ptBR: Messages } = {
     'agent.footer.errors_other': '{n} erros de validação',
     'agent.footer.remediation': 'Correção: {remediation}',
     'agent.footer.source': '@buildtovalue/agentflow · fonte de verdade: Biblioteca',
+    // simulation (A-5)
+    'agent.action.stop': 'Parar',
+    'agent.sim.eyebrow': 'SIMULAÇÃO · MOCK MODE',
+    'agent.sim.running': 'Executando… passo {step}/{total}',
+    'agent.sim.done': 'Concluída · {steps} passos',
+    'agent.sim.blocked': 'Bloqueada · parada honesta',
+    'agent.sim.trail': 'TRILHA',
+    'agent.sim.hint': 'Sem chave de API — fixtures por nó · client-side',
+    'agent.sim.record': 'Registrar sessão no ledger',
+    'agent.sim.recorded': 'Sessão registrada no ledger.',
+    // boundary proposal (A-5)
+    'agent.boundary.title': 'Propor um boundary event de erro?',
+    'agent.boundary.body': 'Este agente tem um ErrorBoundary. Criar um boundary event de erro no nó do macro (um comando undoável)?',
+    'agent.boundary.accept': 'Adicionar boundary event',
+    'agent.boundary.refuse': 'Agora não',
+    // templates chooser (A-5)
+    'agent.templates.pick': 'Escolha um template para começar',
+    'agent.templates.default': ' ★ default',
   },
 };
