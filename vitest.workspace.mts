@@ -59,6 +59,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'sfeel',
+      include: ['packages/sfeel/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'audit',
       include: ['packages/audit/tests/**/*.test.ts'],
       environment: 'node',
