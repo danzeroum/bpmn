@@ -102,6 +102,18 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
     [svgRef],
   );
 
+  /**
+   * N-5 long-press (touch): pointerdown on a node/edge arms a 500ms timer;
+   * crossing the drag threshold or lifting the pointer cancels it.
+   */
+  const longPress = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelLongPress = useCallback(() => {
+    if (longPress.current) {
+      clearTimeout(longPress.current);
+      longPress.current = null;
+    }
+  }, []);
+
   /** Node body pointerdown → select + begin (potential) drag. */
   const onNodePointerDown = useCallback(
     (event: ReactPointerEvent, nodeId: string) => {
@@ -367,6 +379,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
           const active =
             state.dragState.active ||
             Math.hypot(dx, dy) * (svgScale(svgRef.current, state.viewport) || 1) > DRAG_THRESHOLD;
+          if (active) cancelLongPress();
           if (state.snapEnabled && active) {
             dx = snapToGrid(dx, state.gridSize);
             dy = snapToGrid(dy, state.gridSize);
@@ -500,6 +513,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
       }
       pendingMove.current?.();
       pendingMove.current = null;
+      cancelLongPress();
 
       const state = store.getState();
 
@@ -735,6 +749,90 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
     panKeyHeld.current = held;
   }, []);
 
+  /**
+   * Handoff 11 N-5: opens the context menu for a target. Selection follows
+   * the invocation (like a click would); the menu itself lives in the HTML
+   * overlay and reads this state.
+   */
+  const openContextMenu = useCallback(
+    (
+      kind: 'node' | 'edge' | 'canvas',
+      targetId: string | undefined,
+      client: Point,
+      worldPoint: Point,
+    ) => {
+      if (store.getState().readOnly) return;
+      store.setState({
+        ...(kind !== 'canvas' && targetId ? { selectedIds: [targetId] } : {}),
+        contextMenu: { kind, ...(targetId ? { targetId } : {}), client, world: worldPoint },
+      });
+    },
+    [store],
+  );
+
+  const onNodeContextMenu = useCallback(
+    (event: ReactPointerEvent | React.MouseEvent, nodeId: string) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openContextMenu('node', nodeId, { x: event.clientX, y: event.clientY }, world(event));
+    },
+    [openContextMenu, world],
+  );
+
+  const onEdgeContextMenu = useCallback(
+    (event: ReactPointerEvent | React.MouseEvent, edgeId: string) => {
+      event.preventDefault();
+      event.stopPropagation();
+      openContextMenu('edge', edgeId, { x: event.clientX, y: event.clientY }, world(event));
+    },
+    [openContextMenu, world],
+  );
+
+  const onCanvasContextMenu = useCallback(
+    (event: ReactPointerEvent | React.MouseEvent) => {
+      event.preventDefault();
+      openContextMenu('canvas', undefined, { x: event.clientX, y: event.clientY }, world(event));
+    },
+    [openContextMenu, world],
+  );
+
+  const armLongPress = useCallback(
+    (event: ReactPointerEvent, kind: 'node' | 'edge', targetId: string) => {
+      if (event.pointerType !== 'touch') return;
+      cancelLongPress();
+      const client = { x: event.clientX, y: event.clientY };
+      const worldPoint = world(event);
+      longPress.current = setTimeout(() => {
+        cancelGestures();
+        openContextMenu(kind, targetId, client, worldPoint);
+      }, 500);
+    },
+    [cancelGestures, cancelLongPress, openContextMenu, world],
+  );
+
+  /** N-5 keyboard (Menu / Shift+F10): opens for the first selected element. */
+  const openContextMenuForSelection = useCallback(() => {
+    const { selectedIds, viewport } = store.getState();
+    const id = selectedIds[0];
+    if (!id) return;
+    const diagram = diagramRef.current;
+    const node = diagram.nodes[id];
+    const edge = diagram.edges[id];
+    const worldPoint = node
+      ? rectCenter(node)
+      : edge
+        ? rectCenter(getBoundingBox([diagram.nodes[edge.sourceId], diagram.nodes[edge.targetId]].filter(Boolean) as BpmnNode[]))
+        : { x: viewport.x + viewport.width / 2, y: viewport.y + viewport.height / 2 };
+    // World → client (svg rect + viewBox scale); falls back to the rect corner.
+    const svg = svgRef.current;
+    const rect = svg?.getBoundingClientRect();
+    const scale = rect && viewport.width > 0 ? rect.width / viewport.width : 1;
+    const client = rect
+      ? { x: rect.left + (worldPoint.x - viewport.x) * scale, y: rect.top + (worldPoint.y - viewport.y) * scale }
+      : { x: worldPoint.x, y: worldPoint.y };
+    openContextMenu(node ? 'node' : edge ? 'edge' : 'canvas', id, client, worldPoint);
+  }, [openContextMenu, store, svgRef]);
+
   return useMemo(
     () => ({
       onNodePointerDown,
@@ -749,6 +847,12 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
       onPointerUp,
       cancelGestures,
       setPanKey,
+      onNodeContextMenu,
+      onEdgeContextMenu,
+      onCanvasContextMenu,
+      openContextMenuForSelection,
+      armLongPress,
+      cancelLongPress,
       centerOfNode: (nodeId: string) => {
         const node = diagramRef.current.nodes[nodeId];
         return node ? rectCenter(node) : { x: 0, y: 0 };
@@ -767,6 +871,12 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
       onPointerUp,
       cancelGestures,
       setPanKey,
+      onNodeContextMenu,
+      onEdgeContextMenu,
+      onCanvasContextMenu,
+      openContextMenuForSelection,
+      armLongPress,
+      cancelLongPress,
     ],
   );
 }

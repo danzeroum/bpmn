@@ -16,6 +16,7 @@ import { ConnectedNode } from './NodeRenderer.js';
 import { ConnectedEdge } from './EdgeRenderer.js';
 import { BoundarySnapOverlay, ConnectionPreview, SelectionBoxOverlay } from './overlays.js';
 import { SettlingOverlay } from './SettlingOverlay.js';
+import { EdgeLabelEditor } from './EdgeLabelEditor.js';
 import { hiddenNodeIds } from './visibility.js';
 import { cullToViewport } from './culling.js';
 import { useKeyboardShortcuts } from '../gestures/useKeyboardShortcuts.js';
@@ -136,6 +137,7 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
         userSelect: 'none',
       }}
       onPointerDown={interactions.onCanvasPointerDown}
+      onContextMenu={interactions.onCanvasContextMenu}
       onPointerMove={interactions.onPointerMove}
       onPointerUp={interactions.onPointerUp}
       onPointerLeave={interactions.onPointerUp}
@@ -158,6 +160,7 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
         <ConnectionPreview />
         <BoundarySnapOverlay />
         <SelectionBoxOverlay />
+        <EdgeLabelEditor />
         {overlay}
       </g>
     </svg>

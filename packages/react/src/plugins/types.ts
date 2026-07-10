@@ -2,6 +2,7 @@ import type { ComponentType, ReactNode } from 'react';
 import type {
   BpmnDiagram,
   BpmnNode,
+  Command,
   EdgeGeometry,
   LifecycleConfig,
   NodeTypeDefinition,
@@ -155,6 +156,34 @@ export const DEPRECATED_EVENT_ALIASES = {
 } as const;
 
 /**
+ * Context-menu invocation target (Handoff 11 N-5): what was right-clicked /
+ * long-pressed / keyboard-opened, with enough context for `when()` guards.
+ */
+export interface MenuTarget {
+  kind: 'node' | 'edge' | 'canvas';
+  /** The node/edge id (absent for the empty canvas). */
+  id?: string;
+  /** World coordinates of the invocation point. */
+  point: { x: number; y: number };
+  diagram: BpmnDiagram;
+  selectedIds: string[];
+}
+
+/**
+ * One pluggable context-menu item (Handoff 11 N-5). The contract is
+ * deliberately narrow: `run` receives ONLY a command dispatcher — actions go
+ * through commands (undoable, audited); there is no direct state access.
+ */
+export interface ContextMenuItem {
+  id: string;
+  label: string;
+  /** Guard: the item only renders when it returns true (omitted → always). */
+  when?: (target: MenuTarget) => boolean;
+  /** Dispatches commands through `execute` — the menu never mutates state. */
+  run: (target: MenuTarget, api: { execute: (command: Command) => unknown }) => void;
+}
+
+/**
  * Editor observability event (Handoff 2 §2, catalog completed in Handoff 11
  * N-3). `type` is one of {@link EDITOR_EVENTS} — or a deprecated alias from
  * {@link DEPRECATED_EVENT_ALIASES} during its grace minor. The host decides
@@ -241,6 +270,13 @@ export interface BpmnPlugin {
   onAfterLoad?: (diagram: BpmnDiagram) => BpmnDiagram;
   /** Observability sink — receives editor events (all providers are called). */
   onEditorEvent?: EditorEventHandler;
+  /**
+   * Pluggable context-menu items (Handoff 11 N-5): called with the invocation
+   * target; returned items render in the plugin's own section (kicker = the
+   * plugin id), after each item's `when()` guard. Actions dispatch commands
+   * only — the menu never mutates state directly.
+   */
+  contextMenuItems?: (target: MenuTarget) => ContextMenuItem[];
   /**
    * Editor resilience opt-out: `false` disables autosave, the recovery
    * banner and the beforeunload guard. Default true; last plugin wins.

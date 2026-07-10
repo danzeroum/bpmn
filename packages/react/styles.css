@@ -2761,3 +2761,47 @@
   line-height: 1.55;
   color: var(--btv-green, #1a6a54);
 }
+
+/* N-5 (Handoff 11) — pluggable context menu */
+.bpmnr-context-menu {
+  position: absolute;
+  z-index: 40;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  background: var(--bpmnr-panel-bg, #fffdf8);
+  box-shadow: 0 8px 24px rgba(30, 26, 18, 0.14);
+  outline: none;
+}
+.bpmnr-context-menu button[role='menuitem'] {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 12.5px;
+  padding: 7px 10px;
+  min-height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.bpmnr-context-menu button[role='menuitem'][data-active] {
+  background: var(--btv-palette-item-bg, #f4efe3);
+}
+.bpmnr-context-menu-kicker {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bpmnr-text-muted, #6f675a);
+  padding: 6px 10px 2px;
+  border-top: 1px solid var(--bpmnr-border, #d8d2c6);
+  margin-top: 4px;
+}
+@media (pointer: coarse) {
+  /* Touch hit-targets ≥44px (N-5). */
+  .bpmnr-context-menu button[role='menuitem'] {
+    min-height: 44px;
+  }
+}

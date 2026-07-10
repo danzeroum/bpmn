@@ -81,8 +81,16 @@ function NodeRendererInner({
       aria-label={`${node.type}: ${node.label}`}
       opacity={closed ? 0.75 : 1}
       style={{ cursor: editable ? 'grab' : 'default' }}
-      onPointerDown={editable ? (e) => interactions.onNodePointerDown(e, node.id) : undefined}
+      onPointerDown={
+        editable
+          ? (e) => {
+              interactions.onNodePointerDown(e, node.id);
+              interactions.armLongPress(e, 'node', node.id);
+            }
+          : undefined
+      }
       onDoubleClick={editable ? (e) => interactions.onNodeDoubleClick(e, node.id) : undefined}
+      onContextMenu={editable ? (e) => interactions.onNodeContextMenu(e, node.id) : undefined}
       onPointerEnter={closed ? () => store.setState({ hoveredId: node.id }) : undefined}
       onPointerLeave={
         closed

@@ -186,7 +186,9 @@ function EdgeRendererInner({
         if (event.button !== undefined && event.button !== 0) return;
         event.stopPropagation();
         onSelect(edge.id, event.shiftKey);
+        interactions?.armLongPress(event, 'edge', edge.id);
       }}
+      onContextMenu={interactions ? (event) => interactions.onEdgeContextMenu(event, edge.id) : undefined}
       onPointerEnter={onHoverChange ? () => onHoverChange(edge.id, true) : undefined}
       onPointerLeave={onHoverChange ? () => onHoverChange(edge.id, false) : undefined}
       style={{ cursor: 'pointer', opacity: dragging ? 0.7 : undefined }}

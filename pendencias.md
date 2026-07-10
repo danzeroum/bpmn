@@ -527,9 +527,10 @@ Escopo R-4 (entregue): `routeAStar` com `sourcePort`/histerese + lados no retorn
 `longestSegmentMidpoint` no `EdgeRenderer`; botões "Limpar roteamento"/reset + toast no `Toolbar`;
 unit + integração + e2e (`?fallback=1` recuperação + toast, `?fanout=1` corredores).
 
-**Adiado (pós-Handoff 10):** menu de contexto de aresta; re-spread da fan-out no move de host
-individual (hoje só no batch); re-ranqueamento em idle das arestas que cruzam a área antiga/nova de
-um nó movido (§3) — o "Limpar roteamento" cobre a re-otimização global sob demanda.
+**Adiado (pós-Handoff 10):** ~~menu de contexto de aresta~~ (**entregue na N-5 do Handoff 11** —
+ver §13); re-spread da fan-out no move de host individual (hoje só no batch); re-ranqueamento em
+idle das arestas que cruzam a área antiga/nova de um nó movido (§3) — o "Limpar roteamento" cobre
+a re-otimização global sob demanda.
 
 ## 12. Handoff 9 (Copiloto + S-FEEL) — decisões registradas (SF-1)
 
@@ -569,6 +570,17 @@ um nó movido (§3) — o "Limpar roteamento" cobre a re-otimização global sob
   (gate estrutural, exit 1) e REJEITA `--xsd` com mensagem honesta até existir validador real.
   Fecha o follow-up de XSD/corpus dos itens §7/§8.1 no perfil atual — validação XSD integral
   permanece possível como evolução, sob demanda de certificação formal.
+- **N-5 ENTREGUE (fecha o §11.3 "menu de contexto de aresta"):** ContextMenu plugável — built-ins
+  condicionais de ARESTA completos ("Voltar ao automático" só se manual, "Adicionar waypoint aqui",
+  "Editar rótulo" inline via `EdgeLabelEditor`); contrato de plugin `contextMenuItems(target)` →
+  `{id, label, when(ctx), run(ctx, {execute})}` — `run` recebe **só** o dispatcher de comandos
+  (zero acesso direto ao estado, garantido por teste do shape da API); teclado completo
+  (Menu/Shift+F10, setas, Enter) com o menu entrando na pilha única de Esc (fecha antes de
+  qualquer outra coisa) e, aberto, DONO do teclado (atalhos globais silenciam — setas não
+  empurram a seleção atrás do menu); long-press (touch, 500ms) abre e alvos ≥44px via
+  `pointer: coarse`. **Built-ins de NÓ/CANVAS mínimos por decisão:** nó tem só "Editar rótulo";
+  disparo de boundary em simulação, duplicar/colar no canvas etc. são EXTENSÕES FUTURAS — a infra
+  (target kinds `node`/`edge`/`canvas` + seções de plugin) já as comporta sem mudança de contrato.
 
 ## Resolvidas (para histórico)
 
@@ -583,8 +595,9 @@ um nó movido (§3) — o "Limpar roteamento" cobre a re-otimização global sob
   → `toBlob` deixa de retornar null) e embute `@font-face` same-origin. `exportSvg`/`exportPng`
   passaram a ser assíncronos; assets inalcançáveis são deixados como estão (a saída ainda é
   produzida, sem lançar). Unit (inline de imagem + falha graciosa) + e2e (`export.spec.ts`: PNG com
-  assinatura mágica válida, SVG bem-formado sem camadas transitórias). O menu de contexto de aresta
-  (§11.3) segue como única conveniência adiada do roteamento.
+  assinatura mágica válida, SVG bem-formado sem camadas transitórias).
+- ~~Menu de contexto de aresta (§11.3, adiado do roteamento)~~ → entregue na N-5 do Handoff 11
+  como ContextMenu plugável (§13).
 
 *Se nada disto for prioridade agora, pode ignorar o arquivo — está aqui para não perder o
 contexto das decisões em aberto.*

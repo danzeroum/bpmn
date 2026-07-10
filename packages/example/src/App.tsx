@@ -1,5 +1,13 @@
 import { useRef, useState } from 'react';
-import { AuditLedger, BpmnXmlConverter, createDiagram, getEdgeChain, type BpmnDiagram } from '@buildtovalue/core';
+import {
+  addNodeCommand,
+  AuditLedger,
+  BpmnXmlConverter,
+  createDiagram,
+  generateId,
+  getEdgeChain,
+  type BpmnDiagram,
+} from '@buildtovalue/core';
 import {
   astarConnection,
   CopilotPanel,
@@ -117,7 +125,36 @@ const dmnDemoPlugin: BpmnPlugin = {
   ],
 };
 
-const PLUGINS = [domainExamplePlugin, dmnDemoPlugin, healthcarePlugin, observabilityPlugin, soundnessPlugin, bindingPlugin];
+// Context-menu plugin (Handoff 11 N-5): a `demo/menu` section through the
+// {id, label, when, run} contract. The action goes through an EXISTING
+// command (addNodeCommand) — `run` only ever receives the dispatcher, so the
+// plugin cannot touch editor state directly.
+const menuPlugin: BpmnPlugin = {
+  id: 'demo/menu',
+  contextMenuItems: () => [
+    {
+      id: 'duplicate-node',
+      label: 'Duplicar nó',
+      when: (target) => target.kind === 'node' && target.id !== undefined && target.diagram.nodes[target.id] !== undefined,
+      run: (target, api) => {
+        const node = target.diagram.nodes[target.id!];
+        if (!node) return;
+        api.execute(
+          addNodeCommand({
+            ...node,
+            id: generateId(),
+            x: node.x + 40,
+            y: node.y + 40,
+            label: `${node.label} (cópia)`,
+            properties: { ...node.properties },
+          }),
+        );
+      },
+    },
+  ],
+};
+
+const PLUGINS = [domainExamplePlugin, dmnDemoPlugin, healthcarePlugin, observabilityPlugin, soundnessPlugin, bindingPlugin, menuPlugin];
 
 // A* zero-recalc probe (`?astar=1`, Handoff 10 R-2b): a router that delegates to
 // the real astar connection but bumps a global counter on every PER-RENDER

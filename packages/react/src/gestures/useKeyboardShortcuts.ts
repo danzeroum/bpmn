@@ -50,6 +50,13 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
       // inert to all of them, not just Delete/arrows.
       if (state.readOnly) return;
 
+      // N-5: an open context menu owns the keyboard (arrows move the active
+      // item, Enter runs it — handled on the menu element itself). Global
+      // shortcuts stand down so arrows never nudge and Delete never removes
+      // the selection behind the menu. Escape stays live: the dismissal
+      // stack below pops the menu first.
+      if (state.contextMenu && event.key !== 'Escape') return;
+
       if (meta && event.key.toLowerCase() === 'z') {
         event.preventDefault();
         if (event.shiftKey) redo();
@@ -59,6 +66,13 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
       if (meta && event.key.toLowerCase() === 'y') {
         event.preventDefault();
         redo();
+        return;
+      }
+
+      // N-5: open the context menu for the current selection via keyboard.
+      if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+        event.preventDefault();
+        interactions.openContextMenuForSelection();
         return;
       }
 
