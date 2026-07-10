@@ -48,3 +48,17 @@ export {
   DEFAULT_TEMPLATE_ID,
   TEMPLATES,
 } from './templates.js';
+export {
+  type Token,
+  type GatewayKind,
+  type PendingChoice,
+  type BoundaryOption,
+  type PendingDecisionInput,
+  type TransitionRecord,
+  type BlockedDecision,
+  type SimulationState,
+  type NodeFixture,
+  type Fixtures,
+  type SimulateOptions,
+} from './simTypes.js';
+export { simulate } from './simulate.js';

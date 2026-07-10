@@ -15,6 +15,8 @@ export default defineConfig({
         'packages/react/src/plugins/types.ts',
         'packages/registry/src/types.ts',
         'packages/identity/src/types.ts',
+        // Pure type-only shape-parity declarations (H7 simulation shape).
+        'packages/agentflow/src/simTypes.ts',
         // Exercised end-to-end as a real child process in
         // packages/cli/tests/bin.test.ts — v8 coverage instrumentation
         // only observes code run in-process, so a spawned script always

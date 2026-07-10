@@ -32,6 +32,7 @@ const EXPECTED_EXPORTS = [
   'nodeIndex',
   'parseRef',
   'requiresDownstreamGate',
+  'simulate',
   'toRef',
   'validateGraph',
 ].sort();
