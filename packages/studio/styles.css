@@ -543,3 +543,56 @@
   color: inherit;
   cursor: pointer;
 }
+
+/* C6 (Handoff 9 CP-4) — consulta ao ledger com citações */
+.btv-studio-ledger-query {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btv-studio-ledger-query input {
+  flex: 1 1 260px;
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  background: transparent;
+  color: inherit;
+}
+.btv-studio-ledger-query > button {
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  background: transparent;
+  color: #33567e;
+  cursor: pointer;
+}
+.btv-studio-ledger-answer {
+  flex-basis: 100%;
+  font-size: 12.5px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  border-left: 3px solid #33567e;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.btv-studio-ledger-answer p {
+  margin: 0 0 6px;
+}
+.btv-studio-ledger-citations {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.btv-studio-ledger-citation {
+  font-size: 10.5px;
+  border: 1px dashed var(--bpmnr-border, #d8d2c6);
+  border-radius: 999px;
+  padding: 3px 10px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}

@@ -1,12 +1,15 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * Handoff 9 CP-2/CP-3 — the governed copilot with a DETERMINISTIC FAKE
+ * Handoff 9 CP-2/CP-3/CP-4 — the governed copilot with a DETERMINISTIC FAKE
  * provider (§8.6: CI never calls the network). C1 drafts the reimbursement
  * process as ONE undoable composite with AI authorship; C2 adjusts
  * incrementally; "Desfazer tudo" reverts the whole plan in one click; C3
  * explains in the Studio review WITHOUT touching the ledger; C4 pre-fills the
- * change_summary but only a HUMAN interaction commits it.
+ * change_summary but only a HUMAN interaction commits it; C5 fixes a SND_*
+ * error through the same pipeline (and the fix must REALLY fix); C6 answers
+ * ledger questions only with REAL citations — otherwise "não encontrei
+ * registro".
  */
 test('C1: draft → applied diagram + mixed authorship + local soundness footer', async ({ page }) => {
   await page.goto('/?copilot=1');
@@ -65,6 +68,63 @@ test('C3: Explicar is read-only ABSOLUTO — explanation renders, ledger untouch
   // exactly what it was — no "recorded query", nothing.
   await page.getByRole('button', { name: 'Auditoria' }).click();
   await expect(page.locator('.btv-studio-chip-count').first()).toHaveText(before!);
+});
+
+test('C5: erro SND_* listado → "sugerir correção" aplicada REMOVE o erro de fato', async ({
+  page,
+}) => {
+  await page.goto('/?copilot=1&fix=1');
+  // The trap surfaced by the LOCAL analyzer: named code + versioned template.
+  const snd = page.getByTestId('copilot-snd-errors');
+  await expect(snd).toContainText('SND_DEADLOCK_JOIN');
+  await expect(snd).toContainText('prompt: copilot-fix v1.0.0');
+
+  await page.getByTestId('copilot-fix').click();
+  // The fix rides the C2 pipeline: applied, authored, locally re-analyzed.
+  const footer = page.getByTestId('copilot-footer');
+  await expect(footer).toContainText('soundness: 0 erros');
+  await expect(footer).toContainText('autoria: ia.copilot@claude-4 + ana.ruiz');
+  // The motivating error is REALLY gone — the recomputed list disappears
+  // (a fix that does not fix would keep it visible).
+  await expect(snd).toHaveCount(0);
+  await expect(page.locator('[data-node-id="junta"]')).toHaveCount(1);
+
+  // "Desfazer tudo" reverts the whole fix — the trap (and the list) return.
+  await page.getByTestId('copilot-undo-all').click();
+  await expect(snd).toContainText('SND_DEADLOCK_JOIN');
+});
+
+test('C6: consulta ao ledger com citações reais; sem registro citável → não inventa', async ({
+  page,
+}) => {
+  await page.goto('/?studio=1#/auditoria');
+
+  // Positive: the answer is anchored in a REAL entry (clickable citation).
+  const input = page.getByTestId('ledger-query-input');
+  await input.fill('quem aprovou a v2.0.0?');
+  await page.getByTestId('ledger-query-ask').click();
+  const answer = page.getByTestId('ledger-query-answer');
+  await expect(answer).toContainText('carla (compliance)');
+  const citation = page.getByTestId('ledger-query-citation');
+  await expect(citation).toHaveCount(1);
+  await expect(citation).toContainText('APPROVAL_RECORDED');
+
+  // Clicking the citation OPENS the cited entry in the Explorer detail.
+  await citation.click();
+  await expect(
+    page.locator('.btv-studio-ledger-entry[data-selected]'),
+  ).toContainText('APPROVAL_RECORDED');
+
+  // Negative (as important as the positive): nothing citable → the literal
+  // "não encontrei registro" — the invented answer text never renders.
+  await input.fill('quem aprovou a v9.9.9?');
+  await page.getByTestId('ledger-query-ask').click();
+  await expect(page.getByTestId('ledger-query-norecord')).toContainText('não encontrei registro');
+  await expect(page.getByTestId('ledger-query-answer')).toHaveCount(0);
+  await expect(page.getByText('aprovada por alguém')).toHaveCount(0);
+
+  // Read-only como a C3: a consulta não gerou NENHUMA entrada nova.
+  await expect(page.locator('.btv-studio-chip-count').first()).toHaveText('4');
 });
 
 test('C4: AI text only PRE-FILLS the change_summary — the gate stays ○ until the human commits', async ({

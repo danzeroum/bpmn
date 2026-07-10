@@ -173,8 +173,29 @@ function makeFakeCopilotProvider(): AIProvider {
     rationale: 'Ajuste: SLA explícito na análise.',
     promptTemplateRef: { id: 'copilot-adjust', version: '1.0.0' },
   });
+  // C5 (CP-4): the fix for the `?copilot=1&fix=1` deadlock trap — the AND-join
+  // becomes an XOR convergence (the branches are alternatives). It rides the
+  // SAME validation pipeline as any other proposal.
+  const fix = JSON.stringify({
+    commands: [
+      { type: 'removeNode', params: { id: 'join' } },
+      { type: 'addNode', params: { id: 'junta', type: 'exclusiveGateway', label: 'Convergir', x: 520, y: 153 } },
+      { type: 'addEdge', params: { id: 'g1', sourceId: 'yes', targetId: 'junta' } },
+      { type: 'addEdge', params: { id: 'g2', sourceId: 'no', targetId: 'junta' } },
+      { type: 'addEdge', params: { id: 'g3', sourceId: 'junta', targetId: 'end' } },
+    ],
+    rationale: 'Correção: a sincronização AND vira convergência XOR — os ramos são alternativos.',
+    promptTemplateRef: { id: 'copilot-fix', version: '1.0.0' },
+  });
   let calls = 0;
-  return { id: 'claude-4', complete: async () => (calls++ === 0 ? draft : adjust) };
+  return {
+    id: 'claude-4',
+    complete: async ({ messages }) => {
+      const last = messages.at(-1)?.content ?? '';
+      if (last.includes('Corrija os erros de soundness')) return fix;
+      return calls++ === 0 ? draft : adjust;
+    },
+  };
 }
 const fakeCopilotProvider = makeFakeCopilotProvider();
 
@@ -262,8 +283,14 @@ export function App() {
     );
   }
   if (copilotMode) {
+    // `&fix=1` seeds the XOR-split → AND-join trap (C5): the panel lists the
+    // SND_* error and "✦ Sugerir correção" must REALLY remove it.
+    const fixMode = params.get('fix') !== null;
     return (
-      <BpmnEditor diagram={createDiagram({ id: 'demo-copilot', name: 'Copiloto', createdBy: 'demo' })} plugins={PLUGINS}>
+      <BpmnEditor
+        diagram={fixMode ? buildDeadlockDiagram() : createDiagram({ id: 'demo-copilot', name: 'Copiloto', createdBy: 'demo' })}
+        plugins={PLUGINS}
+      >
         <CopilotDemo />
       </BpmnEditor>
     );

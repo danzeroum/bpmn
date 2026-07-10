@@ -34,6 +34,7 @@
   "dependencies": {
     "@buildtovalue/audit": "workspace:*",
     "@buildtovalue/conformance": "workspace:*",
+    "@buildtovalue/copilot": "workspace:*",
     "@buildtovalue/core": "workspace:*",
     "@buildtovalue/identity": "workspace:*",
     "@buildtovalue/library": "workspace:*",

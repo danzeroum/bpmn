@@ -319,6 +319,9 @@ importers:
       '@buildtovalue/conformance':
         specifier: workspace:*
         version: link:../conformance
+      '@buildtovalue/copilot':
+        specifier: workspace:*
+        version: link:../copilot
       '@buildtovalue/core':
         specifier: workspace:*
         version: link:../core

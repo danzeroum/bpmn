@@ -12,6 +12,11 @@ const EXPECTED_EXPORTS = [
   'COPILOT_SUMMARY_PROMPT',
   'parseProposal',
   'validateProposal',
+  // Handoff 9 CP-4 — C5 fix de soundness + C6 consulta com citações.
+  'COPILOT_FIX_PROMPT',
+  'COPILOT_QUERY_PROMPT',
+  'parseLedgerAnswer',
+  'soundnessErrors',
 ].sort();
 
 describe('@buildtovalue/copilot public API surface', () => {
