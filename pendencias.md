@@ -651,6 +651,17 @@ a re-otimização global sob demanda.
 - **Shadow / Live Mode — FORA da v1 (§7):** a simulação da v1 é só mock client-side. Shadow/Live
   entra como evolução futura via `AIProvider` (H9), sob demanda — sem runtime de execução real de
   agente no código ainda.
+- **A-2 — subconjunto de condição simulável (DECIDIDO):** o motor mock avalia apenas
+  `output.<path> <op> <literal>` (`===`/`!==`/`>`/`<`/`>=`/`<=`, literais boolean/number/string).
+  Qualquer coisa fora disso — expressão composta, campo ausente, compare de ordem em não-número —
+  é **bloqueio declarado** (`BlockedDecision`, disciplina S-FEEL), nunca rota adivinhada. Gramática
+  de condição mais rica é evolução sob demanda; o A-1 (`validate`) já casa o mesmo subconjunto.
+- **A-2 — paridade de shape verificada estruturalmente, não por import (cerca §2):** o
+  `agentflow` redefine `SimulationState`/`TransitionRecord`/`BlockedDecision` estruturalmente
+  idênticos aos do H7; `tests/structuralShape.test.ts` INLINA as formas do H7 (sem import) e
+  afirma assignability mútua via `expectTypeOf` (quebra o build se qualquer lado derivar). Um teste
+  de assignability cross-package (importando ambos) pode ser adicionado a partir de um pacote que já
+  depende do ecossistema (ex.: A-6) — o `agentflow` permanece zero imports.
 
 ## Resolvidas (para histórico)
 

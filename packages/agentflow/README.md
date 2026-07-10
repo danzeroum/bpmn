@@ -23,8 +23,31 @@ degradable.
 - **Templates** (`templates.ts`) — Approval Gate Agent ★, Research Agent,
   Document Review Agent.
 
-The simulation engine (A-2), the BPMN `agentTask` (A-3), the Agent Studio UI
-(A-4/A-5), the Library adapter (A-6) and LangGraph interop (A-7) build on this.
+## What's in A-2 — mock simulation engine
+
+`simulate(wf, { fixtures })` runs a **deterministic mock** of an agent workflow
+and returns a `SimulationState`. It is agentflow's OWN engine — message passing,
+data mapping and retries — and never adapts or imports the H7 BPMN token engine
+(cerca §2). The only thing shared with `@buildtovalue/simulation` is the result
+**shape**: `SimulationState` / `TransitionRecord` / `BlockedDecision` here are
+**structurally identical** to the H7 ones, verified by a type-level test that
+inlines the H7 shapes (no import), so the react layer renders an agent run with
+the same trail components.
+
+- **Deterministic** — node outputs come from per-node `fixtures` (a sequence of
+  outputs per visit), never from a clock or a random source: the same run twice
+  is byte-identical.
+- **Data mapping** — tool `params` templates `{{node.output.path}}` resolve from
+  the run context; the merged output feeds decision conditions.
+- **Honest stops** — an exhausted retry, an unmatched route, or a condition
+  outside the simulable subset produce a `BlockedDecision` naming the node, the
+  reason and the count. The run never guesses a route (S-FEEL discipline).
+- **Decorators** — `memory` shows as a trail entry; `errorBoundary` consumes
+  retries with a **simulated** (logical-time) backoff, not real time; `planner`
+  static means successors are visited in declared order.
+
+The BPMN `agentTask` (A-3), the Agent Studio UI (A-4/A-5), the Library adapter
+(A-6) and LangGraph interop (A-7) build on this.
 
 ## AgentO / AIAO vocabulary alignment — WITHOUT a JSON-LD claim
 
