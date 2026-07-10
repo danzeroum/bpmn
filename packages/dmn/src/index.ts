@@ -39,3 +39,8 @@ export {
   DmnKnowledgeSourceShape,
 } from './shapes.js';
 export { dmnPlugin } from './plugin.js';
+export {
+  createSfeelDecisionSupport,
+  nonSimulableCells,
+  type SfeelDecisionSupport,
+} from './sfeelSupport.js';

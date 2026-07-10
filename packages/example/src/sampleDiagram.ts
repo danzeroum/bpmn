@@ -465,6 +465,50 @@ export function buildFanoutDiagram(): BpmnDiagram {
   return diagram;
 }
 
+
+/**
+ * S-FEEL decision demo (`?sfeel=1`, Handoff 9 SF-2): start → businessRuleTask
+ * carrying a decision table (amount < 100 → "auto", >= 100 → "manual") →
+ * labeled flows to two tasks. With `bad=1` the first cell is `date(...)` —
+ * outside the subset — so the simulator stops with the honest ⚠ warning.
+ */
+export function buildSfeelDiagram(bad = false): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-sfeel', name: 'Decisão S-FEEL', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+
+  const decisionTable = {
+    hitPolicy: 'U',
+    inputs: [{ id: 'i1', label: 'Valor', expression: 'amount', typeRef: 'number' }],
+    outputs: [{ id: 'o1', label: 'Rota', expression: 'route', typeRef: 'string' }],
+    rules: [
+      { id: 'r1', inputEntries: [bad ? 'date("2026-01-01") > x' : '< 100'], outputEntries: ['"auto"'] },
+      { id: 'r2', inputEntries: ['>= 100'], outputEntries: ['"manual"'] },
+    ],
+  };
+
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 40, 120),
+    brt: make('businessRuleTask', 'brt', 'Aprovar reembolso?', 160, 100, { decisionTable }),
+    auto: make('task', 'auto', 'Reembolso automático', 380, 20),
+    manual: make('task', 'manual', 'Análise manual', 380, 180),
+    end1: make('endEvent', 'end1', 'Fim', 600, 40),
+    end2: make('endEvent', 'end2', 'Fim', 600, 200),
+  };
+  const edge = (id: string, sourceId: string, targetId: string, label?: string) =>
+    createEdge({ id, sourceId, targetId, type: 'sequenceFlow', versionId: v, ...(label ? { label } : {}) });
+  diagram.edges = {
+    s1: edge('s1', 'start', 'brt'),
+    eAuto: edge('eAuto', 'brt', 'auto', 'auto'),
+    eManual: edge('eManual', 'brt', 'manual', 'manual'),
+    f1: edge('f1', 'auto', 'end1'),
+    f2: edge('f2', 'manual', 'end2'),
+  };
+  return diagram;
+}
+
 /**
  * The three-path simulation demo (`?simulate=1`, Handoff 7A): a task with an
  * interrupting 48h timeout boundary, then an XOR (approve / reject). The three

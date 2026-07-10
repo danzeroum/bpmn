@@ -37,6 +37,20 @@ Documented deliberately so expectations are managed — none of these fail silen
 - Dragging a pool/lane moves only the container, not the nodes inside it; lanes do not auto-reflow
   siblings when resized. Both are candidates for a post-1.0 "swimlane layout" pass.
 
+## S-FEEL evaluation (`@buildtovalue/sfeel`, Handoff 9)
+- **The simulator evaluates a documented S-FEEL SUBSET, never full FEEL.** Supported (§5 of the
+  handoff): comparisons (`<`, `<=`, `>`, `>=`, `=`), inclusive/exclusive/mixed ranges, value lists
+  (implicit OR), `not(list of literals)`, `-` (irrelevant), number/string/boolean, hit policies
+  **U** and **F**. Excluded — explicitly: function invocation (`date()`, `duration()`, …),
+  arithmetic in cells, `for`/`some`/`every`, nested contexts, date/time/duration types, non-literal
+  output expressions, identifier references in cells, and evaluation of the A/P/R/O/C hit policies
+  (editor metadata only). A cell outside the subset yields a DECLARED `nonSimulable {cell, reason}`
+  — the token stops at the `businessRuleTask` with the warning, the DMN editor marks the cell ⚠
+  while editing, and nothing is ever evaluated "approximately".
+- Input-column expressions are used verbatim as context keys — they are not evaluated. A Unique
+  hit-policy violation (two matching rules), a missing input variable and a test/value type
+  mismatch are declared the same way, never a silent false.
+
 ## Token simulation (`@buildtovalue/simulation`, Handoff 7A)
 - **OR (inclusive) gateways use dominator-based structural convergence (upgraded in #65).** The
   engine executes **exact** token semantics for **XOR (exclusive), AND (parallel) and event-based**

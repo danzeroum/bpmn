@@ -31,6 +31,9 @@ const EXPECTED_EXPORTS = [
   'setDecisionTableCommand',
   'unlinkDecisionCommand',
   'validateDecisionTable',
+  // Handoff 9 SF-2 — S-FEEL decision support for the simulator + editor ⚠.
+  'createSfeelDecisionSupport',
+  'nonSimulableCells',
 ].sort();
 
 describe('@buildtovalue/dmn public API surface', () => {

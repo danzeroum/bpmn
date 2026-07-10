@@ -3,6 +3,7 @@ import type { BpmnDiagram } from '@buildtovalue/core';
 import {
   CoverageTracker,
   SimulationEngine,
+  type DecisionEvaluator,
   type CoverageSummary,
   type Decision,
   type SimulationState,
@@ -56,8 +57,12 @@ const TRAVEL_MS = 450;
  * over the real edge geometry. All semantics live in the engine — this hook is
  * orchestration only.
  */
-export function useSimulation(diagram: BpmnDiagram): UseSimulationResult {
-  const engine = useMemo(() => new SimulationEngine(diagram), [diagram]);
+export function useSimulation(
+  diagram: BpmnDiagram,
+  options: { decisions?: DecisionEvaluator } = {},
+): UseSimulationResult {
+  const { decisions } = options;
+  const engine = useMemo(() => new SimulationEngine(diagram, { decisions }), [diagram, decisions]);
   const tracker = useMemo(() => new CoverageTracker(engine.graph), [engine]);
   const [, force] = useState(0);
   const rerender = useCallback(() => force((n) => n + 1), []);
@@ -136,6 +141,8 @@ export function useSimulation(diagram: BpmnDiagram): UseSimulationResult {
   const statusLine = useMemo(() => {
     if (engine.deadlocked) return 'Deadlock — token preso no join (aguardando ramo que não vem)';
     if (engine.complete) return 'Sessão completa — token chegou ao fim';
+    if (state.blockedDecision) return 'Decisão não-simulável — token parado';
+    if (state.pendingDecisionInput) return 'Aguardando entradas da decisão';
     if (state.pendingChoice) return 'Aguardando decisão no gateway';
     const token = state.tokens[0];
     const node = token ? engine.graph.nodes.get(token.nodeId) : undefined;

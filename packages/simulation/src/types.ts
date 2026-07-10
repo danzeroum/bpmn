@@ -73,7 +73,59 @@ export interface BoundaryOption {
 export type Decision =
   | { kind: 'exclusive' | 'eventBased'; gateway: string; edge: string }
   | { kind: 'inclusive'; gateway: string; edges: string[] }
-  | { kind: 'boundary'; host: string; boundary: string };
+  | { kind: 'boundary'; host: string; boundary: string }
+  | { kind: 'decision'; node: string; context: Record<string, number | string | boolean> };
+
+/**
+ * Outcome of evaluating a node's decision table (Handoff 9 SF-2). Produced by
+ * the injected {@link DecisionEvaluator} — the engine itself knows nothing
+ * about S-FEEL or DMN.
+ */
+export interface DecisionOutcome {
+  /** Output values, keyed by output name — recorded in the trail. */
+  outputs?: Record<string, number | string | boolean>;
+  /** 0-based index of the rule that fired. */
+  ruleIndex?: number;
+  /** True when no rule matched (a declared non-result, not a guess). */
+  noMatch?: boolean;
+  /** Declared honest failure (cerca §1.6) — the token stops with this. */
+  nonSimulable?: { cell: string; reason: string };
+}
+
+/**
+ * HOST-injected decision support (Handoff 9 SF-2, same injection pattern as
+ * Signer/AnchorAdapter): lets a `businessRuleTask` route through a real
+ * decision table without the engine importing `dmn` or `sfeel`. The
+ * `@buildtovalue/dmn` package ships an S-FEEL-backed implementation.
+ */
+export interface DecisionEvaluator {
+  /** True when `nodeId` carries a decision table this evaluator can run. */
+  hasDecision(nodeId: string): boolean;
+  /** Input variable names — the prompt card asks the user for these. */
+  inputsOf(nodeId: string): string[];
+  evaluate(
+    nodeId: string,
+    context: Record<string, number | string | boolean>,
+  ): DecisionOutcome;
+}
+
+/** A businessRuleTask waiting for its decision inputs (like PendingChoice). */
+export interface PendingDecisionInput {
+  nodeId: string;
+  label: string;
+  /** Input variable names to collect from the user. */
+  inputs: string[];
+}
+
+/**
+ * A token stopped on a declared non-simulable decision (§5): the honest
+ * warning names the cell and the reason; the session does not proceed past it.
+ */
+export interface BlockedDecision {
+  nodeId: string;
+  cell: string;
+  reason: string;
+}
 
 /** One entry in the session trail — the mono log the panel renders. */
 export interface TransitionRecord {
@@ -86,6 +138,8 @@ export interface TransitionRecord {
     | 'join-wait' // a token arrived at a sync join, still waiting
     | 'join-fire' // a sync join completed
     | 'boundary' // a boundary event fired
+    | 'decision' // a businessRuleTask decision table fired (SF-2)
+    | 'decision-blocked' // declared non-simulable decision — token stopped (§5)
     | 'end'; // a token reached an end/sink and was consumed
   /** Human-readable description (localized by the host, English here). */
   message: string;
@@ -116,6 +170,10 @@ export interface SimulationState {
   deadlocked: boolean;
   pendingChoice: PendingChoice | null;
   boundaryOptions: BoundaryOption[];
+  /** A businessRuleTask waiting for decision inputs (SF-2), if any. */
+  pendingDecisionInput: PendingDecisionInput | null;
+  /** Token stopped on a declared non-simulable decision (§5), if any. */
+  blockedDecision: BlockedDecision | null;
 }
 
 /** Options for constructing an engine. */
@@ -126,4 +184,6 @@ export interface SimulationOptions {
    * descent is not modeled in v1 (see limitations.md).
    */
   scope?: string;
+  /** HOST-injected decision-table support for businessRuleTask (SF-2). */
+  decisions?: DecisionEvaluator;
 }
