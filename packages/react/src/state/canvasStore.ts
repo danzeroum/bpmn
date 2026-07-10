@@ -115,6 +115,10 @@ export interface CanvasState {
    * drop commits ONE attach command.
    */
   boundarySnap: BoundarySnapTarget | null;
+  /** Open context menu (Handoff 11 N-5), or null. */
+  contextMenu: ContextMenuState | null;
+  /** Edge whose label is being edited inline (N-5 "Editar rótulo"). */
+  editingEdgeId: string | null;
 }
 
 export interface BoundarySnapTarget {
@@ -123,6 +127,18 @@ export interface BoundarySnapTarget {
   t: number;
   /** The anchor point ON the border (world coordinates). */
   point: Point;
+}
+
+/**
+ * Open context menu (Handoff 11 N-5): what was invoked and where. `client`
+ * positions the HTML menu (viewport-relative); `world` feeds the actions
+ * (e.g. "adicionar waypoint aqui").
+ */
+export interface ContextMenuState {
+  kind: 'node' | 'edge' | 'canvas';
+  targetId?: string;
+  client: Point;
+  world: Point;
 }
 
 export interface SettlingEntry {
@@ -176,6 +192,8 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     dismissals: [],
     settling: null,
     boundarySnap: null,
+    contextMenu: null,
+    editingEdgeId: null,
     ...partial,
   });
 }

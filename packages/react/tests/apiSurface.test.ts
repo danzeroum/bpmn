@@ -167,6 +167,9 @@ const EXPECTED_EXPORTS = [
   // Handoff 11 N-3 — public event catalog + deprecation aliases.
   'EDITOR_EVENTS',
   'DEPRECATED_EVENT_ALIASES',
+  // Handoff 11 N-5 — pluggable context menu + inline edge label editor.
+  'ContextMenu',
+  'EdgeLabelEditor',
 ].sort();
 
 describe('@buildtovalue/react public API surface', () => {

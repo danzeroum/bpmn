@@ -73,3 +73,5 @@ export * from './ui/VersionBanner.js';
 export * from './ui/EdgePedigree.js';
 export * from './ui/exporters.js';
 export * from './copilot/CopilotPanel.js';
+export * from './ui/ContextMenu.js';
+export * from './canvas/EdgeLabelEditor.js';
