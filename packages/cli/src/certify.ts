@@ -65,7 +65,11 @@ const WARN = '⚠';
 const FAIL = '✖';
 
 /** Human-readable certificate (the --json flag prints the raw report instead). */
-export function formatCertify(report: CertifyReport, reportPath?: string): string {
+export function formatCertify(
+  report: CertifyReport,
+  reportPath?: string,
+  options: { strict?: boolean } = {},
+): string {
   const lines: string[] = [];
   if (!report.wellFormed) {
     lines.push(
@@ -76,6 +80,13 @@ export function formatCertify(report: CertifyReport, reportPath?: string): strin
     return lines.join('\n');
   }
   lines.push(`${OK} XML bem-formado · XXE-safe`);
+  if (options.strict) {
+    // N-2 honesty line: --strict is the structural manifest, not full XSD.
+    lines.push(
+      `${report.structuralIssues.length === 0 ? OK : FAIL} Modo --strict: manifesto ` +
+        'estrutural derivado dos XSDs oficiais — NÃO é validação XSD integral (ver CONFORMANCE.md)',
+    );
+  }
   lines.push(
     `${OK} Perfil: Descriptive ${report.matrixCoverage.descriptive}% · Analytic ${report.matrixCoverage.analytic}%`,
   );

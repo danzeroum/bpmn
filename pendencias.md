@@ -563,6 +563,12 @@ um nó movido (§3) — o "Limpar roteamento" cobre a re-otimização global sob
   entra no catálogo documentado. O contrato de estabilidade semver nasce na N-3.
 - **Triagem N-7 (viewer):** o nome `BpmnViewer` já existe como wrapper readOnly do Designer; o
   realinhamento para o entry point leve exige **teste de equivalência de render** antes de mexer.
+- **N-2 ENTREGUE:** `corpusPolicy.ts` é a fonte única (contagem gerada anti-drift + bounds do
+  fetch); CONFORMANCE.md ganhou as seções "Corpus real vs gerado" (com a decisão
+  MANIFEST-como-proveniência) e "`certify --strict` vs validação XSD"; o CLI ganhou `--strict`
+  (gate estrutural, exit 1) e REJEITA `--xsd` com mensagem honesta até existir validador real.
+  Fecha o follow-up de XSD/corpus dos itens §7/§8.1 no perfil atual — validação XSD integral
+  permanece possível como evolução, sob demanda de certificação formal.
 
 ## Resolvidas (para histórico)
 

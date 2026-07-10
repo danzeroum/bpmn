@@ -262,6 +262,39 @@ describe('bin.ts — registry & governance subcommands', () => {
   });
 });
 
+describe('bin: certify --strict / --xsd (Handoff 11 N-2)', () => {
+  const corpus = join(__dirname, '../../conformance/corpus');
+  const fixtures = join(__dirname, '../../conformance/tests/fixtures');
+
+  it('--strict classifies the 3 invalid fixtures with the standard exit codes', async () => {
+    // Structural violations become a GATE under --strict (exit 1, no --require needed).
+    const structure = await runCli(['certify', join(fixtures, 'invalid-structure.bpmn'), '--strict']);
+    expect(structure.code).toBe(1);
+    expect(structure.stdout).toContain('STRUCT_');
+    // Parse-level failures stay exit 2 (consistent with certify today).
+    expect((await runCli(['certify', join(fixtures, 'invalid-malformed.bpmn'), '--strict'])).code).toBe(2);
+    expect((await runCli(['certify', join(fixtures, 'invalid-doctype.bpmn'), '--strict'])).code).toBe(2);
+  });
+
+  it('--strict passes a clean corpus file (exit 0) and prints the honesty line', async () => {
+    const res = await runCli(['certify', join(corpus, '01-linear-approval-v1.bpmn'), '--strict']);
+    expect(res.code).toBe(0);
+    expect(res.stdout).toContain('Modo --strict: manifesto estrutural');
+    expect(res.stdout).toContain('NÃO é validação XSD integral');
+  });
+
+  it('without --strict, a structural violation alone does not gate the exit code (unchanged)', async () => {
+    expect((await runCli(['certify', join(fixtures, 'invalid-structure.bpmn')])).code).toBe(0);
+  });
+
+  it('--xsd is rejected with an honest pointer to --strict (never claims XSD)', async () => {
+    const res = await runCli(['certify', join(corpus, '01-linear-approval-v1.bpmn'), '--xsd']);
+    expect(res.code).toBe(2);
+    expect(res.stderr).toContain('não há validador XSD integral');
+    expect(res.stderr).toContain('--strict');
+  });
+});
+
 describe('bin: certify (Handoff 4 §A2)', () => {
   const corpus = join(__dirname, '../../conformance/corpus');
   const fixtures = join(__dirname, '../../conformance/tests/fixtures');
