@@ -81,6 +81,8 @@ importers:
         specifier: workspace:*
         version: link:../simulation
 
+  packages/agentflow: {}
+
   packages/anchor-git:
     dependencies:
       '@buildtovalue/identity':

@@ -1,0 +1,44 @@
+{
+  "name": "@buildtovalue/agentflow",
+  "version": "1.0.0",
+  "description": "Headless agent-workflow model (Handoff 12 A-1): the JSON schema for a governed AI-agent sub-workflow — exactly three node types (llm/tool/decision) plus decorators (memory/planner/errorBoundary) — a versioned id@semver reference parser, and graph validation (honest stop criterion, bounded retries, structured-output coherence, delegate resolution, non-empty schemas) with a normative autonomyLevel 0-5 scale. Property naming aligns with the AgentO/AIAO vocabulary WITHOUT any JSON-LD @context/@type claim. Operates on a plain abstract graph and imports NOTHING from the ecosystem (integrations arrive by injection). Zero dependencies.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "agent",
+    "agentflow",
+    "llm",
+    "workflow",
+    "bpmn"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/agentflow"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

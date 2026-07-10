@@ -616,6 +616,42 @@ a re-otimização global sob demanda.
   disparo de boundary em simulação, duplicar/colar no canvas etc. são EXTENSÕES FUTURAS — a infra
   (target kinds `node`/`edge`/`canvas` + seções de plugin) já as comporta sem mudança de contrato.
 
+## 14. Handoff 12 (Agent Lane) — decisões registradas (A-1)
+
+- **Forma canônica de ref (DECIDIDO, A-1):** referência de artefato = string `id@semver`,
+  idêntica ao `calledElement` do callActivity (`agnt-rsch@2.1.0`, `prm:research@2.0.0`). Os
+  prefixos `agnt-`/`prm:` são **convenção de id, não sintaxe** — o único separador estrutural é o
+  ÚLTIMO `@`, então o id pode conter `-`, `:`, `.`. Parser único (`packages/agentflow/src/ref.ts`,
+  `parseRef`) normaliza as três formas hoje existentes: string `id@semver` (callActivity), objeto
+  `{id, version}` (copilot `PromptTemplateRef`), e as formas ABREVIADAS do protótipo
+  (`prm:research@2`, `agnt-verify@1.0`) → expandidas para `major.minor.patch` **com aviso**
+  (`PROMPT_REF_ABBREVIATED`/`DELEGATE_REF_ABBREVIATED`). O protótipo (`AgentStudio BTV.dc.html`)
+  usa a forma abreviada como **display, não como storage** — nunca aceita silenciosamente.
+- **Protótipo vs. normativo — aresta delegate e autonomia (nota):** o canvas do protótipo desenha
+  uma aresta `delegate` (⤳ `agnt-verify@1.0`) enquanto exibe o pill "2 · Bounded Loop". Pela regra
+  §4 ("o grafo é quem manda"), uma aresta delegate força autonomia 4 (Multi-Agent). Portanto o
+  template `Research Agent` fica um Bounded Loop nível 2 LIMPO (sem delegate) e o comportamento
+  delegate/nível-4 é exercitado por teste (`acidez`/`autonomy`/`validate`). Os 3 templates mapeiam
+  1:1 os níveis 1/2/3 (Approval Gate / Research / Document Review) — pedagogia da escala §4.
+- **Divisão da regra de autonomia→gate (cerca §7, DECIDIDO):** a metade agnóstica de grafo vive no
+  `agentflow` (`autonomy.ts`: `minCoherentLevel`, coerência declarado<grafo = erro `AUTONOMY_INCOHERENT`,
+  predicado puro `gateRequirement`). A metade que precisa do processo BPMN — "nível ≤3 sem `btv:gate`
+  alcançável a jusante = erro que bloqueia promoção" — é do **core (A-3)**, que conhece `btv:gate` e
+  alcançabilidade e consome `gateRequirement`. O `agentflow` nunca importa core.
+- **Fronteira A-3 (a decidir na PR A-3):** o §5 mostra elementos XML literais `<btv:agentTask>` /
+  `<btv:agentWorkflowSnapshot>`, mas o converter só conhece o namespace `bpmnr:` e o
+  `readExtensionElements` **descarta** filhos de extensão desconhecidos (com warning). `pendencias`
+  §1 fixa que o prefixo `bpmnr:` NÃO muda (quebraria round-trip). A-3 adiciona read/write explícito
+  desses filhos — decisão: namespace `btv:` dedicado vs. atributos em `bpmnr:meta`. Registrar aqui a
+  escolha quando feita, mais a fixture `degraded-elements` do corpus com `btv:agentTask` desconhecido.
+- **Fronteira A-6 (a decidir na PR A-6):** um `AgentWorkflow` é JSON, não `BpmnDiagram`, então o
+  adapter "AGENTE" da Biblioteca NÃO é um `kindAdapter` sobre `VersionRegistry<BpmnDiagram>` como os
+  demais; A-6 decide entre registrar o JSON do agente como snapshot no registry ou escrever um adapter
+  bespoke sobre a interface `ArtifactAdapter`. `classifyDiagram` também não tem kind `agent`.
+- **Shadow / Live Mode — FORA da v1 (§7):** a simulação da v1 é só mock client-side. Shadow/Live
+  entra como evolução futura via `AIProvider` (H9), sob demanda — sem runtime de execução real de
+  agente no código ainda.
+
 ## Resolvidas (para histórico)
 
 - ~~Lane membership manual/data-only~~ → interativa na Fase 5a.
