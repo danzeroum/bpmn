@@ -88,6 +88,25 @@ export function filterEntries(entries: readonly AuditEntry[], filter: LedgerFilt
   return { entries: filtered, counts };
 }
 
+/**
+ * AI authorship of an entry (Handoff 9 §8.2 — "selo próprio" no Explorer):
+ * the immutable `ia.copilot@<modelo>` recorded either as the entry's author
+ * (COPILOT_PROPOSAL_APPLIED, cerca §1.2) or as the change-summary
+ * co-authorship (VERSION_ACTIVATED carrying `changeSummaryOrigin`, C4).
+ * Pure and data-driven: the seal renders from THIS field, never from
+ * heuristics over free text.
+ */
+export function aiAuthorOf(entry: AuditEntry): string | undefined {
+  const direct = entry.details['author'];
+  if (typeof direct === 'string' && direct.startsWith('ia.copilot@')) return direct;
+  const origin = entry.details['changeSummaryOrigin'];
+  if (origin && typeof origin === 'object') {
+    const author = (origin as { author?: unknown }).author;
+    if (typeof author === 'string' && author.startsWith('ia.copilot@')) return author;
+  }
+  return undefined;
+}
+
 /** Human line for the PAYLOAD block — generic, data-driven. */
 export function describeEntry(entry: AuditEntry): string[] {
   const lines = Object.entries(entry.details).map(([key, value]) =>

@@ -596,3 +596,14 @@
   color: inherit;
   cursor: pointer;
 }
+
+/* §8.2 — selo de autoria de IA nas entradas do Explorer (mesmo azul do
+   selo de rascunho do Designer) */
+.btv-studio-ledger-ai {
+  font-size: 10px;
+  color: #33567e;
+  border: 1px solid #33567e40;
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}

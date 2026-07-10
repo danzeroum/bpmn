@@ -23,6 +23,8 @@ const EXPECTED_EXPORTS = [
   'pendingPromotions',
   'rejectPromotion',
   'runReviewChecks',
+  // Handoff 9 §8.2 — selo de autoria de IA nas entradas do Explorer.
+  'aiAuthorOf',
 ].sort();
 
 describe('@buildtovalue/studio public API surface', () => {
