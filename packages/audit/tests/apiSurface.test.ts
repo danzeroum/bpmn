@@ -20,6 +20,9 @@ const EXPECTED_EXPORTS = [
   'toXES',
   'verifyLedger',
   'verifyLedgerSignatures',
+  // Handoff 11 N-4 — the anchoring act as a first-class ledger entry.
+  'ANCHOR_RECORDED_TYPE',
+  'anchorRecordedEntry',
 ].sort();
 
 describe('@buildtovalue/audit public API surface', () => {

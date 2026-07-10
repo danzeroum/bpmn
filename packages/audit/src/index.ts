@@ -27,3 +27,4 @@ export {
   type AssuranceEvidence,
 } from './assuranceCase.js';
 export { renderAssuranceCaseHtml } from './sacmReport.js';
+export { ANCHOR_RECORDED_TYPE, anchorRecordedEntry } from './anchorEntry.js';

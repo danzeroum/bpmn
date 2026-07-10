@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AuditLedger } from '@buildtovalue/core';
-import { LedgerExplorer } from '../src/index.js';
+import { anchorRecordedEntry } from '@buildtovalue/audit';
+import { categorizeEntry, LedgerExplorer } from '../src/index.js';
 
 afterEach(cleanup);
 
@@ -239,5 +240,124 @@ describe('LedgerExplorer — selo de autoria de IA (Handoff 9 §8.2)', () => {
     const seals = screen.getAllByTestId('ledger-ai-seal');
     expect(seals).toHaveLength(2);
     for (const seal of seals) expect(seal.textContent).toContain('✦ ia.copilot@claude-4');
+  });
+});
+
+describe('LedgerExplorer — banner CADEIA ≠ ÂNCORA (Handoff 11 N-4)', () => {
+  const receiptFor = (hash: string, seq: number) => ({
+    adapterId: 'git',
+    head: { hash, seq },
+    proof: 'commit-abc',
+    anchoredAt: '2026-07-01T00:00:00.000Z',
+  });
+  const fakeAdapter = (verdict: 'anchored' | 'mismatch' | 'unavailable') => ({
+    id: 'git',
+    anchor: vi.fn(async (head: { hash: string; seq: number }) => receiptFor(head.hash, head.seq)),
+    verify: vi.fn(async () => verdict),
+  });
+
+  it('estado 1 — íntegra E ancorada: dois banners independentes, ambos verdes', async () => {
+    const ledger = await seededLedger();
+    const head = ledger.getEntries()[3];
+    render(
+      <LedgerExplorer
+        ledger={ledger}
+        anchor={{ adapter: fakeAdapter('anchored'), receipt: receiptFor(head.hash, head.seq) }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Verificar cadeia' }));
+
+    // Chain statement (verifyLedger) and anchor statement stay SEPARATE.
+    expect(await screen.findByText('Cadeia íntegra (4/4)')).toBeInTheDocument();
+    const banner = await screen.findByTestId('anchor-banner');
+    expect(banner).toHaveAttribute('data-anchor-state', 'anchored');
+    expect(banner.textContent).toContain('Ancorada');
+    expect(banner.textContent).toContain('git');
+    expect(banner.textContent).toContain('2026-07-01');
+  });
+
+  it('estado 2 — íntegra, ancoragem PENDENTE: âmbar com "Retentar âncora" que ancora e vira verde', async () => {
+    const ledger = await seededLedger();
+    const adapter = fakeAdapter('anchored');
+    const onAnchored = vi.fn();
+    render(<LedgerExplorer ledger={ledger} anchor={{ adapter, onAnchored }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Verificar cadeia' }));
+
+    const banner = await screen.findByTestId('anchor-banner');
+    expect(banner).toHaveAttribute('data-anchor-state', 'pending');
+    expect(banner.textContent).toContain('garantia vigente');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retentar âncora' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('anchor-banner')).toHaveAttribute('data-anchor-state', 'anchored'),
+    );
+    // The fresh receipt went back to the HOST for persistence.
+    expect(onAnchored).toHaveBeenCalledTimes(1);
+    const head = ledger.getEntries()[3];
+    expect(adapter.anchor).toHaveBeenCalledWith({ hash: head.hash, seq: head.seq });
+  });
+
+  it('retentar com transporte fora do ar: permanece pendente (nunca regride)', async () => {
+    const ledger = await seededLedger();
+    const adapter = {
+      id: 'git',
+      anchor: vi.fn(async () => {
+        throw new Error('transport down');
+      }),
+      verify: vi.fn(async () => 'anchored' as const),
+    };
+    render(<LedgerExplorer ledger={ledger} anchor={{ adapter }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Verificar cadeia' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Retentar âncora' }));
+    await waitFor(() => expect(adapter.anchor).toHaveBeenCalled());
+    expect(screen.getByTestId('anchor-banner')).toHaveAttribute('data-anchor-state', 'pending');
+  });
+
+  it('estado 3 — CADEIA ≠ ÂNCORA: heads exibidos, índice da divergência e trilha não-confiável', async () => {
+    const ledger = await seededLedger();
+    const anchoredHash = 'f'.repeat(64); // the anchored head no longer matches
+    render(
+      <LedgerExplorer
+        ledger={ledger}
+        anchor={{ adapter: fakeAdapter('mismatch'), receipt: receiptFor(anchoredHash, 2) }}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Verificar cadeia' }));
+
+    const banner = await screen.findByTestId('anchor-banner');
+    expect(banner).toHaveAttribute('data-anchor-state', 'mismatch');
+    expect(banner.textContent).toContain('CADEIA ≠ ÂNCORA');
+    expect(banner.textContent).toContain(`ancorado ${anchoredHash.slice(0, 12)}…`);
+    expect(banner.textContent).toContain('divergência a partir da entrada #2');
+    // INDEPENDENCE: the chain report still says íntegra — never fused.
+    expect(screen.getByText('Cadeia íntegra (4/4)')).toBeInTheDocument();
+
+    // The divergent entry (#2) and every later one are marked não-confiável.
+    const rows = screen.getAllByRole('option');
+    const marked = rows.filter((row) => row.hasAttribute('data-anchor-untrusted'));
+    expect(marked.map((row) => row.getAttribute('data-seq'))).toEqual(['2', '3']);
+    expect(marked[0].textContent).toContain('não-confiável');
+  });
+
+  it('ANCHOR_RECORDED é entrada própria na trilha, categorizada como Verificação', async () => {
+    const ledger = await seededLedger();
+    const head = ledger.getEntries()[3];
+    await ledger.append(
+      anchorRecordedEntry(
+        { adapterId: 'git', head: { hash: head.hash, seq: head.seq }, proof: 'commit-abc', anchoredAt: '2026-07-01T00:00:00.000Z' },
+        { id: 'ana' },
+      ),
+    );
+    render(<LedgerExplorer ledger={ledger} />);
+    expect(screen.getByText('ANCHOR_RECORDED')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Verificações 1' })).toBeInTheDocument();
+    expect(categorizeEntry({ type: 'ANCHOR_RECORDED' })).toBe('verification');
+  });
+
+  it('sem a prop anchor o explorer não muda (degradação)', async () => {
+    render(<LedgerExplorer ledger={await seededLedger()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Verificar cadeia' }));
+    expect(await screen.findByText('Cadeia íntegra (4/4)')).toBeInTheDocument();
+    expect(screen.queryByTestId('anchor-banner')).not.toBeInTheDocument();
   });
 });

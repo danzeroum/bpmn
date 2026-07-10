@@ -9,6 +9,7 @@ import {
   type BpmnNode,
   type UserContext,
 } from '@buildtovalue/core';
+import { anchorRecordedEntry } from '@buildtovalue/audit';
 import { VersionRegistry } from '@buildtovalue/registry';
 import {
   bpmnDiagramAdapter,
@@ -216,6 +217,22 @@ async function buildWorld(): Promise<StudioWorld> {
     ),
   );
 
+  // N-4 (`?anchorbroken=1`): the anchoring act as a FIRST-CLASS trail entry
+  // — recorded when the (now stale) anchor was produced.
+  if (new URLSearchParams(window.location.search).has('anchorbroken')) {
+    await ledger.append(
+      anchorRecordedEntry(
+        {
+          adapterId: 'git',
+          head: { hash: 'f'.repeat(64), seq: 2 },
+          proof: 'commit-old',
+          anchoredAt: '2026-07-01T00:00:00.000Z',
+        },
+        { id: 'ana' },
+      ),
+    );
+  }
+
   // `?tamper=1` flips one byte of an entry — the Explorer must point at the
   // exact break and distrust everything after it (§10.5).
   const tampered = new URLSearchParams(window.location.search).get('tamper') !== null;
@@ -298,6 +315,12 @@ export function StudioSurface() {
     const p = new URLSearchParams(window.location.search);
     return { want: p.has('anchor'), flaky: p.has('anchorflaky') };
   }, []);
+  // N-4 (`?anchorbroken=1`): the Auditoria gets an anchor whose recorded head
+  // no longer matches the local chain — the CADEIA ≠ ÂNCORA banner demo/e2e.
+  const anchorBroken = useMemo(
+    () => new URLSearchParams(window.location.search).has('anchorbroken'),
+    [],
+  );
 
   useEffect(() => {
     void buildWorld().then(setWorld);
@@ -459,6 +482,30 @@ export function StudioSurface() {
               citations: ['0'.repeat(64)],
             });
           },
+          // Handoff 11 N-4: deterministic fake anchor whose RECORDED head
+          // (seq 2, foreign hash) provably diverges from the local chain.
+          ...(anchorBroken
+            ? {
+                anchor: {
+                  adapter: {
+                    id: 'git',
+                    anchor: async (head: { hash: string; seq: number }) => ({
+                      adapterId: 'git',
+                      head,
+                      proof: 'commit-demo',
+                      anchoredAt: '2026-07-09T00:00:00.000Z',
+                    }),
+                    verify: async () => 'mismatch' as const,
+                  },
+                  receipt: {
+                    adapterId: 'git',
+                    head: { hash: 'f'.repeat(64), seq: 2 },
+                    proof: 'commit-old',
+                    anchoredAt: '2026-07-01T00:00:00.000Z',
+                  },
+                },
+              }
+            : {}),
         }}
       />
     </>
