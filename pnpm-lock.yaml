@@ -123,6 +123,15 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/copilot:
+    dependencies:
+      '@buildtovalue/core':
+        specifier: workspace:*
+        version: link:../core
+      '@buildtovalue/soundness':
+        specifier: workspace:*
+        version: link:../soundness
+
   packages/core: {}
 
   packages/dmn:

@@ -66,6 +66,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'copilot',
+      include: ['packages/copilot/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'audit',
       include: ['packages/audit/tests/**/*.test.ts'],
       environment: 'node',
