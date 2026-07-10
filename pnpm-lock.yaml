@@ -172,6 +172,9 @@ importers:
       '@buildtovalue/audit':
         specifier: workspace:*
         version: link:../audit
+      '@buildtovalue/copilot':
+        specifier: workspace:*
+        version: link:../copilot
       '@buildtovalue/core':
         specifier: workspace:*
         version: link:../core
@@ -260,6 +263,9 @@ importers:
 
   packages/react:
     dependencies:
+      '@buildtovalue/copilot':
+        specifier: workspace:*
+        version: link:../copilot
       '@buildtovalue/core':
         specifier: workspace:*
         version: link:../core

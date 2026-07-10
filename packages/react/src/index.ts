@@ -72,3 +72,4 @@ export * from './ui/VersionTimeline.js';
 export * from './ui/VersionBanner.js';
 export * from './ui/EdgePedigree.js';
 export * from './ui/exporters.js';
+export * from './copilot/CopilotPanel.js';

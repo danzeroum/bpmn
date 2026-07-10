@@ -36,7 +36,8 @@
     "@buildtovalue/core": "workspace:*",
     "@buildtovalue/identity": "workspace:*",
     "@buildtovalue/replay": "workspace:*",
-    "@buildtovalue/simulation": "workspace:*"
+    "@buildtovalue/simulation": "workspace:*",
+    "@buildtovalue/copilot": "workspace:*"
   },
   "keywords": [
     "bpmn",

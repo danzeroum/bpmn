@@ -160,6 +160,8 @@ const EXPECTED_EXPORTS = [
   'routeAndSpread',
   'clearRoutingCommands',
   'longestSegmentMidpoint',
+  // Handoff 9 CP-2 — governed copilot panel.
+  'CopilotPanel',
 ].sort();
 
 describe('@buildtovalue/react public API surface', () => {

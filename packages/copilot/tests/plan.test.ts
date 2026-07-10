@@ -152,6 +152,22 @@ describe('buildPlan', () => {
     expect(broken.soundnessPreview.errors).toBeGreaterThan(0);
   });
 
+  it('with attribution the composite audits as COPILOT_PROPOSAL_APPLIED (§1.2)', () => {
+    const diagram = createDiagram({ name: 'P' });
+    const plan = buildPlan(diagram, proposal, {
+      providerId: 'claude-4',
+      conversationId: 'conv-1',
+    });
+    const audit = plan.command.toAuditEvent?.();
+    expect(audit?.type).toBe('COPILOT_PROPOSAL_APPLIED');
+    expect(audit?.details).toMatchObject({
+      author: 'ia.copilot@claude-4',
+      promptTemplateRef: REF,
+      conversationId: 'conv-1',
+      commandCount: 5,
+    });
+  });
+
   it('throws (rather than partially applying) when the proposal is invalid', () => {
     const diagram = createDiagram({ name: 'P' });
     expect(() =>
