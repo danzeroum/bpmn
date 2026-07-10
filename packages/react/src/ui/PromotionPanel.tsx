@@ -56,6 +56,17 @@ export interface PromotionPanelProps {
   actor: UserContext;
   /** Baseline for the embedded diff (typically the previously active snapshot). */
   baseline: BpmnDiagram;
+  /**
+   * C4 (Handoff 9): host-injected change_summary suggestion. The AI text only
+   * PRE-FILLS the field — nothing reaches the version (or the ledger) until a
+   * HUMAN interacts with the field and commits it; the committed version then
+   * records the text co-authorship (`changeSummaryOrigin`).
+   */
+  suggestChangeSummary?: () => Promise<{
+    text: string;
+    author: string;
+    promptTemplateRef: { id: string; version: string };
+  }>;
   /** Currently active version, for the side-effects warning. */
   previousActive?: { semanticVersion: string; runsPinned?: number };
   /** When provided, activation appends a VERSION_ACTIVATED entry and the toast shows its hash. */
@@ -95,6 +106,7 @@ export interface PromotionPanelProps {
  * `promote()`, which re-enforces everything.
  */
 export function PromotionPanel({
+  suggestChangeSummary,
   open,
   onClose,
   approvers,
@@ -116,6 +128,13 @@ export function PromotionPanel({
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // C4: the pending AI suggestion — pre-filled but NOT committed (§8.2).
+  const [suggestion, setSuggestion] = useState<{
+    text: string;
+    author: string;
+    promptTemplateRef: { id: string; version: string };
+  } | null>(null);
+  const summaryRef = useRef<HTMLTextAreaElement | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Identity signing state (Handoff 8 I-2).
   const [payloads, setPayloads] = useState<Record<string, CanonicalApprovalPayload>>({});
@@ -287,6 +306,9 @@ export function PromotionPanel({
           details: {
             semanticVersion: promoted.version.semanticVersion,
             ...(previousActive ? { supersedes: previousActive.semanticVersion } : {}),
+            ...(promoted.version.changeSummaryOrigin
+              ? { changeSummaryOrigin: promoted.version.changeSummaryOrigin }
+              : {}),
           },
         });
       }
@@ -345,23 +367,62 @@ export function PromotionPanel({
                   </strong>
                   {!gate.satisfied && <p className="bpmnr-promotion-detail">{gate.detail}</p>}
                   {gate.id === 'change-summary' && (
-                    <textarea
-                      className="bpmnr-promotion-summary"
-                      aria-label="change_summary"
-                      rows={2}
-                      defaultValue={version.changeSummary}
-                      placeholder={`Descreva a mudança (mín. ${lifecycleEngine.requiredChangeSummaryLength} caracteres)`}
-                      onBlur={(event) => {
-                        const value = event.target.value;
-                        if (value === version.changeSummary) return;
-                        // Same immutable pattern as engine.approve: a new
-                        // version record — gates re-evaluate automatically.
-                        replaceDiagram({
-                          ...diagram,
-                          version: { ...version, changeSummary: value },
-                        });
-                      }}
-                    />
+                    <>
+                      <textarea
+                        ref={summaryRef}
+                        className="bpmnr-promotion-summary"
+                        aria-label="change_summary"
+                        rows={2}
+                        defaultValue={version.changeSummary}
+                        placeholder={`Descreva a mudança (mín. ${lifecycleEngine.requiredChangeSummaryLength} caracteres)`}
+                        onBlur={(event) => {
+                          const value = event.target.value;
+                          if (value === version.changeSummary) return;
+                          // Same immutable pattern as engine.approve: a new
+                          // version record — gates re-evaluate automatically.
+                          // The HUMAN interaction commits; when the text came
+                          // from the copilot, the co-authorship is recorded.
+                          replaceDiagram({
+                            ...diagram,
+                            version: {
+                              ...version,
+                              changeSummary: value,
+                              ...(suggestion
+                                ? {
+                                    changeSummaryOrigin: {
+                                      author: suggestion.author,
+                                      promptTemplateRef: suggestion.promptTemplateRef,
+                                      edited: value !== suggestion.text,
+                                    },
+                                  }
+                                : {}),
+                            },
+                          });
+                        }}
+                      />
+                      {suggestChangeSummary && (
+                        <button
+                          type="button"
+                          className="bpmnr-promotion-suggest"
+                          data-testid="suggest-summary"
+                          disabled={busy}
+                          onClick={() => {
+                            void (async () => {
+                              const s = await suggestChangeSummary();
+                              setSuggestion(s);
+                              // PRE-FILL only: the field shows the text and
+                              // receives focus; committing stays a human act.
+                              if (summaryRef.current) {
+                                summaryRef.current.value = s.text;
+                                summaryRef.current.focus();
+                              }
+                            })();
+                          }}
+                        >
+                          ✦ Sugerir resumo
+                        </button>
+                      )}
+                    </>
                   )}
                   {gate.id === 'approvals' && (
                     <div className="bpmnr-promotion-approvers">

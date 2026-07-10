@@ -10,5 +10,7 @@ export {
 export {
   COPILOT_DRAFT_PROMPT,
   COPILOT_ADJUST_PROMPT,
+  COPILOT_EXPLAIN_PROMPT,
+  COPILOT_SUMMARY_PROMPT,
   type CopilotPromptTemplate,
 } from './prompts.js';

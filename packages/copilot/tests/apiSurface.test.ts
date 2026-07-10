@@ -8,6 +8,8 @@ const EXPECTED_EXPORTS = [
   'buildPlan',
   'COPILOT_ADJUST_PROMPT',
   'COPILOT_DRAFT_PROMPT',
+  'COPILOT_EXPLAIN_PROMPT',
+  'COPILOT_SUMMARY_PROMPT',
   'parseProposal',
   'validateProposal',
 ].sort();

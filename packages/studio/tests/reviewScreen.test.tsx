@@ -245,3 +245,33 @@ describe('ReviewScreen — TELA 2 (§5)', () => {
     expect(onOpen).toHaveBeenCalled();
   });
 });
+
+describe('ReviewScreen — C3 Explicar (Handoff 9 CP-3, read-only ABSOLUTO)', () => {
+  it('renders the explanation and touches NOTHING — no ledger entry, no mutation', async () => {
+    const explain = vi.fn(async () => 'Processo de reembolso: análise, decisão e pagamento.');
+    const { container, ledger } = setup({ explain });
+    const before = ledger.getEntries().length;
+
+    // The review area mounts after the queue auto-selects — wait for it.
+    const button = await waitFor(() => {
+      const el = container.querySelector('[data-testid="review-explain"]');
+      expect(el).not.toBeNull();
+      return el!;
+    });
+    fireEvent.click(button);
+    await waitFor(() =>
+      expect(container.querySelector('[data-testid="review-explanation"]')?.textContent).toContain(
+        'Processo de reembolso',
+      ),
+    );
+    expect(explain).toHaveBeenCalledTimes(1);
+    await ledger.flush();
+    // The only capability WITHOUT a trail — by design (cerca do CP-3).
+    expect(ledger.getEntries().length).toBe(before);
+  });
+
+  it('without the explain prop the button is absent', () => {
+    const { container } = setup();
+    expect(container.querySelector('[data-testid="review-explain"]')).toBeNull();
+  });
+});

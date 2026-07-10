@@ -306,3 +306,84 @@ describe('PromotionPanel — identity signing (Handoff 8 I-2)', () => {
     expect(container.querySelector('.bpmnr-signature-badge')).toBeNull();
   });
 });
+
+describe('PromotionPanel — C4 change_summary sugerido (Handoff 9 CP-3)', () => {
+  const SUGGESTED = 'Adiciona verificação de fraude antes do pagamento.';
+  const suggest = async () => ({
+    text: SUGGESTED,
+    author: 'ia.copilot@claude-4',
+    promptTemplateRef: { id: 'copilot-summary', version: '1.0.0' },
+  });
+
+  it('a sugestão PRÉ-PREENCHE o campo sem commitar — só a interação humana grava (§8.2)', async () => {
+    const diagram = candidateDiagram();
+    diagram.version.changeSummary = ''; // gate unsatisfied
+    const { container } = renderPanel(diagram, { suggestChangeSummary: suggest });
+
+    const button = await waitFor(() => {
+      const el = container.querySelector('[data-testid="suggest-summary"]');
+      expect(el).not.toBeNull();
+      return el!;
+    });
+    fireEvent.click(button);
+    const field = await waitFor(() => {
+      const el = container.querySelector<HTMLTextAreaElement>('[aria-label="change_summary"]')!;
+      expect(el.value).toBe(SUGGESTED);
+      return el;
+    });
+    // NOT committed: the change-summary gate is still unsatisfied.
+    const gate = [...container.querySelectorAll('.bpmnr-promotion-gate')].find((g) =>
+      g.textContent?.includes('change_summary') || g.textContent?.includes('Resumo') || g.textContent?.includes('summary'),
+    );
+    expect(gate?.getAttribute('data-satisfied')).toBe('false');
+
+    // The HUMAN blur commits — with text co-authorship, unedited.
+    fireEvent.blur(field);
+    await waitFor(() => {
+      const g2 = [...container.querySelectorAll('.bpmnr-promotion-gate')].find((g) =>
+        g.textContent?.includes('change_summary') || g.textContent?.includes('Resumo') || g.textContent?.includes('summary'),
+      );
+      expect(g2?.getAttribute('data-satisfied')).toBe('true');
+    });
+  });
+
+  it('a origem ia.copilot + template é registrada; edição humana marca edited=true', async () => {
+    const diagram = candidateDiagram();
+    diagram.version.changeSummary = '';
+    let latest: BpmnDiagram = diagram;
+    const { container } = render(
+      <BpmnDesigner diagram={diagram} onChange={(d) => (latest = d)}>
+        <PromotionPanel
+          open
+          onClose={() => {}}
+          actor={owner}
+          approvers={[{ actor: owner, label: 'Owner' }]}
+          baseline={structuredClone(diagram)}
+          suggestChangeSummary={suggest}
+        />
+      </BpmnDesigner>,
+    );
+    const button = await waitFor(() => {
+      const el = container.querySelector('[data-testid="suggest-summary"]');
+      expect(el).not.toBeNull();
+      return el!;
+    });
+    fireEvent.click(button);
+    const field = await waitFor(() => {
+      const el = container.querySelector<HTMLTextAreaElement>('[aria-label="change_summary"]')!;
+      expect(el.value).toBe(SUGGESTED);
+      return el;
+    });
+    // Human edits then blurs.
+    fireEvent.change(field, { target: { value: SUGGESTED + ' Revisado.' } });
+    fireEvent.blur(field);
+    await waitFor(() => {
+      expect(latest.version.changeSummaryOrigin).toEqual({
+        author: 'ia.copilot@claude-4',
+        promptTemplateRef: { id: 'copilot-summary', version: '1.0.0' },
+        edited: true,
+      });
+      expect(latest.version.changeSummary).toBe(SUGGESTED + ' Revisado.');
+    });
+  });
+});
