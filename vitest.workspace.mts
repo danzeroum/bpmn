@@ -66,6 +66,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'agentflow',
+      include: ['packages/agentflow/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'copilot',
       include: ['packages/copilot/tests/**/*.test.ts'],
       environment: 'node',
