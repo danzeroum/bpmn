@@ -31,14 +31,18 @@ O detalhe **arquivo por arquivo** está dividido em 6 documentos por camada. Cad
 arquivo segue o mesmo template: **Papel · Entradas · Processamento (intermediário)
 · Saídas · Estruturas de dados que trafegam**.
 
-| Doc | Camada | Pacotes cobertos |
-|---|---|---|
-| [`01-core.md`](01-core.md) | Domínio | `core` |
-| [`02-react-editor-ui.md`](02-react-editor-ui.md) | Apresentação (editor + UI) | `react` (canvas, state, contexts, shapes, gestures, plugins, ui, viewer) |
-| [`03-react-features.md`](03-react-features.md) | Apresentação (features) | `react` (simulation, replay, agent, copilot, workers, i18n) |
-| [`04-governanca-analise.md`](04-governanca-analise.md) | Governança · Confiança · Análise | `registry`, `audit`, `identity`, `anchor-*`, `conformance`, `soundness`, `replay` |
-| [`05-familia-ia.md`](05-familia-ia.md) | Família BPMN · IA | `dmn`, `sfeel`, `healthcare`, `domain-example`, `simulation`, `copilot`, `agentflow` |
-| [`06-catalogo-apps.md`](06-catalogo-apps.md) | Catálogo · Aplicações | `library`, `library-react`, `adapters-bpmn`, `studio`, `cli`, `example` |
+| Doc | Camada | Pacotes cobertos | Arquivos |
+|---|---|---|---|
+| [`01-core.md`](01-core.md) | Domínio | `core` | 31 |
+| [`02-react-editor-ui.md`](02-react-editor-ui.md) | Apresentação (editor + UI) | `react` (canvas, state, contexts, shapes, gestures, plugins, ui, viewer) | 57 |
+| [`03-react-features.md`](03-react-features.md) | Apresentação (features) | `react` (simulation, replay, agent, copilot, workers, i18n) | 37 |
+| [`04-governanca-analise.md`](04-governanca-analise.md) | Governança · Confiança · Análise | `registry`, `audit`, `identity`, `anchor-*`, `conformance`, `soundness`, `replay` | 44 |
+| [`05-familia-ia.md`](05-familia-ia.md) | Família BPMN · IA | `dmn`, `sfeel`, `healthcare`, `domain-example`, `simulation`, `copilot`, `agentflow` | 44 |
+| [`06-catalogo-apps.md`](06-catalogo-apps.md) | Catálogo · Aplicações | `library`, `library-react`, `adapters-bpmn`, `studio`, `cli`, `example` | 46 |
+
+**Cobertura total: 259 arquivos-fonte de produção** catalogados (100% dos `src/` dos
+24 pacotes), mais o corpus `.bpmn` (conformance), os assets HTML/CSS do `example` e os
+testes/e2e tratados de forma condensada.
 
 ## Metodologia
 
@@ -224,6 +228,7 @@ imutável (D3) e como entradas de `ledger` (D2). Estado visual transitório
 
 Prossiga para os documentos por camada (§"Como este catálogo está organizado").
 Cada um mapeia entradas, processamento intermediário e saídas de **cada arquivo**
-do seu escopo.
+do seu escopo (≈255 seções de arquivo no total).
 
-> _Contagem de arquivos cobertos por documento é registrada no topo de cada arquivo._
+> _A contagem de arquivos cobertos por documento consta na tabela acima e no topo
+> de cada arquivo._
