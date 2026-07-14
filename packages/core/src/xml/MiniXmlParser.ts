@@ -143,7 +143,7 @@ export class MiniXmlParser {
       this.pos++;
       const end = this.source.indexOf(quote, this.pos);
       if (end < 0) this.fail(`Unterminated attribute value for "${name}"`);
-      attributes[name] = decodeEntities(this.source.slice(this.pos, end), this.line());
+      attributes[name] = decodeEntities(this.source.slice(this.pos, end), () => this.line());
       this.pos = end + 1;
     }
   }
@@ -205,20 +205,24 @@ export class MiniXmlParser {
       }
       const next = this.source.indexOf('<', this.pos);
       const chunk = next < 0 ? this.source.slice(this.pos) : this.source.slice(this.pos, next);
-      text += decodeEntities(chunk, this.line());
+      text += decodeEntities(chunk, () => this.line());
       this.pos = next < 0 ? this.source.length : next;
     }
   }
 }
 
-function decodeEntities(value: string, line: number): string {
+// `lineAt` is a thunk so the O(pos) line scan only runs on the error path —
+// computing it eagerly per attribute/text chunk made parsing O(n²).
+function decodeEntities(value: string, lineAt: () => number): string {
   return value.replace(/&(#x?[0-9A-Fa-f]+|[A-Za-z]+);/g, (match, body: string) => {
     if (body[0] === '#') {
       const code =
         body[1] === 'x' || body[1] === 'X'
           ? parseInt(body.slice(2), 16)
           : parseInt(body.slice(1), 10);
-      if (Number.isNaN(code)) throw new BpmnParseError(`Invalid character reference ${match}`, line);
+      if (Number.isNaN(code)) {
+        throw new BpmnParseError(`Invalid character reference ${match}`, lineAt());
+      }
       return String.fromCodePoint(code);
     }
     switch (body) {
@@ -233,7 +237,7 @@ function decodeEntities(value: string, line: number): string {
       case 'apos':
         return "'";
       default:
-        throw new BpmnParseError(`Unknown entity &${body}; (custom entities are not supported)`, line);
+        throw new BpmnParseError(`Unknown entity &${body}; (custom entities are not supported)`, lineAt());
     }
   });
 }

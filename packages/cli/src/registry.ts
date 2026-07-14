@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import {
   bindRun,
+  RegistryError,
   VersionRegistry,
   type ExportedRegistry,
   type Publication,
@@ -104,7 +105,7 @@ export async function registryBindRunCommand(
 ): Promise<RunBinding> {
   const registry = await loadRegistry(registryPath);
   const entry = registry.get(options.versionId);
-  if (!entry) throw new Error(`Unknown version: ${options.versionId}`);
+  if (!entry) throw new RegistryError(`Unknown version: ${options.versionId}`);
   return bindRun(entry, {
     ...(options.runId !== undefined ? { runId: options.runId } : {}),
     ...(options.channel !== undefined ? { channel: options.channel } : {}),

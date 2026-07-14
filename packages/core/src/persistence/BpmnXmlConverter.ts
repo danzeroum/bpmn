@@ -185,9 +185,17 @@ export class BpmnXmlConverter {
     if (localName(root.tag) !== 'definitions') {
       throw new BpmnParseError(`Expected <definitions> root element, got <${root.tag}>`);
     }
-    const processEl = firstChildByLocalName(root, 'process');
+    const processEls = childrenByLocalName(root, 'process');
+    const processEl = processEls[0];
     if (!processEl) {
       throw new BpmnParseError('No <process> element found in the BPMN document');
+    }
+    if (processEls.length > 1) {
+      warnings.push(
+        `Document has ${processEls.length} <process> elements — only the first ` +
+          `(${processEl.attributes.id ?? 'unnamed'}) was imported; flow elements of the ` +
+          'other processes were dropped (the v1 profile is single-process)',
+      );
     }
 
     const extension = this.ext.readExtensionElements(processEl);

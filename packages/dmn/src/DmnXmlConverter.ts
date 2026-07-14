@@ -1,4 +1,5 @@
 import {
+  BpmnParseError,
   createDiagram,
   createVersion,
   generateId,
@@ -220,7 +221,7 @@ export class DmnXmlConverter {
     const warnings: string[] = [];
     const root = new MiniXmlParser().parse(xmlText);
     if (localName(root.tag) !== 'definitions') {
-      throw new Error(`Expected <definitions> root element, got <${root.tag}>`);
+      throw new BpmnParseError(`Expected <definitions> root element, got <${root.tag}>`);
     }
 
     const extension = firstChildByLocalName(root, 'extensionElements');

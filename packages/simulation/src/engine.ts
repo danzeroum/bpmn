@@ -1,3 +1,4 @@
+import { BpmnError } from '@buildtovalue/core';
 import type { BpmnDiagram } from '@buildtovalue/core';
 import { buildSimGraph, type SimGraph } from './graph.js';
 import { computeDominators, dominates } from './dominators.js';
@@ -591,9 +592,8 @@ export interface Scenario {
   decisions: Decision[];
 }
 
-export class SimulationError extends Error {
+export class SimulationError extends BpmnError {
   constructor(message: string) {
-    super(message);
-    this.name = 'SimulationError';
+    super('SIMULATION', message);
   }
 }

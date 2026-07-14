@@ -1,5 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import type { AuditEntry } from '@buildtovalue/core';
+import { BpmnParseError, type AuditEntry } from '@buildtovalue/core';
 import { toXES, verifyLedger, type VerificationReport } from '@buildtovalue/audit';
 import { loadRegistry } from './registry.js';
 
@@ -14,10 +14,10 @@ export async function auditCommand(path: string): Promise<VerificationReport> {
   try {
     data = JSON.parse(raw) as { entries?: AuditEntry[] };
   } catch (cause) {
-    throw new Error(`${path} is not valid JSON: ${(cause as Error).message}`);
+    throw new BpmnParseError(`${path} is not valid JSON: ${(cause as Error).message}`);
   }
   if (!Array.isArray(data.entries)) {
-    throw new Error(`${path} is not an exported ledger (missing "entries" array)`);
+    throw new BpmnParseError(`${path} is not an exported ledger (missing "entries" array)`);
   }
   return verifyLedger({ entries: data.entries });
 }
@@ -45,10 +45,10 @@ async function readLedgerFile(path: string): Promise<{ entries: AuditEntry[] }> 
   try {
     data = JSON.parse(raw) as { entries?: AuditEntry[] };
   } catch (cause) {
-    throw new Error(`${path} is not valid JSON: ${(cause as Error).message}`);
+    throw new BpmnParseError(`${path} is not valid JSON: ${(cause as Error).message}`);
   }
   if (!Array.isArray(data.entries)) {
-    throw new Error(`${path} is not an exported ledger (missing "entries" array)`);
+    throw new BpmnParseError(`${path} is not an exported ledger (missing "entries" array)`);
   }
   return { entries: data.entries };
 }

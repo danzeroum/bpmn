@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import {
   BOUNDARY_SNAP_THRESHOLD,
-  activeNodes,
   addEdgeCommand,
   attachBoundaryCommand,
   attachedBoundaryEventIds,
@@ -34,6 +33,7 @@ import {
   type ConnectPayload,
   type Point,
 } from '@buildtovalue/core';
+import { activeNodesCached } from './activeCache.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import type { ResizeCorner, SettlingEntry } from '../state/canvasStore.js';
@@ -485,7 +485,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
     (dragged: BpmnNode, pointer: Point) => {
       const { drillId } = store.getState();
       let best: { hostId: string; side: 'top' | 'right' | 'bottom' | 'left'; t: number; point: Point; distance: number } | null = null;
-      for (const host of activeNodes(diagramRef.current)) {
+      for (const host of activeNodesCached(diagramRef.current)) {
         if (host.id === dragged.id) continue;
         if (!config.registry.has(host.type) || config.registry.get(host.type).category !== 'activity') continue;
         if (!isNodeVisible(diagramRef.current, host, drillId)) continue;
@@ -503,7 +503,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
   const findNodeAt = useCallback(
     (point: Point) => {
       const { drillId } = store.getState();
-      const nodes = activeNodes(diagramRef.current).filter((node) =>
+      const nodes = activeNodesCached(diagramRef.current).filter((node) =>
         isNodeVisible(diagramRef.current, node, drillId),
       );
       // Iterate in reverse so topmost (later-rendered) nodes win.
@@ -734,7 +734,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
         // a collapsed sub-process or, in drill-down, the outer process.
         const picked =
           box.width > 2 || box.height > 2
-            ? activeNodes(diagramRef.current)
+            ? activeNodesCached(diagramRef.current)
                 .filter(
                   (node) =>
                     rectsIntersect(box, node) &&

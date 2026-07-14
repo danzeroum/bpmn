@@ -8,6 +8,7 @@ import * as api from '../src/index.js';
  * failing diff means an export was added, renamed, or removed.
  */
 const EXPECTED_EXPORTS = [
+  'AdapterError',
   'BTV_ARTIFACT_KINDS',
   'bpmnDiagramAdapter',
   'classifyDiagram',

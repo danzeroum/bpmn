@@ -1,6 +1,7 @@
 import {
+  BpmnAuditError,
   BpmnXmlConverter,
-  canonicalJson,
+  canonicalJsonExact,
   sha256Hex,
   type ApprovalRecord,
 } from '@buildtovalue/core';
@@ -49,10 +50,10 @@ export async function attestVersion(
 ): Promise<Attestation> {
   const entry = registry.get(versionId);
   if (!entry) {
-    throw new Error(`Version ${versionId} is not registered`);
+    throw new BpmnAuditError(`Version ${versionId} is not registered`);
   }
   if (entry.snapshot.id !== diagramId) {
-    throw new Error(
+    throw new BpmnAuditError(
       `Version ${versionId} belongs to diagram ${entry.snapshot.id}, not ${diagramId}`,
     );
   }
@@ -78,7 +79,7 @@ export async function attestVersion(
 
 /** The attestation's canonical JSON form — byte-stable for equal input. */
 export function canonicalAttestation(attestation: Attestation): string {
-  return canonicalJson(attestation);
+  return canonicalJsonExact(attestation);
 }
 
 /** SHA-256 over the canonical form — the id a host stores/publishes. */

@@ -1,3 +1,4 @@
+import { AdapterError } from './errors.js';
 import type { BpmnDiagram } from '@buildtovalue/core';
 import type {
   ArtifactAction,
@@ -174,7 +175,7 @@ export function createRegistryAdapter(options: RegistryAdapterOptions): Registry
     async get(artifactId) {
       const artifact = matching().find((a) => a.id === artifactId);
       if (!artifact) {
-        throw new Error(`adapter "${id}": unknown artifact "${artifactId}"`);
+        throw new AdapterError(`adapter "${id}": unknown artifact "${artifactId}"`);
       }
       const { entry } = relevantEntry(artifact, target, now());
       const detail: ArtifactDetail = {

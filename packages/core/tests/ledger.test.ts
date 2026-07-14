@@ -4,6 +4,7 @@ import {
   AuditLedger,
   BpmnAuditError,
   CommandStack,
+  computeEntryHash,
   createDiagram,
   createEdge,
   createNode,
@@ -142,5 +143,95 @@ describe('getEdgeChain', () => {
     const e1 = createEdge({ id: 'e1', sourceId: 'a', targetId: 'b' });
     diagram.edges = { e1 };
     expect(getEdgeChain(diagram, 'e1').map((e) => e.id)).toEqual(['e1']);
+  });
+});
+
+describe('hash recipe versioning (v1 legacy / v2 exact)', () => {
+  it('new entries carry hashVersion 2 and verify', async () => {
+    const ledger = new AuditLedger();
+    const entry = await ledger.append({
+      type: 'A',
+      userId: 'u',
+      versionId: 'v',
+      details: { amount: 1.005 },
+    });
+    expect(entry.hashVersion).toBe(2);
+    expect((await ledger.verify()).valid).toBe(true);
+  });
+
+  it('v2 hashes preserve full numeric precision', async () => {
+    const base = {
+      id: 'fixed',
+      seq: 0,
+      type: 'A',
+      timestamp: '2026-01-01T00:00:00.000Z',
+      userId: 'u',
+      versionId: 'v',
+      previousHash: '',
+      hashVersion: 2 as const,
+    };
+    const a = await computeEntryHash({ ...base, details: { amount: 1.005 } });
+    const b = await computeEntryHash({ ...base, details: { amount: 1.006 } });
+    expect(a).not.toBe(b);
+  });
+
+  it('v2 hashes are not ambiguous across field boundaries', async () => {
+    const base = {
+      id: 'fixed',
+      seq: 0,
+      timestamp: '2026-01-01T00:00:00.000Z',
+      versionId: 'v',
+      previousHash: '',
+      details: {},
+      hashVersion: 2 as const,
+    };
+    const a = await computeEntryHash({ ...base, type: 'A|B', userId: 'C' });
+    const b = await computeEntryHash({ ...base, type: 'A', userId: 'B|C' });
+    expect(a).not.toBe(b);
+  });
+
+  it('imports and verifies a legacy v1 chain (no hashVersion field)', async () => {
+    // A v1 chain captured with the legacy `|`-joined recipe: rebuild one here
+    // by hashing without hashVersion, exactly as pre-v2 ledgers did.
+    const first = {
+      id: 'legacy-1',
+      seq: 0,
+      type: 'A',
+      timestamp: '2025-01-01T00:00:00.000Z',
+      userId: 'u',
+      versionId: 'v',
+      details: { k: 1 },
+      previousHash: '',
+    };
+    const firstHash = await computeEntryHash(first);
+    const second = {
+      id: 'legacy-2',
+      seq: 1,
+      type: 'B',
+      timestamp: '2025-01-01T00:00:01.000Z',
+      userId: 'u',
+      versionId: 'v',
+      details: {},
+      previousHash: firstHash,
+    };
+    const entries: AuditEntry[] = [
+      { ...first, hash: firstHash },
+      { ...second, hash: await computeEntryHash(second) },
+    ];
+    const ledger = await AuditLedger.import({ entries });
+    expect((await ledger.verify()).valid).toBe(true);
+
+    // Appending to an imported legacy chain produces v2 entries on top.
+    const appended = await ledger.append({ type: 'C', userId: 'u', versionId: 'v' });
+    expect(appended.hashVersion).toBe(2);
+    expect((await ledger.verify()).valid).toBe(true);
+  });
+
+  it('rejects a tampered v2 entry', async () => {
+    const ledger = new AuditLedger();
+    await ledger.append({ type: 'A', userId: 'u', versionId: 'v', details: { amount: 1.005 } });
+    const entries = ledger.export().entries;
+    entries[0].details.amount = 1.006;
+    await expect(AuditLedger.import({ entries })).rejects.toThrow(BpmnAuditError);
   });
 });

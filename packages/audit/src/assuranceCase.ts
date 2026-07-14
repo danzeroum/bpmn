@@ -1,5 +1,5 @@
 import {
-  canonicalJson,
+  canonicalJsonExact,
   sha256Hex,
   type ApprovalRecord,
   type AuditEntry,
@@ -122,7 +122,7 @@ const SIMULATION_TYPES = /SIMULATION/;
 async function approvalEvidence(approval: ApprovalRecord): Promise<AssuranceEvidence> {
   return {
     id: `approval:${approval.userId}:${approval.role}`,
-    hash: await sha256Hex(canonicalJson(approval)),
+    hash: await sha256Hex(canonicalJsonExact(approval)),
     kind: `aprovação · ${approval.role}`,
     at: approval.approvedAt,
     actor: approval.userId,

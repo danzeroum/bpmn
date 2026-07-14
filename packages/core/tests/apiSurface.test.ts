@@ -69,6 +69,13 @@ const EXPECTED_EXPORTS = [
   'boundaryEventHostRule',
   'bumpSemver',
   'canonicalJson',
+  'canonicalJsonExact',
+  // Flow classification shared by soundness/simulation (model/flow.ts).
+  'NON_FLOW_TYPES',
+  'NON_FLOW_EDGE_TYPES',
+  'isFlowNode',
+  'isFlowEdge',
+  'flowScopeOf',
   'childrenByLocalName',
   'clamp',
   'collapseWaypoints',

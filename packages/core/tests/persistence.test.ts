@@ -28,6 +28,32 @@ describe('JsonSerializer', () => {
     expect(() => serializer.deserialize('{"id":"x","name":"y"}')).toThrow(/version/);
   });
 
+  it('rejects structurally malformed diagrams (well-formed JSON, wrong shapes)', () => {
+    const serializer = new JsonSerializer();
+    const base = {
+      id: 'd',
+      name: 'D',
+      version: { id: 'v', semanticVersion: '1.0.0', status: 'draft' },
+      nodes: {},
+      edges: {},
+    };
+    const json = (patch: Record<string, unknown>) => JSON.stringify({ ...base, ...patch });
+
+    expect(() => serializer.deserialize(json({ nodes: 'x' }))).toThrow(/"nodes"/);
+    expect(() => serializer.deserialize(json({ edges: [1, 2] }))).toThrow(/"edges"/);
+    expect(() => serializer.deserialize(json({ nodes: { n1: 'not-a-node' } }))).toThrow(
+      /nodes\.n1/,
+    );
+    expect(() => serializer.deserialize(json({ nodes: { n1: { id: 'n1' } } }))).toThrow(
+      /"type" at nodes\.n1/,
+    );
+    expect(() =>
+      serializer.deserialize(json({ edges: { e1: { id: 'e1', type: 'sequenceFlow' } } })),
+    ).toThrow(/"sourceId" at edges\.e1/);
+    expect(() => serializer.deserialize(json({ version: 'v1' }))).toThrow(/"version"/);
+    expect(() => serializer.deserialize(json({ version: {} }))).toThrow(/version\.id/);
+  });
+
   it('defaults optional fields', () => {
     const serializer = new JsonSerializer();
     const minimal = JSON.stringify({

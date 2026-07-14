@@ -1,4 +1,4 @@
-import { canonicalJson } from '@buildtovalue/core';
+import { canonicalJsonExact } from '@buildtovalue/core';
 import type { CanonicalApprovalPayload } from './types.js';
 
 /**
@@ -18,11 +18,13 @@ export function buildApprovalPayload(input: CanonicalApprovalPayload): Canonical
 }
 
 /**
- * Deterministic bytes for signing/verification. Uses the same `canonicalJson`
- * as the attestation (Handoff 8 §3) so key ordering never changes the bytes,
- * then UTF-8 encodes. Signer.sign and verifySignature both operate on exactly
- * these bytes.
+ * Deterministic bytes for signing/verification. Uses `canonicalJsonExact`
+ * (key ordering never changes the bytes; numbers are never rounded), then
+ * UTF-8 encodes. Signer.sign and verifySignature both operate on exactly
+ * these bytes. All payload fields are strings, so the bytes are identical to
+ * the ones the previous `canonicalJson` produced — existing signatures keep
+ * verifying.
  */
 export function encodePayload(payload: CanonicalApprovalPayload): Uint8Array {
-  return new TextEncoder().encode(canonicalJson(payload));
+  return new TextEncoder().encode(canonicalJsonExact(payload));
 }
