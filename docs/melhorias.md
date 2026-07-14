@@ -9,6 +9,16 @@
 > Data da análise: 2026-07-14. Complementa `pendencias.md` (decisões de produto) —
 > aqui o foco é **dívida técnica e oportunidade de engenharia**, não escopo de produto.
 
+## Status da implementação (2026-07-14 — mesma branch)
+
+O roadmap foi **implementado nesta branch** na sequência Fase 1 → 2 → 3. Estado por item:
+
+| Status | Itens |
+|---|---|
+| ✅ Implementado | **Backend:** B1 (`canonicalJsonExact` + receita v2 do ledger com `hashVersion`; v1 legado verifica para sempre — decisão em `DECISIONS.md`), B2 (parser lazy-line), B3 (warning multi-processo), B4 (`core/model/flow.ts`), B5 (validação estrutural), B6 (suíte DMN `roundtrip.test.ts`), B7 (preimage v2 sem `join('\|')`), B8 (taxonomia — com exceções arquiteturais abaixo), B9 (índice de lanes), B11 (TAB/CR), B12 (CLI `valueOf`), B13 (diff fast path). **Frontend:** F1 (clipboard/duplicate/select-all + context menu), F2 (foco rondante + gate axe serious), F3 passo 1 (cache em `canvas/activeCache.ts` — na camada react, não no core: import/fixtures mutam records in-place), F4 (seletores consolidados), F5 (i18n canvas + guard), F6 (subpaths `./simulation`/`./replay`/`./agent`/`./copilot`), F8 (tema manual nos blocos DMN restantes — atributo do projeto é `data-bpmnr-theme`), F9 parcial (debounce do rule engine; hit-testing extraído para `canvas/hitTest.ts`), F10 (testes do example + snapshot SVG determinístico), F11 (nudge: seta=1px, Shift=grade). **Processo:** T1, T2 (changesets), T3 (TypeDoc 23 pacotes), T4 (contagens corrigidas + números frágeis removidos + anotações Δ), T5 (`docs/README.md`), T6 (ESLint: `no-explicit-any` on, react-hooks, glob ampliado), T7 (matriz Node 20/22 + artifact lcov), T9 (CONTRIBUTING + stub esclarecido), T10 (`DECISIONS.md` + pendências enxutas). |
+| 📌 Adiado com registro | F7 (routing no worker — harness pronto e sem consumidores; pipeline assíncrono sobre seeding que não pode entrar no undo exige PR dedicada com guardas de corrida; ver `DECISIONS.md`), F9 split completo do `useInteractions` (extração parcial feita; split por gesto é refactor de risco próprio), F3 passo 2 (índice espacial — condicionado a profiling), T8 (Prettier **removido** em vez de imposto: 134–267 arquivos reformatariam; ver `DECISIONS.md`), regras compiler do react-hooks v6 (flagam ~50 padrões deliberados). |
+| ⚖️ Exceções arquiteturais (B8) | `agentflow` e `library` são zero-import por teste de independência — seus erros locais NÃO estendem `BpmnError` de propósito; idem `recipeAdapter` (teste ácido só permite importar de `@buildtovalue/library`). |
+
 ## 0. Estado geral (o que NÃO precisa melhorar)
 
 A base é saudável — as melhorias abaixo são cirúrgicas, não de resgate:

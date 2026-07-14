@@ -4,8 +4,8 @@
 > Cobre todos os arquivos de `packages/core/src`. Para cada arquivo: dados de
 > entrada, processamento intermediário (inclui dados transitórios locais) e saída.
 
-Este catálogo cobre os 31 arquivos-fonte de `packages/core/src`, agrupados por
-subsistema. A camada é *pura* (sem I/O, exceto `crypto` e `crypto.subtle`
+Este catálogo cobre todos os arquivos-fonte de `packages/core/src`, agrupados
+por subsistema (a contagem exata vive no código — `find packages/core/src -name '*.ts' | wc -l`). A camada é *pura* (sem I/O, exceto `crypto` e `crypto.subtle`
 globais), determinística e serializável em JSON. Datas são strings ISO-8601;
 nós e arestas vivem em dicionários `Record<id, …>`.
 
@@ -19,6 +19,13 @@ nós e arestas vivem em dicionários `Record<id, …>`.
 **Processamento (intermediário):** `activityMarkerOf`/`eventDefinitionOf` fazem type-guard string + `includes`. `attachedBoundaryEventIds` monta um `Set` de hosts e filtra `activeNodes`. `descendantIdsOf` faz DFS com `out: string[]`, `seen: Set`, `stack` (guarda contra ciclos). `containmentDepth` sobe a cadeia `parentId` com `seen: Set` e contador `depth`. `subProcessContainerAt` itera todos os nós mantendo `best`/`bestDepth`, testa contido no retângulo, desempata por profundidade e menor área (`node.width*node.height`). `childrenOf` filtra por `parentId`. Constantes locais transitórias em cada laço.
 **Saídas:** Valores de retorno puros: `ActivityMarker|undefined`, `boolean`, `string[]`, `BpmnNode[]`, `BpmnNode|undefined`, `string|undefined`. Nenhuma mutação (todos os helpers são read-only).
 **Estruturas de dados que trafegam:** Types/interfaces `VersionStatus`, `Point`, `Size`, `Rect`, `AuditEventRecord`, `AuditTrail`, `BpmnNode`, `BpmnEdge`, `ApprovalRecord`, `BpmnVersion` (inclui `changeSummaryOrigin`), `BpmnDiagram`, `UserContext`, `EventDefinitionKind`, `ActivityMarker`. Consts: `BUILT_IN_EDGE_TYPES` (`sequenceFlow`, `messageFlow`, `association`), `EVENT_DEFINITION_KINDS` (`message`, `timer`, `error`, `signal`, `escalation`, `conditional`, `link`, `terminate`), `ACTIVITY_MARKERS` (`loop`, `parallelMultiInstance`, `sequentialMultiInstance`), `EVENT_NODE_TYPES` (`startEvent`, `endEvent`, `intermediateCatchEvent`, `intermediateThrowEvent`, `boundaryEvent`), `CONTAINER_NODE_TYPES` (`pool`, `lane`), `DATA_ASSOCIATION_EDGE_TYPE` (`'dataAssociation'`). Funções exportadas: `activityMarkerOf`, `isEventType`, `boundaryAttachedTo`, `isNonInterrupting`, `attachedBoundaryEventIds`, `nodeParentId`, `childrenOf`, `descendantIdsOf`, `isSubProcessExpanded`, `subProcessContainerAt`, `calledElementOf`, `eventDefinitionOf`, `isContainerType`, `laneFlowNodeRefs`, `activeNodes`, `activeEdges` (internas: `containmentDepth`).
+
+### `packages/core/src/model/flow.ts`
+**Papel:** Classificação de fluxo de sequência compartilhada pelas análises estruturais (soundness, simulation, replay) — hospedada no core para que concordem por construção (antes duplicada em cada pacote).
+**Entradas:** `node: BpmnNode`, `edge: BpmnEdge`, `diagram: BpmnDiagram`.
+**Processamento (intermediário):** `isFlowNode` = não-container e fora de `NON_FLOW_TYPES`; `isFlowEdge` = fora de `NON_FLOW_EDGE_TYPES`; `flowScopeOf` resolve boundary event para o escopo do host via `boundaryAttachedTo` + `nodeParentId`.
+**Saídas:** Booleans e `string|undefined` (escopo). Sem mutação.
+**Estruturas de dados que trafegam:** Consts `NON_FLOW_TYPES` (`dataObject`, `dataStore`, `textAnnotation`, `group`), `NON_FLOW_EDGE_TYPES` (`messageFlow`, `association`, `dataAssociation`); funções `isFlowNode`, `isFlowEdge`, `flowScopeOf`.
 
 ### `packages/core/src/model/errors.ts`
 **Papel:** Hierarquia de erros do domínio, permitindo ramificar por tipo/código.
@@ -114,6 +121,7 @@ nós e arestas vivem em dicionários `Record<id, …>`.
 ## diff
 
 ### `packages/core/src/diff/index.ts`
+> Δ 2026-07: `fieldChanges`/metadata comparam primitivos com `Object.is` (números via `roundCoord`) e só canonicalizam JSON para objetos/arrays — mesma semântica, sem serializar escalares.
 **Papel:** Diff estruturado entre dois estados de diagrama e projeção canônica para verificação de round-trip.
 **Entradas:** `before`/`after: BpmnDiagram` (computeDiff), `before`/`after: BpmnEdge` (edgeVersionDiff), `diagram: BpmnDiagram` (normalizeForDiff), `diff: BpmnDiff` (isEmptyDiff). Usa `canonicalJson`/`roundCoord`.
 **Processamento (intermediário):** `fieldChanges` compara campos via `canonicalJson(a ?? null)` vs `b`, acumula `changes: Record<string, FieldChange>`. `computeDiff` monta `diff: BpmnDiff`; itera `after.nodes` (add/update), `before.nodes` (remove); para arestas detecta `supersede` via `supersedesEdgeId` (mantém `supersededOldIds: Set`), senão add/update/remove; compara `metadata` unindo chaves. `normalizeForDiff` projeta nós/arestas ordenados por id, coords arredondadas (`roundCoord`), props canonicalizadas (`canonProps` via JSON.parse(canonicalJson)), stripando audit/versão.
@@ -127,9 +135,9 @@ nós e arestas vivem em dicionários `Record<id, …>`.
 ### `packages/core/src/audit/ledger.ts`
 **Papel:** Ledger de auditoria append-only com encadeamento SHA-256, mais conexão ao CommandStack e navegação de cadeias de supersessão.
 **Entradas:** `AuditEntryInput` (`type`, `userId`, `versionId`, `details?`) no append; `entry` (computeEntryHash); `data.entries` (import); `stack: CommandStack` + `user: UserContext` (connectCommandStack); `filter` (query); `diagram` + `edgeId` (getEdgeChain); `AuditSink` opcional.
-**Processamento (intermediário):** `computeEntryHash` junta `previousHash|id|seq|type|timestamp|userId|versionId|canonicalJson(details)` e faz SHA-256. `AuditLedger` mantém `entries: AuditEntry[]` e uma `queue: Promise` que serializa appends; cada append lê o `previous`, monta `base` (seq = length, previousHash encadeado), calcula `hash`, empurra e escreve no `sink`. `verify` recomputa a cadeia rastreando `previousHash`. `query` filtra por type/nodeId/edgeId (checando `details.edgeId/oldEdgeId/newEdgeId`). `connectCommandStack` inscreve `record` em `command.post/undone/redone` (prioridade -100), montando o tipo com sufixo. `getEdgeChain` caminha para trás por `supersedesEdgeId` (com `visited: Set`) e para frente via `byPredecessor: Map`.
+**Processamento (intermediário):** `computeEntryHash` despacha pela versão da receita: v2 (`entry.hashVersion === 2`, o padrão para entradas novas) = SHA-256 de `canonicalJsonExact` do objeto inteiro (sem arredondamento e sem ambiguidade de delimitador); v1 legado (campo ausente) junta `previousHash|id|seq|type|timestamp|userId|versionId|canonicalJson(details)` — cadeias antigas seguem verificando. `AuditLedger` mantém `entries: AuditEntry[]` e uma `queue: Promise` que serializa appends; cada append lê o `previous`, monta `base` (seq = length, previousHash encadeado), calcula `hash`, empurra e escreve no `sink`. `verify` recomputa a cadeia rastreando `previousHash`. `query` filtra por type/nodeId/edgeId (checando `details.edgeId/oldEdgeId/newEdgeId`). `connectCommandStack` inscreve `record` em `command.post/undone/redone` (prioridade -100), montando o tipo com sufixo. `getEdgeChain` caminha para trás por `supersedesEdgeId` (com `visited: Set`) e para frente via `byPredecessor: Map`.
 **Saídas:** `Promise<AuditEntry>` (append), `Promise<LedgerVerification>` (verify), `readonly AuditEntry[]` (getEntries), `AuditEntry[]` (query), `{entries}` (export), `Promise<AuditLedger>` (import — lança `BpmnAuditError` se inválido), `() => void` (connectCommandStack), `Promise<void>` (flush), `BpmnEdge[]` (getEdgeChain). Efeito: escrita opcional no `AuditSink`.
-**Estruturas de dados que trafegam:** Interfaces `AuditEntry` (`id`, `seq`, `type`, `timestamp`, `userId`, `versionId`, `details`, `previousHash`, `hash`), `AuditEntryInput`, `LedgerVerification` (`valid`, `brokenAt?`), `AuditSink` (`write`), classe `AuditLedger`. Funções `computeEntryHash`, `getEdgeChain` (alias interno `entryHash`).
+**Estruturas de dados que trafegam:** Interfaces `AuditEntry` (`id`, `seq`, `type`, `timestamp`, `userId`, `versionId`, `details`, `previousHash`, `hash`, `hashVersion?: 2`), `AuditEntryInput`, `LedgerVerification` (`valid`, `brokenAt?`), `AuditSink` (`write`), classe `AuditLedger`. Funções `computeEntryHash`, `getEdgeChain` (alias interno `entryHash`).
 
 ---
 
@@ -161,6 +169,7 @@ nós e arestas vivem em dicionários `Record<id, …>`.
 ## xml
 
 ### `packages/core/src/xml/MiniXmlParser.ts`
+> Δ 2026-07: `decodeEntities` recebe a linha como thunk lazy (`() => line`) — o rastreio O(pos) da linha só roda no caminho de erro; antes rodava por atributo/chunk de texto, tornando o parse O(n²) em documentos grandes.
 **Papel:** Parser XML minimalista, sem dependências, seguro contra XXE (rejeita DOCTYPE), para o subset BPMN.
 **Entradas:** `xml: string` (parse); `root: XmlElement`/`name: string` (helpers de busca); `tag: string` (localName).
 **Processamento (intermediário):** Estado interno `source`/`pos`. `parse` chama `skipProlog`, `parseElement`, `skipMisc`, valida fim. Métodos privados transitórios: `line()` conta `\n`, `skipWhitespace`/`skipMisc` (comentários, PIs, rejeita DOCTYPE), `parseName` (regex NAME_START/NAME_CHAR), `parseAttributes` (aspas simples/duplas → `attributes` record, decodifica entidades), `parseElement` (recursivo, acumula `children` e `text`, trata CDATA/comentário/PI/fecho, valida tag de fechamento). `decodeEntities` resolve as 5 entidades predefinidas + refs numéricas (dec/hex). Helpers `findByLocalName` (DFS acumulando `found`), `childrenByLocalName`, `firstChildByLocalName`.
@@ -168,6 +177,7 @@ nós e arestas vivem em dicionários `Record<id, …>`.
 **Estruturas de dados que trafegam:** Interface `XmlElement` (`tag`, `attributes: Record<string,string>`, `children: XmlElement[]`, `text: string`), classe `MiniXmlParser`. Consts internas `NAME_START`, `NAME_CHAR`. Funções `localName`, `findByLocalName`, `childrenByLocalName`, `firstChildByLocalName` (interna `decodeEntities`).
 
 ### `packages/core/src/xml/XmlBuilder.ts`
+> Δ 2026-07: `escapeXmlAttribute` também escapa TAB (`&#9;`) e CR (`&#13;`) — round-trip exato de labels; invariantes internas lançam `BpmnError` (code `XML`) em vez de `Error` genérico.
 **Papel:** Escritor incremental de XML com escaping automático e indentação.
 **Entradas:** `value: string` (escape helpers), options `{indent? = '  ', declaration?}`, `tag: string`, `attributes: XmlAttributes`, `text?: string`.
 **Processamento (intermediário):** `stripInvalidXmlChars` remove chars de controle inválidos; `escapeXmlText`/`escapeXmlAttribute` substituem `& < > " \n`. `XmlBuilder` mantém `parts: string[]` (fragmentos), `stack: string[]` (tags abertas), `indent`. `pad()` repete indent por profundidade. `renderAttributes` filtra `undefined` e serializa. `open` empurra tag e stack; `element` escreve self-closing ou com texto; `close` faz pop e valida; `toString` junta com `\n` (lança se stack não vazia).
@@ -186,16 +196,16 @@ nós e arestas vivem em dicionários `Record<id, …>`.
 ## persistence
 
 ### `packages/core/src/persistence/hash.ts`
-**Papel:** SHA-256 via Web Crypto e JSON canônico determinístico (base de hashing/diffing).
-**Entradas:** `text: string` (sha256Hex), `value: unknown` (canonicalJson), `value: number` (roundCoord). Leitura externa `globalThis.crypto.subtle`, `TextEncoder`.
-**Processamento (intermediário):** `sha256Hex` codifica texto → digest → hex. `sortValue` (recursivo) arredonda números (`roundCoord`), mapeia arrays, ordena chaves de objeto e filtra `undefined`, montando `result` transitório. `roundCoord` arredonda para 2 casas.
-**Saídas:** `Promise<string>` (hash hex), `string` (JSON canônico), `number` (roundCoord). Sem mutação.
-**Estruturas de dados que trafegam:** Funções `sha256Hex`, `canonicalJson`, `roundCoord` (interna `sortValue`).
+**Papel:** SHA-256 via Web Crypto e JSON canônico determinístico (base de hashing/diffing). Duas canonizações: `canonicalJson` (arredonda números a 2 casas — para geometria/snapshot/diff) e `canonicalJsonExact` (números exatos — para fronteiras de integridade: ledger v2, assinaturas, atestações).
+**Entradas:** `text: string` (sha256Hex), `value: unknown` (canonicalJson/canonicalJsonExact), `value: number` (roundCoord). Leitura externa `globalThis.crypto.subtle`, `TextEncoder`.
+**Processamento (intermediário):** `sha256Hex` codifica texto → digest → hex. `sortValue(value, round)` (recursivo) arredonda números somente quando `round=true`, mapeia arrays, ordena chaves de objeto e filtra `undefined`, montando `result` transitório. `roundCoord` arredonda para 2 casas.
+**Saídas:** `Promise<string>` (hash hex), `string` (JSON canônico exato ou arredondado), `number` (roundCoord). Sem mutação.
+**Estruturas de dados que trafegam:** Funções `sha256Hex`, `canonicalJson`, `canonicalJsonExact`, `roundCoord` (interna `sortValue`).
 
 ### `packages/core/src/persistence/serializer.ts`
 **Papel:** Costura de serialização plugável; implementação JSON com validação de campos obrigatórios.
 **Entradas:** `diagram: BpmnDiagram` (serialize), `data: string` (deserialize).
-**Processamento (intermediário):** `JsonSerializer.serialize` faz `JSON.stringify(diagram, null, 2)`. `deserialize` faz `JSON.parse` (try/catch → `BpmnParseError`), valida objeto e campos obrigatórios (`id`, `name`, `version`, `nodes`, `edges`), aplica defaults `description: ''`, `metadata: {}`.
+**Processamento (intermediário):** `JsonSerializer.serialize` faz `JSON.stringify(diagram, null, 2)`. `deserialize` faz `JSON.parse` (try/catch → `BpmnParseError`), valida objeto e campos obrigatórios (`id`, `name`, `version`, `nodes`, `edges`) **e a forma estrutural**: `nodes`/`edges` são records de objetos com `id`/`type` string (arestas também `sourceId`/`targetId`), `version` é objeto com `id` string — erros citam o caminho (`nodes.<id>.type`); aplica defaults `description: ''`, `metadata: {}`.
 **Saídas:** `string` (serialize), `BpmnDiagram` (deserialize). Lança `BpmnParseError`.
 **Estruturas de dados que trafegam:** Interface `Serializer<T>` (`serialize`, `deserialize`), classe `JsonSerializer`.
 
@@ -207,6 +217,7 @@ nós e arestas vivem em dicionários `Record<id, …>`.
 **Estruturas de dados que trafegam:** Interface `Snapshot`. Funções `createSnapshot`, `verifySnapshot`.
 
 ### `packages/core/src/persistence/BpmnXmlConverter.ts`
+> Δ 2026-07: import de documento com múltiplos `<process>` emite warning explícito em `ImportResult.warnings` (só o primeiro é importado — perfil v1 single-process); antes os demais eram descartados em silêncio.
 **Papel:** Orquestrador bidirecional entre o modelo bpmn-react e BPMN 2.0 XML (export/import), delegando a colaboradores focados.
 **Entradas:** `XmlConverterOptions` (`registry?`, `adapter?`, `preferredTypes? = []`, `extensionNamespace?`); `diagram: BpmnDiagram` (toXml); `xmlText: string` (fromXml).
 **Processamento (intermediário):** No construtor instancia `ElementSerializer`, `ElementDeserializer`, `DIHandler`, `ExtensionHandler`. `toXml`: separa `nodes` em `pools`/`lanes`/`flowNodes` (top-level, não-container); `edges` em `messageFlows`/`scopedEdges`/`dataAssocsByActivity`; agrupa `edgesByScope: Map<scope, BpmnEdge[]>` (via `edgeScopeOf`), extrai `processEdges`; calcula `processId` (`xmlSafeId`) e `collaborationId`; abre `bpmn:definitions` (namespaces), escreve collaboration (participants + messageFlows), process (diagram extension, laneSet com flowNodeRefs filtrados, flowNodes recursivos, processEdges), e chama `di.writeDi`. `fromXml`: parseia root (valida `<definitions>`/`<process>`), lê extension (`diagramMeta`/`versionMeta`), monta `diagram` esqueleto, lê collaboration (pools + messageFlows), `readFlowElements`, valida refs de aresta (warnings), aplica DI, e re-deriva âncora paramétrica de boundary events (`boundaryAnchorOf`, mutando `node.properties`).

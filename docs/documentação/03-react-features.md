@@ -212,6 +212,7 @@ Cada arquivo é um `{ en: Messages; ptBR: Messages }` com mapas chave→string (
 - **`copilot.ts`** (`copilot.*`) — painel do copiloto: título, pill "SÓ RASCUNHA", soundness, gerar/ajustar/desfazer, placeholders.
 - **`menus.ts`** (`contextMenu.*`, `edgeLabel.*`, `nodeLabel.*`) — menu de contexto e editores de rótulo inline.
 - **`simulation.ts`** (`sim.*`, `replay.*`) — painel de simulação, cards de escolha de gateway/decisão e painel de token-replay (fitness, desvios, variantes, legenda de import XES/CSV).
+- **`canvas.ts`** (`canvas.*`) — superfícies SVG do canvas: aria de nó/porta/resize, selo FECHADO (`canvas.seal.*`), controles de subprocesso, `<title>` de rota sem corredor e banner de recuperação de rascunho — as últimas superfícies que carregavam strings fixas (e idioma misto EN/PT).
 - **`studio.ts`** (`studio.*`, `review.*`, `ledger.*`) — shell do Studio, Revisão do Aprovador (fila, request, diff, análise de replay anexada, decisão) e Ledger Explorer (verificação de cadeia, âncora, trilha, detalhe de entrada, query).
 - **`agentStudio.ts`** (`agent.*`) — o Agent Studio inteiro: título/autonomia, paleta de nós/decoradores/templates, inspector, footer de validação, simulação mock, proposta de boundary, escolha de template.
 

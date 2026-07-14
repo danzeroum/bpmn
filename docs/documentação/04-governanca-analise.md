@@ -25,6 +25,7 @@ promoção. Nenhum pacote faz rede: transportes (git/TSA/S3), chaves e relógio 
 **Estruturas de dados que trafegam:** `DateInput` (`Date|string`); `PublicationTarget` (`channel`, `environment?`); `Publication` (estende target: `versionId`, `status`, `effectiveFrom`, `effectiveUntil?`, `publishedBy`); `RegistryEntry` (`version: BpmnVersion`, `snapshot: BpmnDiagram`, `snapshotHash: string`, `technicalNotes?`, `registeredAt`, `publications: Publication[]`); `RegistrySink` (`write(entry)`); `RegisterOptions` (`changeSummary?`, `technicalNotes?`); `PublishOptions` (target + `status?`, `effectiveFrom?`, `publishedBy?`); `RunBinding` (`runId`, `versionId`, `semanticVersion`, `snapshotHash`, `channel?`, `environment?`, `boundAt`); `ExportedRegistry` (`entries: RegistryEntry[]`).
 
 ### `packages/registry/src/VersionRegistry.ts`
+> Δ 2026-07: índice interno `lanes: Map<laneKey, Publication[]>` (ordenado por `effectiveFrom`, populado em publish/import) — `publish`/`channelTimeline`/`publicationAt` consultam o índice em vez de varrer todas as entradas × publicações.
 **Papel:** Camada consultável de governança sobre o ciclo de vida — registra versões imutáveis com snapshots hasheados, janelas temporais e publicações por canal/ambiente.
 **Entradas:** `register(diagram: BpmnDiagram, options: RegisterOptions)`; `publish(versionId, options: PublishOptions)`; `diffBetween(from,to)`; `activeAt(at: DateInput, target?)`; `publicationAt`; `channelTimeline`; `lineageOf`; `import(data: ExportedRegistry)`; opção `{ sink?: RegistrySink }`. Dados de core: `BpmnDiagram`, `BpmnVersion`, `BpmnDiff`, `computeDiagramHash`, `computeDiff`, `nowIso`.
 **Processamento (intermediário):** `structuredClone(diagram)` (cópia profunda imutável do snapshot); `snapshotHash = await computeDiagramHash(snapshot)` (SHA-256 do conteúdo) e verificação contra `version.snapshotHash` declarado; backfill do hash computado em `storedVersion`; mapa privado `entries: Map<string,RegistryEntry>`, array `order: string[]`, fila `queue: Promise` serializando mutações (`enqueue`); chaves de lane `laneKey = channel␟environment`; conversões `toMillis`; fechamento da publicação aberta na lane (seta `effectiveUntil`); janelas de cobertura (`covers`, `bestFrom`); cadeia de ancestralidade via `parentVersionId` com `Set` de visitados.
@@ -64,6 +65,7 @@ promoção. Nenhum pacote faz rede: transportes (git/TSA/S3), chaves e relógio 
 ## audit
 
 ### `packages/audit/src/verify.ts`
+> Δ 2026-07: `verifyLedger` verifica cadeias mistas — `computeEntryHash` despacha por `entry.hashVersion` (v2 exato / v1 legado por entrada).
 **Papel:** Re-verificação completa da cadeia hash-encadeada do ledger de auditoria, tornando a integridade demonstrável sob demanda.
 **Entradas:** `verifyLedger(ledger: LedgerLike)`. `LedgerLike = AuditLedger | { entries: readonly AuditEntry[] }` (aceita objeto vivo ou o shape de `ledger.export()`/`ledger.json`). De core: `computeEntryHash`, tipos `AuditEntry`, `AuditLedger`.
 **Processamento (intermediário):** `entriesOf` normaliza a fonte (`getEntries()` vs `.entries`); `previousHash` acumulado ('' inicial); para cada entry compara `entry.previousHash` com o esperado e recomputa `computeEntryHash(entry)` comparando com `entry.hash`; para no primeiro rompimento capturando `index`/`expected`/`actual`; `verifiedAt` = timestamp ISO da execução.
@@ -71,6 +73,7 @@ promoção. Nenhum pacote faz rede: transportes (git/TSA/S3), chaves e relógio 
 **Estruturas de dados que trafegam:** `VerificationReport`, `LedgerLike`, `AuditEntry`.
 
 ### `packages/audit/src/attest.ts`
+> Δ 2026-07: canonização via `canonicalJsonExact` (números exatos no hash de atestação); erros de lookup lançam `BpmnAuditError` (antes `Error`).
 **Papel:** Constrói uma atestação assinável (hash-based) do momento em que uma versão foi promovida — o que estava ativo, desde quando e quem aprovou, endereçado por conteúdo.
 **Entradas:** `attestVersion(registry: VersionRegistry, diagramId, versionId, options: AttestOptions{ledger?,attestedAt?})`; `canonicalAttestation(attestation)`; `attestationHash(attestation)`. De core: `BpmnXmlConverter`, `canonicalJson`, `sha256Hex`, `ApprovalRecord`.
 **Processamento (intermediário):** Busca `registry.get(versionId)`; valida `entry.snapshot.id === diagramId`; exporta XML canônico via `new BpmnXmlConverter().toXml(entry.snapshot)`; `xmlHash = await sha256Hex(xml)`; obtém `ledgerHeadHash` (hash da última entry do ledger ou ''); copia `approvedBy` (`ApprovalRecord[]`); `attestedAt` (override para determinismo).
@@ -92,6 +95,7 @@ promoção. Nenhum pacote faz rede: transportes (git/TSA/S3), chaves e relógio 
 **Estruturas de dados que trafegam:** `XesOptions`, `XesEvent` (interno: `name`, `timestamp`, `resource?`, `extras`), `AuditEntry`, `LedgerLike`, `Publication`.
 
 ### `packages/audit/src/assuranceCase.ts`
+> Δ 2026-07: evidência de aprovação hasheada com `canonicalJsonExact`.
 **Papel:** Constrói o assurance case SACM 100% derivado de registros de governança — claims, argumentos e evidências hasheadas, com verificação da cadeia e re-verificação de assinaturas.
 **Entradas:** `buildAssuranceCase(diagram: BpmnDiagram, ledger: LedgerLike, options: AssuranceCaseOptions{specVersion?,generatedAt?,resolvePublicKey?,anchor?})`. De core: `canonicalJson`, `sha256Hex`, `ApprovalRecord`, `AuditEntry`, `BpmnDiagram`. De identity: `verificationState`, `AnchorState`, `VerificationState`.
 **Processamento (intermediário):** `verifyLedger` roda no momento da geração (produz `VerificationReport`); enriquece cada `approvedBy` casando `SignedApproval` por `payload.role`, resolve chave e obtém `state` (valid/invalid/legacy) + `fingerprint` curto (`ed25519:#xxxx…yyyy`); flag `anySignatureInvalid`; classifica entradas por regex `PROMOTION_TYPES`/`SIMULATION_TYPES` em `simulationEntries`/`promotionEntries`/`commandEntries`; monta argumentos A1 (aprovações + promoções — `approvalEvidence` faz `sha256Hex(canonicalJson(approval))`), A2 (comandos — `entryEvidence` usa `entry.hash`) e opcional A3 (simulação — `simulationEvidence` deriva `covered/total` e `roteiroHash` dos details); claims C1/C2/(C3) com `supported` calculado; `ledgerHeadHash` = hash da última entry.
@@ -140,6 +144,7 @@ Cerca §1.1 — a biblioteca **nunca** gera, armazena ou gerencia chaves: o `Sig
 **Estruturas de dados que trafegam:** `Uint8Array`, `string`.
 
 ### `packages/identity/src/payload.ts`
+> Δ 2026-07: `encodePayload` usa `canonicalJsonExact` — bytes idênticos aos anteriores (payload é só strings, coberto por teste), assinaturas existentes seguem válidas.
 **Papel:** Constrói o payload canônico que a assinatura de aprovação cobre e o serializa para bytes determinísticos.
 **Entradas:** `buildApprovalPayload(input: CanonicalApprovalPayload)`; `encodePayload(payload)`. De core: `canonicalJson`.
 **Processamento (intermediário):** Reordena explicitamente os campos (`diagramId`, `version`, `xmlHash`, `ledgerHead`, `decision`, `role`); `canonicalJson(payload)` estabiliza a ordem de chaves; `TextEncoder().encode(...)` gera os bytes UTF-8 sobre os quais `sign` e `verify` operam.
@@ -289,6 +294,7 @@ O diretório contém 58 arquivos `.bpmn` **gerados** (`scripts/gen-corpus.mjs`, 
 ## soundness
 
 ### `packages/soundness/src/graph.ts`
+> Δ 2026-07: a classificação de fluxo (`isFlowNode`/`isFlowEdge`/`flowScopeOf`) agora vem de `@buildtovalue/core` (`model/flow.ts`) e é reexportada — API pública inalterada.
 **Papel:** Constrói os grafos de sequence-flow por escopo (nível do processo + cada subprocesso) sobre os quais as regras de soundness rodam — análise estrutural apenas (adjacência, alcançabilidade, SCCs).
 **Entradas:** `buildScopeGraphs(diagram: BpmnDiagram)`; `reachableFrom(graph, seeds)`; `coReachableTo(graph, seeds)`; `cyclicComponents(graph)`; helpers `isFlowNode`/`isFlowEdge`/`flowScopeOf`. De core: `activeNodes`, `activeEdges`, `boundaryAttachedTo`, `isContainerType`, `nodeParentId`, `BpmnNode`, `BpmnEdge`.
 **Processamento (intermediário):** Exclui `NON_FLOW_TYPES` (dataObject/dataStore/textAnnotation/group) e `NON_FLOW_EDGE_TYPES` (messageFlow/association/dataAssociation) e elementos fechados; `Map` `graphs` por escopo e `scopeOf` por nó; para cada `ScopeGraph` monta `nodes`/`out`/`in`/`starts`; liga arestas apenas quando ambos endpoints existem no MESMO escopo; adiciona arestas sintéticas `implicit` host→boundaryEvent (só para alcançabilidade); `ends` = endEvents ou nós-sink (sem saída); BFS forward/backward com `Set`+fila; Tarjan **iterativo** (frames com cursor de aresta, `indices`/`lowlinks`/`onStack`/`stack`) retornando só componentes cíclicos reais (≥2 nós ou self-loop).
