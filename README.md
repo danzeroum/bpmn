@@ -90,6 +90,7 @@ pnpm --filter @buildtovalue/example dev   # run the demo app
 - [Version registry (channels, validity, run pinning)](docs/registry.md)
 - [BPMN 2.0 XML format profile](docs/format-spec.md)
 - [Known limitations](docs/limitations.md)
+- [Melhorias estruturadas (análise técnica, PT-BR)](docs/melhorias.md)
 
 ## Stability & versioning
 
