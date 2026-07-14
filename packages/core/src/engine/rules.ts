@@ -24,6 +24,7 @@ export interface ConnectPayload {
  * into a `CommandStack`.
  */
 export class RuleEngine implements CommandInterceptor {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous registry seam: payload types vary per event/tag and are narrowed at the call site
   private readonly rules = new Map<string, Rule<any>[]>();
 
   register<T = unknown>(event: string, rule: Rule<T>): () => void {

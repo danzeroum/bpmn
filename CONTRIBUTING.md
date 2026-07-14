@@ -18,7 +18,8 @@ This project is a **from-scratch implementation**. To keep it legally clean:
 
 ## Zero runtime dependencies policy
 
-Publishable packages (`core`, `react`, `registry`, `domain-example`, `cli`) must declare **no
+Every **publishable package** (all `@buildtovalue/*` packages except the private apps/demos
+`example`, `domain-example` and `healthcare` — about 21 packages today) must declare **no
 external runtime `dependencies`** — only workspace-internal `@buildtovalue/*` links are allowed.
 `react`/`react-dom` are allowed only as `peerDependencies` of the React packages. Build and test
 tooling goes in `devDependencies`. CI enforces this via `pnpm check:no-runtime-deps`.
@@ -48,6 +49,21 @@ pnpm lint
   gaps close; never lower them to make a red build pass. New shapes, commands, or node types need a
   rendering/round-trip test in the same PR, not "coverage happens to still pass."
 - Commit messages: imperative, descriptive, one logical change per commit.
+
+## Releasing (changesets)
+
+Version bumps are tracked with [changesets](https://github.com/changesets/changesets):
+
+```bash
+pnpm changeset          # describe your change; pick patch/minor/major per package
+pnpm version-packages   # (release captain) apply pending bumps + changelogs
+```
+
+- Every PR that changes a publishable package's behavior should include a changeset
+  (`.changeset/*.md`). Docs-only or test-only changes don't need one.
+- Publishing runs through `.github/workflows/release.yml` (manual dispatch, dry-run by
+  default) after the version PR lands. The private apps (`example`, `domain-example`,
+  `healthcare`) are ignored in `.changeset/config.json`.
 
 ## Code style
 

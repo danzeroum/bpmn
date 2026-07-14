@@ -1,4 +1,4 @@
-# index
+# react/src
 
 ## Classes
 
@@ -154,8 +154,8 @@ render():
   | string
   | number
   | boolean
-  | Iterable<ReactNode, any, any>
   | Element
+  | Iterable<ReactNode, any, any>
   | null
   | undefined;
 ```
@@ -165,8 +165,8 @@ render():
   \| `string`
   \| `number`
   \| `boolean`
-  \| `Iterable`\<`ReactNode`, `any`, `any`\>
   \| `Element`
+  \| `Iterable`\<`ReactNode`, `any`, `any`\>
   \| `null`
   \| `undefined`
 
@@ -398,312 +398,6 @@ optional hideInspector?: boolean;
 
 ```ts
 optional hideMiniMap?: boolean;
-```
-
-***
-
-### AgentSimulationRecord
-
-A finished agent-simulation session handed to the host for the ledger (§7).
-
-#### Properties
-
-##### workflowRef
-
-```ts
-workflowRef: string;
-```
-
-##### steps
-
-```ts
-steps: number;
-```
-
-##### complete
-
-```ts
-complete: boolean;
-```
-
-##### blocked?
-
-```ts
-optional blocked?: object;
-```
-
-###### nodeId
-
-```ts
-nodeId: string;
-```
-
-###### reason
-
-```ts
-reason: string;
-```
-
-##### author
-
-```ts
-author: string;
-```
-
-##### timestamp
-
-```ts
-timestamp: string;
-```
-
-***
-
-### AgentStudioProps
-
-#### Properties
-
-##### open
-
-```ts
-open: boolean;
-```
-
-Whether the modal is open (registers on the Esc dismissal stack).
-
-##### workflow
-
-```ts
-workflow: AgentWorkflow;
-```
-
-The sub-workflow being edited (source of truth: the Library).
-
-##### workflowRef?
-
-```ts
-optional workflowRef?: string;
-```
-
-Versioned ref shown in the header, e.g. `agnt-rsch@2.1.0`.
-
-##### lifecycleStatus?
-
-```ts
-optional lifecycleStatus?: string;
-```
-
-Lifecycle seal text (already localized by the host), e.g. `CANDIDATA`.
-
-##### openedFrom?
-
-```ts
-optional openedFrom?: string;
-```
-
-The BPMN node label the Studio was opened from.
-
-##### onSave
-
-```ts
-onSave: (workflow) => void;
-```
-
-Persist the edited sub-workflow to the Library (never the XML — §1.1).
-
-###### Parameters
-
-###### workflow
-
-`AgentWorkflow`
-
-###### Returns
-
-`void`
-
-##### onClose
-
-```ts
-onClose: () => void;
-```
-
-Close the modal (Esc routes here before any Designer dismissal).
-
-###### Returns
-
-`void`
-
-##### agentTaskId?
-
-```ts
-optional agentTaskId?: string;
-```
-
-The macro agentTask node id — enables the error-boundary proposal (§5).
-
-##### simulationFixtures?
-
-```ts
-optional simulationFixtures?: Fixtures;
-```
-
-Per-node mock fixtures for the simulation (§7); default empty → the
-decision blocks honestly on absent structured output.
-
-##### onRecordSimulation?
-
-```ts
-optional onRecordSimulation?: (record) => void;
-```
-
-Record a finished simulation session to the ledger (§7). Button hidden
-when absent. `author`/`timestamp` come from the host (clock-free).
-
-###### Parameters
-
-###### record
-
-[`AgentSimulationRecord`](#agentsimulationrecord)
-
-###### Returns
-
-`void`
-
-##### author?
-
-```ts
-optional author?: string;
-```
-
-##### timestamp?
-
-```ts
-optional timestamp?: string;
-```
-
-***
-
-### EditEffect
-
-One editor action's effect, for N-3 event emission from the modal.
-
-#### Properties
-
-##### event
-
-```ts
-event: "element.added" | "element.changed" | "element.removed";
-```
-
-##### kind
-
-```ts
-kind: "node" | "edge";
-```
-
-##### id?
-
-```ts
-optional id?: string;
-```
-
-##### elementType?
-
-```ts
-optional elementType?: string;
-```
-
-***
-
-### EditResult
-
-#### Properties
-
-##### workflow
-
-```ts
-workflow: AgentWorkflow;
-```
-
-##### effect
-
-```ts
-effect: EditEffect;
-```
-
-***
-
-### AgentEditorState
-
-#### Properties
-
-##### past
-
-```ts
-past: AgentWorkflow[];
-```
-
-##### present
-
-```ts
-present: AgentWorkflow;
-```
-
-##### future
-
-```ts
-future: AgentWorkflow[];
-```
-
-##### lastEffect
-
-```ts
-lastEffect: EditEffect | null;
-```
-
-The last effect, so the view can emit the matching N-3 event.
-
-##### historyOp
-
-```ts
-historyOp: "apply" | "reset" | "undo" | "redo" | null;
-```
-
-Bumped on undo/redo so the view can emit command.undone, etc.
-
-***
-
-### NodeLayout
-
-#### Properties
-
-##### id
-
-```ts
-id: string;
-```
-
-##### x
-
-```ts
-x: number;
-```
-
-##### y
-
-```ts
-y: number;
-```
-
-##### width
-
-```ts
-width: number;
-```
-
-##### height
-
-```ts
-height: number;
 ```
 
 ***
@@ -1256,6 +950,24 @@ optional onHoverChange?: (edgeId, hovered) => void;
 
 `void`
 
+##### focused?
+
+```ts
+optional focused?: boolean;
+```
+
+Roving keyboard focus target (tabIndex 0 vs -1).
+
+##### onFocus?
+
+```ts
+optional onFocus?: () => void;
+```
+
+###### Returns
+
+`void`
+
 ***
 
 ### NodeRendererProps
@@ -1721,6 +1433,14 @@ editing: boolean;
 
 True when this node's label is being edited inline.
 
+##### focused?
+
+```ts
+optional focused?: boolean;
+```
+
+Roving keyboard focus target (tabIndex 0 vs -1).
+
 ***
 
 ### ShapeErrorBoundaryProps
@@ -2146,6 +1866,8 @@ single console warning per session.
 ###### T
 
 `T` *extends* 
+  \| `"command.undone"`
+  \| `"import.warning"`
   \| `"diagram.loaded"`
   \| `"element.added"`
   \| `"element.changed"`
@@ -2153,10 +1875,8 @@ single console warning per session.
   \| `"edge.connected"`
   \| `"selection.changed"`
   \| `"command.executed"`
-  \| `"command.undone"`
   \| `"validation.changed"`
   \| `"promotion.completed"`
-  \| `"import.warning"`
   \| `"render.slow"`
   \| `"shape.render.error"`
 
@@ -2181,70 +1901,6 @@ autosave: boolean;
 ```
 
 Autosave + recovery banner + beforeunload guard toggle. Default true.
-
-***
-
-### CopilotPanelProps
-
-Copilot panel (Handoff 9 CP-2, §6 UX): 372px chat surface where the AI
-DRAFTS and humans stay in charge. Header shows the provider, the versioned
-prompt-template and the `SÓ RASCUNHA` pill; every AI response carries a
-mono footer with authorship, the applied command id (ledger-traceable) and
-the LOCALLY computed soundness preview. "Desfazer tudo" reverts the whole
-plan in one undo. Without a provider the panel renders nothing and the
-editor is unchanged (§8.5).
-
-#### Properties
-
-##### provider?
-
-```ts
-optional provider?: AIProvider;
-```
-
-HOST-injected transport (§1.4). Absent → the panel does not render.
-
-##### resolveLedgerHash?
-
-```ts
-optional resolveLedgerHash?: () => Promise<string | undefined>;
-```
-
-Resolves the ledger hash to show in the response footer after a proposal
-is applied (the host owns the ledger). Optional — footer omits the line.
-
-###### Returns
-
-`Promise`\<`string` \| `undefined`\>
-
-##### author?
-
-```ts
-optional author?: string;
-```
-
-Human co-author shown in the mixed-authorship seal (e.g. "ana.ruiz").
-
-##### promptStatus?
-
-```ts
-optional promptStatus?: (template) => string | undefined;
-```
-
-CP-5 (cerca §1.5): lifecycle status of a template as the host's Biblioteca
-knows it — e.g. "ativa" when the shipped version is the active one. Shown
-after the version in the header ("prompt: copilot-draft v1.0.0 ativa").
-Omitted → header unchanged.
-
-###### Parameters
-
-###### template
-
-`PromptTemplateRef`
-
-###### Returns
-
-`string` \| `undefined`
 
 ***
 
@@ -3087,10 +2743,10 @@ Lifecycle configuration override (first plugin providing one wins).
 ```ts
 optional edgeRouter?: 
   | "straight"
-  | EdgeRouterFn
+  | "astar"
   | "bezier"
   | "orthogonal"
-  | "astar";
+  | EdgeRouterFn;
 ```
 
 Edge routing override: built-in name or custom function. `astar` is the
@@ -4428,6 +4084,14 @@ viewport: Viewport;
 ```ts
 selectedIds: string[];
 ```
+
+##### focusedElementId
+
+```ts
+focusedElementId: string | null;
+```
+
+Roving keyboard focus: the element whose <g> holds tabIndex=0.
 
 ##### hoveredId
 
@@ -5841,28 +5505,6 @@ Named router: 'astar' | 'orthogonal' | 'bezier' | 'straight'. Default 'astar'.
 
 ## Type Aliases
 
-### AgentEditorAction
-
-```ts
-type AgentEditorAction = 
-  | {
-  type: "apply";
-  result: EditResult;
-}
-  | {
-  type: "undo";
-}
-  | {
-  type: "redo";
-}
-  | {
-  type: "reset";
-  workflow: AgentWorkflow;
-};
-```
-
-***
-
 ### RouteMode
 
 ```ts
@@ -6566,298 +6208,6 @@ Import `@buildtovalue/react/styles.css` for the default styling.
 #### Returns
 
 `Element`
-
-***
-
-### AgentStudio()
-
-```ts
-function AgentStudio(props): Element | null;
-```
-
-Agent Studio (Handoff 12 A-4) — the modal sub-workflow editor over the
-Designer. Its edit history is an ISOLATED stack (undo here never touches the
-BPMN diagram behind it); every edit emits the matching N-3 catalog event
-from inside the modal (never a silent hole in the bus); every string is
-localized; Esc closes the modal via the single dismissal stack before any
-Designer dismissal.
-
-#### Parameters
-
-##### props
-
-[`AgentStudioProps`](#agentstudioprops)
-
-#### Returns
-
-`Element` \| `null`
-
-***
-
-### proposeErrorBoundaryCommand()
-
-```ts
-function proposeErrorBoundaryCommand(diagram, hostId): Command | null;
-```
-
-Agent Lane (Handoff 12 §5) — the ONE undoable command that PROPOSES an error
-boundary event on the macro agentTask when the sub-workflow carries an
-errorBoundary decorator. It reuses N-1's parametric boundary anchoring
-(`attachBoundaryCommand` + `boundaryNodePosition`): a boundary event node is
-created and attached to the host in a single composite, so one undo removes
-the whole proposal. Returns `null` when the host node is absent (nothing to
-anchor to) — the Studio then simply doesn't offer the proposal.
-
-The command is NEVER dispatched silently: the Studio shows an accept/refuse
-card and only executes this on accept.
-
-#### Parameters
-
-##### diagram
-
-`BpmnDiagram`
-
-##### hostId
-
-`string`
-
-#### Returns
-
-`Command` \| `null`
-
-***
-
-### nextNodeId()
-
-```ts
-function nextNodeId(workflow, type): string;
-```
-
-Deterministic node id: `<type>-<n>` where n avoids collisions.
-
-#### Parameters
-
-##### workflow
-
-`AgentWorkflow`
-
-##### type
-
-`NodeType`
-
-#### Returns
-
-`string`
-
-***
-
-### addNode()
-
-```ts
-function addNode(workflow, type): EditResult;
-```
-
-Adds a node of `type` with default config.
-
-#### Parameters
-
-##### workflow
-
-`AgentWorkflow`
-
-##### type
-
-`NodeType`
-
-#### Returns
-
-[`EditResult`](#editresult)
-
-***
-
-### updateNodeConfig()
-
-```ts
-function updateNodeConfig(
-   workflow, 
-   id, 
-   patch): EditResult;
-```
-
-Replaces a node's config (shallow merge into the existing config).
-
-#### Parameters
-
-##### workflow
-
-`AgentWorkflow`
-
-##### id
-
-`string`
-
-##### patch
-
-`Record`\<`string`, `unknown`\>
-
-#### Returns
-
-[`EditResult`](#editresult)
-
-***
-
-### removeNode()
-
-```ts
-function removeNode(workflow, id): EditResult;
-```
-
-Removes a node and every edge touching it.
-
-#### Parameters
-
-##### workflow
-
-`AgentWorkflow`
-
-##### id
-
-`string`
-
-#### Returns
-
-[`EditResult`](#editresult)
-
-***
-
-### addEdge()
-
-```ts
-function addEdge(
-   workflow, 
-   from, 
-   to, 
-   edgeType): EditResult;
-```
-
-Adds an edge (skips exact duplicates).
-
-#### Parameters
-
-##### workflow
-
-`AgentWorkflow`
-
-##### from
-
-`string`
-
-##### to
-
-`string`
-
-##### edgeType
-
-`EdgeType`
-
-#### Returns
-
-[`EditResult`](#editresult)
-
-***
-
-### toggleDecorator()
-
-```ts
-function toggleDecorator(
-   workflow, 
-   id, 
-   type): EditResult;
-```
-
-Toggles a decorator on a node (adds a default of that type, or removes it).
-
-#### Parameters
-
-##### workflow
-
-`AgentWorkflow`
-
-##### id
-
-`string`
-
-##### type
-
-`DecoratorType`
-
-#### Returns
-
-[`EditResult`](#editresult)
-
-***
-
-### agentEditorReducer()
-
-```ts
-function agentEditorReducer(state, action): AgentEditorState;
-```
-
-Reducer for the isolated history — the modal's own command/undo stack.
-
-#### Parameters
-
-##### state
-
-[`AgentEditorState`](#agenteditorstate)
-
-##### action
-
-[`AgentEditorAction`](#agenteditoraction)
-
-#### Returns
-
-[`AgentEditorState`](#agenteditorstate)
-
-***
-
-### initEditorState()
-
-```ts
-function initEditorState(workflow): AgentEditorState;
-```
-
-#### Parameters
-
-##### workflow
-
-`AgentWorkflow`
-
-#### Returns
-
-[`AgentEditorState`](#agenteditorstate)
-
-***
-
-### layoutWorkflow()
-
-```ts
-function layoutWorkflow(workflow): NodeLayout[];
-```
-
-A simple deterministic layered layout: entry-first BFS assigns columns,
-siblings stack in rows. No coordinates live in the schema (§3 is a pure
-graph), so the Studio derives them — same input → same layout.
-
-#### Parameters
-
-##### workflow
-
-`AgentWorkflow`
-
-#### Returns
-
-[`NodeLayout`](#nodelayout)[]
 
 ***
 
@@ -8711,24 +8061,6 @@ function useEditorConfig(): EditorConfig;
 
 ***
 
-### CopilotPanel()
-
-```ts
-function CopilotPanel(__namedParameters): Element | null;
-```
-
-#### Parameters
-
-##### \_\_namedParameters
-
-[`CopilotPanelProps`](#copilotpanelprops)
-
-#### Returns
-
-`Element` \| `null`
-
-***
-
 ### useDismissal()
 
 ```ts
@@ -8771,8 +8103,10 @@ function useKeyboardShortcuts(interactions): void;
 ```
 
 Editor shortcuts: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z / Ctrl+Y redo,
+Ctrl/Cmd+A select-all, Ctrl/Cmd+C/X/V copy/cut/paste, Ctrl/Cmd+D duplicate,
 Delete/Backspace removes the selection, Escape cancels gestures and clears
-selection, arrows nudge selected nodes by the grid size, Space holds pan.
+selection, arrows nudge selected nodes by 1px (Shift = grid step), Space
+holds pan.
 
 #### Parameters
 
@@ -10705,3 +10039,123 @@ Worker: feeding it a request yields the same result the SyncExecutor would.
 #### Returns
 
 (`request`) => [`WorkerResponse`](#workerresponse)
+
+## References
+
+### EditEffect
+
+Re-exports [EditEffect](src/agent.md#editeffect)
+
+***
+
+### EditResult
+
+Re-exports [EditResult](src/agent.md#editresult)
+
+***
+
+### nextNodeId
+
+Re-exports [nextNodeId](src/agent.md#nextnodeid)
+
+***
+
+### addNode
+
+Re-exports [addNode](src/agent.md#addnode)
+
+***
+
+### updateNodeConfig
+
+Re-exports [updateNodeConfig](src/agent.md#updatenodeconfig)
+
+***
+
+### removeNode
+
+Re-exports [removeNode](src/agent.md#removenode)
+
+***
+
+### addEdge
+
+Re-exports [addEdge](src/agent.md#addedge)
+
+***
+
+### toggleDecorator
+
+Re-exports [toggleDecorator](src/agent.md#toggledecorator)
+
+***
+
+### AgentEditorState
+
+Re-exports [AgentEditorState](src/agent.md#agenteditorstate)
+
+***
+
+### AgentEditorAction
+
+Re-exports [AgentEditorAction](src/agent.md#agenteditoraction)
+
+***
+
+### agentEditorReducer
+
+Re-exports [agentEditorReducer](src/agent.md#agenteditorreducer)
+
+***
+
+### initEditorState
+
+Re-exports [initEditorState](src/agent.md#initeditorstate)
+
+***
+
+### NodeLayout
+
+Re-exports [NodeLayout](src/agent.md#nodelayout)
+
+***
+
+### layoutWorkflow
+
+Re-exports [layoutWorkflow](src/agent.md#layoutworkflow)
+
+***
+
+### CopilotPanelProps
+
+Re-exports [CopilotPanelProps](src/copilot.md#copilotpanelprops)
+
+***
+
+### CopilotPanel
+
+Re-exports [CopilotPanel](src/copilot.md#copilotpanel)
+
+***
+
+### AgentStudio
+
+Re-exports [AgentStudio](src/agent.md#agentstudio)
+
+***
+
+### AgentStudioProps
+
+Re-exports [AgentStudioProps](src/agent.md#agentstudioprops)
+
+***
+
+### AgentSimulationRecord
+
+Re-exports [AgentSimulationRecord](src/agent.md#agentsimulationrecord)
+
+***
+
+### proposeErrorBoundaryCommand
+
+Re-exports [proposeErrorBoundaryCommand](src/agent.md#proposeerrorboundarycommand)

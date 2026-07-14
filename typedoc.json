@@ -1,11 +1,39 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
+    "packages/adapters-bpmn/src/index.ts",
+    "packages/agentflow/src/index.ts",
+    "packages/anchor-git/src/index.ts",
+    "packages/anchor-rfc3161/src/index.ts",
+    "packages/anchor-s3/src/index.ts",
+    "packages/audit/src/index.ts",
+    "packages/cli/src/index.ts",
+    "packages/conformance/src/index.ts",
+    "packages/copilot/src/index.ts",
+    "packages/core/src/index.ts",
+    "packages/dmn/src/index.ts",
+    "packages/domain-example/src/index.ts",
+    "packages/healthcare/src/index.ts",
+    "packages/identity/src/index.ts",
+    "packages/library-react/src/index.ts",
+    "packages/library/src/index.ts",
+    "packages/react/src/agent.ts",
+    "packages/react/src/copilot.ts",
     "packages/react/src/index.ts",
-    "packages/react/src/viewer.ts"
+    "packages/react/src/replay.ts",
+    "packages/react/src/simulation.ts",
+    "packages/react/src/viewer.ts",
+    "packages/registry/src/index.ts",
+    "packages/replay/src/index.ts",
+    "packages/sfeel/src/index.ts",
+    "packages/simulation/src/index.ts",
+    "packages/soundness/src/index.ts",
+    "packages/studio/src/index.ts"
   ],
-  "tsconfig": "packages/react/tsconfig.json",
-  "plugin": ["typedoc-plugin-markdown"],
+  "tsconfig": "tsconfig.typedoc.json",
+  "plugin": [
+    "typedoc-plugin-markdown"
+  ],
   "out": "docs/api",
   "readme": "none",
   "githubPages": false,
@@ -14,7 +42,9 @@
   "excludeInternal": true,
   "excludeExternals": true,
   "disableSources": true,
-  "sort": ["source-order"],
+  "sort": [
+    "source-order"
+  ],
   "gitRevision": "main",
   "outputFileStrategy": "modules",
   "hideBreadcrumbs": true,

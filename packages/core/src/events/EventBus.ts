@@ -20,6 +20,7 @@ export interface FireResult<T> {
 }
 
 interface Registration {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous registry seam: payload types vary per event/tag and are narrowed at the call site
   handler: EventHandler<any>;
   priority: number;
   /** Monotonic sequence to keep registration order stable within a priority. */
@@ -47,6 +48,7 @@ export class EventBus {
     return this.on(event, wrapper, priority);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous registry seam: payload types vary per event/tag and are narrowed at the call site
   off(event: string, handler: EventHandler<any>): void {
     const list = this.listeners.get(event);
     if (!list) return;

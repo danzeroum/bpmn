@@ -194,7 +194,7 @@ describe('promote & approve commands', () => {
 
   it('records approvals so a two-role active promotion passes the gate', async () => {
     const dir = await tmp();
-    let path = await writeDiagram(
+    const path = await writeDiagram(
       dir,
       'd.json',
       await versionedDiagram({ versionId: 'vc', semver: '1.0.0', status: 'candidate' }),

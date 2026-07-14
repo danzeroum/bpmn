@@ -130,7 +130,7 @@ describe('routeAStar', () => {
       routeAStar(source, target, { obstacles });
       best = Math.min(best, performance.now() - start);
     }
-    // eslint-disable-next-line no-console
+     
     console.log(`[astar] typical route in 100-node field: ${best.toFixed(2)}ms (target < 5ms)`);
     // Regression canary, not the NFR (cf. perf.spec.ts): the real target is
     // < 5ms (see the logged value in a plain run, ~1.3ms). Coverage-v8
@@ -145,7 +145,7 @@ describe('routeAStar', () => {
     const start = performance.now();
     const { routed } = routeAStar(rect(-160, 0), rect(1600, 1080), { obstacles });
     const ms = performance.now() - start;
-    // eslint-disable-next-line no-console
+     
     console.log(`[astar] worst-case corner-to-corner: ${ms.toFixed(2)}ms (routed=${routed})`);
     // A full-field diagonal builds the whole grid; the batch "clear routing"
     // path (R-4) amortizes this by reusing one grid. Bounded (with coverage
