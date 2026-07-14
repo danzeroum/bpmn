@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import {
+  activeEdges,
+  activeNodes,
   childrenOf,
   compositeCommand,
   getBoundingBox,
@@ -12,6 +14,12 @@ import { fitViewport } from '../canvas/viewport.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import type { Interactions } from '../canvas/useInteractions.js';
+import {
+  buildPasteCommand,
+  collectClipboardPayload,
+  readClipboardPayload,
+  writeClipboardPayload,
+} from './clipboard.js';
 
 function isEditingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -25,8 +33,10 @@ function isEditingTarget(target: EventTarget | null): boolean {
 
 /**
  * Editor shortcuts: Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z / Ctrl+Y redo,
+ * Ctrl/Cmd+A select-all, Ctrl/Cmd+C/X/V copy/cut/paste, Ctrl/Cmd+D duplicate,
  * Delete/Backspace removes the selection, Escape cancels gestures and clears
- * selection, arrows nudge selected nodes by the grid size, Space holds pan.
+ * selection, arrows nudge selected nodes by 1px (Shift = grid step), Space
+ * holds pan.
  */
 export function useKeyboardShortcuts(interactions: Interactions): void {
   const { diagram, execute, undo, redo } = useDiagram();
@@ -66,6 +76,114 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
       if (meta && event.key.toLowerCase() === 'y') {
         event.preventDefault();
         redo();
+        return;
+      }
+
+      // Roving keyboard focus (N-8 keyboard-only editing): with DOM focus on
+      // the canvas (or on an element that is NOT selected), arrows browse the
+      // elements instead of nudging; Enter selects the focused element
+      // (Shift+Enter = additive). Once the focused element is selected, arrows
+      // fall through to the nudge block below — Tab → browse → Enter → nudge.
+      const activeEl = document.activeElement;
+      const focusedDomId =
+        activeEl instanceof Element
+          ? (activeEl.getAttribute('data-node-id') ?? activeEl.getAttribute('data-edge-id'))
+          : null;
+      const focusInCanvas =
+        activeEl instanceof Element &&
+        (activeEl.classList.contains('bpmnr-canvas') || focusedDomId !== null);
+      const isNavArrow = event.key.startsWith('Arrow');
+      if (
+        isNavArrow &&
+        focusInCanvas &&
+        (focusedDomId === null
+          ? state.selectedIds.length === 0
+          : !state.selectedIds.includes(focusedDomId))
+      ) {
+        event.preventDefault();
+        const order = [...activeNodes(diagram)]
+          .sort((a, b) => a.y - b.y || a.x - b.x)
+          .map((n) => n.id)
+          .concat(activeEdges(diagram).map((e) => e.id));
+        if (order.length === 0) return;
+        const forward = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+        const current = focusedDomId ?? state.focusedElementId;
+        const index = current ? order.indexOf(current) : -1;
+        const next = order[(index + (forward ? 1 : -1) + order.length) % order.length];
+        store.setState({ focusedElementId: next });
+        const target = document.querySelector<SVGGElement>(
+          `[data-node-id="${next}"], [data-edge-id="${next}"]`,
+        );
+        target?.focus?.();
+        return;
+      }
+      if (event.key === 'Enter' && focusedDomId !== null) {
+        event.preventDefault();
+        const current = state.selectedIds;
+        store.setState({
+          selectedIds: event.shiftKey
+            ? current.includes(focusedDomId)
+              ? current.filter((id) => id !== focusedDomId)
+              : [...current, focusedDomId]
+            : [focusedDomId],
+        });
+        return;
+      }
+
+      if (meta && event.key.toLowerCase() === 'a') {
+        event.preventDefault();
+        store.setState({
+          selectedIds: [
+            ...activeNodes(diagram).map((n) => n.id),
+            ...activeEdges(diagram).map((e) => e.id),
+          ],
+        });
+        return;
+      }
+      if (meta && event.key.toLowerCase() === 'c' && state.selectedIds.length > 0) {
+        event.preventDefault();
+        const payload = collectClipboardPayload(diagram, state.selectedIds);
+        if (payload) void writeClipboardPayload(payload);
+        return;
+      }
+      if (meta && event.key.toLowerCase() === 'x' && state.selectedIds.length > 0) {
+        event.preventDefault();
+        const payload = collectClipboardPayload(diagram, state.selectedIds);
+        if (payload) {
+          void writeClipboardPayload(payload);
+          const commands = state.selectedIds.map((id) =>
+            diagram.nodes[id] ? removeNodeCommand(id) : removeEdgeCommand(id),
+          );
+          execute(
+            commands.length === 1 ? commands[0] : compositeCommand('Cut selection', commands),
+          );
+          store.setState({ selectedIds: [] });
+        }
+        return;
+      }
+      if (meta && event.key.toLowerCase() === 'v') {
+        event.preventDefault();
+        void readClipboardPayload().then((payload) => {
+          if (!payload) return;
+          const paste = buildPasteCommand(diagram, payload);
+          if (!paste) return;
+          execute(paste.command);
+          store.setState({ selectedIds: paste.newIds });
+        });
+        return;
+      }
+      if (meta && event.key.toLowerCase() === 'd' && state.selectedIds.length > 0) {
+        event.preventDefault();
+        const payload = collectClipboardPayload(diagram, state.selectedIds);
+        if (payload) {
+          const paste = buildPasteCommand(diagram, payload, {
+            description: 'Duplicate selection',
+          });
+          if (paste) {
+            execute(paste.command);
+            store.setState({ selectedIds: paste.newIds });
+          }
+        }
         return;
       }
 
@@ -142,7 +260,8 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
       const arrow = arrows[event.key];
       if (arrow && state.selectedIds.length > 0) {
         event.preventDefault();
-        const step = (event.shiftKey ? 1 : state.gridSize) || 1;
+        // Common editor convention: plain arrow = fine 1px nudge, Shift = grid step.
+        const step = (event.shiftKey ? state.gridSize : 1) || 1;
         const commands = state.selectedIds
           .map((id) => diagram.nodes[id])
           .filter(Boolean)

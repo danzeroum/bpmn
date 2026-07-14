@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useRef, type PointerEvent as ReactPointerEvent } from 'react';
 import {
-  BOUNDARY_SNAP_THRESHOLD,
   addEdgeCommand,
   attachBoundaryCommand,
   attachedBoundaryEventIds,
@@ -19,7 +18,6 @@ import {
   laneFlowNodeRefs,
   moveNodeCommand,
   nodeParentId,
-  nearestBoundaryAnchor,
   resizeNodeCommand,
   rectCenter,
   rectsIntersect,
@@ -34,6 +32,7 @@ import {
   type Point,
 } from '@buildtovalue/core';
 import { activeNodesCached } from './activeCache.js';
+import { findBoundarySnapAt, findNodeAtPoint } from './hitTest.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import type { ResizeCorner, SettlingEntry } from '../state/canvasStore.js';
@@ -448,12 +447,18 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
           const target = findNodeAt(point);
           let invalidReason: string | null = null;
           if (target && target.id !== state.connectState.sourceId) {
-            const verdict = config.ruleEngine.evaluate<ConnectPayload>(
-              'edge.connect.pre',
-              { sourceId: state.connectState.sourceId, targetId: target.id },
-              diagramRef.current,
-            );
-            invalidReason = verdict.allowed ? null : (verdict.reason ?? 'Not allowed');
+            // Rules run only when the hover target CHANGES, not per frame —
+            // a host-plugged expensive rule must never stall the drag.
+            if (target.id === state.connectState.hoverTargetId) {
+              invalidReason = state.connectState.invalidReason;
+            } else {
+              const verdict = config.ruleEngine.evaluate<ConnectPayload>(
+                'edge.connect.pre',
+                { sourceId: state.connectState.sourceId, targetId: target.id },
+                diagramRef.current,
+              );
+              invalidReason = verdict.allowed ? null : (verdict.reason ?? 'Not allowed');
+            }
           } else if (target && target.id === state.connectState.sourceId) {
             invalidReason = 'A node cannot connect to itself';
           }
@@ -482,44 +487,19 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
    * the nearest activity border anchor within the 12px snap zone, or null.
    */
   const findBoundarySnap = useCallback(
-    (dragged: BpmnNode, pointer: Point) => {
-      const { drillId } = store.getState();
-      let best: { hostId: string; side: 'top' | 'right' | 'bottom' | 'left'; t: number; point: Point; distance: number } | null = null;
-      for (const host of activeNodesCached(diagramRef.current)) {
-        if (host.id === dragged.id) continue;
-        if (!config.registry.has(host.type) || config.registry.get(host.type).category !== 'activity') continue;
-        if (!isNodeVisible(diagramRef.current, host, drillId)) continue;
-        const anchor = nearestBoundaryAnchor(host, pointer);
-        if (anchor.distance > BOUNDARY_SNAP_THRESHOLD) continue;
-        if (!best || anchor.distance < best.distance) {
-          best = { hostId: host.id, side: anchor.side, t: anchor.t, point: anchor.point, distance: anchor.distance };
-        }
-      }
-      return best ? { hostId: best.hostId, side: best.side, t: best.t, point: best.point } : null;
-    },
+    (dragged: BpmnNode, pointer: Point) =>
+      findBoundarySnapAt(
+        diagramRef.current,
+        config.registry,
+        store.getState().drillId,
+        dragged,
+        pointer,
+      ),
     [config.registry, store],
   );
 
   const findNodeAt = useCallback(
-    (point: Point) => {
-      const { drillId } = store.getState();
-      const nodes = activeNodesCached(diagramRef.current).filter((node) =>
-        isNodeVisible(diagramRef.current, node, drillId),
-      );
-      // Iterate in reverse so topmost (later-rendered) nodes win.
-      for (let i = nodes.length - 1; i >= 0; i--) {
-        const node = nodes[i];
-        if (
-          point.x >= node.x &&
-          point.x <= node.x + node.width &&
-          point.y >= node.y &&
-          point.y <= node.y + node.height
-        ) {
-          return node;
-        }
-      }
-      return undefined;
-    },
+    (point: Point) => findNodeAtPoint(diagramRef.current, store.getState().drillId, point),
     [store],
   );
 

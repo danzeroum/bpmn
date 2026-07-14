@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
  * Handoff 10 R-4 — clear routing, parallel corridors, fallback recovery.
  */
 const warnCount = (page: import('@playwright/test').Page, edgeId: string) =>
-  page.locator(`[data-edge-id="${edgeId}"] title`, { hasText: /no obstacle-free route/i });
+  page.locator(`[data-edge-id="${edgeId}"] title`, { hasText: /sem rota livre de obstáculos/i });
 
 const firstPoint = async (page: import('@playwright/test').Page, edgeId: string) => {
   const d = (await page.locator(`[data-edge-id="${edgeId}"] path`).first().getAttribute('d')) ?? '';

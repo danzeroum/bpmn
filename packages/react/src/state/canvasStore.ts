@@ -86,6 +86,8 @@ export interface ResizeState {
 export interface CanvasState {
   viewport: Viewport;
   selectedIds: string[];
+  /** Roving keyboard focus: the element whose <g> holds tabIndex=0. */
+  focusedElementId: string | null;
   hoveredId: string | null;
   /** Edge currently hovered — reveals its route handles + manual badge (R-3). */
   hoveredEdgeId: string | null;
@@ -188,6 +190,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
   return createStore<CanvasState>({
     viewport: { x: 0, y: 0, width: 1200, height: 800 },
     selectedIds: [],
+    focusedElementId: null,
     hoveredId: null,
     hoveredEdgeId: null,
     dragState: null,

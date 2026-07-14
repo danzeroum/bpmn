@@ -43,6 +43,7 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
   const gridSize = useCanvasState((s) => s.gridSize);
   const isPanning = useCanvasState((s) => s.isPanning);
   const drillId = useCanvasState((s) => s.drillId);
+  const readOnly = useCanvasState((s) => s.readOnly);
   const interactions = useInteractions(svgRef);
 
   useKeyboardShortcuts(interactions);
@@ -110,6 +111,9 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
       className="bpmnr-canvas"
       role="application"
       aria-label={`BPMN diagram: ${diagram.name}`}
+      // Keyboard entry point for roving element focus — editor only, so the
+      // read-only canvas stays byte-identical to the lightweight viewer (N-7).
+      tabIndex={readOnly ? undefined : 0}
       data-zoom-band={1200 / viewport.width >= SEMANTIC_ZOOM_MIN ? 'full' : 'reduced'}
       width="100%"
       height="100%"

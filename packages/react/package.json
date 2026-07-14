@@ -27,7 +27,27 @@
       "import": "./dist/esm/workers/worker.js",
       "require": "./dist/cjs/workers/worker.js"
     },
-    "./styles.css": "./styles.css"
+    "./styles.css": "./styles.css",
+    "./simulation": {
+      "types": "./dist/esm/simulation.d.ts",
+      "import": "./dist/esm/simulation.js",
+      "require": "./dist/cjs/simulation.js"
+    },
+    "./replay": {
+      "types": "./dist/esm/replay.d.ts",
+      "import": "./dist/esm/replay.js",
+      "require": "./dist/cjs/replay.js"
+    },
+    "./agent": {
+      "types": "./dist/esm/agent.d.ts",
+      "import": "./dist/esm/agent.js",
+      "require": "./dist/cjs/agent.js"
+    },
+    "./copilot": {
+      "types": "./dist/esm/copilot.d.ts",
+      "import": "./dist/esm/copilot.js",
+      "require": "./dist/cjs/copilot.js"
+    }
   },
   "files": [
     "dist",

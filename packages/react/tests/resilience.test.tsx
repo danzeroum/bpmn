@@ -139,9 +139,9 @@ describe('D2 — autosave and recovery', () => {
 
     const { container } = render(<BpmnEditor diagram={diagram} />);
     const banner = await screen.findByRole('alert');
-    expect(banner).toHaveTextContent('Rascunho não salvo');
+    expect(banner).toHaveTextContent('Unsaved draft from');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Restaurar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
     expect(container.querySelector('[data-node-id="extra"]')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).toBeNull();
 
@@ -161,7 +161,7 @@ describe('D2 — autosave and recovery', () => {
 
     render(<BpmnEditor diagram={diagram} />);
     await screen.findByRole('alert');
-    fireEvent.click(screen.getByRole('button', { name: 'Descartar' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     expect(screen.queryByRole('alert')).toBeNull();
     expect(localStorage.getItem(autosaveKey('autosave-discard'))).toBeNull();
   });

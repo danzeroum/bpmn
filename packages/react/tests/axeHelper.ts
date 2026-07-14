@@ -6,6 +6,8 @@ export interface AxeSummary {
   violations: axe.Result[];
   byImpact: Record<Impact, number>;
   critical: axe.Result[];
+  /** Serious + critical — the CI gate fails on both (melhorias F2). */
+  seriousOrWorse: axe.Result[];
 }
 
 /**
@@ -28,6 +30,9 @@ export async function runAxe(container: Element): Promise<AxeSummary> {
     violations: results.violations,
     byImpact,
     critical: results.violations.filter((v) => v.impact === 'critical'),
+    seriousOrWorse: results.violations.filter(
+      (v) => v.impact === 'critical' || v.impact === 'serious',
+    ),
   };
 }
 

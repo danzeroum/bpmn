@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { computeDiagramHash, restoreDiagramCommand } from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
+import { useT } from '../i18n/I18nContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import {
   AUTOSAVE_DEBOUNCE_MS,
@@ -22,6 +23,7 @@ export function ResilienceLayer() {
   const { diagram, execute } = useDiagram();
   const { stack } = useDiagram();
   const store = useCanvasStore();
+  const t = useT();
   const diagramRef = useRef(diagram);
   diagramRef.current = diagram;
   const [recovery, setRecovery] = useState<AutosavePayload | null>(null);
@@ -83,12 +85,12 @@ export function ResilienceLayer() {
 
   return (
     <div className="bpmnr-recovery" role="alert">
-      <span>Rascunho não salvo de {formatTime(recovery.savedAt)} encontrado</span>
+      <span>{t('canvas.recovery.found', { time: formatTime(recovery.savedAt) })}</span>
       <button type="button" onClick={restore}>
-        Restaurar
+        {t('canvas.recovery.restore')}
       </button>
       <button type="button" onClick={discard}>
-        Descartar
+        {t('canvas.recovery.discard')}
       </button>
     </div>
   );

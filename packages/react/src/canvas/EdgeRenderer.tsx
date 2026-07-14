@@ -8,6 +8,7 @@ import {
   type Point,
 } from '@buildtovalue/core';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
+import { useT } from '../i18n/I18nContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { isManualEdge } from './routeEdge.js';
 import type { Interactions } from './useInteractions.js';
@@ -51,6 +52,9 @@ export interface EdgeRendererProps {
   targetOffset: { dx: number; dy: number };
   onSelect: (edgeId: string, additive: boolean) => void;
   onHoverChange?: (edgeId: string, hovered: boolean) => void;
+  /** Roving keyboard focus target (tabIndex 0 vs -1). */
+  focused?: boolean;
+  onFocus?: () => void;
 }
 
 function EdgeRendererInner({
@@ -66,8 +70,11 @@ function EdgeRendererInner({
   targetOffset,
   onSelect,
   onHoverChange,
+  focused = false,
+  onFocus,
 }: EdgeRendererProps) {
   const config = useEditorConfig();
+  const t = useT();
   // Boolean selector: an edge re-renders only when crossing the zoom threshold,
   // not on every zoom step. Zoom % is `1200 / viewport.width` (see Toolbar).
   const chipsVisible = useCanvasState((s) => 1200 / s.viewport.width >= CHIP_MIN_ZOOM);
@@ -180,8 +187,11 @@ function EdgeRendererInner({
     <g
       data-edge-id={edge.id}
       data-selected={selected || undefined}
+      data-focused={focused || undefined}
       role="link"
-      aria-label={edge.label ?? `${edge.type} connection`}
+      aria-label={edge.label ?? t('canvas.edge.aria', { type: edge.type })}
+      tabIndex={interactions && !readOnly ? (focused ? 0 : -1) : undefined}
+      onFocus={onFocus}
       onPointerDown={(event) => {
         if (event.button !== undefined && event.button !== 0) return;
         event.stopPropagation();
@@ -320,9 +330,10 @@ function PurposeChip({ x, y, purpose }: { x: number; y: number; purpose?: string
  * still carries its best-effort cached route.
  */
 function FallbackChip({ x, y }: { x: number; y: number }) {
+  const t = useT();
   return (
     <g pointerEvents="none" aria-hidden="true">
-      <title>No obstacle-free route — the line may cross a shape.</title>
+      <title>{t('canvas.edge.noRoute')}</title>
       <circle cx={x} cy={y} r={7.5} fill="var(--btv-error, #b3372f)" />
       <text
         x={x}
@@ -483,35 +494,40 @@ export function ConnectedEdge({
   interactions?: Interactions;
 }) {
   const store = useCanvasStore();
-  const selected = useCanvasState((s) => s.selectedIds.includes(edge.id));
-  const hovered = useCanvasState((s) => s.hoveredEdgeId === edge.id);
-  const readOnly = useCanvasState((s) => s.readOnly);
-  const liveWaypoints = useCanvasState((s) =>
-    s.edgeDrag?.edgeId === edge.id && s.edgeDrag.active ? s.edgeDrag.waypoints : null,
-  );
-  const sourceOffset = useCanvasState((s) =>
-    s.dragState?.active && s.dragState.nodeIds.includes(edge.sourceId)
-      ? { dx: s.dragState.dx, dy: s.dragState.dy }
-      : ZERO_OFFSET,
-  );
-  const targetOffset = useCanvasState((s) =>
-    s.dragState?.active && s.dragState.nodeIds.includes(edge.targetId)
-      ? { dx: s.dragState.dx, dy: s.dragState.dy }
-      : ZERO_OFFSET,
-  );
+  // One consolidated selector per edge (see ConnectedNode): flattened to
+  // primitives so the shallowEqual selector cache stays effective while the
+  // store notifies all listeners per frame.
+  const view = useCanvasState((s) => {
+    const sourceDragged = s.dragState?.active && s.dragState.nodeIds.includes(edge.sourceId);
+    const targetDragged = s.dragState?.active && s.dragState.nodeIds.includes(edge.targetId);
+    return {
+      selected: s.selectedIds.includes(edge.id),
+      hovered: s.hoveredEdgeId === edge.id,
+      readOnly: s.readOnly,
+      focused: s.focusedElementId === edge.id,
+      liveWaypoints:
+        s.edgeDrag?.edgeId === edge.id && s.edgeDrag.active ? s.edgeDrag.waypoints : null,
+      sdx: sourceDragged ? s.dragState!.dx : 0,
+      sdy: sourceDragged ? s.dragState!.dy : 0,
+      tdx: targetDragged ? s.dragState!.dx : 0,
+      tdy: targetDragged ? s.dragState!.dy : 0,
+    };
+  });
 
   return (
     <EdgeRenderer
       edge={edge}
       source={nodes[edge.sourceId]}
       target={nodes[edge.targetId]}
-      selected={selected}
-      hovered={hovered}
-      liveWaypoints={liveWaypoints}
-      readOnly={readOnly}
+      selected={view.selected}
+      hovered={view.hovered}
+      liveWaypoints={view.liveWaypoints}
+      readOnly={view.readOnly}
       interactions={interactions}
-      sourceOffset={sourceOffset}
-      targetOffset={targetOffset}
+      sourceOffset={view.sdx !== 0 || view.sdy !== 0 ? { dx: view.sdx, dy: view.sdy } : ZERO_OFFSET}
+      targetOffset={view.tdx !== 0 || view.tdy !== 0 ? { dx: view.tdx, dy: view.tdy } : ZERO_OFFSET}
+      focused={view.focused}
+      onFocus={() => store.setState({ focusedElementId: edge.id })}
       onHoverChange={(edgeId, next) => {
         const current = store.getState().hoveredEdgeId;
         if (next) store.setState({ hoveredEdgeId: edgeId });
