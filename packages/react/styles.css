@@ -366,13 +366,13 @@
 }
 
 /* Context pad (referência item 1): action buttons beside the selected node. */
-.bpmnr-context-pad-button rect {
+.bpmnr-context-pad-face {
   fill: var(--bpmnr-canvas-bg, #faf9f6);
   stroke: var(--bpmnr-stroke, #44403a);
   stroke-width: 1;
   transition: fill 100ms ease-out;
 }
-.bpmnr-context-pad-button:hover rect {
+.bpmnr-context-pad-button:hover .bpmnr-context-pad-face {
   fill: var(--bpmnr-fill-activity, #f8f7f4);
   stroke: var(--bpmnr-selected, #1a6a54);
 }

@@ -184,6 +184,17 @@ export interface ContextMenuItem {
 }
 
 /**
+ * One pluggable context-pad action (Handoff 14 §1a) — the pad's 5th slot.
+ * Same narrow contract as {@link ContextMenuItem}, plus a single-character
+ * glyph rendered inside the pad button (an emoji or symbol; the full label
+ * stays in the tooltip/aria).
+ */
+export interface ContextPadItem extends ContextMenuItem {
+  /** One character/emoji drawn in the 26px button (e.g. '🤖'). */
+  glyph: string;
+}
+
+/**
  * Editor observability event (Handoff 2 §2, catalog completed in Handoff 11
  * N-3). `type` is one of {@link EDITOR_EVENTS} — or a deprecated alias from
  * {@link DEPRECATED_EVENT_ALIASES} during its grace minor. The host decides
@@ -277,6 +288,12 @@ export interface BpmnPlugin {
    * only — the menu never mutates state directly.
    */
   contextMenuItems?: (target: MenuTarget) => ContextMenuItem[];
+  /**
+   * Context-pad slot (Handoff 14 §1a): the FIRST returned item (after `when`
+   * filtering) takes the pad's 5th button; the rest are reachable via ⋯,
+   * which opens the full context menu.
+   */
+  contextPadItems?: (target: MenuTarget) => ContextPadItem[];
   /**
    * Editor resilience opt-out: `false` disables autosave, the recovery
    * banner and the beforeunload guard. Default true; last plugin wins.

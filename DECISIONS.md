@@ -6,6 +6,16 @@ correspondente. Novas decisões entram no topo da seção "Decisões recentes".
 
 ## Decisões recentes (rodada de melhorias, 2026-07-14)
 
+- **Handoff 14 / 1a — Esc não fecha o context pad pela pilha de dismissal** (validado
+  na U-1): o pad é affordance passiva da seleção (como portas e resize handles), não
+  um overlay aberto pelo usuário — Esc limpa a seleção e o pad some junto. Entrada
+  própria na pilha mudaria a semântica do primeiro Esc sem ganho.
+- **Handoff 14 / 1g — colunas comparativas da matriz ganham PR dedicada (U-7)**, por
+  último: extensão do gerador anti-drift com células de terceiros sempre "declarado
+  pela doc deles" com link — nunca claim próprio sobre concorrentes.
+- **Handoff 14 / 1e — translado de rotas 📍 no auto-layout reusa `translateManualEdges`
+  (R-3)**, translação rígida, sem mecanismo novo (correção definida na validação da U-1).
+
 - **Receita de hash do ledger versionada (v2).** `computeEntryHash` passa a despachar por
   `AuditEntry.hashVersion`: entradas novas usam v2 = SHA-256 de `canonicalJsonExact` do objeto
   inteiro (sem arredondamento numérico e sem o `join('|')` ambíguo do preimage v1); entradas

@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
+  compositeCommand,
   descendantIdsOf,
   getAnchorPoint,
   isContainerType,
   nodeParentId,
   rectCenter,
   subProcessContainerAt,
+  removeEdgeCommand,
+  removeNodeCommand,
   updateEdgeCommand,
   updateNodeCommand,
   type BpmnDiagram,
@@ -178,6 +181,20 @@ export function ContextMenu() {
             void execute(paste.command);
             store.setState({ selectedIds: paste.newIds });
           }
+        },
+      });
+      rendered.push({
+        id: 'node.delete',
+        label: t('contextMenu.delete'),
+        run: () => {
+          const ids = clipboardSelection;
+          const commands = ids.map((id) =>
+            diagram.nodes[id] ? removeNodeCommand(id) : removeEdgeCommand(id),
+          );
+          void execute(
+            commands.length === 1 ? commands[0] : compositeCommand('Delete selection', commands),
+          );
+          store.setState({ selectedIds: [] });
         },
       });
       // Align/distribute (referência item 2): appear for multi-node selections.

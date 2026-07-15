@@ -27,7 +27,7 @@ export const canvas: { en: Messages; ptBR: Messages } = {
     'contextPad.appendGateway': 'Append gateway',
     'contextPad.appendEnd': 'Append end event',
     'contextPad.connect': 'Connect to another element (drag)',
-    'contextPad.delete': 'Delete element',
+    'contextPad.more': 'More actions (context menu)',
   },
   ptBR: {
     'canvas.node.aria': '{type}: {label}',
@@ -48,6 +48,6 @@ export const canvas: { en: Messages; ptBR: Messages } = {
     'contextPad.appendGateway': 'Adicionar gateway conectado',
     'contextPad.appendEnd': 'Adicionar evento de fim conectado',
     'contextPad.connect': 'Conectar a outro elemento (arraste)',
-    'contextPad.delete': 'Excluir elemento',
+    'contextPad.more': 'Mais ações (menu de contexto)',
   },
 };

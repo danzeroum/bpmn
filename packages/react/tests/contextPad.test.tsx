@@ -26,7 +26,7 @@ describe('context pad (referência item 1 — quick-add)', () => {
     selectNode(container, 'a');
     const pad = container.querySelector('[data-context-pad]');
     expect(pad).not.toBeNull();
-    for (const action of ['task', 'gateway', 'end', 'connect', 'delete']) {
+    for (const action of ['task', 'gateway', 'end', 'connect', 'more']) {
       expect(pad!.querySelector(`[data-context-pad-action="${action}"]`)).not.toBeNull();
     }
   });
@@ -76,12 +76,78 @@ describe('context pad (referência item 1 — quick-add)', () => {
     expect(y).toBeGreaterThan(40 + 60); // pushed below the blocker
   });
 
-  it('delete action removes the node and hides the pad', () => {
+  it('⋯ opens the context menu, where delete lives (spec composition)', () => {
     const { container } = render(<BpmnDesigner diagram={buildDiagram()} />);
     selectNode(container, 'a');
-    fireEvent.click(container.querySelector('[data-context-pad-action="delete"]')!);
+    fireEvent.click(container.querySelector('[data-context-pad-action="more"]')!);
+    const menu = container.querySelector('[data-testid="context-menu"]');
+    expect(menu).not.toBeNull();
+    fireEvent.click(menu!.querySelector('[data-menu-item="node.delete"]')!);
     expect(container.querySelector('[data-node-id="a"]')).toBeNull();
     expect(container.querySelector('[data-context-pad]')).toBeNull();
+  });
+
+  it('Tab appends a connected task to the single selected node (spec 1a)', () => {
+    const { container } = render(<BpmnDesigner diagram={buildDiagram()} />);
+    selectNode(container, 'a');
+    const svg = container.querySelector<SVGSVGElement>('svg.bpmnr-canvas')!;
+    svg.focus();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(container.querySelectorAll('[data-node-id]')).toHaveLength(3);
+    expect(container.querySelectorAll('[data-edge-id]')).toHaveLength(2);
+    // Chains: the new node is selected, so another Tab appends again.
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(container.querySelectorAll('[data-node-id]')).toHaveLength(4);
+    // One atomic undo per append.
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+    expect(container.querySelectorAll('[data-node-id]')).toHaveLength(3);
+  });
+
+  it('plugin contextPadItems fill the 5th slot', () => {
+    const plugin = {
+      id: 'demo/agent',
+      contextPadItems: () => [
+        {
+          id: 'agent-task',
+          label: 'Adicionar agentTask',
+          glyph: '🤖',
+          run: () => {},
+        },
+      ],
+    };
+    const { container } = render(<BpmnDesigner diagram={buildDiagram()} plugins={[plugin]} />);
+    selectNode(container, 'a');
+    expect(
+      container.querySelector('[data-context-pad-action="plugin/agent-task"]'),
+    ).not.toBeNull();
+  });
+
+  it('spec geometry: created node lands +140px from the source center, same line', () => {
+    const diagram = buildDiagram();
+    const { container } = render(<BpmnDesigner diagram={diagram} />);
+    selectNode(container, 'a');
+    fireEvent.click(container.querySelector('[data-context-pad-action="task"]')!);
+    const added = [...container.querySelectorAll('[data-node-id]')].find(
+      (n) => !['a', 'b'].includes(n.getAttribute('data-node-id')!),
+    )!;
+    const [x, y] = added
+      .getAttribute('transform')!
+      .match(/translate\(([-\d.]+), ([-\d.]+)\)/)!
+      .slice(1)
+      .map(Number);
+    const source = diagram.nodes.a;
+    expect(x).toBe(source.x + source.width / 2 + 140);
+    expect(y + 30).toBe(source.y + source.height / 2); // vertical centers align
+  });
+
+  it('flips to the left when the pad would clip at the viewport edge', () => {
+    const diagram = buildDiagram();
+    // Default viewport is 1200 wide at x=0; park the node against the edge.
+    diagram.nodes.edgey = createNode({ type: 'task', id: 'edgey', label: 'E', x: 1150, y: 200 });
+    const { container } = render(<BpmnDesigner diagram={diagram} />);
+    selectNode(container, 'edgey');
+    const pad = container.querySelector('[data-context-pad]')!;
+    expect(pad.getAttribute('data-context-pad-flipped')).toBe('true');
   });
 
   it('connect action starts the connection gesture', () => {

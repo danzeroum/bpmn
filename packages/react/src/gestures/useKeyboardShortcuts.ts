@@ -3,6 +3,7 @@ import {
   activeEdges,
   activeNodes,
   childrenOf,
+  isContainerType,
   compositeCommand,
   getBoundingBox,
   moveNodeCommand,
@@ -13,7 +14,9 @@ import {
 import { fitViewport } from '../canvas/viewport.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
+import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import type { Interactions } from '../canvas/useInteractions.js';
+import { buildQuickAddCommand } from '../canvas/quickAdd.js';
 import {
   buildPasteCommand,
   collectClipboardPayload,
@@ -41,6 +44,7 @@ function isEditingTarget(target: EventTarget | null): boolean {
 export function useKeyboardShortcuts(interactions: Interactions): void {
   const { diagram, execute, undo, redo } = useDiagram();
   const store = useCanvasStore();
+  const config = useEditorConfig();
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -193,6 +197,29 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
         return;
       }
 
+      // Handoff 14 §1a: Tab appends a connected task to the single selected
+      // node (mouse-free chaining). Scoped to canvas focus so Tab keeps its
+      // focus-navigation role everywhere else (toolbar, panels, inputs).
+      if (event.key === 'Tab' && !meta && !event.shiftKey && focusInCanvas) {
+        const single =
+          state.selectedIds.length === 1 ? diagram.nodes[state.selectedIds[0]] : undefined;
+        if (single && !single.removedInVersion && !isContainerType(single.type)) {
+          event.preventDefault();
+          const { command, nodeId } = buildQuickAddCommand(
+            diagram,
+            config.registry,
+            single,
+            'task',
+            state.drillId,
+          );
+          const verdict = execute(command);
+          if (verdict.allowed) {
+            store.setState({ selectedIds: [nodeId], lastCreatedNodeId: nodeId });
+          }
+          return;
+        }
+      }
+
       // N-5: open the context menu for the current selection via keyboard.
       if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
         event.preventDefault();
@@ -293,5 +320,5 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [diagram, execute, interactions, redo, store, undo]);
+  }, [config, diagram, execute, interactions, redo, store, undo]);
 }
