@@ -101,6 +101,19 @@ distribute/smart guides, busca Ctrl+F, `@buildtovalue/lint` (etiqueta + executab
 - **Compensação/transação e coreografia** — extensão de cobertura BPMN aditiva (event definitions
   + marcadores + round-trip); especificar junto com a publicação comparativa da CONFORMANCE.
 
+## 2.2 Handoff 14 (UX Craft) — reconciliação §0 aguardando validação
+
+A reconciliação spec × PR #103 está em
+`docs/design_handoff_btv_ux_craft/RECONCILIACAO.md` (U-1, sem código). Todas as
+divergências ⚠ propõem **adotar a spec**; dois pontos pedem decisão explícita:
+
+- **1a Esc**: o pad segue a seleção (Esc→deseleciona→pad some) — querem entrada
+  própria na pilha de dismissal (Esc fecha o pad antes de desfazer a seleção)?
+- **1g colunas comparativas**: sem PR alocada no §5 do handoff — anexar à U-6 ou
+  abrir U-7?
+
+Refinos U-2..U-6 só começam após a validação da reconciliação.
+
 ## 3. Multi-pool / colaboração real (decisão de escopo de produto)
 
 O perfil v1 é single-process: N pools exportam como N participants apontando para o **mesmo**
