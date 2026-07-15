@@ -72,10 +72,15 @@ raspar a borda. Rotas retas continuam colapsando (inalteradas); o offset é clam
 distância âncora-a-âncora para não passar do nó vizinho em layouts apertados. Testes de
 invariante em `geometry.test.ts`.
 
-O **roteador A\* completo continua fora, de propósito** (esta era a parte cara). Um roteador
-correto (visibility graph + A\*, ancoragem estável, recálculo incremental durante drag) é um
-subsistema com orçamento de performance próprio; um meia-boca degradaria a UX atual. O core já
-registra routers plugáveis, então dá para entregar como minor release (`1.x`) sem quebrar nada.
+**Atualização (Handoff 10 ✅ — esta seção estava desatualizada):** o roteador A\* completo FOI
+entregue em `core/geometry/astar.ts` (visibility/Hanan grid sobre os obstáculos inflados por
+clearance, custo `comprimento + 2·dobras + 4·cruzamentos`, determinístico, com fallback
+"sem corredor" sinalizado) e está plugável como `astarConnection` (`react/canvas/routers.ts`)
+com cache por aresta e crossfade de settle (R-2b) — o app demo já o usa. **O que permanece
+aberto**, agora com escopo honesto: (a) tornar o A\* o roteador PADRÃO (hoje é bezier; trocar
+muda o visual de todos os hosts — decisão de produto + major visual); (b) recálculo
+incremental DURANTE o drag (hoje a rota re-assenta no drop, por orçamento de frame — ligado ao
+follow-up do worker em `DECISIONS.md`).
 
 ---
 

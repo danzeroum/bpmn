@@ -55,6 +55,12 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
       }
 
       const state = store.getState();
+      // Find (item 4) is read-only-safe — available in the viewer too.
+      if (meta && event.key.toLowerCase() === 'f') {
+        event.preventDefault();
+        store.setState({ searchOpen: true });
+        return;
+      }
       // Every shortcut below can mutate the diagram (undo/redo replay
       // commands on the stack too), so a read-only viewer must be fully
       // inert to all of them, not just Delete/arrows.

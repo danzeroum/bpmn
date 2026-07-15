@@ -312,6 +312,51 @@
   transition: filter 120ms ease-out;
 }
 
+/* Find bar (referência item 4). */
+.bpmnr-search {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--bpmnr-stroke, #44403a);
+  border-radius: 8px;
+  background: var(--bpmnr-canvas-bg, #faf9f6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+}
+.bpmnr-search input {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--bpmnr-text, #262220);
+  font-size: 12px;
+  width: 180px;
+}
+.bpmnr-search button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--bpmnr-text, #262220);
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+.bpmnr-search button:hover:not(:disabled) {
+  background: var(--bpmnr-fill-activity, #f8f7f4);
+}
+.bpmnr-search button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.bpmnr-search-count {
+  color: var(--bpmnr-text-muted, #6f675a);
+  min-width: 34px;
+  text-align: center;
+}
+
 /* Smart alignment guides (referência item 2). */
 .bpmnr-align-guide {
   stroke: var(--bpmnr-selected, #1a6a54);

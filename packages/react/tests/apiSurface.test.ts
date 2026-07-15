@@ -160,6 +160,7 @@ const EXPECTED_EXPORTS = [
   'computeRoutedWaypoints',
   'deriveAstarRoutes',
   'rerouteConnectedEdges',
+  'SearchPanel',
   'SettlingOverlay',
   'SETTLE_MS',
   // Handoff 10 R-3 — manual routes.

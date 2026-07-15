@@ -95,3 +95,5 @@ export { PT_BR } from './i18n/ptBR.js';
 // Optional off-thread compute (Handoff 11 N-8): sync default + worker opt-in.
 export * from './workers/executor.js';
 export * from './workers/jobs.js';
+
+export { SearchPanel } from './ui/SearchPanel.js';

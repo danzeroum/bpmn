@@ -7,6 +7,7 @@ import { BpmnCanvas } from './canvas/Canvas.js';
 import { ResilienceLayer } from './canvas/ResilienceLayer.js';
 import { VersionBanner } from './ui/VersionBanner.js';
 import { ContextMenu } from './ui/ContextMenu.js';
+import { SearchPanel } from './ui/SearchPanel.js';
 import { I18nProvider } from './i18n/I18nContext.js';
 import type { Messages } from './i18n/messages.js';
 import type { BpmnPlugin } from './plugins/types.js';
@@ -56,6 +57,7 @@ function DesignerBody({
         <div className="bpmnr-designer" style={{ position: 'relative', width: '100%', height: '100%' }}>
           <BpmnCanvas overlay={overlay} showClosed={showClosed} />
           <ContextMenu />
+          <SearchPanel />
           {/* Version context banner — self-gating (read-only / superseded). */}
           <VersionBanner />
           {!(readOnly ?? false) && <ResilienceLayer />}

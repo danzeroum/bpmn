@@ -90,6 +90,8 @@ export interface CanvasState {
   focusedElementId: string | null;
   /** Smart alignment guides drawn while a drag magnetizes (item 2). */
   alignGuides: Array<{ axis: 'v' | 'h'; position: number; from: number; to: number }> | null;
+  /** Find bar visibility (Ctrl/Cmd+F — item 4). */
+  searchOpen: boolean;
   hoveredId: string | null;
   /** Edge currently hovered — reveals its route handles + manual badge (R-3). */
   hoveredEdgeId: string | null;
@@ -194,6 +196,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     selectedIds: [],
     focusedElementId: null,
     alignGuides: null,
+    searchOpen: false,
     hoveredId: null,
     hoveredEdgeId: null,
     dragState: null,

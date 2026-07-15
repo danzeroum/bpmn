@@ -9,6 +9,13 @@ import type { Messages } from '../messages.js';
 export const toolbar: { en: Messages; ptBR: Messages } = {
   en: {
     'toolbar.aria': 'Editor toolbar',
+    'search.aria': 'Find in diagram',
+    'search.inputAria': 'Search elements by name, id or type',
+    'search.placeholder': 'Find… (Enter = next)',
+    'search.count': '{current}/{total}',
+    'search.previous': 'Previous match',
+    'search.next': 'Next match',
+    'search.close': 'Close search',
     'toolbar.arrange': 'Arrange',
     'toolbar.arrange.aria': 'Auto-arrange the diagram',
     'toolbar.arrange.title': 'Auto-arrange (layered layout, undoable)',
@@ -50,6 +57,13 @@ export const toolbar: { en: Messages; ptBR: Messages } = {
     'toolbar.issues.close': 'Close validation',
   },
   ptBR: {
+    'search.aria': 'Buscar no diagrama',
+    'search.inputAria': 'Buscar elementos por nome, id ou tipo',
+    'search.placeholder': 'Buscar… (Enter = próximo)',
+    'search.count': '{current}/{total}',
+    'search.previous': 'Resultado anterior',
+    'search.next': 'Próximo resultado',
+    'search.close': 'Fechar busca',
     'toolbar.arrange': 'Arrumar',
     'toolbar.arrange.aria': 'Arrumar o diagrama automaticamente',
     'toolbar.arrange.title': 'Arrumar automaticamente (layout em camadas, desfazível)',
