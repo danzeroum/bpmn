@@ -97,6 +97,10 @@ test('context menu removes a child from the sub-process by keyboard (a11y path)'
   await expect(menu).toBeVisible();
   await menu.getByRole('menuitem', { name: 'Remover do subprocesso' }).click();
 
+  // Clear the selection first — the child's context pad floats beside it and
+  // would otherwise sit over the sub-process toggle.
+  await page.keyboard.press('Escape');
+
   // No longer a child: collapsing 'returns' leaves it on the canvas.
   await page.locator('[data-node-id="returns"] [data-subprocess-toggle]').click();
   await expect(child).toBeVisible();

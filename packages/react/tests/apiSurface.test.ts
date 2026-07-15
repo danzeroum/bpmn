@@ -60,6 +60,7 @@ const EXPECTED_EXPORTS = [
   'EdgeRenderer',
   'EditorConfigProvider',
   'EndEventShape',
+  'ComplexGatewayShape',
   'EventBasedGatewayShape',
   'ExclusiveGatewayShape',
   'GovernanceBreadcrumb',
@@ -86,6 +87,7 @@ const EXPECTED_EXPORTS = [
   'SEAL_LABELS',
   'SignatureBadge',
   'CanonicalPayloadCard',
+  'AlignmentGuidesOverlay',
   'AnchorSeal',
   // Agent Lane (Handoff 12 A-4) — Agent Studio + isolated editor + shape.
   'AgentStudio',
@@ -159,6 +161,18 @@ const EXPECTED_EXPORTS = [
   'computeRoutedWaypoints',
   'deriveAstarRoutes',
   'rerouteConnectedEdges',
+  'SearchPanel',
+  // Handoff 14 §1d — lint problems dock (etiquette + engine, one surface),
+  // plus the shared animated pan (search + lint use the SAME one).
+  'LintPanel',
+  'panViewportTo',
+  'reducedMotion',
+  // Handoff 14 §1e — auto-layout as a PROPOSAL (card + preview + crossfade).
+  'LayoutProposalCard',
+  'buildLayoutProposal',
+  'LayoutPreviewOverlay',
+  'LayoutSettleOverlay',
+  'SearchPulseOverlay',
   'SettlingOverlay',
   'SETTLE_MS',
   // Handoff 10 R-3 — manual routes.
@@ -206,7 +220,7 @@ describe('@buildtovalue/react public API surface', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });
 
-  it('every one of the 26 built-in shapes is registered in BUILT_IN_SHAPES', () => {
+  it('every one of the 27 built-in shapes is registered in BUILT_IN_SHAPES', () => {
     expect(Object.keys(api.BUILT_IN_SHAPES).sort()).toEqual(
       [
         'agentTask',
@@ -216,7 +230,8 @@ describe('@buildtovalue/react public API surface', () => {
         'dataObject',
         'dataStore',
         'endEvent',
-        'eventBasedGateway',
+        'complexGateway',
+      'eventBasedGateway',
         'exclusiveGateway',
         'group',
         'inclusiveGateway',

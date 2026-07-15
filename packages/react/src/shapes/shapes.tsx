@@ -315,6 +315,29 @@ export function InclusiveGatewayShape(props: ShapeProps) {
   );
 }
 
+/** Complex gateway: the BPMN asterisk marker inside the diamond. */
+export function ComplexGatewayShape(props: ShapeProps) {
+  const { width, height } = props.node;
+  const cx = width / 2;
+  const cy = height / 2;
+  const r = Math.min(width, height) * 0.22;
+  const stroke = strokeFor(props.selected);
+  const d = (r * Math.SQRT1_2).toFixed(2);
+  return (
+    <g>
+      <GatewayDiamond {...props} />
+      <path
+        d={`M ${cx - r} ${cy} H ${cx + r} M ${cx} ${cy - r} V ${cy + r} M ${cx - Number(d)} ${cy - Number(d)} L ${cx + Number(d)} ${cy + Number(d)} M ${cx + Number(d)} ${cy - Number(d)} L ${cx - Number(d)} ${cy + Number(d)}`}
+        stroke={stroke}
+        strokeWidth={2.2}
+        strokeLinecap="round"
+        fill="none"
+      />
+      {gatewayLabel(props.node)}
+    </g>
+  );
+}
+
 /** Event-based gateway: a pentagon inside a double ring, inside the diamond. */
 export function EventBasedGatewayShape(props: ShapeProps) {
   const { width, height } = props.node;

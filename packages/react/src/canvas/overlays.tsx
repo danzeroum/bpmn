@@ -1,4 +1,4 @@
-import { useCanvasState } from '../contexts/CanvasContext.js';
+import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { theme } from '../shapes/common.js';
 
@@ -117,5 +117,124 @@ export function SelectionBoxOverlay() {
       pointerEvents="none"
       data-selection-box
     />
+  );
+}
+
+
+/** Smart alignment guides + equal-spacing badges (Handoff 14 §1b) — draw-only. */
+export function AlignmentGuidesOverlay() {
+  const guides = useCanvasState((s) => s.alignGuides);
+  const badges = useCanvasState((s) => s.spacingBadges);
+  if (!guides && !badges) return null;
+  return (
+    <g pointerEvents="none" data-alignment-guides>
+      {guides?.map((guide, index) => (
+        <line
+          key={`g${index}`}
+          className="bpmnr-align-guide"
+          x1={guide.axis === 'v' ? guide.position : guide.from}
+          x2={guide.axis === 'v' ? guide.position : guide.to}
+          y1={guide.axis === 'v' ? guide.from : guide.position}
+          y2={guide.axis === 'v' ? guide.to : guide.position}
+        />
+      ))}
+      {badges?.map((b, index) => {
+        const mid = (b.from + b.to) / 2;
+        const x = b.axis === 'h' ? mid : b.position;
+        const y = b.axis === 'h' ? b.position : mid;
+        return (
+          <g key={`b${index}`} data-spacing-badge={b.value}>
+            <line
+              className="bpmnr-align-guide"
+              x1={b.axis === 'h' ? b.from : b.position}
+              x2={b.axis === 'h' ? b.to : b.position}
+              y1={b.axis === 'h' ? b.position : b.from}
+              y2={b.axis === 'h' ? b.position : b.to}
+            />
+            <rect
+              className="bpmnr-spacing-badge"
+              x={x - 19}
+              y={y - 8}
+              width={38}
+              height={16}
+              rx={8}
+            />
+            {/* i18n-exempt — numeric measurement, no prose */}
+            <text className="bpmnr-spacing-badge-text" x={x} y={y + 3.5} textAnchor="middle">
+              {b.value}px
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+
+/**
+ * Two expanding halo rings around the latest search hit (Handoff 14 §1c).
+ * Pure CSS animation (2 rings, staggered); cleared when the outer ring ends.
+ * Never rendered under reduced motion — the store field stays null.
+ */
+export function SearchPulseOverlay() {
+  const pulse = useCanvasState((s) => s.searchPulse);
+  const store = useCanvasStore();
+  const { diagram } = useDiagram();
+  if (!pulse) return null;
+  const node = diagram.nodes[pulse.elementId];
+  if (!node) return null;
+  const cx = node.x + node.width / 2;
+  const cy = node.y + node.height / 2;
+  const base = Math.max(node.width, node.height) / 2 + 8;
+  return (
+    <g pointerEvents="none" data-search-pulse key={pulse.token}>
+      <circle className="bpmnr-search-pulse" cx={cx} cy={cy} r={base} />
+      <circle
+        className="bpmnr-search-pulse bpmnr-search-pulse-late"
+        cx={cx}
+        cy={cy}
+        r={base}
+        onAnimationEnd={() => {
+          if (store.getState().searchPulse?.token === pulse.token) {
+            store.setState({ searchPulse: null });
+          }
+        }}
+      />
+    </g>
+  );
+}
+
+/**
+ * Target-position ghosts of the pending auto-layout (Handoff 14 §1e): while
+ * the Aplicar/Recusar card is open, every node the layout wants to move shows
+ * a dashed outline at its PROPOSED position — the "DEPOIS" preview. Nothing
+ * on the real diagram moves until the user applies. Stripped from exports
+ * (TRANSIENT_SELECTORS).
+ */
+export function LayoutPreviewOverlay() {
+  const proposal = useCanvasState((s) => s.layoutProposal);
+  if (!proposal) return null;
+  return (
+    <g pointerEvents="none" data-layout-preview>
+      {proposal.moved.map((move) => (
+        <g key={move.id}>
+          <line
+            className="bpmnr-layout-preview-trace"
+            x1={move.from.x + move.width / 2}
+            y1={move.from.y + move.height / 2}
+            x2={move.to.x + move.width / 2}
+            y2={move.to.y + move.height / 2}
+          />
+          <rect
+            className="bpmnr-layout-preview-ghost"
+            x={move.to.x}
+            y={move.to.y}
+            width={move.width}
+            height={move.height}
+            rx={8}
+          />
+        </g>
+      ))}
+    </g>
   );
 }

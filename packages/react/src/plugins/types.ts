@@ -184,6 +184,17 @@ export interface ContextMenuItem {
 }
 
 /**
+ * One pluggable context-pad action (Handoff 14 §1a) — the pad's 5th slot.
+ * Same narrow contract as {@link ContextMenuItem}, plus a single-character
+ * glyph rendered inside the pad button (an emoji or symbol; the full label
+ * stays in the tooltip/aria).
+ */
+export interface ContextPadItem extends ContextMenuItem {
+  /** One character/emoji drawn in the 26px button (e.g. '🤖'). */
+  glyph: string;
+}
+
+/**
  * Editor observability event (Handoff 2 §2, catalog completed in Handoff 11
  * N-3). `type` is one of {@link EDITOR_EVENTS} — or a deprecated alias from
  * {@link DEPRECATED_EVENT_ALIASES} during its grace minor. The host decides
@@ -278,8 +289,50 @@ export interface BpmnPlugin {
    */
   contextMenuItems?: (target: MenuTarget) => ContextMenuItem[];
   /**
+   * Context-pad slot (Handoff 14 §1a): the FIRST returned item (after `when`
+   * filtering) takes the pad's 5th button; the rest are reachable via ⋯,
+   * which opens the full context menu.
+   */
+  contextPadItems?: (target: MenuTarget) => ContextPadItem[];
+  /**
    * Editor resilience opt-out: `false` disables autosave, the recovery
    * banner and the beforeunload guard. Default true; last plugin wins.
    */
   autosave?: boolean;
+  /**
+   * Execution-engine bridge (Handoff 14 §1f): registering one turns on the
+   * "Execução" tab of the properties panel for executable activities. First
+   * plugin providing one wins (same rule as `lifecycleConfig`). Actual
+   * deployment stays HOST-owned and GATED — see {@link EngineBridge}.
+   */
+  engine?: EngineBridge;
+}
+
+/**
+ * Execution-engine bridge (Handoff 14 §1f). The editor renders the
+ * "Execução" tab (progressive disclosure: essentials visible, the rest
+ * foldable) and GATES deploy: only an ACTIVE (VIGENTE) **and signed** version
+ * may deploy; anything else gets the "⚑ Deploy bloqueado → Ir para promoção"
+ * card. The signature truth and the deploy transport are host-owned —
+ * network integration is deliberately out of editor scope (§3).
+ */
+export interface EngineBridge {
+  /** Engine id, e.g. 'zeebe', 'camunda7'. Prefixes default property keys. */
+  id: string;
+  /** Display name in the tab header, e.g. 'Camunda 8 (Zeebe)'. */
+  name?: string;
+  /** Property key of the ESSENTIAL job-type binding. Default `<id>:taskDefinitionType`. */
+  jobTypeKey?: string;
+  /** Property key of the retries field. Default `<id>:retries`. */
+  retriesKey?: string;
+  /**
+   * Host-owned truth: is the CURRENT version's activation signed (identity
+   * package / host ledger)? Gates deploy together with `status === 'active'`.
+   * Absent → treated as NOT signed (deploy stays blocked).
+   */
+  isSigned?: (diagram: BpmnDiagram) => boolean;
+  /** Deploy transport — only invoked when the gate passes. */
+  deploy?: (diagram: BpmnDiagram) => void | Promise<void>;
+  /** "Ir para promoção →" navigation on the blocked card (host-owned). */
+  onRequestPromotion?: () => void;
 }

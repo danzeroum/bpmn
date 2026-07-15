@@ -2615,6 +2615,47 @@ Point suitable for placing a label.
 
 ***
 
+### LayoutOptions
+
+Layered auto-layout (referência item 2) — a dependency-free Sugiyama-style
+pass: longest-path ranking, barycenter ordering, predecessor-averaged row
+placement. Deterministic (stable tie-breaks by id) so the same diagram
+always lays out identically.
+
+v1 scope: the TOP process level of a single-process diagram. Diagrams with
+pools/lanes keep their manual arrangement (`null` is returned — swimlane
+layout is a dedicated post-1.0 effort, pendências §4). Sub-process children
+and boundary events follow their host: children keep their offset relative
+to the container; boundary events keep their anchor.
+
+#### Properties
+
+##### gapX?
+
+```ts
+optional gapX?: number;
+```
+
+Horizontal gap between layers. Default 72.
+
+##### gapY?
+
+```ts
+optional gapY?: number;
+```
+
+Vertical gap between nodes in a layer. Default 40.
+
+##### origin?
+
+```ts
+optional origin?: Point;
+```
+
+Top-left origin of the arrangement. Default {x: 60, y: 60}.
+
+***
+
 ### CreateVersionOptions
 
 #### Properties
@@ -3833,6 +3874,14 @@ coordinates); on import the pair is derived back from the DI geometry.
 
 ```ts
 type Side = "left" | "right" | "top" | "bottom";
+```
+
+***
+
+### AlignMode
+
+```ts
+type AlignMode = "left" | "centerX" | "right" | "top" | "centerY" | "bottom";
 ```
 
 ***
@@ -5535,6 +5584,82 @@ Snaps a value to the nearest multiple of `gridSize` (no-op for gridSize ≤ 0).
 #### Returns
 
 `number`
+
+***
+
+### computeLayeredLayout()
+
+```ts
+function computeLayeredLayout(diagram, options?): Map<string, Point> | null;
+```
+
+Computes new positions for the layout scope. Returns `null` when the
+diagram is outside the v1 scope (has pools/lanes) or has nothing to lay
+out; otherwise a map of nodeId → new top-left position covering every
+repositioned node (top-level flow nodes, their sub-process children and
+attached boundary events).
+
+#### Parameters
+
+##### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+##### options?
+
+[`LayoutOptions`](#layoutoptions) = `{}`
+
+#### Returns
+
+`Map`\<`string`, [`Point`](#point-1)\> \| `null`
+
+***
+
+### alignPositions()
+
+```ts
+function alignPositions(nodes, mode): Map<string, Point>;
+```
+
+New positions aligning `nodes` on the given edge/axis (2+ nodes).
+
+#### Parameters
+
+##### nodes
+
+[`BpmnNode`](#bpmnnode)[]
+
+##### mode
+
+[`AlignMode`](#alignmode)
+
+#### Returns
+
+`Map`\<`string`, [`Point`](#point-1)\>
+
+***
+
+### distributePositions()
+
+```ts
+function distributePositions(nodes, axis): Map<string, Point>;
+```
+
+New positions spreading `nodes` evenly along the axis (3+ nodes).
+
+#### Parameters
+
+##### nodes
+
+[`BpmnNode`](#bpmnnode)[]
+
+##### axis
+
+`"horizontal"` \| `"vertical"`
+
+#### Returns
+
+`Map`\<`string`, [`Point`](#point-1)\>
 
 ***
 

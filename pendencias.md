@@ -72,12 +72,57 @@ raspar a borda. Rotas retas continuam colapsando (inalteradas); o offset é clam
 distância âncora-a-âncora para não passar do nó vizinho em layouts apertados. Testes de
 invariante em `geometry.test.ts`.
 
-O **roteador A\* completo continua fora, de propósito** (esta era a parte cara). Um roteador
-correto (visibility graph + A\*, ancoragem estável, recálculo incremental durante drag) é um
-subsistema com orçamento de performance próprio; um meia-boca degradaria a UX atual. O core já
-registra routers plugáveis, então dá para entregar como minor release (`1.x`) sem quebrar nada.
+**Atualização (Handoff 10 ✅ — esta seção estava desatualizada):** o roteador A\* completo FOI
+entregue em `core/geometry/astar.ts` (visibility/Hanan grid sobre os obstáculos inflados por
+clearance, custo `comprimento + 2·dobras + 4·cruzamentos`, determinístico, com fallback
+"sem corredor" sinalizado) e está plugável como `astarConnection` (`react/canvas/routers.ts`)
+com cache por aresta e crossfade de settle (R-2b) — o app demo já o usa. **O que permanece
+aberto**, agora com escopo honesto: (a) tornar o A\* o roteador PADRÃO (hoje é bezier; trocar
+muda o visual de todos os hosts — decisão de produto + major visual); (b) recálculo
+incremental DURANTE o drag (hoje a rota re-assenta no drop, por orçamento de frame — ligado ao
+follow-up do worker em `DECISIONS.md`).
 
 ---
+
+## 2.1 Rodada "referência de mercado" — o que ficou aberto dos itens 5–6
+
+Da sequência de paridade/interop (2026-07): entregues context pad, auto-layout/align/
+distribute/smart guides, busca Ctrl+F, `@buildtovalue/lint` (etiqueta + executabilidade) e
+`complexGateway` nativo. Ficaram abertos, cada um com escopo próprio:
+
+- **Passthrough de extensões estrangeiras (`zeebe:*`/`camunda:*`)** — hoje `readExtensionElements`
+  consome só `bpmnr:property`/`bpmnr:meta`; elementos de outros namespaces são lidos e perdidos no
+  export. Preservá-los (armazenar a árvore no modelo + re-emitir + capturar `xmlns:*` do root)
+  interage com os testes de byte-estabilidade e o corpus externo de conformance — PR dedicada.
+  As regras `EXEC_*` do pacote lint já aceitam as grafias `zeebe:`/`camunda:` quando o host as
+  injeta via propriedades.
+- **Deploy direto para engine (Camunda 8/Flowable)** — integração de rede/produto; depende do
+  passthrough acima para ser útil.
+- **Compensação/transação e coreografia** — extensão de cobertura BPMN aditiva (event definitions
+  + marcadores + round-trip); especificar junto com a publicação comparativa da CONFORMANCE.
+
+## 2.2 Handoff 14 (UX Craft) — estado da fila U-1..U-7
+
+A reconciliação (`docs/design_handoff_btv_ux_craft/RECONCILIACAO.md`) é o
+retrato congelado da U-1 (validada); o estado vivo é este:
+
+- **U-1** reconciliação — ✅ validada (decisões: Esc no pad NÃO entra na pilha;
+  1g vira U-7; todas as divergências ⚠ adotaram a spec).
+- **U-2** context pad (1a) — ✅ validada 100%.
+- **U-3** smart guides (1b) — ✅ validada 100% (padrão "export mid-gesture"
+  adotado para toda superfície transiente).
+- **U-4** busca (1c) — ✅ validada 100% (cap 8 + overflow registrado).
+- **U-5** painel de lint (1d) — ✅ validada 100% (`TRANSIENT_ATTRIBUTES` adotado
+  como evolução do export mid-gesture).
+- **U-6** (última) — entregue, aguardando validação: auto-layout por PROPOSTA
+  (card aplicar/recusar + contagens + crossfade 160ms + preview ghosts),
+  translado rígido das 📍 via `translateManualEdges`, layered no import sem DI
+  (corpus 61/61 medido antes), aba "Execução" (`BpmnPlugin.engine`, progressive
+  disclosure, deploy gated VIGENTE+assinada), e 1g anexada (colunas comparativas
+  "declarado pela doc deles" no CONFORMANCE.md).
+- **Balanço final**: `docs/design_handoff_btv_ux_craft/RECONCILIACAO.md`
+  atualizado — placar 42 ✅ + 2 📌 (passthrough `zeebe:*` adiado com aval da
+  spec; publicação em site = pendência de produto). Não restam ⚠ nem ⬜.
 
 ## 3. Multi-pool / colaboração real (decisão de escopo de produto)
 

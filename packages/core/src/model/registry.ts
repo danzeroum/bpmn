@@ -94,6 +94,7 @@ export const BUILT_IN_NODE_TYPES: NodeTypeDefinition[] = [
   { type: 'parallelGateway', label: 'Parallel Gateway', category: 'gateway', defaultSize: { width: 50, height: 50 }, xml: { tag: 'parallelGateway' } },
   { type: 'inclusiveGateway', label: 'Inclusive Gateway', category: 'gateway', defaultSize: { width: 50, height: 50 }, xml: { tag: 'inclusiveGateway' } },
   { type: 'eventBasedGateway', label: 'Event-based Gateway', category: 'gateway', defaultSize: { width: 50, height: 50 }, xml: { tag: 'eventBasedGateway' } },
+  { type: 'complexGateway', label: 'Complex Gateway', category: 'gateway', defaultSize: { width: 50, height: 50 }, xml: { tag: 'complexGateway' } },
   { type: 'subProcess', label: 'Sub-Process', category: 'activity', defaultSize: { width: 300, height: 160 }, xml: { tag: 'subProcess' } },
   { type: 'callActivity', label: 'Call Activity', category: 'activity', defaultSize: { width: 120, height: 60 }, xml: { tag: 'callActivity' } },
   // Agent Lane (Handoff 12): a governed AI-agent sub-workflow. Maps onto the

@@ -4093,6 +4093,22 @@ focusedElementId: string | null;
 
 Roving keyboard focus: the element whose <g> holds tabIndex=0.
 
+##### alignGuides
+
+```ts
+alignGuides: object[] | null;
+```
+
+Smart alignment guides drawn while a drag magnetizes (item 2).
+
+##### searchOpen
+
+```ts
+searchOpen: boolean;
+```
+
+Find bar visibility (Ctrl/Cmd+F — item 4).
+
 ##### hoveredId
 
 ```ts
@@ -6736,6 +6752,20 @@ Lasso rectangle during box selection.
 
 ***
 
+### AlignmentGuidesOverlay()
+
+```ts
+function AlignmentGuidesOverlay(): Element | null;
+```
+
+Smart alignment guide lines (referência item 2) — draw-only.
+
+#### Returns
+
+`Element` \| `null`
+
+***
+
 ### sideOfAnchor()
 
 ```ts
@@ -8856,6 +8886,26 @@ function InclusiveGatewayShape(props): Element;
 
 ***
 
+### ComplexGatewayShape()
+
+```ts
+function ComplexGatewayShape(props): Element;
+```
+
+Complex gateway: the BPMN asterisk marker inside the diamond.
+
+#### Parameters
+
+##### props
+
+[`ShapeProps`](#shapeprops)
+
+#### Returns
+
+`Element`
+
+***
+
 ### EventBasedGatewayShape()
 
 ```ts
@@ -9663,6 +9713,18 @@ properties. Property values are JSON — strings can be typed directly.
 #### Returns
 
 `Element`
+
+***
+
+### SearchPanel()
+
+```ts
+function SearchPanel(): Element | null;
+```
+
+#### Returns
+
+`Element` \| `null`
 
 ***
 

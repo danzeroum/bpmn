@@ -58,3 +58,53 @@ export function SettlingOverlay() {
     </g>
   );
 }
+
+/**
+ * Layout crossfade (Handoff 14 §1e): after APPLYING an auto-layout proposal,
+ * ghosts of the moved nodes' OLD rects fade out over {@link SETTLE_MS}ms on
+ * top of the settled result — same opacity-only crossfade discipline as the
+ * edge settle above. `prefers-reduced-motion` suppresses it upstream (the
+ * apply handler never sets `layoutSettle`).
+ */
+export function LayoutSettleOverlay() {
+  const settle = useCanvasState((s) => s.layoutSettle);
+  const store = useCanvasStore();
+  const [opacity, setOpacity] = useState(1);
+
+  useEffect(() => {
+    if (!settle) return;
+    setOpacity(1);
+    const raf =
+      typeof requestAnimationFrame === 'function'
+        ? requestAnimationFrame(() => setOpacity(0))
+        : (setTimeout(() => setOpacity(0), 0) as unknown as number);
+    const done = setTimeout(() => store.setState({ layoutSettle: null }), SETTLE_MS + 40);
+    return () => {
+      if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(raf);
+      clearTimeout(done);
+    };
+  }, [settle, store]);
+
+  if (!settle) return null;
+  return (
+    <g
+      data-layout-settle
+      pointerEvents="none"
+      aria-hidden="true"
+      opacity={opacity}
+      style={{ transition: `opacity ${SETTLE_MS}ms ease-out` }}
+    >
+      {settle.ghosts.map((ghost) => (
+        <rect
+          key={ghost.id}
+          className="bpmnr-layout-settle-ghost"
+          x={ghost.x}
+          y={ghost.y}
+          width={ghost.width}
+          height={ghost.height}
+          rx={8}
+        />
+      ))}
+    </g>
+  );
+}

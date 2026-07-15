@@ -12,6 +12,7 @@ export * from './events/EventBus.js';
 export * from './geometry/index.js';
 export * from './geometry/astar.js';
 export * from './geometry/boundary.js';
+export * from './geometry/layout.js';
 
 // Commands
 export * from './commands/types.js';

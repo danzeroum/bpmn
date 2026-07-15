@@ -1,0 +1,47 @@
+{
+  "name": "@buildtovalue/lint",
+  "version": "1.0.0",
+  "description": "bpmnlint-style extensible modelling lint for bpmn-react: an etiquette profile (naming, superfluous gateways, implicit splits/joins, duplicate flows) and an executability profile (engine-readiness checks), delivered as plugin-compatible validation rules. Zero runtime dependencies.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@buildtovalue/core": "workspace:*"
+  },
+  "keywords": [
+    "bpmn",
+    "lint",
+    "bpmnlint",
+    "style-guide",
+    "executability"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/lint"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -42,6 +42,9 @@ const EXPECTED_EXPORTS = [
   // Handoff 9 CP-5 — copilot prompt-template adapter (dogfooding §1.5).
   'activeCopilotPromptVersion',
   'copilotPromptAdapter',
+  // Handoff 14 §1d — lint profiles as promotable Biblioteca artifacts.
+  'activeLintProfileVersion',
+  'lintProfileAdapter',
 ].sort();
 
 describe('@buildtovalue/adapters-bpmn public API surface', () => {

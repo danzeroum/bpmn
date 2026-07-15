@@ -575,22 +575,20 @@ describe('BpmnXmlConverter.fromXml — external documents', () => {
     expect(warnings.some((w) => w.includes('transaction'))).toBe(true);
   });
 
-  it('drops complexGateway with a named warning suggesting an inclusive gateway', () => {
+  it('imports complexGateway natively and round-trips it (referência item 5)', () => {
     const xml = `<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL">
       <process id="p">
         <startEvent id="s"/>
-        <complexGateway id="cx"/>
+        <complexGateway id="cx" name="Complex merge"/>
       </process>
     </definitions>`;
     const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
-    expect(diagram.nodes.cx).toBeUndefined();
-    const warning = warnings.find((w) => w.includes('complexGateway'));
-    expect(warning).toBeDefined();
-    // Names the element (with its id) and points at the concrete remedy —
-    // not the generic "Ignored unsupported element" line.
-    expect(warning).toContain('id="cx"');
-    expect(warning).toContain('inclusive gateway');
-    expect(warning).not.toContain('Ignored unsupported element');
+    expect(diagram.nodes.cx).toBeDefined();
+    expect(diagram.nodes.cx.type).toBe('complexGateway');
+    expect(diagram.nodes.cx.label).toBe('Complex merge');
+    expect(warnings.some((w) => w.includes('complexGateway'))).toBe(false);
+    const reExported = new BpmnXmlConverter().toXml(diagram);
+    expect(reExported).toContain('<bpmn:complexGateway id="cx" name="Complex merge"');
   });
 
   it('applies a grid layout and warns when DI is missing', () => {
@@ -1026,8 +1024,8 @@ describe('BpmnXmlConverter — call activities & data elements (F7-3)', () => {
       </bpmn:process>
     </bpmn:definitions>`;
     const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
-    // Only the missing-DI grid fallback — property/ioSpecification are silent.
-    expect(warnings).toEqual(['Document has no BPMN DI — applied automatic grid layout']);
+    // Only the missing-DI layout fallback — property/ioSpecification are silent.
+    expect(warnings).toEqual(['Document has no BPMN DI — applied automatic layered layout']);
     expect(diagram.nodes.T1.type).toBe('task');
     expect(diagram.nodes.Store_1.type).toBe('dataStore');
     // Input edge targets the OWNING ACTIVITY, not the synthesized property.

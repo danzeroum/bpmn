@@ -6,6 +6,44 @@ correspondente. Novas decisões entram no topo da seção "Decisões recentes".
 
 ## Decisões recentes (rodada de melhorias, 2026-07-14)
 
+- **Handoff 14 / 1d — o LintPanel é dono de `issueBadges` enquanto aberto (U-5):** ao
+  abrir, o dock espelha seus findings como badges de canvas (mesmo campo que o Validate
+  e o PromotionPanel populam — última superfície vence); ao fechar, limpa. Os badges
+  nunca vazam para o export: além dos elementos `[data-node-issue]` (já em
+  `TRANSIENT_SELECTORS`), o exporter agora remove **atributos** transitórios
+  (`TRANSIENT_ATTRIBUTES`, hoje `data-node-issue-state`) — extensão do padrão
+  "export mid-gesture" adotado na U-3.
+- **Handoff 14 / 1c+1d — `panViewportTo`/`reducedMotion` viraram API pública:** o pan
+  animado da busca foi extraído para `canvas/viewport.ts` e é reusado pelo painel de
+  lint (ordem da validação da U-4: "reuse o pan animado, não crie mecanismo novo");
+  como `index.ts` reexporta o módulo, os dois helpers entraram no apiSurface —
+  deliberado, hosts ganham a MESMA navegação animada.
+- **Handoff 14 / 1d — perfis de lint versionados como identidade de artefato:**
+  `LintProfile {id, name, version, source, rules}` no `@buildtovalue/lint`
+  (`lint-etiquette@1.0.0`, `lint-engine@1.0.0`); o header do painel e o
+  `lintProfileAdapter` da Biblioteca leem o MESMO registro `LINT_PROFILES` (padrão
+  anti-drift do copilotPromptAdapter). Mudar regra = nova versão promovível.
+- **Handoff 14 / 1a — Esc não fecha o context pad pela pilha de dismissal** (validado
+  na U-1): o pad é affordance passiva da seleção (como portas e resize handles), não
+  um overlay aberto pelo usuário — Esc limpa a seleção e o pad some junto. Entrada
+  própria na pilha mudaria a semântica do primeiro Esc sem ganho.
+- **Handoff 14 / 1g — colunas comparativas ANEXADAS à U-6** (decisão revista na
+  validação da U-5; a U-1 havia aberto U-7): extensão do gerador anti-drift
+  (`THIRD_PARTY_DECLARATIONS`) com células de terceiros sempre "declarado pela doc
+  deles" com link no cabeçalho da coluna — nunca claim próprio sobre concorrentes;
+  "—" significa "sem declaração registrada", não falta de suporte.
+- **Handoff 14 / 1e — import sem DI usa o layout layered** (era grade): mesma
+  regra de sempre — aplica direto COM aviso declarado (não há geometria do usuário
+  para propor contra); grade permanece como fallback para diagramas com
+  pools/lanes (fora do escopo do motor v1). Impacto medido antes: corpus 61/61.
+- **Handoff 14 / 1f — contrato `BpmnPlugin.engine` (EngineBridge):** a aba
+  "Execução" só existe com plugin de engine (primeiro vence); a verdade da
+  assinatura (`isSigned`) e o transporte de deploy são do HOST — o editor só
+  aplica o gate (VIGENTE + assinada) e o card de bloqueio. Deploy de rede segue
+  fora de escopo (§3).
+- **Handoff 14 / 1e — translado de rotas 📍 no auto-layout reusa `translateManualEdges`
+  (R-3)**, translação rígida, sem mecanismo novo (correção definida na validação da U-1).
+
 - **Receita de hash do ledger versionada (v2).** `computeEntryHash` passa a despachar por
   `AuditEntry.hashVersion`: entradas novas usam v2 = SHA-256 de `canonicalJsonExact` do objeto
   inteiro (sem arredondamento numérico e sem o `join('|')` ambíguo do preimage v1); entradas

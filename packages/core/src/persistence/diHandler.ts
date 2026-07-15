@@ -1,6 +1,7 @@
 import type { BpmnDiagram, BpmnEdge, Point } from '../model/types.js';
 import { activeNodes, isContainerType } from '../model/types.js';
 import { routeOrthogonal } from '../geometry/index.js';
+import { computeLayeredLayout } from '../geometry/layout.js';
 import type { XmlBuilder } from '../xml/XmlBuilder.js';
 import {
   childrenByLocalName,
@@ -111,18 +112,48 @@ export class DIHandler {
       }
     }
 
-    // If no DI at all, spread nodes on a simple grid so the import is usable.
+    // If no DI at all, lay the process out so the import is usable — this is
+    // the ONE case where a layout applies directly (with a declared warning,
+    // Handoff 14 §1e): there is no user geometry to propose against. The
+    // layered (Sugiyama-lite) engine follows the flow; diagrams outside its
+    // scope (pools/lanes) fall back to the simple grid.
     const hasAnyDi = shapes.length > 0;
     if (!hasAnyDi) {
       const nodes = activeNodes(diagram);
-      nodes.forEach((node, index) => {
-        diagram.nodes[node.id] = {
-          ...node,
-          x: 80 + (index % 4) * 200,
-          y: 80 + Math.floor(index / 4) * 140,
-        };
-      });
-      if (nodes.length > 0) warnings.push('Document has no BPMN DI — applied automatic grid layout');
+      const layered = nodes.length > 0 ? computeLayeredLayout(diagram) : null;
+      if (layered) {
+        for (const [id, to] of layered) {
+          const node = diagram.nodes[id];
+          if (node) diagram.nodes[id] = { ...node, x: to.x, y: to.y };
+        }
+        // Artifacts/data nodes sit outside the flow-layout scope — park them
+        // on a deterministic grid below the laid-out flow.
+        let maxY = 0;
+        for (const id of layered.keys()) {
+          const node = diagram.nodes[id];
+          if (node) maxY = Math.max(maxY, node.y + node.height);
+        }
+        const leftovers = nodes.filter(
+          (n) => !layered.has(n.id) && !isContainerType(n.type),
+        );
+        leftovers.forEach((node, index) => {
+          diagram.nodes[node.id] = {
+            ...node,
+            x: 80 + (index % 4) * 200,
+            y: maxY + 80 + Math.floor(index / 4) * 140,
+          };
+        });
+        warnings.push('Document has no BPMN DI — applied automatic layered layout');
+      } else {
+        nodes.forEach((node, index) => {
+          diagram.nodes[node.id] = {
+            ...node,
+            x: 80 + (index % 4) * 200,
+            y: 80 + Math.floor(index / 4) * 140,
+          };
+        });
+        if (nodes.length > 0) warnings.push('Document has no BPMN DI — applied automatic grid layout');
+      }
     }
   }
 }

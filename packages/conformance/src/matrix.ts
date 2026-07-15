@@ -63,7 +63,7 @@ export const CONFORMANCE_MATRIX: ConformanceEntry[] = [
   { element: 'bpmn:parallelGateway', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'parallelGateway' },
   { element: 'bpmn:inclusiveGateway', status: 'supported', conformanceClass: 'analytic', mappedTo: 'inclusiveGateway' },
   { element: 'bpmn:eventBasedGateway', status: 'supported', conformanceClass: 'analytic', mappedTo: 'eventBasedGateway' },
-  { element: 'bpmn:complexGateway', status: 'unsupported', conformanceClass: 'extended', notes: 'Ignored with a warning (import degrades).' },
+  { element: 'bpmn:complexGateway', status: 'supported', conformanceClass: 'extended', mappedTo: 'complexGateway' },
   // Connecting objects
   { element: 'bpmn:sequenceFlow', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'sequenceFlow' },
   { element: 'bpmn:messageFlow', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'messageFlow' },
@@ -78,7 +78,7 @@ export const CONFORMANCE_MATRIX: ConformanceEntry[] = [
   { element: 'bpmn:textAnnotation', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'textAnnotation' },
   { element: 'bpmn:group', status: 'supported', conformanceClass: 'analytic', mappedTo: 'group' },
   // DI
-  { element: 'bpmndi:BPMNDiagram / BPMNShape / BPMNEdge', status: 'supported', conformanceClass: 'descriptive', notes: 'Missing DI falls back to an automatic grid layout (warning).' },
+  { element: 'bpmndi:BPMNDiagram / BPMNShape / BPMNEdge', status: 'supported', conformanceClass: 'descriptive', notes: 'Missing DI falls back to an automatic layered layout (warning; grid when pools/lanes are present).' },
   // Other diagram kinds
   { element: 'conversation / choreography diagrams', status: 'unsupported', conformanceClass: 'extended', notes: 'Deliberately out of scope.' },
 ];

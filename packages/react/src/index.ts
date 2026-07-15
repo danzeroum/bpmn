@@ -95,3 +95,10 @@ export { PT_BR } from './i18n/ptBR.js';
 // Optional off-thread compute (Handoff 11 N-8): sync default + worker opt-in.
 export * from './workers/executor.js';
 export * from './workers/jobs.js';
+
+export { SearchPanel } from './ui/SearchPanel.js';
+export { LintPanel } from './ui/LintPanel.js';
+export type { LintPanelProps } from './ui/LintPanel.js';
+export { LayoutProposalCard } from './ui/LayoutProposalCard.js';
+export { buildLayoutProposal } from './canvas/arrange.js';
+export type { LayoutMove, LayoutProposal } from './canvas/arrange.js';

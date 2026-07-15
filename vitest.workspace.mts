@@ -38,6 +38,13 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'lint',
+      include: ['packages/lint/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'soundness',
       include: ['packages/soundness/tests/**/*.test.ts'],
       environment: 'node',

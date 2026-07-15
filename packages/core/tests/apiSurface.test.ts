@@ -76,6 +76,10 @@ const EXPECTED_EXPORTS = [
   'isFlowNode',
   'isFlowEdge',
   'flowScopeOf',
+  // Layered auto-layout + align/distribute (referência item 2).
+  'computeLayeredLayout',
+  'alignPositions',
+  'distributePositions',
   'childrenByLocalName',
   'clamp',
   'collapseWaypoints',

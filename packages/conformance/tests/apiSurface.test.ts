@@ -16,6 +16,8 @@ const EXPECTED_EXPORTS = [
   'EXTERNAL_CORPUS_MIN',
   'EXTERNAL_CORPUS_SOURCES',
   'GENERATED_CORPUS_FILES',
+  // Handoff 14 §1g — third-party columns ("declarado pela doc deles").
+  'THIRD_PARTY_DECLARATIONS',
 ].sort();
 
 describe('@buildtovalue/conformance public API surface', () => {

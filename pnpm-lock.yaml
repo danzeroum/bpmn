@@ -77,6 +77,9 @@ importers:
       '@buildtovalue/library':
         specifier: workspace:*
         version: link:../library
+      '@buildtovalue/lint':
+        specifier: workspace:*
+        version: link:../lint
       '@buildtovalue/registry':
         specifier: workspace:*
         version: link:../registry
@@ -281,6 +284,12 @@ importers:
         specifier: workspace:*
         version: link:../adapters-bpmn
 
+  packages/lint:
+    dependencies:
+      '@buildtovalue/core':
+        specifier: workspace:*
+        version: link:../core
+
   packages/react:
     dependencies:
       '@buildtovalue/agentflow':
@@ -295,6 +304,9 @@ importers:
       '@buildtovalue/identity':
         specifier: workspace:*
         version: link:../identity
+      '@buildtovalue/lint':
+        specifier: workspace:*
+        version: link:../lint
       '@buildtovalue/replay':
         specifier: workspace:*
         version: link:../replay
