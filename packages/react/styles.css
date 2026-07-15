@@ -359,10 +359,18 @@
 
 /* Smart alignment guides (referência item 2). */
 .bpmnr-align-guide {
-  stroke: var(--bpmnr-selected, #1a6a54);
+  stroke: var(--btv-error, #b3372f);
   stroke-width: 1;
   stroke-dasharray: 4 3;
   opacity: 0.9;
+}
+.bpmnr-spacing-badge {
+  fill: var(--btv-error, #b3372f);
+}
+.bpmnr-spacing-badge-text {
+  fill: #ffffff;
+  font-size: 8.5px;
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
 }
 
 /* Context pad (referência item 1): action buttons beside the selected node. */

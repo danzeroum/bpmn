@@ -66,17 +66,19 @@ describe('align/distribute via context menu', () => {
 });
 
 describe('smart guide snapping (pure)', () => {
+  const VIEWPORT = { x: 0, y: 0, width: 1200, height: 800 };
+
   it('magnetizes within the threshold and emits a guide', () => {
     const diagram = messy();
     // Drag `a` so its top would land 4px off `b`'s top: 10 - 400 = -390 → dy -386.
-    const snap = computeGuideSnap(diagram, null, diagram.nodes.a, 0, -386, new Set(['a']));
+    const snap = computeGuideSnap(diagram, null, VIEWPORT, diagram.nodes.a, 0, -386, new Set(['a']));
     expect(snap.dy).toBe(-390);
     expect(snap.guides.some((g) => g.axis === 'h' && g.position === 10)).toBe(true);
   });
 
   it('leaves the offset alone outside the threshold', () => {
     const diagram = messy();
-    const snap = computeGuideSnap(diagram, null, diagram.nodes.a, 0, -300, new Set(['a']));
+    const snap = computeGuideSnap(diagram, null, VIEWPORT, diagram.nodes.a, 0, -300, new Set(['a']));
     expect(snap.dy).toBe(-300);
   });
 });

@@ -390,12 +390,14 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
           // Smart guides (item 2): single-root drags magnetize to neighbors'
           // edges/centers; the final pixels win over the grid snap.
           let alignGuides: ReturnType<typeof computeGuideSnap>['guides'] | null = null;
+          let spacingBadges: ReturnType<typeof computeGuideSnap>['badges'] | null = null;
           if (active && state.dragState.rootIds.length === 1) {
             const root = diagramRef.current.nodes[state.dragState.rootIds[0]];
             if (root) {
               const snap = computeGuideSnap(
                 diagramRef.current,
                 state.drillId,
+                state.viewport,
                 root,
                 dx,
                 dy,
@@ -404,6 +406,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
               dx = snap.dx;
               dy = snap.dy;
               alignGuides = snap.guides.length > 0 ? snap.guides : null;
+              spacingBadges = snap.badges.length > 0 ? snap.badges : null;
             }
           }
           const dropLaneId = active
@@ -434,6 +437,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
             dragState: { ...state.dragState, dx, dy, active, dropLaneId, reparentTargetId },
             boundarySnap,
             alignGuides,
+            spacingBadges,
           });
           return;
         }
@@ -570,7 +574,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
       if (state.dragState) {
         const { nodeIds, rootIds, dx, dy, active, reparentTargetId } = state.dragState;
         const snap = state.boundarySnap;
-        store.setState({ dragState: null, boundarySnap: null, alignGuides: null });
+        store.setState({ dragState: null, boundarySnap: null, alignGuides: null, spacingBadges: null });
         if (active && (dx !== 0 || dy !== 0)) {
           const single = nodeIds.length === 1 ? diagramRef.current.nodes[nodeIds[0]] : undefined;
           // Handoff 11 N-1: a lone event dropped inside the snap zone

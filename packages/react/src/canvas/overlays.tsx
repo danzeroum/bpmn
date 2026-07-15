@@ -121,15 +121,16 @@ export function SelectionBoxOverlay() {
 }
 
 
-/** Smart alignment guide lines (referência item 2) — draw-only. */
+/** Smart alignment guides + equal-spacing badges (Handoff 14 §1b) — draw-only. */
 export function AlignmentGuidesOverlay() {
   const guides = useCanvasState((s) => s.alignGuides);
-  if (!guides) return null;
+  const badges = useCanvasState((s) => s.spacingBadges);
+  if (!guides && !badges) return null;
   return (
     <g pointerEvents="none" data-alignment-guides>
-      {guides.map((guide, index) => (
+      {guides?.map((guide, index) => (
         <line
-          key={index}
+          key={`g${index}`}
           className="bpmnr-align-guide"
           x1={guide.axis === 'v' ? guide.position : guide.from}
           x2={guide.axis === 'v' ? guide.position : guide.to}
@@ -137,6 +138,34 @@ export function AlignmentGuidesOverlay() {
           y2={guide.axis === 'v' ? guide.to : guide.position}
         />
       ))}
+      {badges?.map((b, index) => {
+        const mid = (b.from + b.to) / 2;
+        const x = b.axis === 'h' ? mid : b.position;
+        const y = b.axis === 'h' ? b.position : mid;
+        return (
+          <g key={`b${index}`} data-spacing-badge={b.value}>
+            <line
+              className="bpmnr-align-guide"
+              x1={b.axis === 'h' ? b.from : b.position}
+              x2={b.axis === 'h' ? b.to : b.position}
+              y1={b.axis === 'h' ? b.position : b.from}
+              y2={b.axis === 'h' ? b.position : b.to}
+            />
+            <rect
+              className="bpmnr-spacing-badge"
+              x={x - 19}
+              y={y - 8}
+              width={38}
+              height={16}
+              rx={8}
+            />
+            {/* i18n-exempt — numeric measurement, no prose */}
+            <text className="bpmnr-spacing-badge-text" x={x} y={y + 3.5} textAnchor="middle">
+              {b.value}px
+            </text>
+          </g>
+        );
+      })}
     </g>
   );
 }

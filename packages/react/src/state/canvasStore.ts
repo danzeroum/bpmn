@@ -90,6 +90,14 @@ export interface CanvasState {
   focusedElementId: string | null;
   /** Smart alignment guides drawn while a drag magnetizes (item 2). */
   alignGuides: Array<{ axis: 'v' | 'h'; position: number; from: number; to: number }> | null;
+  /** Equal-spacing badges (Handoff 14 §1b) drawn alongside the guides. */
+  spacingBadges: Array<{
+    axis: 'h' | 'v';
+    value: number;
+    from: number;
+    to: number;
+    position: number;
+  }> | null;
   /** Find bar visibility (Ctrl/Cmd+F — item 4). */
   searchOpen: boolean;
   hoveredId: string | null;
@@ -196,6 +204,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     selectedIds: [],
     focusedElementId: null,
     alignGuides: null,
+    spacingBadges: null,
     searchOpen: false,
     hoveredId: null,
     hoveredEdgeId: null,
