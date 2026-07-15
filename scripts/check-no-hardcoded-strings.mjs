@@ -53,6 +53,7 @@ const MIGRATED = [
   'packages/react/src/canvas/ContextPad.tsx',
   'packages/react/src/ui/SearchPanel.tsx',
   'packages/react/src/ui/LintPanel.tsx',
+  'packages/react/src/ui/LayoutProposalCard.tsx',
   'packages/react/src/copilot/CopilotPanel.tsx',
   'packages/react/src/agent/AgentStudio.tsx',
   'packages/react/src/simulation/SimulationPanel.tsx',

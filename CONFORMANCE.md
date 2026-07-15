@@ -59,8 +59,64 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:dataStoreReference` | ✅ supported | analytic | `dataStore` | Native dataStoreRef attribute; root-level <dataStore> declarations are not modelled. |
 | `bpmn:textAnnotation` | ✅ supported | descriptive | `textAnnotation` |  |
 | `bpmn:group` | ✅ supported | analytic | `group` |  |
-| `bpmndi:BPMNDiagram / BPMNShape / BPMNEdge` | ✅ supported | descriptive | — | Missing DI falls back to an automatic grid layout (warning). |
+| `bpmndi:BPMNDiagram / BPMNShape / BPMNEdge` | ✅ supported | descriptive | — | Missing DI falls back to an automatic layered layout (warning; grid when pools/lanes are present). |
 | `conversation / choreography diagrams` | ⛔ unsupported | extended | — | Deliberately out of scope. |
+
+## Comparativo — declarações de terceiros (Handoff 14 §1g)
+
+> **Regra de honestidade:** as células de terceiros refletem SOMENTE o que a
+> documentação do próprio fornecedor declara (link no cabeçalho da coluna) —
+> nunca verificação ou claim nosso sobre concorrentes. "—" significa apenas
+> "sem declaração registrada na fonte", **não** falta de suporte.
+
+| Element | bpmn-react | [bpmn-js (bpmn.io)](https://bpmn.io/toolkit/bpmn-js/) | [Camunda 8 (Zeebe)](https://docs.camunda.io/docs/components/modeler/bpmn/bpmn-coverage/) |
+|---|---|---|---|
+| `bpmn:task` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:userTask` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:serviceTask` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:scriptTask` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:sendTask` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:receiveTask` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:manualTask` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:businessRuleTask` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:subProcess` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:callActivity` | ✅ supported | modela (declarado) | executa (declarado) |
+| `btv:agentTask (extension)` | ✅ supported | — | — |
+| `bpmn:transaction` | ⛔ unsupported | modela (declarado) | — |
+| `bpmn:adHocSubProcess` | ⛔ unsupported | modela (declarado) | — |
+| `loopCharacteristics (standard)` | ✅ supported | modela (declarado) | — |
+| `loopCharacteristics (multiInstance)` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:startEvent` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:endEvent` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:intermediateCatchEvent` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:intermediateThrowEvent` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:boundaryEvent` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:messageEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:timerEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:errorEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:signalEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:escalationEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:conditionalEventDefinition` | ✅ supported | modela (declarado) | — |
+| `bpmn:linkEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:terminateEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
+| `eventSubProcess` | ⛔ unsupported | modela (declarado) | executa (declarado) |
+| `bpmn:exclusiveGateway` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:parallelGateway` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:inclusiveGateway` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:eventBasedGateway` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:complexGateway` | ✅ supported | modela (declarado) | — |
+| `bpmn:sequenceFlow` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:messageFlow` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:association` | ✅ supported | modela (declarado) | — |
+| `bpmn:dataAssociation` | ✅ supported | modela (declarado) | — |
+| `bpmn:participant (pool)` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:lane / laneSet` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:dataObjectReference` | ✅ supported | modela (declarado) | — |
+| `bpmn:dataStoreReference` | ✅ supported | modela (declarado) | — |
+| `bpmn:textAnnotation` | ✅ supported | modela (declarado) | — |
+| `bpmn:group` | ✅ supported | modela (declarado) | — |
+| `bpmndi:BPMNDiagram / BPMNShape / BPMNEdge` | ✅ supported | modela (declarado) | — |
+| `conversation / choreography diagrams` | ⛔ unsupported | — | — |
 
 Interoperability is exercised by the corpus in `packages/conformance/corpus/`
 (structural equivalents of Camunda Modeler / bpmn.io / OMG-spec exports —

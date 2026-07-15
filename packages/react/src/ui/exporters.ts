@@ -27,6 +27,8 @@ const TRANSIENT_SELECTORS = [
   '[data-alignment-guides]',
   '[data-context-pad]',
   '[data-search-pulse]',
+  '[data-layout-preview]',
+  '[data-layout-settle]',
 ];
 
 /** Transient state ATTRIBUTES on otherwise-permanent elements (e.g. the node

@@ -58,10 +58,12 @@ describe('computeLayeredLayout', () => {
       }
   });
 
-  it('is deterministic', () => {
-    const a = computeLayeredLayout(chainDiagram())!;
-    const b = computeLayeredLayout(chainDiagram())!;
-    expect([...a.entries()]).toEqual([...b.entries()]);
+  it('is deterministic — same graph → same layout, 10×', () => {
+    const first = computeLayeredLayout(chainDiagram())!;
+    for (let run = 0; run < 10; run++) {
+      const next = computeLayeredLayout(chainDiagram())!;
+      expect([...next.entries()]).toEqual([...first.entries()]);
+    }
   });
 
   it('survives cycles without hanging and ranks every node', () => {

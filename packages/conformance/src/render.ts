@@ -3,6 +3,7 @@ import {
   CONFORMANCE_MATRIX,
   type ConformanceEntry,
 } from './matrix.js';
+import { THIRD_PARTY_DECLARATIONS } from './thirdParty.js';
 import {
   EXTERNAL_CORPUS_MAX,
   EXTERNAL_CORPUS_MIN,
@@ -49,6 +50,30 @@ export function renderConformanceMarkdown(entries: ConformanceEntry[] = CONFORMA
       `| \`${entry.element}\` | ${STATUS_BADGE[entry.status]} | ${entry.conformanceClass} | ${
         entry.mappedTo ? `\`${entry.mappedTo}\`` : '—'
       } | ${entry.notes ?? ''} |`,
+    );
+  }
+  // Handoff 14 §1g — comparative columns. Honesty rule (binding): third-party
+  // cells reflect ONLY what the linked vendor doc declares, never our claims.
+  lines.push(
+    '',
+    '## Comparativo — declarações de terceiros (Handoff 14 §1g)',
+    '',
+    '> **Regra de honestidade:** as células de terceiros refletem SOMENTE o que a',
+    '> documentação do próprio fornecedor declara (link no cabeçalho da coluna) —',
+    '> nunca verificação ou claim nosso sobre concorrentes. "—" significa apenas',
+    '> "sem declaração registrada na fonte", **não** falta de suporte.',
+    '',
+    `| Element | bpmn-react | ${THIRD_PARTY_DECLARATIONS.map(
+      (d) => `[${d.vendor}](${d.sourceUrl})`,
+    ).join(' | ')} |`,
+    `|---|---|${THIRD_PARTY_DECLARATIONS.map(() => '---').join('|')}|`,
+  );
+  for (const entry of entries) {
+    const cells = THIRD_PARTY_DECLARATIONS.map((d) =>
+      d.declaredElements.includes(entry.element) ? d.claim : '—',
+    );
+    lines.push(
+      `| \`${entry.element}\` | ${STATUS_BADGE[entry.status]} | ${cells.join(' | ')} |`,
     );
   }
   lines.push(

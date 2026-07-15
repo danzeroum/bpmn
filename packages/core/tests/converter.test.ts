@@ -1024,8 +1024,8 @@ describe('BpmnXmlConverter — call activities & data elements (F7-3)', () => {
       </bpmn:process>
     </bpmn:definitions>`;
     const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
-    // Only the missing-DI grid fallback — property/ioSpecification are silent.
-    expect(warnings).toEqual(['Document has no BPMN DI — applied automatic grid layout']);
+    // Only the missing-DI layout fallback — property/ioSpecification are silent.
+    expect(warnings).toEqual(['Document has no BPMN DI — applied automatic layered layout']);
     expect(diagram.nodes.T1.type).toBe('task');
     expect(diagram.nodes.Store_1.type).toBe('dataStore');
     // Input edge targets the OWNING ACTIVITY, not the synthesized property.

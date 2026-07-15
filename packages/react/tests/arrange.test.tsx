@@ -27,10 +27,13 @@ function nodeX(container: HTMLElement, id: string): number {
   return Number(transform.match(/translate\(([-\d.]+),/)![1]);
 }
 
-describe('toolbar auto-arrange (referência item 2)', () => {
-  it('lays the chain out left-to-right in one undoable command', () => {
+describe('toolbar auto-arrange (referência item 2 + Handoff 14 §1e)', () => {
+  it('proposes, and APPLYING lays the chain out left-to-right in one undoable command', () => {
     const { container } = render(<BpmnEditor diagram={messy()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Auto-arrange the diagram' }));
+    // §1.7: nothing moved yet — the card is a PROPOSAL.
+    expect(nodeX(container, 'start')).toBe(500);
+    fireEvent.click(screen.getByTestId('layout-apply'));
     expect(nodeX(container, 'start')).toBeLessThan(nodeX(container, 'a'));
     expect(nodeX(container, 'a')).toBeLessThan(nodeX(container, 'b'));
     expect(nodeX(container, 'b')).toBeLessThan(nodeX(container, 'end'));

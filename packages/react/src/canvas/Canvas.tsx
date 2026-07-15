@@ -11,11 +11,12 @@ import {
   AlignmentGuidesOverlay,
   BoundarySnapOverlay,
   ConnectionPreview,
+  LayoutPreviewOverlay,
   ReparentTargetOverlay,
   SearchPulseOverlay,
   SelectionBoxOverlay,
 } from './overlays.js';
-import { SettlingOverlay } from './SettlingOverlay.js';
+import { LayoutSettleOverlay, SettlingOverlay } from './SettlingOverlay.js';
 import { ContextPad } from './ContextPad.js';
 import { EdgeLabelEditor } from './EdgeLabelEditor.js';
 import { hiddenNodeIds } from './visibility.js';
@@ -156,6 +157,8 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
         <SelectionBoxOverlay />
         <AlignmentGuidesOverlay />
         <SearchPulseOverlay />
+        <LayoutPreviewOverlay />
+        <LayoutSettleOverlay />
         <EdgeLabelEditor />
         {overlay}
       </g>

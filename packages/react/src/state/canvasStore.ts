@@ -1,4 +1,4 @@
-import type { Point } from '@buildtovalue/core';
+import type { Command, Point } from '@buildtovalue/core';
 import { createStore, type Store } from './createStore.js';
 
 export interface Viewport {
@@ -103,6 +103,20 @@ export interface CanvasState {
   /** Lint panel visibility — the bottom problems dock (Handoff 14 §1d). */
   lintOpen: boolean;
   /**
+   * Pending auto-layout proposal (Handoff 14 §1e, cerca §1.7): the canvas
+   * shows target-position ghosts and the Aplicar/Recusar card; NOTHING moves
+   * until the user applies. Refusing (or Esc) just clears this.
+   */
+  layoutProposal: LayoutProposalState | null;
+  /**
+   * 160ms crossfade after applying a layout: ghosts of the OLD positions
+   * fading out over the settled result (reduced-motion → never set).
+   */
+  layoutSettle: {
+    ghosts: Array<{ id: string; x: number; y: number; width: number; height: number }>;
+    token: number;
+  } | null;
+  /**
    * Two halo pulses around a search hit (Handoff 14 §1c). `token` re-triggers
    * the CSS animation on consecutive hits; null under reduced motion.
    */
@@ -155,6 +169,26 @@ export interface CanvasState {
   contextMenu: ContextMenuState | null;
   /** Edge whose label is being edited inline (N-5 "Editar rótulo"). */
   editingEdgeId: string | null;
+}
+
+/**
+ * The pending auto-layout (Handoff 14 §1e) as the store carries it. Matches
+ * `LayoutProposal` from `canvas/arrange.ts` structurally — the store module
+ * stays dependency-light (core types only).
+ */
+export interface LayoutProposalState {
+  command: Command;
+  moved: Array<{
+    id: string;
+    from: Point;
+    to: Point;
+    width: number;
+    height: number;
+  }>;
+  reroutedCount: number;
+  manualCount: number;
+  /** Discard the proposal when the diagram changes underneath it. */
+  baseDiagram: unknown;
 }
 
 export interface BoundarySnapTarget {
@@ -214,6 +248,8 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     spacingBadges: null,
     searchOpen: false,
     lintOpen: false,
+    layoutProposal: null,
+    layoutSettle: null,
     searchPulse: null,
     hoveredId: null,
     hoveredEdgeId: null,

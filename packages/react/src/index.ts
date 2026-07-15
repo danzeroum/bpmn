@@ -99,3 +99,6 @@ export * from './workers/jobs.js';
 export { SearchPanel } from './ui/SearchPanel.js';
 export { LintPanel } from './ui/LintPanel.js';
 export type { LintPanelProps } from './ui/LintPanel.js';
+export { LayoutProposalCard } from './ui/LayoutProposalCard.js';
+export { buildLayoutProposal } from './canvas/arrange.js';
+export type { LayoutMove, LayoutProposal } from './canvas/arrange.js';

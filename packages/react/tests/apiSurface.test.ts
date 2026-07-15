@@ -167,6 +167,11 @@ const EXPECTED_EXPORTS = [
   'LintPanel',
   'panViewportTo',
   'reducedMotion',
+  // Handoff 14 §1e — auto-layout as a PROPOSAL (card + preview + crossfade).
+  'LayoutProposalCard',
+  'buildLayoutProposal',
+  'LayoutPreviewOverlay',
+  'LayoutSettleOverlay',
   'SearchPulseOverlay',
   'SettlingOverlay',
   'SETTLE_MS',

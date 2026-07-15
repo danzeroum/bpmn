@@ -203,3 +203,38 @@ export function SearchPulseOverlay() {
     </g>
   );
 }
+
+/**
+ * Target-position ghosts of the pending auto-layout (Handoff 14 §1e): while
+ * the Aplicar/Recusar card is open, every node the layout wants to move shows
+ * a dashed outline at its PROPOSED position — the "DEPOIS" preview. Nothing
+ * on the real diagram moves until the user applies. Stripped from exports
+ * (TRANSIENT_SELECTORS).
+ */
+export function LayoutPreviewOverlay() {
+  const proposal = useCanvasState((s) => s.layoutProposal);
+  if (!proposal) return null;
+  return (
+    <g pointerEvents="none" data-layout-preview>
+      {proposal.moved.map((move) => (
+        <g key={move.id}>
+          <line
+            className="bpmnr-layout-preview-trace"
+            x1={move.from.x + move.width / 2}
+            y1={move.from.y + move.height / 2}
+            x2={move.to.x + move.width / 2}
+            y2={move.to.y + move.height / 2}
+          />
+          <rect
+            className="bpmnr-layout-preview-ghost"
+            x={move.to.x}
+            y={move.to.y}
+            width={move.width}
+            height={move.height}
+            rx={8}
+          />
+        </g>
+      ))}
+    </g>
+  );
+}

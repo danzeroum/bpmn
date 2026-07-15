@@ -10,17 +10,28 @@ import { useCanvasState } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { backToAutoPatch, isManualEdge } from '../canvas/routeEdge.js';
 import { useT } from '../i18n/I18nContext.js';
+import type { EngineBridge } from '../plugins/types.js';
 
 /**
  * Inspector for the selected element: label, purpose (edges) and free-form
  * properties. Property values are JSON — strings can be typed directly.
+ *
+ * Handoff 14 §1f: with an engine plugin registered (`plugin.engine`), an
+ * executable activity ALSO gets an "Execução" tab — progressive disclosure
+ * (job type + retries visible, the rest foldable) and the GATED deploy
+ * (VIGENTE + assinada, or the "⚑ Deploy bloqueado" card). Without an engine
+ * plugin the panel is byte-identical to before.
  */
 export function PropertiesPanel() {
   const { diagram } = useDiagram();
-  const { inspectorSections } = useEditorConfig();
+  const { inspectorSections, engine } = useEditorConfig();
   const selectedIds = useCanvasState((s) => s.selectedIds);
   const readOnly = useCanvasState((s) => s.readOnly);
   const t = useT();
+  const [tab, setTab] = useState<'general' | 'execution'>('general');
+  const selectedId = selectedIds.length === 1 ? selectedIds[0] : null;
+  // Selecting another element always lands on the general tab.
+  useEffect(() => setTab('general'), [selectedId]);
 
   if (selectedIds.length !== 1) {
     return (
@@ -37,18 +48,162 @@ export function PropertiesPanel() {
   const id = selectedIds[0];
   const node = diagram.nodes[id];
   const edge = diagram.edges[id];
+  const executable = node !== undefined && isExecutableActivity(node);
+  const showTabs = engine !== null && executable;
+  const activeTab = showTabs ? tab : 'general';
   return (
     <aside className="bpmnr-inspector" aria-label={t('properties.title')}>
-      {node && <NodeInspector node={node} readOnly={readOnly} />}
-      {/* Plugin sections (Handoff 5, wireframe 2d) — e.g. DMN "Decisão". */}
-      {node &&
-        inspectorSections
-          .filter((section) => section.appliesTo(node))
-          .map((section) => <section.component key={section.id} node={node} />)}
-      {edge && <EdgeInspector edge={edge} readOnly={readOnly} />}
-      {!node && !edge && <p className="bpmnr-inspector-empty">{t('properties.elementNotFound')}</p>}
+      {showTabs && (
+        <div className="bpmnr-inspector-tabs" role="tablist" aria-label={t('properties.tabsAria')}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'general'}
+            data-inspector-tab="general"
+            onClick={() => setTab('general')}
+          >
+            {t('properties.tab.general')}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'execution'}
+            data-inspector-tab="execution"
+            onClick={() => setTab('execution')}
+          >
+            {t('properties.tab.execution')}
+          </button>
+        </div>
+      )}
+      {activeTab === 'execution' && showTabs && engine && node ? (
+        <ExecutionInspector node={node} engine={engine} readOnly={readOnly} />
+      ) : (
+        <>
+          {node && <NodeInspector node={node} readOnly={readOnly} />}
+          {/* Plugin sections (Handoff 5, wireframe 2d) — e.g. DMN "Decisão". */}
+          {node &&
+            inspectorSections
+              .filter((section) => section.appliesTo(node))
+              .map((section) => <section.component key={section.id} node={node} />)}
+          {edge && <EdgeInspector edge={edge} readOnly={readOnly} />}
+          {!node && !edge && (
+            <p className="bpmnr-inspector-empty">{t('properties.elementNotFound')}</p>
+          )}
+        </>
+      )}
     </aside>
   );
+}
+
+/** Activities an engine can execute — tasks, call activities, sub-processes. */
+function isExecutableActivity(node: BpmnNode): boolean {
+  return (
+    node.type.toLowerCase().includes('task') ||
+    node.type === 'callActivity' ||
+    node.type === 'subProcess'
+  );
+}
+
+/**
+ * The "Execução" tab (Handoff 14 §1f): ESSENTIAL fields visible (job type,
+ * retries), everything else foldable, and the GATED deploy — only an ACTIVE
+ * (VIGENTE) **and signed** version deploys; otherwise the blocked card with
+ * "Ir para promoção →".
+ */
+function ExecutionInspector({
+  node,
+  engine,
+  readOnly,
+}: {
+  node: BpmnNode;
+  engine: EngineBridge;
+  readOnly: boolean;
+}) {
+  const { diagram, execute } = useDiagram();
+  const t = useT();
+  const jobTypeKey = engine.jobTypeKey ?? `${engine.id}:taskDefinitionType`;
+  const retriesKey = engine.retriesKey ?? `${engine.id}:retries`;
+  const commitProperty = (key: string) => (value: string) =>
+    execute(updateNodeCommand(node.id, { properties: { [key]: value } }));
+  const advanced = Object.entries(node.properties).filter(
+    ([key]) => key.startsWith(`${engine.id}:`) && key !== jobTypeKey && key !== retriesKey,
+  );
+  const status = diagram.version.status;
+  const signed = engine.isSigned?.(diagram) ?? false;
+  const canDeploy = status === 'active' && signed;
+
+  return (
+    <div data-inspector-execution={node.id}>
+      <h3 className="bpmnr-inspector-title">
+        {t('execution.title')}
+        {engine.name ? <span className="bpmnr-inspector-engine"> · {engine.name}</span> : null}
+      </h3>
+      <p className="bpmnr-inspector-kicker">{t('execution.essential')}</p>
+      <Field
+        label={t('execution.jobType')}
+        value={stringProperty(node, jobTypeKey)}
+        readOnly={readOnly}
+        onCommit={commitProperty(jobTypeKey)}
+      />
+      <Field
+        label={t('execution.retries')}
+        value={stringProperty(node, retriesKey)}
+        readOnly={readOnly}
+        onCommit={commitProperty(retriesKey)}
+      />
+      <details className="bpmnr-inspector-advanced" data-testid="execution-advanced">
+        <summary>{t('execution.advanced')}</summary>
+        {advanced.length === 0 && (
+          <p className="bpmnr-inspector-empty">{t('execution.noAdvanced')}</p>
+        )}
+        {advanced.map(([key, value]) => (
+          <Field
+            key={key}
+            label={key}
+            value={typeof value === 'string' ? value : JSON.stringify(value)}
+            readOnly={readOnly}
+            onCommit={commitProperty(key)}
+          />
+        ))}
+      </details>
+      <div className="bpmnr-inspector-deploy">
+        {canDeploy ? (
+          <button
+            type="button"
+            className="bpmnr-inspector-deploy-button"
+            data-testid="engine-deploy"
+            disabled={readOnly}
+            onClick={() => void engine.deploy?.(diagram)}
+          >
+            {t('execution.deploy')}
+          </button>
+        ) : (
+          <div className="bpmnr-inspector-deploy-blocked" data-testid="engine-blocked">
+            <strong>
+              {/* i18n-exempt — blocked flag glyph */}⚑ {t('execution.blockedTitle')}
+            </strong>
+            <p>
+              {t('execution.blockedBody', {
+                status: t(`status.${status}`),
+              })}
+            </p>
+            <button
+              type="button"
+              data-testid="engine-go-promote"
+              onClick={() => engine.onRequestPromotion?.()}
+            >
+              {t('execution.goToPromotion')} →
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function stringProperty(node: BpmnNode, key: string): string {
+  const value = node.properties[key];
+  return typeof value === 'string' ? value : value === undefined ? '' : JSON.stringify(value);
 }
 
 function NodeInspector({ node, readOnly }: { node: BpmnNode; readOnly: boolean }) {

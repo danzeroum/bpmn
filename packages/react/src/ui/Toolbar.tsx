@@ -17,7 +17,7 @@ import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { useT } from '../i18n/I18nContext.js';
 import { fitViewport, zoomViewportAt } from '../canvas/viewport.js';
 import { clearRoutingCommands } from '../canvas/routeEdge.js';
-import { buildLayoutCommand } from '../canvas/arrange.js';
+import { buildLayoutProposal } from '../canvas/arrange.js';
 import { downloadFile, exportPng, exportSvg } from './exporters.js';
 import { clearAutosave } from '../state/autosave.js';
 import { GovernanceBreadcrumb, type GovernanceBreadcrumbLevel } from './GovernanceBreadcrumb.js';
@@ -165,9 +165,10 @@ export function Toolbar({ extra }: ToolbarProps) {
     })),
   ];
 
+  // Handoff 14 §1e (cerca §1.7): "Arrumar" PROPOSES — the card applies/refuses.
   const arrange = () => {
-    const command = buildLayoutCommand(diagram);
-    if (command) execute(command);
+    const proposal = buildLayoutProposal(diagram);
+    if (proposal) store.setState({ layoutProposal: proposal });
   };
 
   const drillTo = (targetId: string | null) => {

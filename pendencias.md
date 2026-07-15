@@ -112,15 +112,17 @@ retrato congelado da U-1 (validada); o estado vivo é este:
 - **U-3** smart guides (1b) — ✅ validada 100% (padrão "export mid-gesture"
   adotado para toda superfície transiente).
 - **U-4** busca (1c) — ✅ validada 100% (cap 8 + overflow registrado).
-- **U-5** painel de lint (1d) — entregue, aguardando validação: dock inferior
-  redimensionável (`LintPanel`), contrato `fix(ctx)→command` no
-  `@buildtovalue/lint` (fixes: duplicate-flow, superfluous-gateway,
-  event-endpoints), "corrigir todos" = 1 composto, ✦ C5 gated por `AIProvider`,
-  `lintProfileAdapter` na Biblioteca, perfil engine na MESMA superfície.
-- **U-6** auto-layout proposta/recusa + translado das 📍 via
-  `translateManualEdges` + aba Execução/deploy gated (1e+1f) — próxima.
-- **U-7** matriz comparativa 1g (colunas de terceiros "declarado pela doc
-  deles" + script anti-drift) — por último, decisão registrada.
+- **U-5** painel de lint (1d) — ✅ validada 100% (`TRANSIENT_ATTRIBUTES` adotado
+  como evolução do export mid-gesture).
+- **U-6** (última) — entregue, aguardando validação: auto-layout por PROPOSTA
+  (card aplicar/recusar + contagens + crossfade 160ms + preview ghosts),
+  translado rígido das 📍 via `translateManualEdges`, layered no import sem DI
+  (corpus 61/61 medido antes), aba "Execução" (`BpmnPlugin.engine`, progressive
+  disclosure, deploy gated VIGENTE+assinada), e 1g anexada (colunas comparativas
+  "declarado pela doc deles" no CONFORMANCE.md).
+- **Balanço final**: `docs/design_handoff_btv_ux_craft/RECONCILIACAO.md`
+  atualizado — placar 42 ✅ + 2 📌 (passthrough `zeebe:*` adiado com aval da
+  spec; publicação em site = pendência de produto). Não restam ⚠ nem ⬜.
 
 ## 3. Multi-pool / colaboração real (decisão de escopo de produto)
 

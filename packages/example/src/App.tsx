@@ -160,6 +160,25 @@ const menuPlugin: BpmnPlugin = {
 
 const PLUGINS = [domainExamplePlugin, dmnDemoPlugin, healthcarePlugin, observabilityPlugin, soundnessPlugin, bindingPlugin, menuPlugin];
 
+// Engine bridge demo (`?engine=candidate|active`, Handoff 14 §1f): turns on
+// the properties panel's "Execução" tab. The signature truth is host-owned —
+// here `?signed=1` plays the host ledger; deploy just marks the DOM so the
+// e2e can observe the gate.
+const engineBridgePlugin: BpmnPlugin = {
+  id: 'demo/engine-bridge',
+  engine: {
+    id: 'zeebe',
+    name: 'Camunda 8 (Zeebe)',
+    isSigned: () => new URLSearchParams(window.location.search).get('signed') === '1',
+    deploy: () => {
+      document.body.dataset.deployed = '1';
+    },
+    onRequestPromotion: () => {
+      document.body.dataset.promotionRequested = '1';
+    },
+  },
+};
+
 // A* zero-recalc probe (`?astar=1`, Handoff 10 R-2b): a router that delegates to
 // the real astar connection but bumps a global counter on every PER-RENDER
 // call. Cached edges bypass this (they paint from stored waypoints), so a pan
@@ -287,7 +306,14 @@ export function App() {
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
     if (params.get('hc')) return buildHealthcareDiagram();
-    return buildSampleDiagram();
+    const base = buildSampleDiagram();
+    // `?engine=candidate|active` (Handoff 14 §1f): the deploy gate depends on
+    // the version status — the e2e drives both sides of it.
+    const engineStatus = params.get('engine');
+    if (engineStatus === 'candidate' || engineStatus === 'active') {
+      base.version = { ...base.version, status: engineStatus };
+    }
+    return base;
   });
   const [editorKey, setEditorKey] = useState(0);
   // Runtime dictionary switch (Handoff 11 N-6): the host owns locale. `messages`
@@ -484,7 +510,13 @@ export function App() {
         <BpmnEditor
           key={editorKey}
           diagram={diagram}
-          plugins={astarMode ? ASTAR_PLUGINS : PLUGINS}
+          plugins={
+            astarMode
+              ? ASTAR_PLUGINS
+              : params.get('engine')
+                ? [...PLUGINS, engineBridgePlugin]
+                : PLUGINS
+          }
           messages={messages}
           onChange={(next) => {
             latestRef.current = next;

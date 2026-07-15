@@ -299,4 +299,40 @@ export interface BpmnPlugin {
    * banner and the beforeunload guard. Default true; last plugin wins.
    */
   autosave?: boolean;
+  /**
+   * Execution-engine bridge (Handoff 14 §1f): registering one turns on the
+   * "Execução" tab of the properties panel for executable activities. First
+   * plugin providing one wins (same rule as `lifecycleConfig`). Actual
+   * deployment stays HOST-owned and GATED — see {@link EngineBridge}.
+   */
+  engine?: EngineBridge;
+}
+
+/**
+ * Execution-engine bridge (Handoff 14 §1f). The editor renders the
+ * "Execução" tab (progressive disclosure: essentials visible, the rest
+ * foldable) and GATES deploy: only an ACTIVE (VIGENTE) **and signed** version
+ * may deploy; anything else gets the "⚑ Deploy bloqueado → Ir para promoção"
+ * card. The signature truth and the deploy transport are host-owned —
+ * network integration is deliberately out of editor scope (§3).
+ */
+export interface EngineBridge {
+  /** Engine id, e.g. 'zeebe', 'camunda7'. Prefixes default property keys. */
+  id: string;
+  /** Display name in the tab header, e.g. 'Camunda 8 (Zeebe)'. */
+  name?: string;
+  /** Property key of the ESSENTIAL job-type binding. Default `<id>:taskDefinitionType`. */
+  jobTypeKey?: string;
+  /** Property key of the retries field. Default `<id>:retries`. */
+  retriesKey?: string;
+  /**
+   * Host-owned truth: is the CURRENT version's activation signed (identity
+   * package / host ledger)? Gates deploy together with `status === 'active'`.
+   * Absent → treated as NOT signed (deploy stays blocked).
+   */
+  isSigned?: (diagram: BpmnDiagram) => boolean;
+  /** Deploy transport — only invoked when the gate passes. */
+  deploy?: (diagram: BpmnDiagram) => void | Promise<void>;
+  /** "Ir para promoção →" navigation on the blocked card (host-owned). */
+  onRequestPromotion?: () => void;
 }

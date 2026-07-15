@@ -78,7 +78,7 @@ export const CONFORMANCE_MATRIX: ConformanceEntry[] = [
   { element: 'bpmn:textAnnotation', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'textAnnotation' },
   { element: 'bpmn:group', status: 'supported', conformanceClass: 'analytic', mappedTo: 'group' },
   // DI
-  { element: 'bpmndi:BPMNDiagram / BPMNShape / BPMNEdge', status: 'supported', conformanceClass: 'descriptive', notes: 'Missing DI falls back to an automatic grid layout (warning).' },
+  { element: 'bpmndi:BPMNDiagram / BPMNShape / BPMNEdge', status: 'supported', conformanceClass: 'descriptive', notes: 'Missing DI falls back to an automatic layered layout (warning; grid when pools/lanes are present).' },
   // Other diagram kinds
   { element: 'conversation / choreography diagrams', status: 'unsupported', conformanceClass: 'extended', notes: 'Deliberately out of scope.' },
 ];
