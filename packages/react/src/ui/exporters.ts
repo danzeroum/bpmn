@@ -26,6 +26,7 @@ const TRANSIENT_SELECTORS = [
   '[data-layer="settling"]',
   '[data-alignment-guides]',
   '[data-context-pad]',
+  '[data-search-pulse]',
 ];
 
 /** Clones the live canvas SVG, sizes it to the viewBox, strips transient

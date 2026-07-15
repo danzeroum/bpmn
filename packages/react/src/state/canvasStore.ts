@@ -100,6 +100,11 @@ export interface CanvasState {
   }> | null;
   /** Find bar visibility (Ctrl/Cmd+F — item 4). */
   searchOpen: boolean;
+  /**
+   * Two halo pulses around a search hit (Handoff 14 §1c). `token` re-triggers
+   * the CSS animation on consecutive hits; null under reduced motion.
+   */
+  searchPulse: { elementId: string; token: number } | null;
   hoveredId: string | null;
   /** Edge currently hovered — reveals its route handles + manual badge (R-3). */
   hoveredEdgeId: string | null;
@@ -206,6 +211,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     alignGuides: null,
     spacingBadges: null,
     searchOpen: false,
+    searchPulse: null,
     hoveredId: null,
     hoveredEdgeId: null,
     dragState: null,

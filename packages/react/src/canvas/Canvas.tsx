@@ -12,6 +12,7 @@ import {
   BoundarySnapOverlay,
   ConnectionPreview,
   ReparentTargetOverlay,
+  SearchPulseOverlay,
   SelectionBoxOverlay,
 } from './overlays.js';
 import { SettlingOverlay } from './SettlingOverlay.js';
@@ -154,6 +155,7 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
         <ReparentTargetOverlay />
         <SelectionBoxOverlay />
         <AlignmentGuidesOverlay />
+        <SearchPulseOverlay />
         <EdgeLabelEditor />
         {overlay}
       </g>

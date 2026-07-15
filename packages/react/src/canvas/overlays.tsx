@@ -1,4 +1,4 @@
-import { useCanvasState } from '../contexts/CanvasContext.js';
+import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { theme } from '../shapes/common.js';
 
@@ -166,6 +166,40 @@ export function AlignmentGuidesOverlay() {
           </g>
         );
       })}
+    </g>
+  );
+}
+
+
+/**
+ * Two expanding halo rings around the latest search hit (Handoff 14 §1c).
+ * Pure CSS animation (2 rings, staggered); cleared when the outer ring ends.
+ * Never rendered under reduced motion — the store field stays null.
+ */
+export function SearchPulseOverlay() {
+  const pulse = useCanvasState((s) => s.searchPulse);
+  const store = useCanvasStore();
+  const { diagram } = useDiagram();
+  if (!pulse) return null;
+  const node = diagram.nodes[pulse.elementId];
+  if (!node) return null;
+  const cx = node.x + node.width / 2;
+  const cy = node.y + node.height / 2;
+  const base = Math.max(node.width, node.height) / 2 + 8;
+  return (
+    <g pointerEvents="none" data-search-pulse key={pulse.token}>
+      <circle className="bpmnr-search-pulse" cx={cx} cy={cy} r={base} />
+      <circle
+        className="bpmnr-search-pulse bpmnr-search-pulse-late"
+        cx={cx}
+        cy={cy}
+        r={base}
+        onAnimationEnd={() => {
+          if (store.getState().searchPulse?.token === pulse.token) {
+            store.setState({ searchPulse: null });
+          }
+        }}
+      />
     </g>
   );
 }

@@ -162,6 +162,7 @@ const EXPECTED_EXPORTS = [
   'deriveAstarRoutes',
   'rerouteConnectedEdges',
   'SearchPanel',
+  'SearchPulseOverlay',
   'SettlingOverlay',
   'SETTLE_MS',
   // Handoff 10 R-3 — manual routes.
