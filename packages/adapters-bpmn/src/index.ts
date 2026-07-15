@@ -51,3 +51,4 @@ export type {
 } from './agentWorkflowAdapter.js';
 export { agentPromotionGate, agentReferenceCurrencyWarnings } from './agentGovernance.js';
 export type { AgentReferenceWarning } from './agentGovernance.js';
+export { AdapterError } from './errors.js';

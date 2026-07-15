@@ -53,6 +53,23 @@ const EDGE_FIELDS: (keyof BpmnEdge)[] = [
   'removedInVersion',
 ];
 
+/**
+ * Same equality semantics as `canonicalJson(a) !== canonicalJson(b)` — numbers
+ * compare rounded to two decimals — without serializing primitives to JSON.
+ * Only objects/arrays fall back to canonical serialization.
+ */
+function differs(rawA: unknown, rawB: unknown): boolean {
+  const a = rawA ?? null;
+  const b = rawB ?? null;
+  if (typeof a === 'number' && typeof b === 'number') {
+    return roundCoord(a) !== roundCoord(b);
+  }
+  const aPrimitive = a === null || typeof a !== 'object';
+  const bPrimitive = b === null || typeof b !== 'object';
+  if (aPrimitive && bPrimitive) return !Object.is(a, b);
+  return canonicalJson(a) !== canonicalJson(b);
+}
+
 function fieldChanges<T extends object>(
   before: T,
   after: T,
@@ -62,7 +79,7 @@ function fieldChanges<T extends object>(
   for (const field of fields) {
     const a = before[field];
     const b = after[field];
-    if (canonicalJson(a ?? null) !== canonicalJson(b ?? null)) {
+    if (differs(a, b)) {
       changes[field as string] = { from: a, to: b };
     }
   }
@@ -114,7 +131,7 @@ export function computeDiff(before: BpmnDiagram, after: BpmnDiagram): BpmnDiff {
   for (const key of new Set([...Object.keys(before.metadata), ...Object.keys(after.metadata)])) {
     const a = before.metadata[key];
     const b = after.metadata[key];
-    if (canonicalJson(a ?? null) !== canonicalJson(b ?? null)) {
+    if (differs(a, b)) {
       diff.metadata[key] = { from: a, to: b };
     }
   }

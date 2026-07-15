@@ -36,7 +36,7 @@ describe('elemento fechado — variante 5b mitigada (Handoff 5 §5)', () => {
   });
 
   it('renders the FECHADO seal ONLY on hover/selection (aceite 10.5.6)', () => {
-    const { container } = render(<BpmnDesigner diagram={snapshotDiagram()} />);
+    const { container } = render(<BpmnDesigner diagram={snapshotDiagram()} messages={PT_BR} />);
     expect(container.querySelector('[data-closed-seal]')).toBeNull();
 
     // Selection shows it — with the semver when closed in the loaded version.
@@ -60,7 +60,7 @@ describe('elemento fechado — variante 5b mitigada (Handoff 5 §5)', () => {
   });
 
   it('falls back to the closing version id when it is not the loaded version', () => {
-    const { container } = render(<BpmnDesigner diagram={snapshotDiagram()} />);
+    const { container } = render(<BpmnDesigner diagram={snapshotDiagram()} messages={PT_BR} />);
     fireEvent.pointerEnter(container.querySelector('[data-node-id="old"]')!);
     expect(container.querySelector('[data-closed-seal]')?.textContent).toBe('FECHADO #ver_his');
   });

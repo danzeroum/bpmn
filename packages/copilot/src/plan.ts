@@ -1,4 +1,5 @@
 import {
+  BpmnValidationError,
   CommandStack,
   compositeCommand,
   type BpmnDiagram,
@@ -125,7 +126,7 @@ export function buildPlan(
 ): CopilotPlan {
   const verdict = validateProposal(diagram, proposal);
   if (!verdict.ok) {
-    throw new Error(
+    throw new BpmnValidationError(
       `invalid proposal: ${verdict.errors.map((e) => `#${e.index + 1} ${e.message}`).join('; ')}`,
     );
   }

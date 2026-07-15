@@ -2,22 +2,21 @@ import {
   activeEdges,
   activeNodes,
   boundaryAttachedTo,
-  isContainerType,
+  flowScopeOf,
+  isFlowNode,
   isNonInterrupting,
-  nodeParentId,
+  NON_FLOW_EDGE_TYPES,
   type BpmnDiagram,
-  type BpmnNode,
 } from '@buildtovalue/core';
 import type { GatewayKind, SimEdge, SimNode } from './types.js';
 
 /**
  * The control-flow graph the token engine walks. It is built from a diagram
  * using the **same flow-node / flow-edge classification the soundness analysis
- * uses** (Handoff 7 §7.2). Because `simulation` may only depend on `core`, that
- * classification is duplicated here rather than imported from `@buildtovalue/
- * soundness`; `tests/soundnessAgreement.test.ts` pins the two to identical
- * adjacency so the coverage checklist and the deadlock verdict agree with
- * soundness by construction, not by coincidence.
+ * uses** (Handoff 7 §7.2): both import it from `@buildtovalue/core`
+ * (`model/flow.ts`), so the coverage checklist and the deadlock verdict agree
+ * with soundness by construction. `tests/soundnessAgreement.test.ts` keeps
+ * pinning the resulting adjacencies to each other end-to-end.
  */
 export interface SimGraph {
   scope: string | undefined;
@@ -28,20 +27,9 @@ export interface SimGraph {
   boundariesByHost: Map<string, string[]>;
 }
 
-// Kept identical to @buildtovalue/soundness graph.ts (see class doc above).
-const NON_FLOW_TYPES = new Set(['dataObject', 'dataStore', 'textAnnotation', 'group']);
-const NON_FLOW_EDGE_TYPES = new Set(['messageFlow', 'association', 'dataAssociation']);
-
-export function isFlowNode(node: BpmnNode): boolean {
-  return !isContainerType(node.type) && !NON_FLOW_TYPES.has(node.type);
-}
-
-/** Scope a node's flow runs in: a boundary event works in its host's scope. */
-export function flowScopeOf(diagram: BpmnDiagram, node: BpmnNode): string | undefined {
-  const host = boundaryAttachedTo(node);
-  const anchor = host ? (diagram.nodes[host] ?? node) : node;
-  return nodeParentId(anchor);
-}
+// Flow classification is hosted in core (`model/flow.ts`) — the same
+// functions soundness uses, so the two analyses agree by construction.
+export { isFlowNode, flowScopeOf } from '@buildtovalue/core';
 
 /** Resolves the gateway control-flow role for a node type (undefined if none). */
 export function gatewayKindOf(type: string): GatewayKind | undefined {

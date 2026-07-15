@@ -89,6 +89,7 @@ A costura headless→React da Biblioteca. Toda a lógica de catálogo vive em `@
 Adapters concretos que mapeiam `RegistryEntry` → `ArtifactSummary`/`Detail`, o thumbnail SVG headless, e a cola de injeção de ledger (payloads `AuditEntryInput` para simulação/replay/sessões de agente).
 
 ### `packages/adapters-bpmn/src/registryAdapter.ts`
+> Δ 2026-07: lookups desconhecidos nos adapters BPMN lançam `AdapterError extends BpmnError` (code `ADAPTER`, novo `src/errors.ts`) — exceto `recipeAdapter`, que por teste ácido só importa de `@buildtovalue/library` e mantém `Error`.
 **Papel:** Ponte genérica registry→library; cada adapter concreto do pacote é uma configuração fina desta factory. Read-only sobre o registry.
 **Entradas:** `RegistryAdapterOptions` (`id`, `typeLabel`, `registry: VersionRegistry`, `match?`, `target?: ObserverTarget`, `now?`, `boundRuns?`, `thumbnail?`); em runtime `LibraryQuery`/`artifactId`.
 **Processamento (intermediário):** `logicalArtifacts` agrupa `registry.list()` por `entry.snapshot.id` (`Map<string,RegistryEntry[]>`, ordenado por `version.createdAt`). `relevantEntry` escolhe a entry+`publication` visível ao observador (`openPublicationAt` casa channel/environment/janela `effectiveFrom..effectiveUntil`); sem target, a versão mais nova vence. `matching()` filtra por `match(snapshot)`. `toSummary`: conta nós ativos (`!removedInVersion`), monta `ArtifactSummary` (status vem da `publication?.status ?? version.status`, meta = description ou "N nós"). `versionTimeline` mapeia entries→`VersionEntry[]` (reverse, mais novo primeiro). `defaultActions` gera "Abrir no Designer"/"Diff vs versão ativa" com payload `{artifactId, versionId}`. `get`: adiciona approvers (userIds), changeSummary, provenance (`snapshotHash`/createdBy/createdAt), effectiveFrom/Until. Set de `listeners` para subscribe/notifyChanged.
@@ -293,6 +294,7 @@ Ferramenta headless de linha de comando (`bpmn-react`): validate, certify, audit
 **Estruturas de dados que trafegam:** `ActorOptions`, `PromoteOptions`, `VersionStatus`, `BpmnDiagram`.
 
 ### `packages/cli/src/bin.ts`
+> Δ 2026-07: `valueOf` rejeita flag como valor (`--reason --json` → erro claro) e aceita a forma `--flag=valor`.
 **Papel:** Entrypoint executável (`#!/usr/bin/env node`): parse de argv, dispatch de comandos, códigos de saída.
 **Entradas:** `process.argv` (comando + flags: `--to`, `--actor-id/role`, `--reason`, `--json`, `--strict`, `--require`, `--report`, `--assurance-case`, `--ledger`, `--registry`, `--channel`, `--version`, etc.).
 **Processamento (intermediário):** `USAGE` (const). `main`: switch por comando; `runRegistry` para o subcomando registry. Helpers `valueOf`/`opt`/`notes`/`actorFrom` parseiam flags. Regras de exit: validate → `valid?0:1`; certify → 2 se mal-formado, 1 se strict com issues ou requirement não atendido; promote captura `BpmnLifecycleError`→1; audit → `intact?0:1`; diff/registry-diff → 1 se há mudança. `--xsd` é reservado (exit 2).

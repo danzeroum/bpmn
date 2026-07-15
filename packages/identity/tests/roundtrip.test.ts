@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { canonicalJson } from '@buildtovalue/core';
 import {
   buildApprovalPayload,
   encodePayload,
@@ -80,5 +81,13 @@ describe('sign → verify round-trip', () => {
       diagramId: BASE.diagramId,
     };
     expect(encodePayload(reordered)).toEqual(encodePayload(BASE));
+  });
+
+  it('encodePayload bytes match the legacy canonicalJson encoding (string-only payloads)', () => {
+    // The switch to canonicalJsonExact must not change the signed bytes for
+    // existing approvals — every payload field is a string, so rounding never
+    // applied. This pins that byte-for-byte compatibility.
+    const legacyBytes = new TextEncoder().encode(canonicalJson(BASE));
+    expect(encodePayload(BASE)).toEqual(legacyBytes);
   });
 });

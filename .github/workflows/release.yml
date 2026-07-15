@@ -4,8 +4,11 @@
 # pipeline can be validated without publishing; untick dry_run to release.
 #
 # Requirements (see pendencias.md):
-#   - The npm scope (@bpmn-react) must exist and be owned by you.
+#   - The npm scope (@buildtovalue) must exist and be owned by you.
 #   - Repository secret NPM_TOKEN must hold an npm automation token.
+#
+# Version bumps flow through changesets: `pnpm changeset` per PR, then
+# `pnpm version-packages` (or the release PR) before dispatching this.
 name: Release
 
 on:
@@ -38,6 +41,15 @@ jobs:
       - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test:coverage
+
+      # Releases consume changesets: fail loudly when pending changesets have
+      # not been versioned (`pnpm version-packages`) before dispatching.
+      - name: Check for unconsumed changesets
+        run: |
+          if npx changeset status --output=/dev/null 2>/dev/null && [ -n "$(find .changeset -name '*.md' ! -name 'README.md' -print -quit)" ]; then
+            echo "::error::Pending changesets found — run 'pnpm version-packages' and merge the version PR before releasing."
+            exit 1
+          fi
 
       # Software Bill of Materials for the release (CycloneDX JSON), attached
       # as a build artifact for supply-chain transparency / SBOM requirements.

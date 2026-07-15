@@ -312,6 +312,22 @@
   transition: filter 120ms ease-out;
 }
 
+/* Roving keyboard focus (N-8 keyboard-only editing): visible focus ring on
+   the focused element and on the canvas itself when it holds focus. */
+.bpmnr-canvas:focus-visible {
+  outline: 2px solid var(--bpmnr-selected, #1c6b5a);
+  outline-offset: -2px;
+}
+.bpmnr-canvas [data-node-id]:focus,
+.bpmnr-canvas [data-edge-id]:focus {
+  outline: none; /* the ring is drawn below, offset from the shape */
+}
+.bpmnr-canvas [data-node-id][data-focused='true'],
+.bpmnr-canvas [data-edge-id][data-focused='true'] {
+  outline: 2px dashed var(--bpmnr-selected, #1c6b5a);
+  outline-offset: 3px;
+}
+
 /* Handoff 5 §3.2 — CALL_REF_MISSING: the shape's stroke and marker turn
    error-red while the issue overlay marks the node (CSS wins over SVG
    presentation attributes, so shapes stay pure). */
@@ -1533,7 +1549,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-bpmnr-theme]) {
     --btv-dmn-fill: #22322f;
     --btv-dmn-stroke: #63b3a6;
     --btv-dmn-input-fill: #1d2a27;
@@ -1568,6 +1584,44 @@
     --btv-hc-warning-bg: #33301f;
     --btv-hc-warning-stroke: #cba84b;
   }
+}
+
+/* Manual theme counterpart (melhorias F8): same DMN dark tokens when the
+   host opts in via [data-bpmnr-theme='dark']. */
+[data-bpmnr-theme='dark'] {
+    --btv-dmn-fill: #22322f;
+    --btv-dmn-stroke: #63b3a6;
+    --btv-dmn-input-fill: #1d2a27;
+    --btv-dmn-input-stroke: #4f8f83;
+    --btv-dmn-knowledge-fill: #262220;
+    --btv-dmn-knowledge-stroke: #63b3a6;
+
+    --btv-dmn-edge: #63b3a6;
+
+    --btv-dmn-table-header-bg: #24322f;
+    --btv-dmn-table-header-fg: #8fd0c4;
+    --btv-dmn-table-rule-bg: #22292a;
+    --btv-dmn-table-grid: #33473f;
+    --btv-dmn-hit-bg: #33301f;
+    --btv-dmn-hit-fg: #cba84b;
+    --btv-dmn-cell-invalid-bg: #3a2622;
+    --btv-dmn-cell-selected: #22312a;
+    --btv-dmn-annotation-fg: #a49c8f;
+
+    --btv-dmn-link-badge-bg: #33301f;
+    --btv-dmn-link-badge-stroke: #cba84b;
+
+    --btv-pedigree-line: #6f675a;
+    --btv-pedigree-closed: #a49c8f;
+    --btv-closed-hatch: #6f675a;
+    --btv-sacm-claim: #c9c4ba;
+    --btv-sacm-argument: #cba84b;
+    --btv-sacm-evidence: #57b895;
+
+    --btv-hc-fill: #2e2536;
+    --btv-hc-stroke: #b592d4;
+    --btv-hc-warning-bg: #33301f;
+    --btv-hc-warning-stroke: #cba84b;
 }
 
 /* ============================================================
@@ -1939,9 +1993,15 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  .btv-dmn-peek {
+  :root:not([data-bpmnr-theme]) .btv-dmn-peek {
     background: #2c2825; /* estado §10.4: peek dark */
   }
+}
+
+/* Manual theme counterpart (melhorias F8): hosts force dark via
+   [data-bpmnr-theme='dark'] regardless of the OS preference. */
+[data-bpmnr-theme='dark'] .btv-dmn-peek {
+  background: #2c2825;
 }
 
 /* --- DECISAO . DMN inspector section (wireframe 2d). --- */

@@ -43,10 +43,10 @@ async function expectNoCritical(container: Element, label: string) {
     results.violations.filter((v) => v.impact === impact).length;
   const critical = results.violations.filter((v) => v.impact === 'critical');
   if (critical.length > 0) {
-    // eslint-disable-next-line no-console
+     
     console.error(`${label} CRITICAL:\n${critical.map((v) => `${v.id}: ${v.help}`).join('\n')}`);
   }
-  // eslint-disable-next-line no-console
+   
   console.log(
     `[a11y] ${label}: critical=${count('critical')} serious=${count('serious')} moderate=${count('moderate')} minor=${count('minor')}`,
   );

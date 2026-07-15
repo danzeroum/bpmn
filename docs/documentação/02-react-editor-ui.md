@@ -61,6 +61,10 @@ mesclado a partir dos plugins.
 
 ---
 
+### `packages/react/src/simulation.ts` · `replay.ts` · `agent.ts` · `copilot.ts`
+**Papel:** Barrels de subpath opt-in (`@buildtovalue/react/simulation` etc., espelhando `./viewer`) — consumidores editor-only não dependem de tree-shaking para descartar as superfícies pesadas; o barrel raiz segue reexportando por compatibilidade.
+**Entradas/Saídas:** Reexports puros das superfícies respectivas (sem dados próprios).
+
 ## contexts
 
 ### `packages/react/src/contexts/DiagramContext.tsx`
@@ -89,6 +93,7 @@ mesclado a partir dos plugins.
 ## state
 
 ### `packages/react/src/state/canvasStore.ts`
+> Δ 2026-07: novo campo `focusedElementId: string | null` (foco de teclado rondante — o elemento com `tabIndex=0`).
 **Papel:** Define **todo o formato do dado visual** (`CanvasState`) e a fábrica do store.
 **Entradas:** `createCanvasStore(partial?: Partial<CanvasState>)`.
 **Processamento (intermediário):** Constrói o estado inicial (viewport 1200×800, `gridSize: 20`, `snapEnabled: true`, coleções vazias) e faz merge com `partial`. Constantes `MIN_VIEWPORT_WIDTH=200`, `MAX_VIEWPORT_WIDTH=20000`.
@@ -163,6 +168,20 @@ mesclado a partir dos plugins.
 **Saídas:** `{ nodes, edges }`.
 **Estruturas de dados que trafegam:** `BpmnDiagram`, `BpmnNode[]`, `BpmnEdge[]`, `Set<string>`, `Viewport`.
 
+### `packages/react/src/canvas/activeCache.ts`
+**Papel:** Cache por-diagrama de `activeNodes`/`activeEdges` para os hot paths por frame (hit-testing, renderList, lasso, MiniMap). Vive na camada react de propósito: diagramas aqui vêm do `CommandStack` (structural sharing — identidade de objeto é chave válida); o core não pode cachear porque import/fixtures montam `diagram.nodes` mutando no lugar.
+**Entradas:** `diagram: BpmnDiagram`.
+**Processamento (intermediário):** `WeakMap<BpmnDiagram, BpmnNode[]/BpmnEdge[]>` — miss delega ao core e memoiza.
+**Saídas:** `BpmnNode[]`/`BpmnEdge[]` (arrays compartilhados — read-only por convenção).
+**Estruturas de dados que trafegam:** Funções `activeNodesCached`, `activeEdgesCached`.
+
+### `packages/react/src/canvas/hitTest.ts`
+**Papel:** Hit-testing puro extraído do `useInteractions` (parâmetros explícitos em vez de closures do hook — testável sem montar canvas).
+**Entradas:** `diagram`, `registry: NodeTypeRegistry`, `drillId`, `dragged: BpmnNode`, `pointer/point: Point`.
+**Processamento (intermediário):** `findBoundarySnapAt` varre hosts activity visíveis mantendo `best` por distância (zona `BOUNDARY_SNAP_THRESHOLD`); `findNodeAtPoint` filtra visíveis e varre em ordem reversa (topo vence) testando contenção no retângulo.
+**Saídas:** `BoundarySnap|null` (`{hostId, side, t, point}`), `BpmnNode|undefined`.
+**Estruturas de dados que trafegam:** Interface `BoundarySnap`; funções `findBoundarySnapAt`, `findNodeAtPoint`.
+
 ### `packages/react/src/canvas/useInteractions.ts`
 **Papel:** Motor central de gestos de ponteiro — **produz dado transitório por rAF no `canvasStore` e comita `Command`s no `pointerup`**. Uma única `pointermove`/`pointerup` serve drag, connect, pan, laço, resize, edição de rota, boundary snap e context menu.
 **Entradas:** `svgRef`; do domínio `{diagram, execute}`; store `canvasStore`; `config` (registry, ruleEngine, edgeRouter, emitEditorEvent). Eventos `ReactPointerEvent`/teclado (via shortcuts). `DRAG_THRESHOLD=4`.
@@ -183,6 +202,7 @@ mesclado a partir dos plugins.
 **Estruturas de dados que trafegam:** `DragState`, `ConnectState`, `ResizeState`, `EdgeDragState`, `SelectionBoxState`, `BoundarySnapTarget`, `SettlingEntry`, `ContextMenuState`, `PanSession` (local), `Command`, `ConnectPayload`, `Point`, `Interactions` (retorno memoizado). Helpers `candidateLanes`/`laneAt`/`dropTargetLane`/`laneMembershipCommands`/`reparentCommands`/`appendRerouteCommands`/`prefersReducedMotion`/`svgScale`.
 
 ### `packages/react/src/canvas/NodeRenderer.tsx`
+> Δ 2026-07: `ConnectedNode` consolida as ~7 assinaturas de store num único selector achatado em primitivos (cache shallowEqual efetivo por frame); foco de teclado rondante (`tabIndex` 0/-1 via `focusedElementId`, `data-focused`, `onFocus`); aria-labels/selo FECHADO via `useT()` (fragment `canvas.*`).
 **Papel:** Renderiza um nó BPMN com halo de seleção, portas, handles de resize, selo de fechado, badge de issue, controles de sub-processo e editor inline de rótulo.
 **Entradas:** `NodeRendererProps` — `node`, `selected`, `editable`, `interactions`, `dx`/`dy` (offset de drag), `connectHover: 'valid'|'invalid'|null`, `resizeRect`, `editing`. `ConnectedNode` lê do store: `selectedIds.includes`, `readOnly`, `dragState` (offset), `connectState.hoverTargetId`, `dropLaneId`, `resizeState.current`, `editingNodeId`, `lastCreatedNodeId`, `issueBadges[id]`, `hoveredId` (só closed), banda de sombra/zoom.
 **Processamento (intermediário):** `SHADOW_MIN_ZOOM=0.5`; `rendered` = node com override de `resizeRect`; `typeDef` do registry; `hasShadow` some no drag; seletores booleanos evitam re-render por passo de zoom. `SubProcessControls` calcula posição do marcador [+]/[−] e drill.
@@ -190,6 +210,7 @@ mesclado a partir dos plugins.
 **Estruturas de dados que trafegam:** `NodeRendererProps`, `BpmnNode`, `NodeIssueBadge`, `Interactions`.
 
 ### `packages/react/src/canvas/EdgeRenderer.tsx`
+> Δ 2026-07: `ConnectedEdge` consolidado num selector achatado (sdx/sdy/tdx/tdy primitivos); foco rondante como nos nós; `<title>` de rota e aria via `useT()`.
 **Papel:** Renderiza uma aresta: rota (waypoints/roteador/live), estilo por estado (closed/selected/domínio/fallback/manual), decorações, handles de edição de rota e rótulo.
 **Entradas:** `EdgeRendererProps` — `edge`, `source`/`target`, `selected`, `hovered?`, `liveWaypoints?`, `readOnly?`, `interactions?`, `sourceOffset`/`targetOffset {dx,dy}`, `onSelect`, `onHoverChange`. `ConnectedEdge` lê do store: `selectedIds`, `hoveredEdgeId`, `readOnly`, `edgeDrag.waypoints` (se ativo p/ esta aresta), offsets de `dragState`. `chipsVisible` por zoom.
 **Processamento (intermediário):** `CHIP_MIN_ZOOM=0.6`, `CHIP_MAX_CHARS=24`; escolhe `geometry: EdgeGeometry` (live > waypoints salvos > `config.edgeRouter` > `straightConnection` p/ DMN); `manual = isManualEdge`; deriva `stroke`/`strokeWidth`/`dash`/`marker` por precedência de estado; `fallback`/`collision`/`manualActive` por `edge.properties`; `editWaypoints`, `showHandles`, `editable`; `labelPoint` via `longestSegmentMidpoint`. `DOMAIN_MARKER` mapeia marker→id.
@@ -218,6 +239,7 @@ mesclado a partir dos plugins.
 **Estruturas de dados que trafegam:** `BpmnNode`.
 
 ### `packages/react/src/canvas/ResilienceLayer.tsx`
+> Δ 2026-07: banner de recuperação via `useT()` (`canvas.recovery.*`) — antes PT fixo.
 **Papel:** Resiliência do editor: autosave debounced, banner de recuperação e guarda `beforeunload` enquanto sujo.
 **Entradas:** `config.autosave`; domínio `{diagram, execute, stack}`; store; `diagramRef`.
 **Processamento (intermediário):** Efeito assina `stack.subscribe` → marca `dirtySinceExport:true` e `setTimeout(writeAutosave, AUTOSAVE_DEBOUNCE_MS)`; efeito de detecção compara `computeDiagramHash(diagram)` com `saved.hash` → `recovery` (useState); efeito registra `beforeunload` que preventDefault se `dirtySinceExport`.
@@ -288,7 +310,15 @@ mesclado a partir dos plugins.
 
 ## gestures
 
+### `packages/react/src/gestures/clipboard.ts`
+**Papel:** Clipboard do editor: coleta do subconjunto selecionado, serialização auto-descritiva, remap de ids na colagem e transporte (navigator.clipboard + fallback interno de módulo).
+**Entradas:** `diagram`, `selectedIds` (coleta); `payload: ClipboardPayload`, `options {description?, offsetX?, offsetY?, userId?}` (colagem); texto JSON (parse).
+**Processamento (intermediário):** `collectClipboardPayload` filtra nós ativos selecionados + arestas com ambos os endpoints no conjunto (clones estruturais). `buildPasteCommand` gera UUIDs novos (`idMap`), remapeia `sourceId`/`targetId`/`parentId`/`attachedToRef`/`flowNodeRefs` (refs externas mantidas se o alvo ainda existe, descartadas senão; boundary sem host é descartado), aplica offset (+24 default), audit fresco e `createdInVersion` corrente, e monta UM `compositeCommand` (undo atômico). Transporte tenta `navigator.clipboard` e cai para variável de módulo.
+**Saídas:** `ClipboardPayload|null`, `{command, newIds}|null`, `Promise<void>`/`Promise<ClipboardPayload|null>`.
+**Estruturas de dados que trafegam:** Interface `ClipboardPayload` (`kind: 'bpmnr-elements'`, `nodes`, `edges`); const `PASTE_OFFSET`; funções `collectClipboardPayload`, `buildPasteCommand`, `serializeClipboardPayload`, `parseClipboardPayload`, `writeClipboardPayload`, `readClipboardPayload`, `hasClipboardContent`.
+
 ### `packages/react/src/gestures/useKeyboardShortcuts.ts`
+> Δ 2026-07: novos ramos Ctrl/Cmd+A (select-all), C/X/V (clipboard), D (duplicar); navegação rondante por setas quando o foco DOM está no canvas/elemento não-selecionado (Enter seleciona, Shift+Enter aditivo); nudge segue convenção de editor — seta = 1px, Shift = passo de grade (era o inverso).
 **Papel:** Atalhos de teclado do editor: undo/redo, delete, escape (pilha de dismissal + cancelar gestos + subir breadcrumb), setas (nudge), espaço (pan).
 **Entradas:** `interactions: Interactions`; domínio `{diagram, execute, undo, redo}`; store. Eventos `KeyboardEvent` (window).
 **Processamento (intermediário):** `isEditingTarget` ignora inputs; `meta = ctrl||cmd`; lê `state` do store (readOnly, contextMenu, dismissals, selectedIds, drillId, gridSize); `arrows` map `{ArrowX:[dx,dy]}`; `step = shift?1:gridSize`. Escape: pop `dismissals.slice(0,-1)` e `top.close()`, senão cancelar seleção/gestos, senão subir um nível de drill (`fitViewport(getBoundingBox(scope))`).
@@ -367,6 +397,7 @@ mesclado a partir dos plugins.
 **Estruturas de dados que trafegam:** `BpmnNode[]`, `Viewport`, bbox `{x,y,width,height}`.
 
 ### `packages/react/src/ui/ContextMenu.tsx`
+> Δ 2026-07: novos built-ins `node.copy`/`node.duplicate` (após os de reparent) e `canvas.paste` (cola ancorado no ponto do clique) — despacham via clipboard compartilhado (`gestures/clipboard.ts`).
 **Papel:** Menu de contexto plugável (N-5): built-ins condicionais por tipo de alvo + seções por plugin; operável por teclado; registrado na pilha de Esc.
 **Entradas:** Store `contextMenu: ContextMenuState`; domínio `{diagram, execute}`; `config.plugins`/`edgeRouter`; `useT`. `MENU_WIDTH=240`, `ITEM_HEIGHT=34`.
 **Processamento (intermediário):** `activeIndex` (useState); `useDismissal('context-menu', ...)`; `items = useMemo` monta `RenderedItem[]` a partir de `MenuTarget {kind, id?, point:world, diagram, selectedIds}` — edge (back-to-auto, add-waypoint via `nearestSegmentIndex`/`computeRoutedWaypoints`/`straightRoute`, edit-label), node (edit-label, move-into/remove-from subprocess via `subProcessContainerAt`), plus itens de plugin filtrados por `when()`. Flip nas bordas via `getBoundingClientRect`.

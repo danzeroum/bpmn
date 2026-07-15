@@ -1,5 +1,9 @@
 # Architecture
 
+> High-level overview. For the complete C4 + 4+1 architecture views (PT-BR)
+> see [uml/arquitetura.md](uml/arquitetura.md); for the per-file data catalog
+> see [documentação/](documenta%C3%A7%C3%A3o/).
+
 bpmn-react follows a strict three-layer separation:
 
 ```

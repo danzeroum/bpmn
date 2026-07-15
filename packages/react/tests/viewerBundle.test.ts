@@ -89,7 +89,7 @@ describe('BpmnViewer bundle (N-7)', () => {
     const editorBytes = totalBytes(reachedFiles('index.js'));
     const ratio = viewerBytes / editorBytes;
     // Surface the real numbers so a regression reads at a glance.
-    // eslint-disable-next-line no-console
+     
     console.log(
       `viewer=${viewerBytes}B editor=${editorBytes}B ratio=${(ratio * 100).toFixed(1)}%`,
     );

@@ -165,4 +165,12 @@ export default defineWorkspace([
       setupFiles: ['packages/react/tests/setup.ts'],
     },
   },
+  {
+    test: {
+      name: 'example',
+      include: ['packages/example/tests/**/*.test.{ts,tsx}'],
+      environment: 'jsdom',
+      setupFiles: ['packages/react/tests/setup.ts'],
+    },
+  },
 ]);

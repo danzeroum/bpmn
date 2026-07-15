@@ -272,8 +272,16 @@ function actorFrom(args: string[]): { actorId: string; actorRole: string; reason
 }
 
 function valueOf(args: string[], flag: string): string | undefined {
+  // `--flag=value` form.
+  const inline = args.find((arg) => arg.startsWith(`${flag}=`));
+  if (inline !== undefined) return inline.slice(flag.length + 1);
   const index = args.indexOf(flag);
-  return index >= 0 ? args[index + 1] : undefined;
+  if (index < 0) return undefined;
+  const value = args[index + 1];
+  if (value === undefined || value.startsWith('--')) {
+    throw new Error(`flag ${flag} requires a value`);
+  }
+  return value;
 }
 
 /** Spreads a key only when the value is defined (keeps exactOptional-friendly). */

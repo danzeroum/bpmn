@@ -2,10 +2,10 @@ import {
   activeEdges,
   activeNodes,
   boundaryAttachedTo,
-  isContainerType,
-  nodeParentId,
+  flowScopeOf,
+  isFlowEdge,
+  isFlowNode,
   type BpmnDiagram,
-  type BpmnEdge,
   type BpmnNode,
 } from '@buildtovalue/core';
 
@@ -42,26 +42,9 @@ export interface ScopeGraph {
   ends: string[];
 }
 
-/** Node types that never take part in the sequence flow. */
-const NON_FLOW_TYPES = new Set(['dataObject', 'dataStore', 'textAnnotation', 'group']);
-
-/** Edge types that are not sequence flow (inter-pool / artifact / data links). */
-const NON_FLOW_EDGE_TYPES = new Set(['messageFlow', 'association', 'dataAssociation']);
-
-export function isFlowNode(node: BpmnNode): boolean {
-  return !isContainerType(node.type) && !NON_FLOW_TYPES.has(node.type);
-}
-
-export function isFlowEdge(edge: BpmnEdge): boolean {
-  return !NON_FLOW_EDGE_TYPES.has(edge.type);
-}
-
-/** Scope a node's flow runs in: a boundary event works in its host's scope. */
-export function flowScopeOf(diagram: BpmnDiagram, node: BpmnNode): string | undefined {
-  const host = boundaryAttachedTo(node);
-  const anchor = host ? (diagram.nodes[host] ?? node) : node;
-  return nodeParentId(anchor);
-}
+// Flow classification is hosted in core (`model/flow.ts`) and re-exported
+// here so this package's public API is unchanged.
+export { isFlowNode, isFlowEdge, flowScopeOf } from '@buildtovalue/core';
 
 /**
  * Builds the per-scope flow graphs for a diagram. Closed (removed) elements

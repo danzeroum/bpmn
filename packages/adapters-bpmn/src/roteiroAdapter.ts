@@ -1,3 +1,4 @@
+import { AdapterError } from './errors.js';
 import type {
   ArtifactAdapter,
   ArtifactDetail,
@@ -81,7 +82,7 @@ export function createRoteiroAdapter(source: () => RoteiroRecord[]): RoteiroAdap
     },
     async get(artifactId) {
       const record = records().find((r) => r.session.scenarioHash === artifactId);
-      if (!record) throw new Error(`adapter "roteiro": unknown roteiro "${artifactId}"`);
+      if (!record) throw new AdapterError(`adapter "roteiro": unknown roteiro "${artifactId}"`);
       const { session } = record;
       const detail: ArtifactDetail = {
         ...toSummary(record),

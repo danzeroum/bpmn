@@ -9,12 +9,16 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    strategy:
+      # engines declares >=20 — prove it on the floor and the current LTS.
+      matrix:
+        node-version: [20, 22]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ matrix.node-version }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # Fail the build on any high/critical advisory in the dependency tree.
@@ -38,6 +42,14 @@ jobs:
       - run: pnpm fetch:corpus
         continue-on-error: true
       - run: pnpm test:coverage
+      # Publish the lcov report so the per-package thresholds in
+      # vitest.config.mts are inspectable, not just pass/fail.
+      - uses: actions/upload-artifact@v4
+        if: matrix.node-version == 22
+        with:
+          name: coverage-lcov
+          path: coverage/
+          retention-days: 14
 
   e2e:
     runs-on: ubuntu-latest

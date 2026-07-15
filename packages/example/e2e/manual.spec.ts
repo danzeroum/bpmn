@@ -10,7 +10,7 @@ const pathOf = (page: import('@playwright/test').Page, edgeId: string) =>
   page.locator(`[data-edge-id="${edgeId}"] path`).first().getAttribute('d');
 
 const warnCount = (page: import('@playwright/test').Page, edgeId: string) =>
-  page.locator(`[data-edge-id="${edgeId}"] title`, { hasText: /no obstacle-free route/i });
+  page.locator(`[data-edge-id="${edgeId}"] title`, { hasText: /sem rota livre de obstáculos/i });
 
 async function dragBy(
   page: import('@playwright/test').Page,

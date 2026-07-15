@@ -1,4 +1,5 @@
-import { activeNodes, getBoundingBox } from '@buildtovalue/core';
+import { getBoundingBox } from '@buildtovalue/core';
+import { activeNodesCached } from '../canvas/activeCache.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useT } from '../i18n/I18nContext.js';
@@ -18,7 +19,7 @@ export function MiniMap() {
   const viewport = useCanvasState((s) => s.viewport);
   const t = useT();
 
-  const nodes = activeNodes(diagram);
+  const nodes = activeNodesCached(diagram);
   const world = getBoundingBox(
     nodes.length > 0 ? nodes : [{ x: 0, y: 0, width: 1200, height: 800 }],
   );

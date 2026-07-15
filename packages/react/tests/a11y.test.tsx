@@ -29,16 +29,19 @@ function diagram(): BpmnDiagram {
 
 async function expectNoCritical(container: Element, label: string) {
   const summary = await runAxe(container);
-  if (summary.critical.length > 0) {
-    // eslint-disable-next-line no-console
-    console.error(`${label} CRITICAL:\n${summary.critical.map(describeViolation).join('\n')}`);
+  if (summary.seriousOrWorse.length > 0) {
+     
+    console.error(
+      `${label} SERIOUS+:\n${summary.seriousOrWorse.map(describeViolation).join('\n')}`,
+    );
   }
-  // Surface serious/moderate counts for the pendencias ledger (never silent).
-  // eslint-disable-next-line no-console
+  // Surface moderate/minor counts for the pendencias ledger (never silent).
+   
   console.log(
     `[a11y] ${label}: critical=${summary.byImpact.critical} serious=${summary.byImpact.serious} moderate=${summary.byImpact.moderate} minor=${summary.byImpact.minor}`,
   );
-  expect(summary.critical, label).toEqual([]);
+  // The gate covers serious AND critical (upgraded from critical-only).
+  expect(summary.seriousOrWorse, label).toEqual([]);
 }
 
 describe('a11y — zero critical axe violations (N-8)', () => {

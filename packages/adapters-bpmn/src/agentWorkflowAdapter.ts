@@ -1,3 +1,4 @@
+import { AdapterError } from './errors.js';
 import { canonicalJson, sha256Hex } from '@buildtovalue/core';
 import type { AgentWorkflow } from '@buildtovalue/agentflow';
 import type {
@@ -145,7 +146,7 @@ export function agentWorkflowAdapter(options: AgentWorkflowAdapterOptions): Agen
     },
     async get(artifactId) {
       const group = groupAgentVersions(source).find((g) => g.id === artifactId);
-      if (!group) throw new Error(`adapter "${id}": unknown agent "${artifactId}"`);
+      if (!group) throw new AdapterError(`adapter "${id}": unknown agent "${artifactId}"`);
       const version = relevant(group);
       const wf = version.workflow;
       const detail: ArtifactDetail = {

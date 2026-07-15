@@ -1,3 +1,4 @@
+import { AdapterError } from './errors.js';
 import type { BpmnNode } from '@buildtovalue/core';
 import type { ArtifactDetail, ArtifactSummary } from '@buildtovalue/library';
 import type { VersionRegistry } from '@buildtovalue/registry';
@@ -102,7 +103,7 @@ export function dmnDecisionAdapter(
         : { entry: undefined };
       const node = entry?.snapshot.nodes[nodeId ?? ''];
       if (!artifact || !node || node.type !== DECISION_TYPE || node.removedInVersion) {
-        throw new Error(`adapter "${id}": unknown decision "${artifactId}"`);
+        throw new AdapterError(`adapter "${id}": unknown decision "${artifactId}"`);
       }
       const detail: ArtifactDetail = {
         ...toSummary(artifact, node),

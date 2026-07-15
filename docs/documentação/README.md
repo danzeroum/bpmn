@@ -14,7 +14,7 @@ O pedido menciona Rust, Python, TypeScript e HTML. A inspeção recursiva confir
 
 | Tipo | Qtd. | Situação |
 |---|---|---|
-| `.ts` / `.tsx` (TypeScript) | 475 | **100% da lógica** — todo o dado do sistema trafega aqui |
+| `.ts` / `.tsx` (TypeScript) | ~490 | **100% da lógica** — todo o dado do sistema trafega aqui |
 | `.html` | 1 | `packages/example/index.html` (bootstrap do app-demo Vite) |
 | `.css` | 5 | folhas de estilo dos pacotes React (tokens/temas) |
 | `.bpmn` (XML) | 50+ | `packages/conformance/corpus/` — **dados de entrada** de teste de interop |
@@ -31,18 +31,21 @@ O detalhe **arquivo por arquivo** está dividido em 6 documentos por camada. Cad
 arquivo segue o mesmo template: **Papel · Entradas · Processamento (intermediário)
 · Saídas · Estruturas de dados que trafegam**.
 
-| Doc | Camada | Pacotes cobertos | Arquivos |
-|---|---|---|---|
-| [`01-core.md`](01-core.md) | Domínio | `core` | 31 |
-| [`02-react-editor-ui.md`](02-react-editor-ui.md) | Apresentação (editor + UI) | `react` (canvas, state, contexts, shapes, gestures, plugins, ui, viewer) | 57 |
-| [`03-react-features.md`](03-react-features.md) | Apresentação (features) | `react` (simulation, replay, agent, copilot, workers, i18n) | 37 |
-| [`04-governanca-analise.md`](04-governanca-analise.md) | Governança · Confiança · Análise | `registry`, `audit`, `identity`, `anchor-*`, `conformance`, `soundness`, `replay` | 44 |
-| [`05-familia-ia.md`](05-familia-ia.md) | Família BPMN · IA | `dmn`, `sfeel`, `healthcare`, `domain-example`, `simulation`, `copilot`, `agentflow` | 44 |
-| [`06-catalogo-apps.md`](06-catalogo-apps.md) | Catálogo · Aplicações | `library`, `library-react`, `adapters-bpmn`, `studio`, `cli`, `example` | 46 |
+| Doc | Camada | Pacotes cobertos |
+|---|---|---|
+| [`01-core.md`](01-core.md) | Domínio | `core` |
+| [`02-react-editor-ui.md`](02-react-editor-ui.md) | Apresentação (editor + UI) | `react` (canvas, state, contexts, shapes, gestures, plugins, ui, viewer) |
+| [`03-react-features.md`](03-react-features.md) | Apresentação (features) | `react` (simulation, replay, agent, copilot, workers, i18n) |
+| [`04-governanca-analise.md`](04-governanca-analise.md) | Governança · Confiança · Análise | `registry`, `audit`, `identity`, `anchor-*`, `conformance`, `soundness`, `replay` |
+| [`05-familia-ia.md`](05-familia-ia.md) | Família BPMN · IA | `dmn`, `sfeel`, `healthcare`, `domain-example`, `simulation`, `copilot`, `agentflow` |
+| [`06-catalogo-apps.md`](06-catalogo-apps.md) | Catálogo · Aplicações | `library`, `library-react`, `adapters-bpmn`, `studio`, `cli`, `example` |
 
-**Cobertura total: 259 arquivos-fonte de produção** catalogados (100% dos `src/` dos
-24 pacotes), mais o corpus `.bpmn` (conformance), os assets HTML/CSS do `example` e os
-testes/e2e tratados de forma condensada.
+**Cobertura: 100% dos `src/` dos 24 pacotes** (≈268 arquivos hoje — contagens absolutas
+por doc foram removidas de propósito: envelheciam a cada PR; o número vivo é
+`find packages/*/src -name '*.ts*' | wc -l`), mais o corpus `.bpmn` (conformance), os
+assets HTML/CSS do `example` e os testes/e2e tratados de forma condensada. Mudanças
+estruturais recentes são marcadas com blocos `> Δ 2026-07` na entrada do arquivo
+correspondente.
 
 ## Metodologia
 
@@ -94,9 +97,9 @@ do sistema. (Detalhe de campos: `docs/uml/analise-uml.md §6`.)
 |---|---|---|
 | `XmlElement` | `{tag,attributes,children,text}` | árvore de parse XML |
 | `ImportResult` | `{diagram,warnings[]}` | import BPMN/DMN |
-| hash SHA-256 / `canonicalJson` | string | conteúdo normalizado p/ hash/diff |
+| hash SHA-256 / `canonicalJson` / `canonicalJsonExact` | string | normalização p/ hash/diff — `canonicalJson` arredonda coordenadas (geometria/snapshot); `canonicalJsonExact` preserva números (ledger v2, assinaturas, atestações) |
 | `Snapshot` | `{diagram,hash,createdAt,createdBy}` | verificação de conteúdo |
-| `AuditEntry` | `{seq,type,...,previousHash,hash}` (cadeia) | ledger encadeado |
+| `AuditEntry` | `{seq,type,...,previousHash,hash,hashVersion?:2}` (cadeia; receita v2 exata, v1 legado verifica p/ sempre) | ledger encadeado |
 | `LedgerVerification` / `VerificationReport` | `{valid,brokenAt?}` | verificação de integridade |
 | `CanonicalApprovalPayload` / `SignedApproval` | payload + assinatura Ed25519 | aprovação assinada |
 | `AnchorHead` / `AnchorReceipt` | head + recibo | ancoragem externa |
@@ -120,9 +123,10 @@ do sistema. (Detalhe de campos: `docs/uml/analise-uml.md §6`.)
 
 | Dado | Forma | Papel |
 |---|---|---|
-| `CanvasState` | viewport, selectedIds, dragState, connectState, resizeState, selectionBox, edgeDrag, boundarySnap, contextMenu, settling, issueBadges, dismissals | **estado visual** (store externo) |
+| `CanvasState` | viewport, selectedIds, focusedElementId, dragState, connectState, resizeState, selectionBox, edgeDrag, boundarySnap, contextMenu, settling, issueBadges, dismissals | **estado visual** (store externo) |
 | `EditorConfig` | registry+shapes+engines+router+emit resolvidos dos plugins | configuração do editor |
 | `AutosavePayload` | diagrama serializado + timestamp | recuperação |
+| `ClipboardPayload` | `{kind:'bpmnr-elements',nodes,edges}` | copiar/colar/duplicar (remap de ids na colagem) |
 | `Messages` (i18n) | mapas chave→string (EN/PT_BR) | textos de UI |
 | `ArtifactSummary` / `ArtifactDetail` | resumo/detalhe de artefato | catálogo |
 | `LibraryQuery` / `LibraryResult` / `LibraryCounts` | consulta + resultado + contagens | busca no catálogo |

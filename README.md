@@ -83,13 +83,18 @@ pnpm --filter @buildtovalue/example dev   # run the demo app
 
 ## Documentation
 
+Full index (incl. UML/C4 views, the per-file data catalog and design handoffs): **[docs/README.md](docs/README.md)**
+
 - [Getting started](docs/getting-started.md)
-- [Architecture](docs/architecture.md)
+- [Architecture](docs/architecture.md) · [C4/4+1 views (PT-BR)](docs/uml/arquitetura.md)
+- [API reference (generated)](docs/api/)
 - [Plugins](docs/plugins.md)
 - [Versioning & governance](docs/versioning.md)
 - [Version registry (channels, validity, run pinning)](docs/registry.md)
 - [BPMN 2.0 XML format profile](docs/format-spec.md)
+- [Assurance case (SACM)](docs/assurance-case.md) · [Conformance matrix](CONFORMANCE.md)
 - [Known limitations](docs/limitations.md)
+- [Melhorias estruturadas (análise técnica, PT-BR)](docs/melhorias.md)
 
 ## Stability & versioning
 

@@ -16,6 +16,13 @@ import { useCanvasStore, useCanvasState } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { useDismissal } from '../gestures/useDismissal.js';
+import {
+  buildPasteCommand,
+  collectClipboardPayload,
+  hasClipboardContent,
+  readClipboardPayload,
+  writeClipboardPayload,
+} from '../gestures/clipboard.js';
 import { useT } from '../i18n/I18nContext.js';
 import {
   backToAutoPatch,
@@ -144,6 +151,56 @@ export function ContextMenu() {
           });
         }
       }
+      const clipboardSelection = target.selectedIds.includes(node.id)
+        ? target.selectedIds
+        : [node.id];
+      rendered.push({
+        id: 'node.copy',
+        label: t('contextMenu.copy'),
+        run: () => {
+          const payload = collectClipboardPayload(diagram, clipboardSelection);
+          if (payload) void writeClipboardPayload(payload);
+        },
+      });
+      rendered.push({
+        id: 'node.duplicate',
+        label: t('contextMenu.duplicate'),
+        run: () => {
+          const payload = collectClipboardPayload(diagram, clipboardSelection);
+          const paste = payload
+            ? buildPasteCommand(diagram, payload, { description: 'Duplicate selection' })
+            : null;
+          if (paste) {
+            void execute(paste.command);
+            store.setState({ selectedIds: paste.newIds });
+          }
+        },
+      });
+    }
+
+    if (menu.kind === 'canvas' && hasClipboardContent()) {
+      rendered.push({
+        id: 'canvas.paste',
+        label: t('contextMenu.paste'),
+        run: () => {
+          void readClipboardPayload().then((payload) => {
+            // Paste anchored at the click point: shift the payload so its
+            // top-left corner lands on the menu's world position.
+            const minX = payload ? Math.min(...payload.nodes.map((n) => n.x)) : 0;
+            const minY = payload ? Math.min(...payload.nodes.map((n) => n.y)) : 0;
+            const paste = payload
+              ? buildPasteCommand(diagram, payload, {
+                  offsetX: menu.world.x - minX,
+                  offsetY: menu.world.y - minY,
+                })
+              : null;
+            if (paste) {
+              void execute(paste.command);
+              store.setState({ selectedIds: paste.newIds });
+            }
+          });
+        },
+      });
     }
 
     // PLUGIN sections (contract §N-5): when() decides presence; run() only

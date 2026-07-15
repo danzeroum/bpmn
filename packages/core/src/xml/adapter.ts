@@ -18,6 +18,7 @@ export class MiniXmlAdapter implements XmlParserAdapter {
 
 export class DomXmlAdapter implements XmlParserAdapter {
   parse(xml: string): XmlElement {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- heterogeneous registry seam: payload types vary per event/tag and are narrowed at the call site
     const DomParserCtor = (globalThis as Record<string, any>).DOMParser;
     if (typeof DomParserCtor !== 'function') {
       throw new BpmnParseError('DOMParser is not available in this environment — use MiniXmlAdapter');

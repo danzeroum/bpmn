@@ -1,3 +1,4 @@
+import { AdapterError } from './errors.js';
 import { COPILOT_PROMPTS, type CopilotPromptTemplate } from '@buildtovalue/copilot';
 import type { ArtifactAdapter, ArtifactDetail, ArtifactSummary } from '@buildtovalue/library';
 
@@ -59,7 +60,7 @@ export function copilotPromptAdapter(): ArtifactAdapter {
     async get(artifactId) {
       const template = COPILOT_PROMPTS.find((t) => t.id === artifactId);
       if (!template) {
-        throw new Error(`adapter "copilot-prompt": unknown template "${artifactId}"`);
+        throw new AdapterError(`adapter "copilot-prompt": unknown template "${artifactId}"`);
       }
       const detail: ArtifactDetail = {
         ...toSummary(template),

@@ -7,6 +7,7 @@ import {
   type BpmnNode,
 } from '@buildtovalue/core';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
+import { useT } from '../i18n/I18nContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { DefaultShape } from '../shapes/index.js';
@@ -33,6 +34,8 @@ export interface NodeRendererProps {
   resizeRect: { x: number; y: number; width: number; height: number } | null;
   /** True when this node's label is being edited inline. */
   editing: boolean;
+  /** Roving keyboard focus target (tabIndex 0 vs -1). */
+  focused?: boolean;
 }
 
 function NodeRendererInner({
@@ -45,9 +48,11 @@ function NodeRendererInner({
   connectHover,
   resizeRect,
   editing,
+  focused = false,
 }: NodeRendererProps) {
   const config = useEditorConfig();
   const store = useCanvasStore();
+  const t = useT();
   // Boolean selector: nodes re-render only when crossing the zoom threshold
   // (same pattern as the purpose chip in EdgeRenderer).
   const shadowsVisible = useCanvasState((s) => 1200 / s.viewport.width >= SHADOW_MIN_ZOOM);
@@ -75,10 +80,13 @@ function NodeRendererInner({
       data-node-id={node.id}
       data-node-type={node.type}
       data-selected={selected || undefined}
+      data-focused={focused || undefined}
       data-node-issue-state={issueBadge?.severity}
       data-node-closed={closed || undefined}
       role="button"
-      aria-label={`${node.type}: ${node.label}`}
+      aria-label={t('canvas.node.aria', { type: node.type, label: node.label })}
+      tabIndex={editable ? (focused ? 0 : -1) : undefined}
+      onFocus={editable ? () => store.setState({ focusedElementId: node.id }) : undefined}
       opacity={closed ? 0.75 : 1}
       style={{ cursor: editable ? 'grab' : 'default' }}
       onPointerDown={
@@ -209,6 +217,7 @@ function ConnectionPorts({
   node: BpmnNode;
   interactions: Interactions;
 }) {
+  const t = useT();
   const ports = [
     { x: node.width, y: node.height / 2 },
     { x: node.width / 2, y: node.height },
@@ -228,7 +237,7 @@ function ConnectionPorts({
           strokeWidth={1.5}
           style={{ cursor: 'crosshair' }}
           data-port
-          aria-label="Connection port"
+          aria-label={t('canvas.port.aria')}
           onPointerDown={(e) => interactions.onPortPointerDown(e, node.id)}
         />
       ))}
@@ -245,6 +254,7 @@ function ResizeHandles({
   nodeId: string;
   interactions: Interactions;
 }) {
+  const t = useT();
   const size = 7;
   const corners = [
     { corner: 'nw' as const, x: 0, y: 0, cursor: 'nwse-resize' },
@@ -266,7 +276,7 @@ function ResizeHandles({
           strokeWidth={1.2}
           style={{ cursor }}
           data-resize-corner={corner}
-          aria-label={`Resize ${corner}`}
+          aria-label={t('canvas.resize.aria', { corner })}
           onPointerDown={(e) => interactions.onResizePointerDown(e, nodeId, corner)}
         />
       ))}
@@ -334,10 +344,11 @@ function IssueBadge({
  */
 function ClosedSeal({ removedInVersion, width }: { removedInVersion: string; width: number }) {
   const { diagram } = useDiagram();
+  const t = useT();
   const label =
     removedInVersion === diagram.version.id
-      ? `FECHADO v${diagram.version.semanticVersion}`
-      : `FECHADO #${removedInVersion.slice(0, 7)}`;
+      ? t('canvas.seal.closedVersion', { version: diagram.version.semanticVersion })
+      : t('canvas.seal.closedRef', { ref: removedInVersion.slice(0, 7) });
   const pillWidth = label.length * 5.6 + 14;
   return (
     <g
@@ -377,6 +388,7 @@ function ClosedSeal({ removedInVersion, width }: { removedInVersion: string; wid
  * shapes stay pure.
  */
 function SubProcessControls({ node, editable }: { node: BpmnNode; editable: boolean }) {
+  const t = useT();
   const store = useCanvasStore();
   const { diagram, execute } = useDiagram();
   const expanded = isSubProcessExpanded(node);
@@ -409,7 +421,11 @@ function SubProcessControls({ node, editable }: { node: BpmnNode; editable: bool
         data-subprocess-toggle
         data-expanded={expanded || undefined}
         role="button"
-        aria-label={expanded ? `Collapse ${node.label}` : `Expand ${node.label}`}
+        aria-label={
+          expanded
+            ? t('canvas.subprocess.collapse', { label: node.label })
+            : t('canvas.subprocess.expand', { label: node.label })
+        }
         style={{ cursor: editable ? 'pointer' : 'default' }}
         onPointerDown={editable ? swallow : undefined}
         onDoubleClick={editable ? swallow : undefined}
@@ -431,7 +447,7 @@ function SubProcessControls({ node, editable }: { node: BpmnNode; editable: bool
           transform={`translate(${node.width - boxSize - 5}, ${markerY})`}
           data-subprocess-drill
           role="button"
-          aria-label={`Open ${node.label}`}
+          aria-label={t('canvas.subprocess.open', { label: node.label })}
           style={{ cursor: 'pointer' }}
           onPointerDown={swallow}
           onDoubleClick={swallow}
@@ -459,40 +475,57 @@ export function ConnectedNode({
   node: BpmnNode;
   interactions: Interactions;
 }) {
-  const selected = useCanvasState((s) => s.selectedIds.includes(node.id));
-  const readOnly = useCanvasState((s) => s.readOnly);
-  const drag = useCanvasState((s) =>
-    s.dragState?.active && s.dragState.nodeIds.includes(node.id)
-      ? { dx: s.dragState.dx, dy: s.dragState.dy }
-      : null,
-  );
-  const connectHover = useCanvasState((s) =>
-    s.connectState?.hoverTargetId === node.id
-      ? s.connectState.invalidReason
-        ? ('invalid' as const)
-        : ('valid' as const)
-      : null,
-  );
-  // Lanes light up as drop targets while a flow node is dragged over them.
-  const laneDropTarget = useCanvasState((s) =>
-    Boolean(s.dragState?.active && s.dragState.dropLaneId === node.id),
-  );
-  const resizeRect = useCanvasState((s) =>
-    s.resizeState?.nodeId === node.id ? s.resizeState.current : null,
-  );
-  const editing = useCanvasState((s) => s.editingNodeId === node.id);
+  // One consolidated selector per node instead of 7+ separate subscriptions:
+  // the store notifies every listener on each setState, so during a drag every
+  // mounted element runs its selectors per frame — flattening the slice to
+  // primitives keeps the shallowEqual cache effective and cuts the per-frame
+  // selector count by ~7x.
+  const view = useCanvasState((s) => {
+    const dragging = s.dragState?.active && s.dragState.nodeIds.includes(node.id);
+    const resize = s.resizeState?.nodeId === node.id ? s.resizeState.current : null;
+    return {
+      selected: s.selectedIds.includes(node.id),
+      readOnly: s.readOnly,
+      dx: dragging ? s.dragState!.dx : 0,
+      dy: dragging ? s.dragState!.dy : 0,
+      connectHover:
+        s.connectState?.hoverTargetId === node.id
+          ? s.connectState.invalidReason
+            ? ('invalid' as const)
+            : ('valid' as const)
+          : s.dragState?.active && s.dragState.dropLaneId === node.id
+            ? ('valid' as const)
+            : null,
+      resizeX: resize ? resize.x : null,
+      resizeY: resize ? resize.y : null,
+      resizeWidth: resize ? resize.width : null,
+      resizeHeight: resize ? resize.height : null,
+      editing: s.editingNodeId === node.id,
+      focused: s.focusedElementId === node.id,
+    };
+  });
 
   return (
     <NodeRenderer
       node={node}
-      selected={selected}
-      editable={!readOnly}
+      selected={view.selected}
+      editable={!view.readOnly}
       interactions={interactions}
-      dx={drag?.dx ?? 0}
-      dy={drag?.dy ?? 0}
-      connectHover={connectHover ?? (laneDropTarget ? 'valid' : null)}
-      resizeRect={resizeRect}
-      editing={editing}
+      dx={view.dx}
+      dy={view.dy}
+      connectHover={view.connectHover}
+      resizeRect={
+        view.resizeX !== null
+          ? {
+              x: view.resizeX,
+              y: view.resizeY as number,
+              width: view.resizeWidth as number,
+              height: view.resizeHeight as number,
+            }
+          : null
+      }
+      editing={view.editing}
+      focused={view.focused}
     />
   );
 }

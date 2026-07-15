@@ -1073,3 +1073,30 @@ describe('BpmnXmlConverter — businessRuleTask (Handoff 5 F-A)', () => {
     expect(converter().toXml(imported)).toBe(xml);
   });
 });
+
+describe('BpmnXmlConverter — multi-process documents', () => {
+  it('imports the first process and warns that the others were dropped', () => {
+    const xml = `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D">
+      <bpmn:process id="P1">
+        <bpmn:task id="T1" name="In first" />
+      </bpmn:process>
+      <bpmn:process id="P2">
+        <bpmn:task id="T2" name="In second" />
+      </bpmn:process>
+    </bpmn:definitions>`;
+    const { diagram, warnings } = new BpmnXmlConverter().fromXml(xml);
+    expect(diagram.nodes.T1).toBeDefined();
+    expect(diagram.nodes.T2).toBeUndefined();
+    expect(warnings.some((w) => w.includes('2 <process>') && w.includes('P1'))).toBe(true);
+  });
+
+  it('does not warn for single-process documents', () => {
+    const xml = `<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D">
+      <bpmn:process id="P1">
+        <bpmn:task id="T1" />
+      </bpmn:process>
+    </bpmn:definitions>`;
+    const { warnings } = new BpmnXmlConverter().fromXml(xml);
+    expect(warnings.some((w) => w.includes('<process>'))).toBe(false);
+  });
+});

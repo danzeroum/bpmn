@@ -1,11 +1,10 @@
 import {
-  activeEdges,
-  activeNodes,
   nodeParentId,
   type BpmnDiagram,
   type BpmnEdge,
   type BpmnNode,
 } from '@buildtovalue/core';
+import { activeEdgesCached, activeNodesCached } from './activeCache.js';
 import type { Viewport } from '../state/canvasStore.js';
 import { cullToViewport } from './culling.js';
 
@@ -32,12 +31,12 @@ export function selectRenderList(
   showClosed: boolean,
 ): { nodes: BpmnNode[]; edges: BpmnEdge[] } {
   const visibleNodes = orderByZ(
-    (showClosed ? Object.values(diagram.nodes) : activeNodes(diagram)).filter(
+    (showClosed ? Object.values(diagram.nodes) : activeNodesCached(diagram)).filter(
       (node) => !hiddenIds.has(node.id),
     ),
     diagram,
   );
-  const visibleEdges = (showClosed ? Object.values(diagram.edges) : activeEdges(diagram)).filter(
+  const visibleEdges = (showClosed ? Object.values(diagram.edges) : activeEdgesCached(diagram)).filter(
     (edge) => !hiddenIds.has(edge.sourceId) && !hiddenIds.has(edge.targetId),
   );
   return cullToViewport(visibleNodes, visibleEdges, diagram.nodes, viewport);

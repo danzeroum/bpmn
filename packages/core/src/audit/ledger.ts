@@ -2,7 +2,7 @@ import type { BpmnDiagram, BpmnEdge } from '../model/types.js';
 import type { UserContext } from '../model/types.js';
 import { BpmnAuditError } from '../model/errors.js';
 import { generateId, nowIso } from '../model/factory.js';
-import { canonicalJson, sha256Hex } from '../persistence/hash.js';
+import { canonicalJson, canonicalJsonExact, sha256Hex } from '../persistence/hash.js';
 import type { CommandStack } from '../commands/CommandStack.js';
 import type { Command } from '../commands/types.js';
 
@@ -17,6 +17,12 @@ export interface AuditEntry {
   details: Record<string, unknown>;
   previousHash: string;
   hash: string;
+  /**
+   * Hash-recipe version. `2` = exact canonical JSON over the whole entry
+   * (no numeric rounding, no delimiter ambiguity). Absent = legacy v1
+   * (`|`-joined fields with rounded `details`), kept verifiable forever.
+   */
+  hashVersion?: 2;
 }
 
 export interface AuditEntryInput {
@@ -40,9 +46,28 @@ export interface AuditSink {
 /**
  * The chain's hash recipe — exported so external verifiers (e.g.
  * `@buildtovalue/audit`'s `verifyLedger`) recompute entries against the exact
- * same bytes the ledger signed. Changing this breaks every existing chain.
+ * same bytes the ledger signed. The recipe is versioned per entry via
+ * {@link AuditEntry.hashVersion}: new entries use v2 (exact canonical JSON of
+ * the whole entry — no numeric rounding, no delimiter ambiguity); entries
+ * without the field verify against the legacy v1 recipe, so chains written
+ * before v2 remain valid forever.
  */
 export async function computeEntryHash(entry: Omit<AuditEntry, 'hash'>): Promise<string> {
+  if (entry.hashVersion === 2) {
+    return sha256Hex(
+      canonicalJsonExact({
+        hashVersion: 2,
+        previousHash: entry.previousHash,
+        id: entry.id,
+        seq: entry.seq,
+        type: entry.type,
+        timestamp: entry.timestamp,
+        userId: entry.userId,
+        versionId: entry.versionId,
+        details: entry.details,
+      }),
+    );
+  }
   return sha256Hex(
     [
       entry.previousHash,
@@ -89,6 +114,7 @@ export class AuditLedger {
         versionId: input.versionId,
         details: input.details ?? {},
         previousHash: previous?.hash ?? '',
+        hashVersion: 2 as const,
       };
       const entry: AuditEntry = { ...base, hash: await entryHash(base) };
       this.entries.push(entry);

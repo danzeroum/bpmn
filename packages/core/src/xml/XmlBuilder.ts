@@ -1,3 +1,5 @@
+import { BpmnError } from '../model/errors.js';
+
 /** Escapes character data (text nodes). */
 export function escapeXmlText(value: string): string {
   return stripInvalidXmlChars(value)
@@ -6,9 +8,17 @@ export function escapeXmlText(value: string): string {
     .replace(/>/g, '&gt;');
 }
 
-/** Escapes attribute values (double-quoted). */
+/**
+ * Escapes attribute values (double-quoted). TAB/LF/CR are written as
+ * character references — a strict parser normalizes the literal characters
+ * to spaces on re-read, which would break exact round-trips.
+ */
 export function escapeXmlAttribute(value: string): string {
-  return escapeXmlText(value).replace(/"/g, '&quot;').replace(/\n/g, '&#10;');
+  return escapeXmlText(value)
+    .replace(/"/g, '&quot;')
+    .replace(/\n/g, '&#10;')
+    .replace(/\t/g, '&#9;')
+    .replace(/\r/g, '&#13;');
 }
 
 /** Removes characters that are invalid in XML 1.0 documents. */
@@ -68,14 +78,14 @@ export class XmlBuilder {
 
   close(): this {
     const tag = this.stack.pop();
-    if (!tag) throw new Error('XmlBuilder: close() without a matching open()');
+    if (!tag) throw new BpmnError('XML', 'XmlBuilder: close() without a matching open()');
     this.parts.push(`${this.pad()}</${tag}>`);
     return this;
   }
 
   toString(): string {
     if (this.stack.length > 0) {
-      throw new Error(`XmlBuilder: unclosed elements: ${this.stack.join(', ')}`);
+      throw new BpmnError('XML', `XmlBuilder: unclosed elements: ${this.stack.join(', ')}`);
     }
     return this.parts.join('\n') + '\n';
   }

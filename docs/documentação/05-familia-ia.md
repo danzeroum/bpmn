@@ -2,7 +2,7 @@
 
 Catálogo de dados (mapa de dados) para o cluster **família BPMN + IA** do monorepo TypeScript. Mapeia TODO dado que circula — entradas, dados intermediários/de processamento (inclusive locais transitórios que nunca deixam a função, "mesmo que os dados se percam na própria classe") e saídas — arquivo por arquivo.
 
-Pacotes cobertos: `dmn`, `sfeel`, `healthcare`, `domain-example`, `simulation`, `copilot`, `agentflow`. **44 arquivos de código-fonte** (nenhum `*.test.ts` sob `src/`).
+Pacotes cobertos: `dmn`, `sfeel`, `healthcare`, `domain-example`, `simulation`, `copilot`, `agentflow`. Todos os arquivos de código-fonte dos `src/` (nenhum `*.test.ts` sob `src/`).
 
 O caminho de injeção em runtime que costura tudo: **`simulation` (engine) ↔ `DecisionEvaluator` (interface injetada) ↔ `dmn` (`createSfeelDecisionSupport`) ↔ `sfeel` (`evaluate`)**. O engine de token nunca importa `dmn` nem `sfeel`; recebe um objeto estrutural via `SimulationOptions.decisions`.
 
@@ -32,6 +32,7 @@ O caminho de injeção em runtime que costura tudo: **`simulation` (engine) ↔ 
 **Estruturas de dados que trafegam:** `DecisionTable`, `DecisionRule`, `DecisionTableColumn`, `HitPolicy`, `HIT_POLICY_TO_XML`, `XmlElement`, `XmlBuilder`.
 
 ### `packages/dmn/src/DmnXmlConverter.ts`
+> Δ 2026-07: root inválido lança `BpmnParseError` (antes `Error`); suíte dedicada de round-trip headless em `dmn/tests/roundtrip.test.ts` (aspas S-FEEL, células vazias, byte-estabilidade, DMNDI, XXE).
 **Papel:** Conversor bidirecional DRD (BpmnDiagram com nós `dmn:*`) ⇄ DMN 1.3 XML, incluindo DMNDI e extensão de governança bpmnr.
 **Entradas:** `BpmnDiagram` (toXml); `xmlText: string` (fromXml).
 **Processamento (intermediário):** `toXml`: `definitionsId` regex-saneado; `requirementsByOwner: Map<string,BpmnEdge[]>` agrupa arestas de requisito por target; para cada nó calcula `meta` (`nodeMeta` → `property:*` JSON.stringify, exclui `decisionTable`), delega tabela a `writeDecisionTable`; DMNDI emite `DMNShape`+`Bounds` e `DMNEdge`+waypoints (`edgeWaypoints` cai em `straightConnection`). `fromXml`: `MiniXmlParser` (XXE-safe), lê `diagramMeta`/`versionMeta`, monta `diagram` via `createDiagram`, `readVersion` (valida status contra `VERSION_STATUSES`), `readNode` (parse de `bpmnr:meta`/`property` com JSON.parse tolerante), `readDecisionTable` sobrepõe blob legado, `readRequirements` cria `BpmnEdge` a partir de `href="#id"`, `applyDi` aplica bounds/waypoints ou grid automático; acumula `warnings[]`.
@@ -177,6 +178,7 @@ O caminho de injeção em runtime que costura tudo: **`simulation` (engine) ↔ 
 **Estruturas de dados que trafegam:** `GatewayKind` (exclusive/parallel/inclusive/eventBased), `SimEdge` (id/source/target/label), `SimNode` (id/type/label/gateway?/outgoing/incoming/boundaryHost?/interrupting?/isStart/isEnd), `PendingChoice`, `BoundaryOption`, `Decision` (união: exclusive/eventBased{gateway,edge} | inclusive{gateway,edges} | boundary{host,boundary} | decision{node,context}), `DecisionOutcome` (outputs?/ruleIndex?/noMatch?/nonSimulable{cell,reason}), `DecisionEvaluator` (hasDecision/inputsOf/evaluate — a **interface injetada** do caminho runtime), `PendingDecisionInput`, `BlockedDecision` (nodeId/cell/reason), `TransitionRecord` (step/type/message/nodeId?/edgeId?/approximate?), `Token` (id/nodeId), `SimulationState`, `SimulationOptions` (scope?/decisions?).
 
 ### `packages/simulation/src/graph.ts`
+> Δ 2026-07: `isFlowNode`/`flowScopeOf`/`NON_FLOW_EDGE_TYPES` agora IMPORTADOS de `@buildtovalue/core` (`model/flow.ts`) e reexportados — a duplicação com soundness (pinada por teste) foi eliminada na fonte.
 **Papel:** Constrói o grafo de controle de fluxo (SimGraph) para um escopo, com a mesma classificação de nó/aresta que a análise de soundness.
 **Entradas:** `BpmnDiagram`, `scope?`.
 **Processamento (intermediário):** `inScope: Set<string>` filtra flow nodes do escopo; monta `SimNode` por nó (gateway via `gatewayKindOf`, boundary via `boundaryAttachedTo`/`isNonInterrupting`); popula `outgoing`/`incoming` percorrendo `activeEdges` (ignora messageFlow/association/dataAssociation); `label` de aresta cai no label do target; sets/maps transitórios `nodes`/`edges`/`starts`/`boundariesByHost`.
@@ -184,6 +186,7 @@ O caminho de injeção em runtime que costura tudo: **`simulation` (engine) ↔ 
 **Estruturas de dados que trafegam:** `SimGraph`, `SimNode`, `SimEdge`, `GatewayKind`, `BpmnDiagram`, `BpmnNode`.
 
 ### `packages/simulation/src/engine.ts`
+> Δ 2026-07: `SimulationError` estende `BpmnError` (code `SIMULATION`).
 **Papel:** Engine de token small-step determinístico; resolve XOR/AND/event/boundary exato e OR aproximado por dominadores; a lista ordenada de `Decision` É o scenario (replay bit-a-bit).
 **Entradas:** `BpmnDiagram` + `SimulationOptions` (com `decisions?: DecisionEvaluator` injetado); `Decision` (choose/replay); `boundaryId`; `Scenario` (replay).
 **Processamento (intermediário):** Estado interno mutável: `tokens: Token[]`, `joinArrivals: Map<string,Set>`, `traversedEdges`/`visitedNodes: Set`, `trail: TransitionRecord[]`, `decisions: Decision[]`, `tokenSeq`/`stepSeq`, `blocked: BlockedDecision|null`; `dom` (immediate-dominators). Micro-passos: `step`/`emit`/`deliver` (move/split, sync-join com contagem de arrivals, OR-join adiado); `settleOrJoins` (fixpoint), `orJoinReady`/`canReach` (BFS + dominância); **`decideDecision`** chama `decisionSupport.evaluate(node,context)` → `DecisionOutcome`, roteia pelo primeiro output (`String(values[0])` casado com label de aresta), ou faz `stop()` produzindo `BlockedDecision` + registro `decision-blocked` (nonSimulable/noMatch/output sem flow). Locais transitórios abundantes: `values`, `summary`, `wanted`, `edgeId`, `arrivals`, `live`, `seen`, `queue`.
