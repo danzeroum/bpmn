@@ -281,6 +281,12 @@ importers:
         specifier: workspace:*
         version: link:../adapters-bpmn
 
+  packages/lint:
+    dependencies:
+      '@buildtovalue/core':
+        specifier: workspace:*
+        version: link:../core
+
   packages/react:
     dependencies:
       '@buildtovalue/agentflow':

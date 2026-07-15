@@ -48,7 +48,7 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:parallelGateway` | ✅ supported | descriptive | `parallelGateway` |  |
 | `bpmn:inclusiveGateway` | ✅ supported | analytic | `inclusiveGateway` |  |
 | `bpmn:eventBasedGateway` | ✅ supported | analytic | `eventBasedGateway` |  |
-| `bpmn:complexGateway` | ⛔ unsupported | extended | — | Ignored with a warning (import degrades). |
+| `bpmn:complexGateway` | ✅ supported | extended | `complexGateway` |  |
 | `bpmn:sequenceFlow` | ✅ supported | descriptive | `sequenceFlow` |  |
 | `bpmn:messageFlow` | ✅ supported | descriptive | `messageFlow` |  |
 | `bpmn:association` | ✅ supported | descriptive | `association` |  |

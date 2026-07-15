@@ -60,6 +60,7 @@ const EXPECTED_EXPORTS = [
   'EdgeRenderer',
   'EditorConfigProvider',
   'EndEventShape',
+  'ComplexGatewayShape',
   'EventBasedGatewayShape',
   'ExclusiveGatewayShape',
   'GovernanceBreadcrumb',
@@ -208,7 +209,7 @@ describe('@buildtovalue/react public API surface', () => {
     expect(Object.keys(api).sort()).toEqual(EXPECTED_EXPORTS);
   });
 
-  it('every one of the 26 built-in shapes is registered in BUILT_IN_SHAPES', () => {
+  it('every one of the 27 built-in shapes is registered in BUILT_IN_SHAPES', () => {
     expect(Object.keys(api.BUILT_IN_SHAPES).sort()).toEqual(
       [
         'agentTask',
@@ -218,7 +219,8 @@ describe('@buildtovalue/react public API surface', () => {
         'dataObject',
         'dataStore',
         'endEvent',
-        'eventBasedGateway',
+        'complexGateway',
+      'eventBasedGateway',
         'exclusiveGateway',
         'group',
         'inclusiveGateway',

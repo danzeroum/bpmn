@@ -18,6 +18,7 @@
 - [identity/src](identity/src.md)
 - [library/src](library/src.md)
 - [library-react/src](library-react/src.md)
+- [lint/src](lint/src.md)
 - [react/src/agent](react/src/agent.md)
 - [react/src/copilot](react/src/copilot.md)
 - [react/src](react/src.md)

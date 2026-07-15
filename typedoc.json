@@ -17,6 +17,7 @@
     "packages/identity/src/index.ts",
     "packages/library-react/src/index.ts",
     "packages/library/src/index.ts",
+    "packages/lint/src/index.ts",
     "packages/react/src/agent.ts",
     "packages/react/src/copilot.ts",
     "packages/react/src/index.ts",

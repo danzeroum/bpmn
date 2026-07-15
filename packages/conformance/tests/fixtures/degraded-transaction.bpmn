@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Certify fixture: a transaction sub-process (deliberately unsupported,
+     matrix "out of scope before v2.x") plus a dangling reference so the
+     formatter exercises BOTH the unsupported-elements and warnings blocks. -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Def_degraded">
+  <bpmn:process id="P">
+    <bpmn:startEvent id="s" name="Start" />
+    <bpmn:transaction id="tx" name="Book trip" />
+    <bpmn:sequenceFlow id="f1" sourceRef="s" targetRef="ghost" />
+  </bpmn:process>
+</bpmn:definitions>

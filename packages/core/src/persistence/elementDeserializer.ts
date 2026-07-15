@@ -186,19 +186,6 @@ export class ElementDeserializer {
       type = this.registry.typeForXmlTag(tag, this.preferredTypes)?.type;
     }
     if (!type) {
-      // complexGateway carries an unmodellable merge/branch expression, so it
-      // is dropped rather than silently downgraded. Surface an explicit,
-      // actionable warning instead of the generic "unsupported" line so the
-      // author knows what was lost and the usual remedy (an inclusive gateway
-      // with conditional flows covers most complex-gateway intents).
-      if (tag === 'complexGateway') {
-        const idAttr = el.attributes.id ? ` id="${el.attributes.id}"` : '';
-        warnings.push(
-          `Dropped <bpmn:complexGateway${idAttr}>: complex gateways are not supported. ` +
-            `Remodel it as an inclusive gateway with conditional sequence flows.`,
-        );
-        return undefined;
-      }
       warnings.push(`Ignored unsupported element <${el.tag}>`);
       return undefined;
     }

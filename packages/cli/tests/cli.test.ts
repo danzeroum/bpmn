@@ -148,7 +148,7 @@ describe('certifyCommand / formatCertify (Handoff 4 §A2)', () => {
   });
 
   it('formats warnings, unsupported elements and structural issues', async () => {
-    const degraded = formatCertify(await certifyCommand(join(corpus, '37-degraded-elements-v1.bpmn')));
+    const degraded = formatCertify(await certifyCommand(join(fixtures, 'degraded-transaction.bpmn')));
     expect(degraded).toContain('Elementos fora do perfil');
     expect(degraded).toContain('warning(s):');
     expect(degraded).toContain('Classe certificável: NENHUMA');

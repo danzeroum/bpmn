@@ -84,6 +84,23 @@ follow-up do worker em `DECISIONS.md`).
 
 ---
 
+## 2.1 Rodada "referência de mercado" — o que ficou aberto dos itens 5–6
+
+Da sequência de paridade/interop (2026-07): entregues context pad, auto-layout/align/
+distribute/smart guides, busca Ctrl+F, `@buildtovalue/lint` (etiqueta + executabilidade) e
+`complexGateway` nativo. Ficaram abertos, cada um com escopo próprio:
+
+- **Passthrough de extensões estrangeiras (`zeebe:*`/`camunda:*`)** — hoje `readExtensionElements`
+  consome só `bpmnr:property`/`bpmnr:meta`; elementos de outros namespaces são lidos e perdidos no
+  export. Preservá-los (armazenar a árvore no modelo + re-emitir + capturar `xmlns:*` do root)
+  interage com os testes de byte-estabilidade e o corpus externo de conformance — PR dedicada.
+  As regras `EXEC_*` do pacote lint já aceitam as grafias `zeebe:`/`camunda:` quando o host as
+  injeta via propriedades.
+- **Deploy direto para engine (Camunda 8/Flowable)** — integração de rede/produto; depende do
+  passthrough acima para ser útil.
+- **Compensação/transação e coreografia** — extensão de cobertura BPMN aditiva (event definitions
+  + marcadores + round-trip); especificar junto com a publicação comparativa da CONFORMANCE.
+
 ## 3. Multi-pool / colaboração real (decisão de escopo de produto)
 
 O perfil v1 é single-process: N pools exportam como N participants apontando para o **mesmo**
