@@ -17,6 +17,10 @@ import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { useDismissal } from '../gestures/useDismissal.js';
 import {
+  buildAlignCommand,
+  buildDistributeCommand,
+} from '../canvas/arrange.js';
+import {
   buildPasteCommand,
   collectClipboardPayload,
   hasClipboardContent,
@@ -176,6 +180,44 @@ export function ContextMenu() {
           }
         },
       });
+      // Align/distribute (referência item 2): appear for multi-node selections.
+      const selectedNodes = target.selectedIds
+        .map((id) => diagram.nodes[id])
+        .filter((n): n is NonNullable<typeof n> => Boolean(n && !n.removedInVersion));
+      if (selectedNodes.length >= 2) {
+        const aligners = [
+          ['align-left', 'left', 'contextMenu.alignLeft'],
+          ['align-center-x', 'centerX', 'contextMenu.alignCenterX'],
+          ['align-top', 'top', 'contextMenu.alignTop'],
+          ['align-center-y', 'centerY', 'contextMenu.alignCenterY'],
+        ] as const;
+        for (const [id, mode, key] of aligners) {
+          rendered.push({
+            id: `selection.${id}`,
+            label: t(key),
+            run: () => {
+              const command = buildAlignCommand(diagram, selectedNodes, mode);
+              if (command) void execute(command);
+            },
+          });
+        }
+      }
+      if (selectedNodes.length >= 3) {
+        for (const axis of ['horizontal', 'vertical'] as const) {
+          rendered.push({
+            id: `selection.distribute-${axis}`,
+            label: t(
+              axis === 'horizontal'
+                ? 'contextMenu.distributeHorizontal'
+                : 'contextMenu.distributeVertical',
+            ),
+            run: () => {
+              const command = buildDistributeCommand(diagram, selectedNodes, axis);
+              if (command) void execute(command);
+            },
+          });
+        }
+      }
     }
 
     if (menu.kind === 'canvas' && hasClipboardContent()) {

@@ -86,6 +86,7 @@ const EXPECTED_EXPORTS = [
   'SEAL_LABELS',
   'SignatureBadge',
   'CanonicalPayloadCard',
+  'AlignmentGuidesOverlay',
   'AnchorSeal',
   // Agent Lane (Handoff 12 A-4) — Agent Studio + isolated editor + shape.
   'AgentStudio',

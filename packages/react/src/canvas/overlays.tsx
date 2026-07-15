@@ -119,3 +119,24 @@ export function SelectionBoxOverlay() {
     />
   );
 }
+
+
+/** Smart alignment guide lines (referência item 2) — draw-only. */
+export function AlignmentGuidesOverlay() {
+  const guides = useCanvasState((s) => s.alignGuides);
+  if (!guides) return null;
+  return (
+    <g pointerEvents="none" data-alignment-guides>
+      {guides.map((guide, index) => (
+        <line
+          key={index}
+          className="bpmnr-align-guide"
+          x1={guide.axis === 'v' ? guide.position : guide.from}
+          x2={guide.axis === 'v' ? guide.position : guide.to}
+          y1={guide.axis === 'v' ? guide.from : guide.position}
+          y2={guide.axis === 'v' ? guide.to : guide.position}
+        />
+      ))}
+    </g>
+  );
+}

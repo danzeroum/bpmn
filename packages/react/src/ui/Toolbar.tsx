@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
+  computeLayeredLayout,
   BpmnXmlConverter,
   childrenOf,
   compositeCommand,
@@ -16,6 +17,7 @@ import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { useT } from '../i18n/I18nContext.js';
 import { fitViewport, zoomViewportAt } from '../canvas/viewport.js';
 import { clearRoutingCommands } from '../canvas/routeEdge.js';
+import { buildLayoutCommand } from '../canvas/arrange.js';
 import { downloadFile, exportPng, exportSvg } from './exporters.js';
 import { clearAutosave } from '../state/autosave.js';
 import { GovernanceBreadcrumb, type GovernanceBreadcrumbLevel } from './GovernanceBreadcrumb.js';
@@ -163,6 +165,11 @@ export function Toolbar({ extra }: ToolbarProps) {
     })),
   ];
 
+  const arrange = () => {
+    const command = buildLayoutCommand(diagram);
+    if (command) execute(command);
+  };
+
   const drillTo = (targetId: string | null) => {
     const scope =
       targetId === null
@@ -216,6 +223,15 @@ export function Toolbar({ extra }: ToolbarProps) {
         </>
       )}
       <span className="bpmnr-toolbar-sep" />
+      <button
+        type="button"
+        onClick={arrange}
+        disabled={computeLayeredLayout(diagram) === null}
+        aria-label={t('toolbar.arrange.aria')}
+        title={t('toolbar.arrange.title')}
+      >
+        {t('toolbar.arrange')}
+      </button>
       <button type="button" onClick={validate} aria-label={t('toolbar.validate.aria')}>
         {'✓ '}
         {t('toolbar.validate')}

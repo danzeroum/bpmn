@@ -8,6 +8,7 @@ import { Defs, GridLayer } from './Defs.js';
 import { ConnectedNode } from './NodeRenderer.js';
 import { ConnectedEdge } from './EdgeRenderer.js';
 import {
+  AlignmentGuidesOverlay,
   BoundarySnapOverlay,
   ConnectionPreview,
   ReparentTargetOverlay,
@@ -152,6 +153,7 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
         <BoundarySnapOverlay />
         <ReparentTargetOverlay />
         <SelectionBoxOverlay />
+        <AlignmentGuidesOverlay />
         <EdgeLabelEditor />
         {overlay}
       </g>

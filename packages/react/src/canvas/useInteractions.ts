@@ -33,6 +33,7 @@ import {
 } from '@buildtovalue/core';
 import { activeNodesCached } from './activeCache.js';
 import { findBoundarySnapAt, findNodeAtPoint } from './hitTest.js';
+import { computeGuideSnap } from './smartGuides.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import type { ResizeCorner, SettlingEntry } from '../state/canvasStore.js';
@@ -386,6 +387,25 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
             dx = snapToGrid(dx, state.gridSize);
             dy = snapToGrid(dy, state.gridSize);
           }
+          // Smart guides (item 2): single-root drags magnetize to neighbors'
+          // edges/centers; the final pixels win over the grid snap.
+          let alignGuides: ReturnType<typeof computeGuideSnap>['guides'] | null = null;
+          if (active && state.dragState.rootIds.length === 1) {
+            const root = diagramRef.current.nodes[state.dragState.rootIds[0]];
+            if (root) {
+              const snap = computeGuideSnap(
+                diagramRef.current,
+                state.drillId,
+                root,
+                dx,
+                dy,
+                new Set(state.dragState.nodeIds),
+              );
+              dx = snap.dx;
+              dy = snap.dy;
+              alignGuides = snap.guides.length > 0 ? snap.guides : null;
+            }
+          }
           const dropLaneId = active
             ? (dropTargetLane(diagramRef.current, state.dragState.nodeIds, dx, dy)?.id ?? null)
             : null;
@@ -413,6 +433,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
           store.setState({
             dragState: { ...state.dragState, dx, dy, active, dropLaneId, reparentTargetId },
             boundarySnap,
+            alignGuides,
           });
           return;
         }
@@ -549,7 +570,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
       if (state.dragState) {
         const { nodeIds, rootIds, dx, dy, active, reparentTargetId } = state.dragState;
         const snap = state.boundarySnap;
-        store.setState({ dragState: null, boundarySnap: null });
+        store.setState({ dragState: null, boundarySnap: null, alignGuides: null });
         if (active && (dx !== 0 || dy !== 0)) {
           const single = nodeIds.length === 1 ? diagramRef.current.nodes[nodeIds[0]] : undefined;
           // Handoff 11 N-1: a lone event dropped inside the snap zone
@@ -768,8 +789,13 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
       worldPoint: Point,
     ) => {
       if (store.getState().readOnly) return;
+      // Right-clicking a member of a multi-selection keeps the selection
+      // (align/distribute act on it); clicking outside it re-selects.
+      const currentSelection = store.getState().selectedIds;
       store.setState({
-        ...(kind !== 'canvas' && targetId ? { selectedIds: [targetId] } : {}),
+        ...(kind !== 'canvas' && targetId && !currentSelection.includes(targetId)
+          ? { selectedIds: [targetId] }
+          : {}),
         contextMenu: { kind, ...(targetId ? { targetId } : {}), client, world: worldPoint },
       });
     },

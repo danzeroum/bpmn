@@ -312,6 +312,14 @@
   transition: filter 120ms ease-out;
 }
 
+/* Smart alignment guides (referência item 2). */
+.bpmnr-align-guide {
+  stroke: var(--bpmnr-selected, #1a6a54);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  opacity: 0.9;
+}
+
 /* Context pad (referência item 1): action buttons beside the selected node. */
 .bpmnr-context-pad-button rect {
   fill: var(--bpmnr-canvas-bg, #faf9f6);

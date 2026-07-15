@@ -9,6 +9,9 @@ import type { Messages } from '../messages.js';
 export const toolbar: { en: Messages; ptBR: Messages } = {
   en: {
     'toolbar.aria': 'Editor toolbar',
+    'toolbar.arrange': 'Arrange',
+    'toolbar.arrange.aria': 'Auto-arrange the diagram',
+    'toolbar.arrange.title': 'Auto-arrange (layered layout, undoable)',
     'toolbar.undo': 'Undo',
     'toolbar.undo.title': 'Undo (Ctrl+Z)',
     'toolbar.redo': 'Redo',
@@ -47,6 +50,9 @@ export const toolbar: { en: Messages; ptBR: Messages } = {
     'toolbar.issues.close': 'Close validation',
   },
   ptBR: {
+    'toolbar.arrange': 'Arrumar',
+    'toolbar.arrange.aria': 'Arrumar o diagrama automaticamente',
+    'toolbar.arrange.title': 'Arrumar automaticamente (layout em camadas, desfazível)',
     'toolbar.aria': 'Barra de ferramentas',
     'toolbar.undo': 'Desfazer',
     'toolbar.undo.title': 'Desfazer (Ctrl+Z)',

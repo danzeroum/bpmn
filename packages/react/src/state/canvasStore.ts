@@ -88,6 +88,8 @@ export interface CanvasState {
   selectedIds: string[];
   /** Roving keyboard focus: the element whose <g> holds tabIndex=0. */
   focusedElementId: string | null;
+  /** Smart alignment guides drawn while a drag magnetizes (item 2). */
+  alignGuides: Array<{ axis: 'v' | 'h'; position: number; from: number; to: number }> | null;
   hoveredId: string | null;
   /** Edge currently hovered — reveals its route handles + manual badge (R-3). */
   hoveredEdgeId: string | null;
@@ -191,6 +193,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     viewport: { x: 0, y: 0, width: 1200, height: 800 },
     selectedIds: [],
     focusedElementId: null,
+    alignGuides: null,
     hoveredId: null,
     hoveredEdgeId: null,
     dragState: null,
