@@ -312,6 +312,25 @@
   transition: filter 120ms ease-out;
 }
 
+/* Context pad (referência item 1): action buttons beside the selected node. */
+.bpmnr-context-pad-button rect {
+  fill: var(--bpmnr-canvas-bg, #faf9f6);
+  stroke: var(--bpmnr-stroke, #44403a);
+  stroke-width: 1;
+  transition: fill 100ms ease-out;
+}
+.bpmnr-context-pad-button:hover rect {
+  fill: var(--bpmnr-fill-activity, #f8f7f4);
+  stroke: var(--bpmnr-selected, #1a6a54);
+}
+.bpmnr-context-pad-glyph {
+  stroke: var(--bpmnr-text, #262220);
+  pointer-events: none;
+}
+.bpmnr-context-pad-button:hover .bpmnr-context-pad-glyph {
+  stroke: var(--bpmnr-selected, #1a6a54);
+}
+
 /* Roving keyboard focus (N-8 keyboard-only editing): visible focus ring on
    the focused element and on the canvas itself when it holds focus. */
 .bpmnr-canvas:focus-visible {

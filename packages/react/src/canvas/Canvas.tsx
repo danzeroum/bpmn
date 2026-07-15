@@ -14,6 +14,7 @@ import {
   SelectionBoxOverlay,
 } from './overlays.js';
 import { SettlingOverlay } from './SettlingOverlay.js';
+import { ContextPad } from './ContextPad.js';
 import { EdgeLabelEditor } from './EdgeLabelEditor.js';
 import { hiddenNodeIds } from './visibility.js';
 import { selectRenderList, SEMANTIC_ZOOM_MIN } from './renderList.js';
@@ -146,6 +147,7 @@ export function BpmnCanvas({ overlay, showClosed = true }: CanvasProps) {
       </g>
       <g data-layer="overlay">
         <SettlingOverlay />
+        <ContextPad interactions={interactions} />
         <ConnectionPreview />
         <BoundarySnapOverlay />
         <ReparentTargetOverlay />
