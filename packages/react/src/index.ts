@@ -97,3 +97,5 @@ export * from './workers/executor.js';
 export * from './workers/jobs.js';
 
 export { SearchPanel } from './ui/SearchPanel.js';
+export { LintPanel } from './ui/LintPanel.js';
+export type { LintPanelProps } from './ui/LintPanel.js';

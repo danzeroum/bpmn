@@ -15,6 +15,12 @@ const EXPECTED_EXPORTS = [
   'lintDiagram',
   'serviceTaskImplementationRule',
   'superfluousGatewayRule',
+  // Handoff 14 §1d — quick-fix contract + versioned profiles.
+  'ETIQUETTE_PROFILE',
+  'EXECUTABILITY_PROFILE',
+  'LINT_PROFILES',
+  'lintFindings',
+  'fixCommandFor',
 ].sort();
 
 describe('@buildtovalue/lint public API surface', () => {

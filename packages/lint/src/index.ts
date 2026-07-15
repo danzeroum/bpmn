@@ -1,12 +1,19 @@
 import {
   activeEdges,
   activeNodes,
+  addEdgeCommand,
+  compositeCommand,
+  createEdge,
   isContainerType,
   isEventType,
   isFlowEdge,
   isFlowNode,
+  removeEdgeCommand,
+  removeNodeCommand,
   type BpmnDiagram,
+  type BpmnEdge,
   type BpmnNode,
+  type Command,
   type ValidationIssue,
   type ValidationResult,
   type ValidationRule,
@@ -273,4 +280,179 @@ export function lintDiagram(
 ): ValidationResult {
   const issues = rules.flatMap((rule) => rule(diagram));
   return { valid: issues.every((issue) => issue.severity !== 'error'), issues };
+}
+
+// -------------------------------------------------- quick fixes + profiles
+
+/** What a quick-fix receives: the CURRENT diagram and the issue to repair. */
+export interface LintFixContext {
+  diagram: BpmnDiagram;
+  issue: ValidationIssue;
+}
+
+/**
+ * A lint rule with an identity and an OPTIONAL mechanical quick-fix
+ * (Handoff 14 §1d). `fix` returns ONE undoable `Command` (composites fold
+ * multi-step repairs into a single undo) — or `null` when the concrete issue
+ * cannot be fixed mechanically after all. Rules without `fix` are the ones
+ * the panel routes to the copilot's C5 pipeline instead.
+ */
+export interface LintRule {
+  /** Stable kebab-case id ("duplicate-flow") — the grouping key for hosts. */
+  id: string;
+  run: ValidationRule;
+  fix?: (ctx: LintFixContext) => Command | null;
+}
+
+/**
+ * A named, versioned rule set — the unit the Biblioteca lists as a promotable
+ * artifact (via `lintProfileAdapter`) and the panel shows as "política:
+ * <id>@<version>". `source` tags every finding so etiquette and
+ * engine-readiness issues share ONE surface without losing provenance.
+ */
+export interface LintProfile {
+  id: string;
+  name: string;
+  version: string;
+  source: 'etiquette' | 'executability';
+  rules: LintRule[];
+}
+
+function flowEdgesTouching(diagram: BpmnDiagram, nodeId: string): {
+  incoming: BpmnEdge[];
+  outgoing: BpmnEdge[];
+} {
+  const incoming: BpmnEdge[] = [];
+  const outgoing: BpmnEdge[] = [];
+  for (const edge of activeEdges(diagram)) {
+    if (!isFlowEdge(edge)) continue;
+    if (edge.targetId === nodeId) incoming.push(edge);
+    if (edge.sourceId === nodeId) outgoing.push(edge);
+  }
+  return { incoming, outgoing };
+}
+
+/** Duplicate flow: remove the redundant edge (the issue points at it). */
+function fixDuplicateFlow(ctx: LintFixContext): Command | null {
+  return ctx.issue.edgeId && ctx.diagram.edges[ctx.issue.edgeId]
+    ? removeEdgeCommand(ctx.issue.edgeId)
+    : null;
+}
+
+/**
+ * Superfluous gateway: remove it and, when it sat on a 1-in/1-out path,
+ * reconnect its neighbours with a fresh sequence flow — ONE composite.
+ */
+function fixSuperfluousGateway(ctx: LintFixContext): Command | null {
+  const nodeId = ctx.issue.nodeId;
+  if (!nodeId || !ctx.diagram.nodes[nodeId]) return null;
+  const { incoming, outgoing } = flowEdgesTouching(ctx.diagram, nodeId);
+  const commands: Command[] = [removeNodeCommand(nodeId)];
+  if (incoming.length === 1 && outgoing.length === 1) {
+    // The remove cascades the gateway's own edges, so the reconnect is a
+    // brand-new flow between the former neighbours.
+    commands.push(
+      addEdgeCommand(
+        createEdge({
+          sourceId: incoming[0].sourceId,
+          targetId: outgoing[0].targetId,
+          type: 'sequenceFlow',
+        }),
+      ),
+    );
+  }
+  return commands.length === 1
+    ? commands[0]
+    : compositeCommand('Remove superfluous gateway', commands);
+}
+
+/** Start/end endpoint violations: remove the offending flows — ONE command. */
+function fixEventEndpoints(ctx: LintFixContext): Command | null {
+  const nodeId = ctx.issue.nodeId;
+  if (!nodeId) return null;
+  const { incoming, outgoing } = flowEdgesTouching(ctx.diagram, nodeId);
+  const offending = ctx.issue.code === 'LINT_START_WITH_INCOMING' ? incoming : outgoing;
+  if (offending.length === 0) return null;
+  const commands = offending.map((edge) => removeEdgeCommand(edge.id));
+  return commands.length === 1
+    ? commands[0]
+    : compositeCommand('Remove invalid event flows', commands);
+}
+
+export const ETIQUETTE_PROFILE: LintProfile = {
+  id: 'lint-etiquette',
+  name: 'Etiqueta de modelagem',
+  version: '1.0.0',
+  source: 'etiquette',
+  rules: [
+    { id: 'label-required', run: labelRequiredRule },
+    { id: 'superfluous-gateway', run: superfluousGatewayRule, fix: fixSuperfluousGateway },
+    { id: 'implicit-split', run: implicitSplitRule },
+    { id: 'implicit-join', run: implicitJoinRule },
+    { id: 'duplicate-flow', run: duplicateFlowRule, fix: fixDuplicateFlow },
+    { id: 'event-endpoints', run: eventEndpointsRule, fix: fixEventEndpoints },
+  ],
+};
+
+export const EXECUTABILITY_PROFILE: LintProfile = {
+  id: 'lint-engine',
+  name: 'Prontidão de execução (engine)',
+  version: '1.0.0',
+  source: 'executability',
+  rules: [
+    { id: 'service-task-implementation', run: serviceTaskImplementationRule },
+    { id: 'conditional-flows', run: conditionalFlowsRule },
+  ],
+};
+
+/** The shipped profiles — both run on the SAME panel surface (§1d). */
+export const LINT_PROFILES: LintProfile[] = [ETIQUETTE_PROFILE, EXECUTABILITY_PROFILE];
+
+/** An issue annotated with the rule and profile that produced it. */
+export interface LintFinding extends ValidationIssue {
+  ruleId: string;
+  profileId: string;
+  source: 'etiquette' | 'executability';
+  /** True when the rule's quick-fix yields a command for THIS issue. */
+  fixable: boolean;
+}
+
+/** Runs the profiles and annotates every issue with rule/profile provenance. */
+export function lintFindings(
+  diagram: BpmnDiagram,
+  profiles: LintProfile[] = LINT_PROFILES,
+): LintFinding[] {
+  const findings: LintFinding[] = [];
+  for (const profile of profiles) {
+    for (const rule of profile.rules) {
+      for (const issue of rule.run(diagram)) {
+        findings.push({
+          ...issue,
+          ruleId: rule.id,
+          profileId: profile.id,
+          source: profile.source,
+          fixable: rule.fix !== undefined && rule.fix({ diagram, issue }) !== null,
+        });
+      }
+    }
+  }
+  return findings;
+}
+
+/**
+ * A FRESH quick-fix command for a finding, built against the CURRENT diagram
+ * — commands close over undo state at execute time, so never reuse one across
+ * executions. `null` when the finding's rule has no mechanical fix.
+ */
+export function fixCommandFor(
+  diagram: BpmnDiagram,
+  finding: LintFinding,
+  profiles: LintProfile[] = LINT_PROFILES,
+): Command | null {
+  for (const profile of profiles) {
+    if (profile.id !== finding.profileId) continue;
+    const rule = profile.rules.find((r) => r.id === finding.ruleId);
+    return rule?.fix?.({ diagram, issue: finding }) ?? null;
+  }
+  return null;
 }

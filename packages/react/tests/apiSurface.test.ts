@@ -162,6 +162,11 @@ const EXPECTED_EXPORTS = [
   'deriveAstarRoutes',
   'rerouteConnectedEdges',
   'SearchPanel',
+  // Handoff 14 §1d — lint problems dock (etiquette + engine, one surface),
+  // plus the shared animated pan (search + lint use the SAME one).
+  'LintPanel',
+  'panViewportTo',
+  'reducedMotion',
   'SearchPulseOverlay',
   'SettlingOverlay',
   'SETTLE_MS',

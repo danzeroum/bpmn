@@ -66,6 +66,7 @@
     "@buildtovalue/agentflow": "workspace:*",
     "@buildtovalue/core": "workspace:*",
     "@buildtovalue/identity": "workspace:*",
+    "@buildtovalue/lint": "workspace:*",
     "@buildtovalue/replay": "workspace:*",
     "@buildtovalue/simulation": "workspace:*",
     "@buildtovalue/copilot": "workspace:*"

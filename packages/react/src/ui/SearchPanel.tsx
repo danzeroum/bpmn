@@ -7,7 +7,7 @@ import {
   type BpmnDiagram,
 } from '@buildtovalue/core';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
-import type { CanvasStore } from '../state/canvasStore.js';
+import { panViewportTo, reducedMotion } from '../canvas/viewport.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { useDismissal } from '../gestures/useDismissal.js';
@@ -122,48 +122,6 @@ export function laneLabelOf(diagram: BpmnDiagram, elementId: string): string | n
     if (laneFlowNodeRefs(node).includes(elementId)) return node.label || node.id;
   }
   return null;
-}
-
-function reducedMotion(): boolean {
-  return (
-    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
-}
-
-/** Animated viewport pan (240ms ease-out); instant under reduced motion. */
-function panViewportTo(
-  store: CanvasStore,
-  targetX: number,
-  targetY: number,
-  cancelRef: { current: number | null },
-): void {
-  const { viewport } = store.getState();
-  if (cancelRef.current !== null && typeof cancelAnimationFrame === 'function') {
-    cancelAnimationFrame(cancelRef.current);
-    cancelRef.current = null;
-  }
-  if (reducedMotion() || typeof requestAnimationFrame !== 'function') {
-    store.setState({ viewport: { ...viewport, x: targetX, y: targetY } });
-    return;
-  }
-  const startX = viewport.x;
-  const startY = viewport.y;
-  const start = performance.now();
-  const DURATION = 240;
-  const tick = (now: number) => {
-    const raw = Math.min(1, (now - start) / DURATION);
-    const eased = 1 - (1 - raw) ** 3;
-    const current = store.getState().viewport;
-    store.setState({
-      viewport: {
-        ...current,
-        x: startX + (targetX - startX) * eased,
-        y: startY + (targetY - startY) * eased,
-      },
-    });
-    cancelRef.current = raw < 1 ? requestAnimationFrame(tick) : null;
-  };
-  cancelRef.current = requestAnimationFrame(tick);
 }
 
 const CATEGORY_GLYPH: Record<string, string> = {

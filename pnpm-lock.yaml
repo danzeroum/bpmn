@@ -77,6 +77,9 @@ importers:
       '@buildtovalue/library':
         specifier: workspace:*
         version: link:../library
+      '@buildtovalue/lint':
+        specifier: workspace:*
+        version: link:../lint
       '@buildtovalue/registry':
         specifier: workspace:*
         version: link:../registry
@@ -301,6 +304,9 @@ importers:
       '@buildtovalue/identity':
         specifier: workspace:*
         version: link:../identity
+      '@buildtovalue/lint':
+        specifier: workspace:*
+        version: link:../lint
       '@buildtovalue/replay':
         specifier: workspace:*
         version: link:../replay

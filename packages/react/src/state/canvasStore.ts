@@ -100,6 +100,8 @@ export interface CanvasState {
   }> | null;
   /** Find bar visibility (Ctrl/Cmd+F — item 4). */
   searchOpen: boolean;
+  /** Lint panel visibility — the bottom problems dock (Handoff 14 §1d). */
+  lintOpen: boolean;
   /**
    * Two halo pulses around a search hit (Handoff 14 §1c). `token` re-triggers
    * the CSS animation on consecutive hits; null under reduced motion.
@@ -211,6 +213,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     alignGuides: null,
     spacingBadges: null,
     searchOpen: false,
+    lintOpen: false,
     searchPulse: null,
     hoveredId: null,
     hoveredEdgeId: null,

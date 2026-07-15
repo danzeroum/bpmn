@@ -101,18 +101,26 @@ distribute/smart guides, busca Ctrl+F, `@buildtovalue/lint` (etiqueta + executab
 - **Compensação/transação e coreografia** — extensão de cobertura BPMN aditiva (event definitions
   + marcadores + round-trip); especificar junto com a publicação comparativa da CONFORMANCE.
 
-## 2.2 Handoff 14 (UX Craft) — reconciliação §0 aguardando validação
+## 2.2 Handoff 14 (UX Craft) — estado da fila U-1..U-7
 
-A reconciliação spec × PR #103 está em
-`docs/design_handoff_btv_ux_craft/RECONCILIACAO.md` (U-1, sem código). Todas as
-divergências ⚠ propõem **adotar a spec**; dois pontos pedem decisão explícita:
+A reconciliação (`docs/design_handoff_btv_ux_craft/RECONCILIACAO.md`) é o
+retrato congelado da U-1 (validada); o estado vivo é este:
 
-- **1a Esc**: o pad segue a seleção (Esc→deseleciona→pad some) — querem entrada
-  própria na pilha de dismissal (Esc fecha o pad antes de desfazer a seleção)?
-- **1g colunas comparativas**: sem PR alocada no §5 do handoff — anexar à U-6 ou
-  abrir U-7?
-
-Refinos U-2..U-6 só começam após a validação da reconciliação.
+- **U-1** reconciliação — ✅ validada (decisões: Esc no pad NÃO entra na pilha;
+  1g vira U-7; todas as divergências ⚠ adotaram a spec).
+- **U-2** context pad (1a) — ✅ validada 100%.
+- **U-3** smart guides (1b) — ✅ validada 100% (padrão "export mid-gesture"
+  adotado para toda superfície transiente).
+- **U-4** busca (1c) — ✅ validada 100% (cap 8 + overflow registrado).
+- **U-5** painel de lint (1d) — entregue, aguardando validação: dock inferior
+  redimensionável (`LintPanel`), contrato `fix(ctx)→command` no
+  `@buildtovalue/lint` (fixes: duplicate-flow, superfluous-gateway,
+  event-endpoints), "corrigir todos" = 1 composto, ✦ C5 gated por `AIProvider`,
+  `lintProfileAdapter` na Biblioteca, perfil engine na MESMA superfície.
+- **U-6** auto-layout proposta/recusa + translado das 📍 via
+  `translateManualEdges` + aba Execução/deploy gated (1e+1f) — próxima.
+- **U-7** matriz comparativa 1g (colunas de terceiros "declarado pela doc
+  deles" + script anti-drift) — por último, decisão registrada.
 
 ## 3. Multi-pool / colaboração real (decisão de escopo de produto)
 

@@ -6,6 +6,23 @@ correspondente. Novas decisões entram no topo da seção "Decisões recentes".
 
 ## Decisões recentes (rodada de melhorias, 2026-07-14)
 
+- **Handoff 14 / 1d — o LintPanel é dono de `issueBadges` enquanto aberto (U-5):** ao
+  abrir, o dock espelha seus findings como badges de canvas (mesmo campo que o Validate
+  e o PromotionPanel populam — última superfície vence); ao fechar, limpa. Os badges
+  nunca vazam para o export: além dos elementos `[data-node-issue]` (já em
+  `TRANSIENT_SELECTORS`), o exporter agora remove **atributos** transitórios
+  (`TRANSIENT_ATTRIBUTES`, hoje `data-node-issue-state`) — extensão do padrão
+  "export mid-gesture" adotado na U-3.
+- **Handoff 14 / 1c+1d — `panViewportTo`/`reducedMotion` viraram API pública:** o pan
+  animado da busca foi extraído para `canvas/viewport.ts` e é reusado pelo painel de
+  lint (ordem da validação da U-4: "reuse o pan animado, não crie mecanismo novo");
+  como `index.ts` reexporta o módulo, os dois helpers entraram no apiSurface —
+  deliberado, hosts ganham a MESMA navegação animada.
+- **Handoff 14 / 1d — perfis de lint versionados como identidade de artefato:**
+  `LintProfile {id, name, version, source, rules}` no `@buildtovalue/lint`
+  (`lint-etiquette@1.0.0`, `lint-engine@1.0.0`); o header do painel e o
+  `lintProfileAdapter` da Biblioteca leem o MESMO registro `LINT_PROFILES` (padrão
+  anti-drift do copilotPromptAdapter). Mudar regra = nova versão promovível.
 - **Handoff 14 / 1a — Esc não fecha o context pad pela pilha de dismissal** (validado
   na U-1): o pad é affordance passiva da seleção (como portas e resize handles), não
   um overlay aberto pelo usuário — Esc limpa a seleção e o pad some junto. Entrada

@@ -31,6 +31,7 @@
     "@buildtovalue/copilot": "workspace:*",
     "@buildtovalue/core": "workspace:*",
     "@buildtovalue/library": "workspace:*",
+    "@buildtovalue/lint": "workspace:*",
     "@buildtovalue/registry": "workspace:*",
     "@buildtovalue/replay": "workspace:*",
     "@buildtovalue/simulation": "workspace:*"

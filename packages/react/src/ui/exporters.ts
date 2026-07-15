@@ -29,6 +29,10 @@ const TRANSIENT_SELECTORS = [
   '[data-search-pulse]',
 ];
 
+/** Transient state ATTRIBUTES on otherwise-permanent elements (e.g. the node
+ * group's issue marker while the lint dock is open) — stripped, not removed. */
+const TRANSIENT_ATTRIBUTES = ['data-node-issue-state'];
+
 /** Clones the live canvas SVG, sizes it to the viewBox, strips transient
  * artifacts, and inlines the live CSS custom properties so themed colors export
  * faithfully. Synchronous — asset embedding (images/fonts) is the async step. */
@@ -43,6 +47,9 @@ function cloneForExport(svg: SVGSVGElement): SVGSVGElement {
   }
   for (const selector of TRANSIENT_SELECTORS) {
     clone.querySelectorAll(selector).forEach((el) => el.remove());
+  }
+  for (const attribute of TRANSIENT_ATTRIBUTES) {
+    clone.querySelectorAll(`[${attribute}]`).forEach((el) => el.removeAttribute(attribute));
   }
   const vars = collectCustomProperties(svg);
   for (const [name, value] of Object.entries(vars)) clone.style.setProperty(name, value);
