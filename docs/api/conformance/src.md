@@ -203,6 +203,51 @@ Internal node/edge type or event definition key, when applicable.
 optional notes?: string;
 ```
 
+***
+
+### ThirdPartyDeclaration
+
+Third-party comparative columns (Handoff 14 §1g). HONESTY RULE, binding:
+every cell reflects ONLY what the vendor's own documentation declares —
+"declarado pela doc deles", linked per column — never our own testing or
+claims about a competitor. An element absent from `declaredElements`
+renders "—" (no recorded declaration), which is NOT a claim of absence.
+Updating a column = re-reading THEIR doc and adjusting this fixture.
+
+#### Properties
+
+##### vendor
+
+```ts
+vendor: string;
+```
+
+Column header, e.g. 'bpmn-js (bpmn.io)'.
+
+##### sourceUrl
+
+```ts
+sourceUrl: string;
+```
+
+The vendor documentation page the declarations were read from.
+
+##### claim
+
+```ts
+claim: string;
+```
+
+Short claim rendered in declared cells, e.g. 'modela' / 'executa'.
+
+##### declaredElements
+
+```ts
+declaredElements: string[];
+```
+
+Matrix elements THEIR doc declares as covered.
+
 ## Type Aliases
 
 ### CertifiableClass
@@ -304,6 +349,14 @@ const STRUCTURAL_MANIFEST: Record<string, ElementRule>;
 
 ```ts
 const CONFORMANCE_MATRIX: ConformanceEntry[];
+```
+
+***
+
+### THIRD\_PARTY\_DECLARATIONS
+
+```ts
+const THIRD_PARTY_DECLARATIONS: ThirdPartyDeclaration[];
 ```
 
 ## Functions

@@ -1458,6 +1458,40 @@ function dmnDecisionAdapter(registry, options?): RegistryArtifactAdapter;
 
 ***
 
+### activeLintProfileVersion()
+
+```ts
+function activeLintProfileVersion(profileId): string | undefined;
+```
+
+The active (= shipped) version of a lint profile, or undefined for an
+unknown id. The panel header appends "VIGENTE" through this — the SAME
+registry the Biblioteca lists.
+
+#### Parameters
+
+##### profileId
+
+`string`
+
+#### Returns
+
+`string` \| `undefined`
+
+***
+
+### lintProfileAdapter()
+
+```ts
+function lintProfileAdapter(): ArtifactAdapter;
+```
+
+#### Returns
+
+`ArtifactAdapter`
+
+***
+
 ### createRecipeAdapter()
 
 ```ts

@@ -1489,6 +1489,91 @@ children: ReactNode;
 
 ***
 
+### LayoutMove
+
+One node the layout wants to move — feeds the preview ghosts and the fade.
+
+#### Properties
+
+##### id
+
+```ts
+id: string;
+```
+
+##### from
+
+```ts
+from: Point;
+```
+
+##### to
+
+```ts
+to: Point;
+```
+
+##### width
+
+```ts
+width: number;
+```
+
+##### height
+
+```ts
+height: number;
+```
+
+***
+
+### LayoutProposal
+
+The pending auto-layout, waiting for Aplicar/Recusar (Handoff 14 §1e).
+
+#### Properties
+
+##### command
+
+```ts
+command: Command;
+```
+
+ONE undoable composite: node moves + rigid 📍 translations.
+
+##### moved
+
+```ts
+moved: LayoutMove[];
+```
+
+##### reroutedCount
+
+```ts
+reroutedCount: number;
+```
+
+Auto-routed edges touching moved nodes — they re-route on apply.
+
+##### manualCount
+
+```ts
+manualCount: number;
+```
+
+Manual 📍 routes rigidly translated (PRESERVED, never re-routed).
+
+##### baseDiagram
+
+```ts
+baseDiagram: BpmnDiagram;
+```
+
+The diagram the proposal was computed against — a stale proposal
+(diagram changed while the card was open) must be discarded.
+
+***
+
 ### EdgeReroute
 
 One rerouted edge produced by a host-node move (Handoff 10 R-2b).
@@ -1901,6 +1986,14 @@ autosave: boolean;
 ```
 
 Autosave + recovery banner + beforeunload guard toggle. Default true.
+
+##### engine
+
+```ts
+engine: EngineBridge | null;
+```
+
+Execution-engine bridge (Handoff 14 §1f); null → no "Execução" tab.
 
 ***
 
@@ -2464,6 +2557,10 @@ One pluggable context-menu item (Handoff 11 N-5). The contract is
 deliberately narrow: `run` receives ONLY a command dispatcher — actions go
 through commands (undoable, audited); there is no direct state access.
 
+#### Extended by
+
+- [`ContextPadItem`](#contextpaditem)
+
 #### Properties
 
 ##### id
@@ -2519,6 +2616,99 @@ Dispatches commands through `execute` — the menu never mutates state.
 ###### Returns
 
 `void`
+
+***
+
+### ContextPadItem
+
+One pluggable context-pad action (Handoff 14 §1a) — the pad's 5th slot.
+Same narrow contract as [ContextMenuItem](#contextmenuitem), plus a single-character
+glyph rendered inside the pad button (an emoji or symbol; the full label
+stays in the tooltip/aria).
+
+#### Extends
+
+- [`ContextMenuItem`](#contextmenuitem)
+
+#### Properties
+
+##### id
+
+```ts
+id: string;
+```
+
+###### Inherited from
+
+[`ContextMenuItem`](#contextmenuitem).[`id`](#id-5)
+
+##### label
+
+```ts
+label: string;
+```
+
+###### Inherited from
+
+[`ContextMenuItem`](#contextmenuitem).[`label`](#label-2)
+
+##### when?
+
+```ts
+optional when?: (target) => boolean;
+```
+
+Guard: the item only renders when it returns true (omitted → always).
+
+###### Parameters
+
+###### target
+
+[`MenuTarget`](#menutarget)
+
+###### Returns
+
+`boolean`
+
+###### Inherited from
+
+[`ContextMenuItem`](#contextmenuitem).[`when`](#when)
+
+##### run
+
+```ts
+run: (target, api) => void;
+```
+
+Dispatches commands through `execute` — the menu never mutates state.
+
+###### Parameters
+
+###### target
+
+[`MenuTarget`](#menutarget)
+
+###### api
+
+###### execute
+
+(`command`) => `unknown`
+
+###### Returns
+
+`void`
+
+###### Inherited from
+
+[`ContextMenuItem`](#contextmenuitem).[`run`](#run)
+
+##### glyph
+
+```ts
+glyph: string;
+```
+
+One character/emoji drawn in the 26px button (e.g. '🤖').
 
 ***
 
@@ -2817,6 +3007,26 @@ only — the menu never mutates state directly.
 
 [`ContextMenuItem`](#contextmenuitem)[]
 
+##### contextPadItems?
+
+```ts
+optional contextPadItems?: (target) => ContextPadItem[];
+```
+
+Context-pad slot (Handoff 14 §1a): the FIRST returned item (after `when`
+filtering) takes the pad's 5th button; the rest are reachable via ⋯,
+which opens the full context menu.
+
+###### Parameters
+
+###### target
+
+[`MenuTarget`](#menutarget)
+
+###### Returns
+
+[`ContextPadItem`](#contextpaditem)[]
+
 ##### autosave?
 
 ```ts
@@ -2825,6 +3035,112 @@ optional autosave?: boolean;
 
 Editor resilience opt-out: `false` disables autosave, the recovery
 banner and the beforeunload guard. Default true; last plugin wins.
+
+##### engine?
+
+```ts
+optional engine?: EngineBridge;
+```
+
+Execution-engine bridge (Handoff 14 §1f): registering one turns on the
+"Execução" tab of the properties panel for executable activities. First
+plugin providing one wins (same rule as `lifecycleConfig`). Actual
+deployment stays HOST-owned and GATED — see [EngineBridge](#enginebridge).
+
+***
+
+### EngineBridge
+
+Execution-engine bridge (Handoff 14 §1f). The editor renders the
+"Execução" tab (progressive disclosure: essentials visible, the rest
+foldable) and GATES deploy: only an ACTIVE (VIGENTE) **and signed** version
+may deploy; anything else gets the "⚑ Deploy bloqueado → Ir para promoção"
+card. The signature truth and the deploy transport are host-owned —
+network integration is deliberately out of editor scope (§3).
+
+#### Properties
+
+##### id
+
+```ts
+id: string;
+```
+
+Engine id, e.g. 'zeebe', 'camunda7'. Prefixes default property keys.
+
+##### name?
+
+```ts
+optional name?: string;
+```
+
+Display name in the tab header, e.g. 'Camunda 8 (Zeebe)'.
+
+##### jobTypeKey?
+
+```ts
+optional jobTypeKey?: string;
+```
+
+Property key of the ESSENTIAL job-type binding. Default `<id>:taskDefinitionType`.
+
+##### retriesKey?
+
+```ts
+optional retriesKey?: string;
+```
+
+Property key of the retries field. Default `<id>:retries`.
+
+##### isSigned?
+
+```ts
+optional isSigned?: (diagram) => boolean;
+```
+
+Host-owned truth: is the CURRENT version's activation signed (identity
+package / host ledger)? Gates deploy together with `status === 'active'`.
+Absent → treated as NOT signed (deploy stays blocked).
+
+###### Parameters
+
+###### diagram
+
+`BpmnDiagram`
+
+###### Returns
+
+`boolean`
+
+##### deploy?
+
+```ts
+optional deploy?: (diagram) => void | Promise<void>;
+```
+
+Deploy transport — only invoked when the gate passes.
+
+###### Parameters
+
+###### diagram
+
+`BpmnDiagram`
+
+###### Returns
+
+`void` \| `Promise`\<`void`\>
+
+##### onRequestPromotion?
+
+```ts
+optional onRequestPromotion?: () => void;
+```
+
+"Ir para promoção →" navigation on the blocked card (host-owned).
+
+###### Returns
+
+`void`
 
 ***
 
@@ -4101,6 +4417,14 @@ alignGuides: object[] | null;
 
 Smart alignment guides drawn while a drag magnetizes (item 2).
 
+##### spacingBadges
+
+```ts
+spacingBadges: object[] | null;
+```
+
+Equal-spacing badges (Handoff 14 §1b) drawn alongside the guides.
+
 ##### searchOpen
 
 ```ts
@@ -4108,6 +4432,52 @@ searchOpen: boolean;
 ```
 
 Find bar visibility (Ctrl/Cmd+F — item 4).
+
+##### lintOpen
+
+```ts
+lintOpen: boolean;
+```
+
+Lint panel visibility — the bottom problems dock (Handoff 14 §1d).
+
+##### layoutProposal
+
+```ts
+layoutProposal: LayoutProposalState | null;
+```
+
+Pending auto-layout proposal (Handoff 14 §1e, cerca §1.7): the canvas
+shows target-position ghosts and the Aplicar/Recusar card; NOTHING moves
+until the user applies. Refusing (or Esc) just clears this.
+
+##### layoutSettle
+
+```ts
+layoutSettle: 
+  | {
+  ghosts: object[];
+  token: number;
+}
+  | null;
+```
+
+160ms crossfade after applying a layout: ghosts of the OLD positions
+fading out over the settled result (reduced-motion → never set).
+
+##### searchPulse
+
+```ts
+searchPulse: 
+  | {
+  elementId: string;
+  token: number;
+}
+  | null;
+```
+
+Two halo pulses around a search hit (Handoff 14 §1c). `token` re-triggers
+the CSS animation on consecutive hits; null under reduced motion.
 
 ##### hoveredId
 
@@ -4267,6 +4637,78 @@ editingEdgeId: string | null;
 ```
 
 Edge whose label is being edited inline (N-5 "Editar rótulo").
+
+***
+
+### LayoutProposalState
+
+The pending auto-layout (Handoff 14 §1e) as the store carries it. Matches
+`LayoutProposal` from `canvas/arrange.ts` structurally — the store module
+stays dependency-light (core types only).
+
+#### Properties
+
+##### command
+
+```ts
+command: Command;
+```
+
+##### moved
+
+```ts
+moved: object[];
+```
+
+###### id
+
+```ts
+id: string;
+```
+
+###### from
+
+```ts
+from: Point;
+```
+
+###### to
+
+```ts
+to: Point;
+```
+
+###### width
+
+```ts
+width: number;
+```
+
+###### height
+
+```ts
+height: number;
+```
+
+##### reroutedCount
+
+```ts
+reroutedCount: number;
+```
+
+##### manualCount
+
+```ts
+manualCount: number;
+```
+
+##### baseDiagram
+
+```ts
+baseDiagram: unknown;
+```
+
+Discard the proposal when the diagram changes underneath it.
 
 ***
 
@@ -4746,6 +5188,53 @@ Runs the verification — typically `() => verifyLedger(ledger)`.
 
   \| [`LedgerVerificationReport`](#ledgerverificationreport)
   \| `Promise`\<[`LedgerVerificationReport`](#ledgerverificationreport)\>
+
+***
+
+### LintPanelProps
+
+Lint panel (Handoff 14 §1d): a resizable bottom dock listing every finding
+of the active lint profiles, grouped by rule. Etiquette AND engine-readiness
+(executability) findings share this ONE surface — the source tag tells them
+apart. Clicking a row selects the element and pans to it with the SAME
+animated pan as the search bar; Esc closes via the single dismissal stack.
+
+Fixes: a rule's mechanical quick-fix ("corrigir") executes ONE undoable
+command; "corrigir todos" folds every available fix into ONE composite.
+Findings without a mechanical fix show "✦ sugerir correção" instead —
+routed through the copilot's C5 pipeline (same whitelist, integral
+rejection, atomic composite) — and only when the host injected an
+`AIProvider`, mirroring the CopilotPanel gate.
+
+While the dock is open its findings mirror onto the canvas as issue badges
+(`[data-node-issue]` — already stripped from exports by TRANSIENT_SELECTORS,
+the "export mid-gesture" rule); closing clears them.
+
+#### Properties
+
+##### provider?
+
+```ts
+optional provider?: AIProvider;
+```
+
+HOST-injected transport for "✦ sugerir correção". Absent → no ✦ button.
+
+##### profiles?
+
+```ts
+optional profiles?: LintProfile[];
+```
+
+Rule sets to run. Default: the shipped etiquette + engine profiles.
+
+##### initialHeight?
+
+```ts
+optional initialHeight?: number;
+```
+
+Initial dock height in px (resizable by the user).
 
 ***
 
@@ -6689,6 +7178,44 @@ never sets `settling`), so this overlay simply renders nothing then.
 
 ***
 
+### LayoutSettleOverlay()
+
+```ts
+function LayoutSettleOverlay(): Element | null;
+```
+
+Layout crossfade (Handoff 14 §1e): after APPLYING an auto-layout proposal,
+ghosts of the moved nodes' OLD rects fade out over [SETTLE\_MS](#settle_ms)ms on
+top of the settled result — same opacity-only crossfade discipline as the
+edge settle above. `prefers-reduced-motion` suppresses it upstream (the
+apply handler never sets `layoutSettle`).
+
+#### Returns
+
+`Element` \| `null`
+
+***
+
+### buildLayoutProposal()
+
+```ts
+function buildLayoutProposal(diagram): LayoutProposal | null;
+```
+
+Computes the layout PROPOSAL; null when out of scope or a no-op.
+
+#### Parameters
+
+##### diagram
+
+`BpmnDiagram`
+
+#### Returns
+
+[`LayoutProposal`](#layoutproposal) \| `null`
+
+***
+
 ### ConnectionPreview()
 
 ```ts
@@ -6758,7 +7285,41 @@ Lasso rectangle during box selection.
 function AlignmentGuidesOverlay(): Element | null;
 ```
 
-Smart alignment guide lines (referência item 2) — draw-only.
+Smart alignment guides + equal-spacing badges (Handoff 14 §1b) — draw-only.
+
+#### Returns
+
+`Element` \| `null`
+
+***
+
+### SearchPulseOverlay()
+
+```ts
+function SearchPulseOverlay(): Element | null;
+```
+
+Two expanding halo rings around the latest search hit (Handoff 14 §1c).
+Pure CSS animation (2 rings, staggered); cleared when the outer ring ends.
+Never rendered under reduced motion — the store field stays null.
+
+#### Returns
+
+`Element` \| `null`
+
+***
+
+### LayoutPreviewOverlay()
+
+```ts
+function LayoutPreviewOverlay(): Element | null;
+```
+
+Target-position ghosts of the pending auto-layout (Handoff 14 §1e): while
+the Aplicar/Recusar card is open, every node the layout wants to move shows
+a dashed outline at its PROPOSED position — the "DEPOIS" preview. Nothing
+on the real diagram moves until the user applies. Stripped from exports
+(TRANSIENT_SELECTORS).
 
 #### Returns
 
@@ -7893,6 +8454,60 @@ Wheel handler: zoom at cursor (plain wheel) — trackpad-friendly.
 ###### deltaY
 
 `number`
+
+#### Returns
+
+`void`
+
+***
+
+### reducedMotion()
+
+```ts
+function reducedMotion(): boolean;
+```
+
+True when the user asked for reduced motion — animations collapse to 0.
+
+#### Returns
+
+`boolean`
+
+***
+
+### panViewportTo()
+
+```ts
+function panViewportTo(
+   store, 
+   targetX, 
+   targetY, 
+   cancelRef): void;
+```
+
+Animated viewport pan (240ms ease-out); instant under reduced motion.
+Shared by the search bar (Handoff 14 §1c) and the lint panel (§1d) — the
+ONE navigation animation, never re-implemented per surface.
+
+#### Parameters
+
+##### store
+
+[`CanvasStore`](#canvasstore)
+
+##### targetX
+
+`number`
+
+##### targetY
+
+`number`
+
+##### cancelRef
+
+###### current
+
+`number` \| `null`
 
 #### Returns
 
@@ -9624,6 +10239,26 @@ import for both (aceite 10.5.3).
 
 ***
 
+### LayoutProposalCard()
+
+```ts
+function LayoutProposalCard(): Element | null;
+```
+
+Auto-layout proposal card (Handoff 14 §1e, cerca §1.7 — nothing silent):
+"Arrumar" only PROPOSES. While this card is open the canvas shows dashed
+ghosts at the target positions (LayoutPreviewOverlay); Aplicar executes the
+ONE composite (moves + rigid 📍 translations) and plays a 160ms crossfade
+of the old positions (reduced-motion → none); Recusar — or Esc via the
+dismissal stack — discards it and NOTHING changes. A proposal computed
+against a diagram that has since changed is discarded automatically.
+
+#### Returns
+
+`Element` \| `null`
+
+***
+
 ### LedgerStatus()
 
 ```ts
@@ -9640,6 +10275,24 @@ expected vs. found hash.
 ##### \_\_namedParameters
 
 [`LedgerStatusProps`](#ledgerstatusprops)
+
+#### Returns
+
+`Element`
+
+***
+
+### LintPanel()
+
+```ts
+function LintPanel(__namedParameters): Element;
+```
+
+#### Parameters
+
+##### \_\_namedParameters
+
+[`LintPanelProps`](#lintpanelprops)
 
 #### Returns
 
@@ -9709,6 +10362,12 @@ function PropertiesPanel(): Element;
 
 Inspector for the selected element: label, purpose (edges) and free-form
 properties. Property values are JSON — strings can be typed directly.
+
+Handoff 14 §1f: with an engine plugin registered (`plugin.engine`), an
+executable activity ALSO gets an "Execução" tab — progressive disclosure
+(job type + retries visible, the rest foldable) and the GATED deploy
+(VIGENTE + assinada, or the "⚑ Deploy bloqueado" card). Without an engine
+plugin the panel is byte-identical to before.
 
 #### Returns
 
