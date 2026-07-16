@@ -6,6 +6,13 @@ correspondente. Novas decisões entram no topo da seção "Decisões recentes".
 
 ## Decisões recentes (rodada de melhorias, 2026-07-14)
 
+- **Gate de audit da CI tolera o endpoint aposentado do npm (2026-07-15, decisão do
+  owner):** o npm aposentou o endpoint de security-audit que o `pnpm audit` chama
+  (HTTP 410 em `/-/npm/v1/security/audits[/quick]`; o pnpm 10.33 — latest na data —
+  ainda o usa). O step passou a converter SOMENTE `ERR_PNPM_AUDIT_BAD_RESPONSE` em
+  warning de workflow; qualquer advisory real continua derrubando o build. Revisitar
+  (remover a tolerância) quando o pnpm migrar para o bulk advisory endpoint.
+
 - **Handoff 14 / 1d — o LintPanel é dono de `issueBadges` enquanto aberto (U-5):** ao
   abrir, o dock espelha seus findings como badges de canvas (mesmo campo que o Validate
   e o PromotionPanel populam — última superfície vence); ao fechar, limpa. Os badges
