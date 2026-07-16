@@ -97,7 +97,8 @@ describe('lint panel (spec 1d)', () => {
         expect(Math.abs(x - 360)).toBeLessThan(1);
         expect(Math.abs(y - -70)).toBeLessThan(1);
       },
-      { timeout: 2000 },
+      // Generous under coverage instrumentation — rAF frames slow down there.
+      { timeout: 5000 },
     );
   });
 
