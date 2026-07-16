@@ -27,6 +27,7 @@ export * from './engine/agentTask.js';
 
 // Diff
 export * from './diff/index.js';
+export * from './diff/diffDiagrams.js';
 
 // Audit
 export * from './audit/ledger.js';

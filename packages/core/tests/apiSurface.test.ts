@@ -86,6 +86,8 @@ const EXPECTED_EXPORTS = [
   'compositeCommand',
   'computeDiagramHash',
   'computeDiff',
+  // Handoff 15 V-1 — review-grade semantic diff (classified + stable order).
+  'diffDiagrams',
   'edgeVersionDiff',
   'createDefaultRegistry',
   'createDefaultRuleEngine',

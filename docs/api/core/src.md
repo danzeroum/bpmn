@@ -1977,6 +1977,70 @@ evaluateCommand(command, diagram): RuleVerdict;
 
 ***
 
+### DiffEntry
+
+#### Properties
+
+##### kind
+
+```ts
+kind: DiffKind;
+```
+
+##### elementKind
+
+```ts
+elementKind: "node" | "edge";
+```
+
+##### elementId
+
+```ts
+elementId: string;
+```
+
+##### label?
+
+```ts
+optional label?: string;
+```
+
+Label for lists/a11y — target's when present, else the base's.
+
+##### changes?
+
+```ts
+optional changes?: Record<string, FieldChange>;
+```
+
+ΔN content: field → from/to, excluding x/y/waypoints/removedInVersion.
+
+##### from?
+
+```ts
+optional from?: Point;
+```
+
+Node position in the BASE version (removed ghost / move origin).
+
+##### to?
+
+```ts
+optional to?: Point;
+```
+
+Node position in the TARGET version (move destination).
+
+##### moved?
+
+```ts
+optional moved?: boolean;
+```
+
+`changed` entries that ALSO moved — render draws halo + origin arrow.
+
+***
+
 ### FieldChange
 
 #### Properties
@@ -3684,6 +3748,33 @@ parse(xml): XmlElement;
 
 ## Type Aliases
 
+### DiffKind
+
+```ts
+type DiffKind = "added" | "removed" | "moved" | "changed" | "rerouted";
+```
+
+Review-grade semantic diff (Handoff 15 §2a, V-1): classifies the raw
+[computeDiff](#computediff) output into the five review categories and returns the
+entries in a STABLE graph-reading order — the single list every review
+surface consumes (canvas overlay, change-by-change navigation, the Studio
+"Mudanças" tab). Headless, deterministic, zero new dependencies;
+`computeDiff`/`DiffView` are untouched.
+
+Classification (validated in the V-0 reconciliation):
+- node update whose only changes are `x`/`y`            → `moved`
+- node update with position AND other fields            → `changed` + `moved: true`
+- edge update whose only change is `waypoints`          → `rerouted` (its own
+  category — a re-route never pollutes a node's ΔN nor counts as `changed`)
+- `removedInVersion` set in the target                  → `removed` (a closed
+  element IS removed for review purposes); cleared → `added` (reopened)
+- edge supersession                                     → `changed` with a
+  `supersededBy` field change
+- `changes` NEVER includes `x`/`y`/`waypoints`/`removedInVersion` — its size
+  is the ΔN badge.
+
+***
+
 ### NodeDiffOp
 
 ```ts
@@ -4633,6 +4724,34 @@ diagram as it was at execution time, captured on `execute`.
 #### Returns
 
 [`Command`](#command-1)
+
+***
+
+### diffDiagrams()
+
+```ts
+function diffDiagrams(base, target): DiffEntry[];
+```
+
+The V-1 entry point: classified, deterministically ordered review diff.
+Ordering: topological graph-reading rank (target graph; elements absent
+from the target rank by the BASE graph), ties broken by base-version
+position (y, then x), then nodes before their edges, then id — a pure
+function of content, proven by the shuffle test.
+
+#### Parameters
+
+##### base
+
+[`BpmnDiagram`](#bpmndiagram)
+
+##### target
+
+[`BpmnDiagram`](#bpmndiagram)
+
+#### Returns
+
+[`DiffEntry`](#diffentry)[]
 
 ***
 
