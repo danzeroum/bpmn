@@ -103,4 +103,46 @@ describe('quick-fix contract fix(ctx) → command', () => {
     expect(finding.fixable).toBe(false);
     expect(fixCommandFor(diagram, finding)).toBeNull();
   });
+
+  it('a STALE duplicate-flow finding (edge already gone) yields no command', () => {
+    const diagram = base();
+    diagram.edges.dup = createEdge({ id: 'dup', sourceId: 'start', targetId: 'a' });
+    const finding = lintFindings(diagram).find((f) => f.code === 'LINT_DUPLICATE_FLOW')!;
+    const { dup: _gone, ...edges } = diagram.edges;
+    const changed = { ...diagram, edges };
+    expect(fixCommandFor(changed, finding)).toBeNull();
+  });
+
+  it('an ISOLATED superfluous gateway is removed without a reconnect (single command)', () => {
+    const diagram = base();
+    diagram.nodes.g = createNode({ id: 'g', type: 'exclusiveGateway', label: 'G', x: 300, y: 200 });
+    const finding = lintFindings(diagram).find((f) => f.code === 'LINT_SUPERFLUOUS_GATEWAY')!;
+    const fixed = fixCommandFor(diagram, finding)!.execute(diagram);
+    expect(fixed.nodes.g).toBeUndefined();
+    // No neighbours → no reconnect flow was invented.
+    expect(activeEdges(fixed)).toHaveLength(activeEdges(diagram).length);
+  });
+
+  it('event-endpoints with SEVERAL offending flows folds them into ONE composite', () => {
+    const diagram = base();
+    diagram.edges.back1 = createEdge({ id: 'back1', sourceId: 'a', targetId: 'start' });
+    diagram.edges.back2 = createEdge({ id: 'back2', sourceId: 'end', targetId: 'start' });
+    const finding = lintFindings(diagram).find((f) => f.code === 'LINT_START_WITH_INCOMING')!;
+    const command = fixCommandFor(diagram, finding)!;
+    const fixed = command.execute(diagram);
+    expect(fixed.edges.back1).toBeUndefined();
+    expect(fixed.edges.back2).toBeUndefined();
+    // ONE undo restores both offending flows — it was a single composite.
+    const restored = command.undo(fixed);
+    expect(restored.edges.back1).toBeDefined();
+    expect(restored.edges.back2).toBeDefined();
+  });
+
+  it('fixCommandFor with an unknown profile/rule provenance returns null', () => {
+    const diagram = base();
+    diagram.edges.dup = createEdge({ id: 'dup', sourceId: 'start', targetId: 'a' });
+    const finding = lintFindings(diagram).find((f) => f.code === 'LINT_DUPLICATE_FLOW')!;
+    expect(fixCommandFor(diagram, { ...finding, profileId: 'ghost' })).toBeNull();
+    expect(fixCommandFor(diagram, { ...finding, ruleId: 'ghost' })).toBeNull();
+  });
 });

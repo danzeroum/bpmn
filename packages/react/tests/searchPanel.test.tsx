@@ -183,7 +183,8 @@ describe('search — spec 1c refinements (U-4)', () => {
         const [x] = svg.getAttribute('viewBox')!.split(' ').map(Number);
         expect(Math.abs(x - 460)).toBeLessThan(1);
       },
-      { timeout: 2000 },
+      // Generous under coverage instrumentation — rAF frames slow down there.
+      { timeout: 5000 },
     );
   });
 
