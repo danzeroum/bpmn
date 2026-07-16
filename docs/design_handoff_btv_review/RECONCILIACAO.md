@@ -1,8 +1,15 @@
 # Handoff 15 §0 — Reconciliação spec × main (V-0, sem código)
 
-> Estado: **aguardando validação** antes da V-1. Legenda: ✅ existe na main (com
-> evidência) · ⚠ existe parcialmente / diverge (com proposta) · ⬜ não existe
-> (entra na PR indicada). Base: `main@9173aaa` (+ upload do handoff `387d06a`).
+> Estado: **VALIDADA** — decisões dos 5 conflitos registradas no fim do documento;
+> V-1 aprovada integralmente. Legenda: ✅ existe na main (com evidência) ·
+> ⚠ existe parcialmente / diverge (com proposta) · ⬜ não existe (entra na PR
+> indicada). Base: `main@9173aaa` (+ upload do handoff `387d06a`).
+>
+> **ERRATA da spec (§1.3), decidida na validação:** os tokens `--btv-success` e
+> `--btv-blue` citados pela cerca NÃO existem — a spec errou os NOMES; os valores
+> visuais dos mocks seguem sendo a régua. Mapeamento vinculante: adicionado →
+> `--btv-green` · alterado → `--btv-ink` (removido → `--btv-error` e movido →
+> `--btv-gold`, como na cerca). Nenhum token novo.
 
 ## Resumo executivo
 
@@ -96,7 +103,18 @@
 
 ---
 
-## Conflitos / decisões para a validação da V-0
+## Conflitos / decisões — RESOLVIDOS na validação da V-0
+
+> Decisões do owner (2026-07-16): **1.** tokens mapeados (errata acima), nenhum
+> token novo. **2.** adapter mapeia EM REVISÃO → `candidate` com perda
+> documentada; glifo ⟲ no meta/typeLabel — vocabulário da Biblioteca intacto.
+> **3.** pedir-mudanças = caminho PADRÃO do Studio; `rejectPromotion` permanece
+> na API como rejeição dura documentada. **4.** extração dos registros de
+> comando (V-7) aprovada, COM teste de equivalência antes do refactor (padrão
+> N-7). **5.** incluir `review.thread.resolved` — catálogo N-3 vai a 16 eventos
+> com os 3 `review.*`, todos minor.
+
+Texto original das propostas (para contexto):
 
 1. **Tokens `--btv-success` e `--btv-blue` não existem** (cerca §1.3 os cita como
    "existentes"). Existem `--btv-green` (verde aprovação/seleção) e `--btv-ink`
