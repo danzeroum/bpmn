@@ -6,6 +6,7 @@ export * from './BpmnEditor.js';
 // editor graph.
 export { BpmnViewer, type BpmnViewerProps } from './viewer/BpmnViewer.js';
 export { ViewerCanvas, type ViewerCanvasProps } from './viewer/ViewerCanvas.js';
+export { BpmnDiffViewer, type BpmnDiffViewerProps } from './viewer/BpmnDiffViewer.js';
 
 // Contexts & hooks
 export * from './contexts/DiagramContext.js';

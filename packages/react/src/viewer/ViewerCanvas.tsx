@@ -25,14 +25,24 @@ import { useViewerPan } from './useViewerPan.js';
  */
 const NOOP_INTERACTIONS = Object.freeze({}) as unknown as Interactions;
 
+/** Diff paint category per element (Handoff 15 §2a — the DiffEntry kinds). */
+export type DiffPaintKind = 'added' | 'removed' | 'moved' | 'changed' | 'rerouted';
+
 export interface ViewerCanvasProps {
   /** Extra SVG content rendered on the overlay layer (world coordinates). */
   overlay?: ReactNode;
   /** Show closed (removedInVersion) elements. Default true. */
   showClosed?: boolean;
+  /**
+   * Diff painting (Handoff 15 §2a): element id → kind. When provided, every
+   * rendered element gains a `data-diff-state` wrapper — elements NOT in the
+   * map read `unchanged` and dim to 45% via CSS (never hidden). When absent
+   * the render tree is BYTE-IDENTICAL to before (viewerEquivalence).
+   */
+  diffStates?: Record<string, DiffPaintKind>;
 }
 
-export function ViewerCanvas({ overlay, showClosed = true }: ViewerCanvasProps) {
+export function ViewerCanvas({ overlay, showClosed = true, diffStates }: ViewerCanvasProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const { diagram } = useDiagram();
   const viewport = useCanvasState((s) => s.viewport);
@@ -70,14 +80,26 @@ export function ViewerCanvas({ overlay, showClosed = true }: ViewerCanvasProps) 
       <Defs gridSize={gridSize} />
       <GridLayer viewport={viewport} />
       <g data-layer="edges">
-        {edges.map((edge) => (
-          <ConnectedEdge key={edge.id} edge={edge} nodes={diagram.nodes} />
-        ))}
+        {edges.map((edge) =>
+          diffStates ? (
+            <g key={edge.id} data-diff-state={diffStates[edge.id] ?? 'unchanged'}>
+              <ConnectedEdge edge={edge} nodes={diagram.nodes} />
+            </g>
+          ) : (
+            <ConnectedEdge key={edge.id} edge={edge} nodes={diagram.nodes} />
+          ),
+        )}
       </g>
       <g data-layer="nodes">
-        {nodes.map((node) => (
-          <ConnectedNode key={node.id} node={node} interactions={NOOP_INTERACTIONS} />
-        ))}
+        {nodes.map((node) =>
+          diffStates ? (
+            <g key={node.id} data-diff-state={diffStates[node.id] ?? 'unchanged'}>
+              <ConnectedNode node={node} interactions={NOOP_INTERACTIONS} />
+            </g>
+          ) : (
+            <ConnectedNode key={node.id} node={node} interactions={NOOP_INTERACTIONS} />
+          ),
+        )}
       </g>
       <g data-layer="overlay">{overlay}</g>
     </svg>

@@ -3425,3 +3425,171 @@
     min-height: 44px;
   }
 }
+
+/* --- Review diff (Handoff 15 §2a). Tokens per the V-0 decision 1: added
+   --btv-green · removed --btv-error · moved --btv-gold · changed --btv-ink.
+   State NEVER by color alone — every mark carries the glyph+text code
+   (+ADD, −REM, →MOV, ΔN, ↷ROTA). --- */
+.bpmnr-diff-viewer [data-diff-state='unchanged'] {
+  opacity: 0.45; /* esmaecido, nunca oculto (§2a) */
+}
+.bpmnr-diff-tag {
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  paint-order: stroke;
+  stroke: var(--bpmnr-canvas-bg, #faf9f6);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.bpmnr-diff-tag[data-diff-tag='added'] { fill: var(--btv-green, #1a6a54); }
+.bpmnr-diff-tag[data-diff-tag='removed'] { fill: var(--btv-error, #b3372f); }
+.bpmnr-diff-tag[data-diff-tag='moved'] { fill: var(--btv-gold, #9a7b1e); }
+.bpmnr-diff-tag[data-diff-tag='rerouted'] { fill: var(--btv-gold, #9a7b1e); }
+.bpmnr-diff-ghost-removed {
+  fill: none;
+  stroke: var(--btv-error, #b3372f);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}
+.bpmnr-diff-ghost-label {
+  font-size: 11px;
+  text-anchor: middle;
+  fill: var(--btv-error, #b3372f);
+  opacity: 0.8;
+}
+.bpmnr-diff-ghost-moved {
+  fill: none;
+  stroke: var(--btv-gold, #9a7b1e);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}
+.bpmnr-diff-move-arrow {
+  stroke: var(--btv-gold, #9a7b1e);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 4;
+}
+.bpmnr-diff-move-head { fill: var(--btv-gold, #9a7b1e); }
+.bpmnr-diff-halo-added {
+  fill: none;
+  stroke: var(--btv-green, #1a6a54);
+  stroke-width: 2;
+}
+.bpmnr-diff-halo-changed {
+  fill: none;
+  stroke: var(--btv-ink, #33567e);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 4;
+}
+.bpmnr-diff-edge-removed {
+  fill: none;
+  stroke: var(--btv-error, #b3372f);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+.bpmnr-diff-edge-added {
+  fill: none;
+  stroke: var(--btv-green, #1a6a54);
+  stroke-width: 2.5;
+  opacity: 0.7;
+}
+.bpmnr-diff-edge-rerouted {
+  fill: none;
+  stroke: var(--btv-gold, #9a7b1e);
+  stroke-width: 2.5;
+  stroke-dasharray: 8 4;
+  opacity: 0.8;
+}
+.bpmnr-diff-badge { cursor: pointer; }
+.bpmnr-diff-badge-hit { fill: transparent; }
+.bpmnr-diff-badge-face {
+  fill: var(--btv-ink, #33567e);
+}
+.bpmnr-diff-badge-text {
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  fill: #fff;
+  text-anchor: middle;
+}
+.bpmnr-diff-legend {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  border-radius: 8px;
+  background: var(--bpmnr-canvas-bg, #faf9f6);
+  color: var(--bpmnr-text, #262220);
+  font-size: 11px;
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+.bpmnr-diff-legend [data-legend='added'] { color: var(--btv-green, #1a6a54); }
+.bpmnr-diff-legend [data-legend='removed'] { color: var(--btv-error, #b3372f); }
+.bpmnr-diff-legend [data-legend='moved'] { color: var(--btv-gold, #9a7b1e); }
+.bpmnr-diff-legend [data-legend='changed'] { color: var(--btv-ink, #33567e); }
+.bpmnr-diff-legend [data-legend='rerouted'] { color: var(--btv-gold, #9a7b1e); }
+.bpmnr-diff-popover {
+  position: absolute;
+  z-index: 40;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 10px 12px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  border-radius: 8px;
+  background: var(--bpmnr-canvas-bg, #faf9f6);
+  color: var(--bpmnr-text, #262220);
+  font-size: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+}
+.bpmnr-diff-popover header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.bpmnr-diff-popover header button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--bpmnr-text, #262220);
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+.bpmnr-diff-popover dl { margin: 0; }
+.bpmnr-diff-popover dt {
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  color: var(--bpmnr-text-muted, #6f675a);
+  margin-top: 6px;
+}
+.bpmnr-diff-popover dd { margin: 0; overflow-wrap: anywhere; }
+.bpmnr-diff-popover-from {
+  color: var(--btv-error, #b3372f);
+  text-decoration: line-through;
+}
+.bpmnr-diff-popover-to { color: var(--btv-green, #1a6a54); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-bpmnr-theme]) .bpmnr-diff-legend,
+  :root:not([data-bpmnr-theme]) .bpmnr-diff-popover {
+    background: #262220;
+    color: #e8e3da;
+    border-color: #44403a;
+  }
+}
+[data-bpmnr-theme='dark'] .bpmnr-diff-legend,
+[data-bpmnr-theme='dark'] .bpmnr-diff-popover {
+  background: #262220;
+  color: #e8e3da;
+  border-color: #44403a;
+}
+@media (pointer: coarse) {
+  .bpmnr-diff-popover header button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}

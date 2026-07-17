@@ -8,6 +8,8 @@
  */
 export { BpmnViewer } from './viewer/BpmnViewer.js';
 export type { BpmnViewerProps } from './viewer/BpmnViewer.js';
+export { BpmnDiffViewer } from './viewer/BpmnDiffViewer.js';
+export type { BpmnDiffViewerProps } from './viewer/BpmnDiffViewer.js';
 export { ViewerCanvas } from './viewer/ViewerCanvas.js';
 export type { ViewerCanvasProps } from './viewer/ViewerCanvas.js';
 
