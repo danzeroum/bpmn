@@ -13,6 +13,7 @@ import { studio } from './studio.js';
 import { agentStudio } from './agentStudio.js';
 import { canvas } from './canvas.js';
 import { lint } from './lint.js';
+import { review } from './review.js';
 
 /**
  * Every dictionary fragment (Handoff 11 N-6). One entry per migrated surface
@@ -34,4 +35,5 @@ export const FRAGMENTS: Array<{ en: Messages; ptBR: Messages }> = [
   agentStudio,
   canvas,
   lint,
+  review,
 ];

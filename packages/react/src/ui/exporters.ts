@@ -29,11 +29,13 @@ const TRANSIENT_SELECTORS = [
   '[data-search-pulse]',
   '[data-layout-preview]',
   '[data-layout-settle]',
+  '[data-diff-overlay]',
 ];
 
 /** Transient state ATTRIBUTES on otherwise-permanent elements (e.g. the node
- * group's issue marker while the lint dock is open) — stripped, not removed. */
-const TRANSIENT_ATTRIBUTES = ['data-node-issue-state'];
+ * group's issue marker while the lint dock is open, or the review-diff paint
+ * wrappers) — stripped, not removed. */
+const TRANSIENT_ATTRIBUTES = ['data-node-issue-state', 'data-diff-state'];
 
 /** Clones the live canvas SVG, sizes it to the viewBox, strips transient
  * artifacts, and inlines the live CSS custom properties so themed colors export

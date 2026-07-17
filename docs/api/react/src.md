@@ -5809,6 +5809,61 @@ Re-attempt anchoring (the ↻ Retentar action).
 
 ***
 
+### BpmnDiffViewerProps
+
+Review diff surface (Handoff 15 §2a, V-2): the TARGET diagram rendered on
+the read-only viewer (N-7) with the semantic diff painted over it.
+Binding semantics from the spec mock:
+- unchanged elements dim to 45% (never hidden — `data-diff-state` + CSS);
+- removed = dashed ghost AT THE BASE POSITION (−REM);
+- moved = dashed ghost at the origin + arrow to the destination (→MOV);
+- changed = dashed halo + clickable ΔN badge → popover with the property
+  changes before → after;
+- added = halo + tag on the new element (+ADD);
+- rerouted paints the ROUTE, never the nodes, and never counts as Δ.
+Colors come from the EXISTING tokens per the V-0 decision (added
+`--btv-green`, removed `--btv-error`, moved `--btv-gold`, changed
+`--btv-ink`), always with glyph + text — never color alone. The whole
+overlay lives under `[data-diff-overlay]` and the paint under
+`data-diff-state` — both stripped from exports (TRANSIENT_*).
+
+READ-ONLY by construction (cerca §1.1): the substrate is the viewer — no
+command stack, no gestures, no keyboard editing exists in this tree; the
+binding test proves no mutation is reachable. Nothing here ever touches the
+diagram objects (cerca §1.2 — XML round-trip stays byte-identical).
+
+#### Properties
+
+##### base
+
+```ts
+base: BpmnDiagram;
+```
+
+The v-base (e.g. the currently ACTIVE version).
+
+##### target
+
+```ts
+target: BpmnDiagram;
+```
+
+The v-target being reviewed (e.g. the CANDIDATE). Rendered diagram.
+
+##### plugins?
+
+```ts
+optional plugins?: BpmnPlugin[];
+```
+
+##### messages?
+
+```ts
+optional messages?: Messages;
+```
+
+***
+
 ### BpmnViewerProps
 
 #### Properties
@@ -5853,6 +5908,14 @@ optional messages?: Messages;
 
 Injected UI dictionary (Handoff 11 N-6). Omitted → English / outer provider.
 
+##### diffStates?
+
+```ts
+optional diffStates?: Record<string, DiffPaintKind>;
+```
+
+Diff painting per element (Handoff 15 §2a) — see ViewerCanvasProps.
+
 ***
 
 ### ViewerCanvasProps
@@ -5874,6 +5937,17 @@ optional showClosed?: boolean;
 ```
 
 Show closed (removedInVersion) elements. Default true.
+
+##### diffStates?
+
+```ts
+optional diffStates?: Record<string, DiffPaintKind>;
+```
+
+Diff painting (Handoff 15 §2a): element id → kind. When provided, every
+rendered element gains a `data-diff-state` wrapper — elements NOT in the
+map read `unchanged` and dim to 45% via CSS (never hidden). When absent
+the render tree is BYTE-IDENTICAL to before (viewerEquivalence).
 
 ***
 
@@ -10648,6 +10722,24 @@ With no adapter or no head it stays `none`.
 #### Returns
 
 [`AnchorCycle`](#anchorcycle)
+
+***
+
+### BpmnDiffViewer()
+
+```ts
+function BpmnDiffViewer(__namedParameters): Element;
+```
+
+#### Parameters
+
+##### \_\_namedParameters
+
+[`BpmnDiffViewerProps`](#bpmndiffviewerprops)
+
+#### Returns
+
+`Element`
 
 ***
 

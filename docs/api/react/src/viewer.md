@@ -14,6 +14,18 @@ Re-exports [BpmnViewerProps](../src.md#bpmnviewerprops)
 
 ***
 
+### BpmnDiffViewer
+
+Re-exports [BpmnDiffViewer](../src.md#bpmndiffviewer)
+
+***
+
+### BpmnDiffViewerProps
+
+Re-exports [BpmnDiffViewerProps](../src.md#bpmndiffviewerprops)
+
+***
+
 ### ViewerCanvas
 
 Re-exports [ViewerCanvas](../src.md#viewercanvas)

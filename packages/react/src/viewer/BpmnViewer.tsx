@@ -10,7 +10,7 @@ import { I18nProvider } from '../i18n/I18nContext.js';
 import { VersionBanner } from '../ui/VersionBanner.js';
 import type { Messages } from '../i18n/messages.js';
 import type { BpmnPlugin } from '../plugins/types.js';
-import { ViewerCanvas } from './ViewerCanvas.js';
+import { ViewerCanvas, type ViewerCanvasProps } from './ViewerCanvas.js';
 
 export interface BpmnViewerProps {
   diagram: BpmnDiagram;
@@ -26,13 +26,16 @@ export interface BpmnViewerProps {
   showClosed?: boolean;
   /** Injected UI dictionary (Handoff 11 N-6). Omitted → English / outer provider. */
   messages?: Messages;
+  /** Diff painting per element (Handoff 15 §2a) — see ViewerCanvasProps. */
+  diffStates?: ViewerCanvasProps['diffStates'];
 }
 
 function ViewerBody({
   diagram,
   overlay,
   showClosed,
-}: Pick<BpmnViewerProps, 'diagram' | 'overlay' | 'showClosed'>) {
+  diffStates,
+}: Pick<BpmnViewerProps, 'diagram' | 'overlay' | 'showClosed' | 'diffStates'>) {
   const config = useEditorConfig();
   return (
     <DiagramProvider
@@ -44,7 +47,7 @@ function ViewerBody({
       {/* Read-only from birth: no gesture can mutate the diagram. */}
       <CanvasProvider initial={{ readOnly: true }}>
         <div className="bpmnr-viewer" style={{ position: 'relative', width: '100%', height: '100%' }}>
-          <ViewerCanvas overlay={overlay} showClosed={showClosed} />
+          <ViewerCanvas overlay={overlay} showClosed={showClosed} diffStates={diffStates} />
           {/* Read-only governance seal (selo): version + lock + closed count.
               Self-gating — paints only in read-only / superseded contexts. */}
           <VersionBanner />
@@ -66,10 +69,10 @@ function ViewerBody({
  * viewerEquivalence.test), so swapping a heavy read-only editor for this viewer
  * changes bundle size, never pixels.
  */
-export function BpmnViewer({ diagram, plugins, overlay, showClosed, messages }: BpmnViewerProps) {
+export function BpmnViewer({ diagram, plugins, overlay, showClosed, messages, diffStates }: BpmnViewerProps) {
   const body = (
     <EditorConfigProvider plugins={plugins}>
-      <ViewerBody diagram={diagram} overlay={overlay} showClosed={showClosed} />
+      <ViewerBody diagram={diagram} overlay={overlay} showClosed={showClosed} diffStates={diffStates} />
     </EditorConfigProvider>
   );
   // Compose, don't shadow (N-6): provide a dictionary only when given one,

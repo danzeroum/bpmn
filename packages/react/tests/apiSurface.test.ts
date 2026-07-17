@@ -167,6 +167,8 @@ const EXPECTED_EXPORTS = [
   'LintPanel',
   'panViewportTo',
   'reducedMotion',
+  // Handoff 15 §2a — review diff painted on the read-only viewer.
+  'BpmnDiffViewer',
   // Handoff 14 §1e — auto-layout as a PROPOSAL (card + preview + crossfade).
   'LayoutProposalCard',
   'buildLayoutProposal',
