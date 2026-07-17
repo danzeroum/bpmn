@@ -5811,26 +5811,34 @@ Re-attempt anchoring (the ↻ Retentar action).
 
 ### BpmnDiffViewerProps
 
-Review diff surface (Handoff 15 §2a, V-2): the TARGET diagram rendered on
-the read-only viewer (N-7) with the semantic diff painted over it.
-Binding semantics from the spec mock:
-- unchanged elements dim to 45% (never hidden — `data-diff-state` + CSS);
-- removed = dashed ghost AT THE BASE POSITION (−REM);
-- moved = dashed ghost at the origin + arrow to the destination (→MOV);
-- changed = dashed halo + clickable ΔN badge → popover with the property
-  changes before → after;
-- added = halo + tag on the new element (+ADD);
-- rerouted paints the ROUTE, never the nodes, and never counts as Δ.
-Colors come from the EXISTING tokens per the V-0 decision (added
-`--btv-green`, removed `--btv-error`, moved `--btv-gold`, changed
-`--btv-ink`), always with glyph + text — never color alone. The whole
-overlay lives under `[data-diff-overlay]` and the paint under
-`data-diff-state` — both stripped from exports (TRANSIENT_*).
+Review diff surface (Handoff 15 §2a + §2b, V-2/V-3): the TARGET diagram on
+the read-only viewer (N-7) with the semantic diff painted over it and the
+change-by-change navigation bar on top.
 
-READ-ONLY by construction (cerca §1.1): the substrate is the viewer — no
-command stack, no gestures, no keyboard editing exists in this tree; the
-binding test proves no mutation is reachable. Nothing here ever touches the
-diagram objects (cerca §1.2 — XML round-trip stays byte-identical).
+§2a binding semantics (V-2): unchanged dims to 45% (never hidden); removed
+= dashed ghost AT the v-base position (−REM); moved = ghost at the origin +
+arrow (→MOV); added = halo (+ADD); changed = dashed halo + clickable ΔN
+badge → before→after popover; rerouted paints the ROUTE (↷ROTA), never the
+nodes, never Δ. Tokens per the V-0 decision; glyph+text always.
+
+§2b navigation (V-3): the bar consumes the SAME topologically-ordered list
+`diffDiagrams` returns — the UI NEVER reorders. F7/Shift+F7 (and ←/→) walk
+with wrap, each step pans with the U-4 `panViewportTo` and plays two halo
+pulses (reduced-motion → instant pan, zero pulses). Category chips filter
+(combinable, counts per kind); filtering recomputes M and repositions N
+without losing the current item when it survives. The synced side list
+navigates on click. Removed entries are navigable — the pan goes to the
+GHOST at the v-base position.
+
+Esc (V-2 decision, standalone surface): one local handler — popover first,
+then `onClose` when the host provided it. The Studio embed (V-5) joins the
+editor's single dismissal stack instead.
+
+READ-ONLY by construction (cerca §1.1); nothing here touches the diagram
+objects (§1.2). Every SVG artifact of the surface lives under
+`[data-diff-overlay]` / `data-diff-state` (TRANSIENT_*) — exports stay
+clean mid-diff and mid-navigation; the bar/list/legend are HTML outside
+the SVG and can never leak into an export by construction.
 
 #### Properties
 
@@ -5861,6 +5869,18 @@ optional plugins?: BpmnPlugin[];
 ```ts
 optional messages?: Messages;
 ```
+
+##### onClose?
+
+```ts
+optional onClose?: () => void;
+```
+
+Host-owned "close diff mode" (Esc reaches it after the popover).
+
+###### Returns
+
+`void`
 
 ***
 
