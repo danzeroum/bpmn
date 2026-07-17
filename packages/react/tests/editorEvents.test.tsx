@@ -82,7 +82,7 @@ describe('onEditorEvent (observability, zero deps)', () => {
 });
 
 describe('N-3 — the complete typed catalog', () => {
-  it('freezes the 13 catalog names and the deprecated alias map', () => {
+  it('freezes the 16 catalog names and the deprecated alias map', () => {
     expect([...EDITOR_EVENTS]).toEqual([
       'diagram.loaded',
       'element.added',
@@ -97,6 +97,10 @@ describe('N-3 — the complete typed catalog', () => {
       'import.warning',
       'render.slow',
       'shape.render.error',
+      // Handoff 15 (V-0 decision 5) — the three review.* events, all minor.
+      'review.thread.opened',
+      'review.thread.resolved',
+      'review.changes.requested',
     ]);
     expect(DEPRECATED_EVENT_ALIASES).toEqual({ 'node.created': 'element.added' });
   });

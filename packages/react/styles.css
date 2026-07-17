@@ -3727,3 +3727,144 @@
     min-height: 44px;
   }
 }
+
+/* --- Review threads (Handoff 15 §2c): gold pins + thread popover + orphans. --- */
+.bpmnr-review-pin { cursor: pointer; }
+.bpmnr-review-pin-hit { fill: transparent; }
+.bpmnr-review-pin-face {
+  fill: var(--btv-gold, #9a7b1e);
+  stroke: var(--bpmnr-canvas-bg, #faf9f6);
+  stroke-width: 1.5;
+}
+.bpmnr-review-pin-face-resolved {
+  fill: var(--bpmnr-canvas-bg, #faf9f6);
+  stroke: var(--btv-green, #1a6a54);
+  stroke-width: 2;
+}
+.bpmnr-review-pin-text {
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  fill: #fff;
+  text-anchor: middle;
+}
+.bpmnr-review-pin[data-review-pin-state='resolved'] .bpmnr-review-pin-text {
+  fill: var(--btv-green, #1a6a54);
+}
+.bpmnr-review-thread {
+  position: absolute;
+  z-index: 40;
+  width: 280px;
+  padding: 10px 12px;
+  border: 1px solid var(--btv-gold, #9a7b1e);
+  border-radius: 8px;
+  background: var(--bpmnr-canvas-bg, #faf9f6);
+  color: var(--bpmnr-text, #262220);
+  font-size: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+}
+.bpmnr-review-thread header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.bpmnr-review-thread header button,
+.bpmnr-review-thread [data-review-resolve] {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--bpmnr-text, #262220);
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+.bpmnr-review-thread [data-review-resolve] {
+  color: var(--btv-green, #1a6a54);
+  font-size: 11px;
+}
+.bpmnr-review-msg { margin: 4px 0; }
+.bpmnr-review-msg-author {
+  display: block;
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  color: var(--bpmnr-text-muted, #6f675a);
+}
+.bpmnr-review-msg-ai { color: var(--btv-agent, #7a4f9a); }
+.bpmnr-review-resolved {
+  font-size: 11px;
+  color: var(--btv-green, #1a6a54);
+}
+.bpmnr-review-compose { display: flex; gap: 6px; margin-top: 8px; }
+.bpmnr-review-compose textarea {
+  flex: 1;
+  min-height: 44px;
+  font: inherit;
+  font-size: 12px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  border-radius: 6px;
+  padding: 6px;
+  background: transparent;
+  color: inherit;
+  resize: vertical;
+}
+.bpmnr-review-compose button {
+  border: none;
+  border-radius: 6px;
+  background: var(--btv-ink, #33567e);
+  color: #fff;
+  padding: 4px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  align-self: flex-end;
+}
+.bpmnr-review-compose button:disabled { opacity: 0.4; cursor: default; }
+.bpmnr-review-author {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  color: var(--bpmnr-text-muted, #8a8175);
+}
+.bpmnr-review-orphans {
+  position: absolute;
+  bottom: 44px;
+  left: 10px;
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--bpmnr-warning-border, #e8d9ae);
+  border-radius: 8px;
+  background: var(--bpmnr-warning-bg, #fdf6e8);
+  color: var(--bpmnr-warning-fg, #7a611e);
+  font-size: 11px;
+}
+.bpmnr-review-orphans button {
+  border: none;
+  background: transparent;
+  color: var(--btv-ink, #33567e);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-bpmnr-theme]) .bpmnr-review-thread {
+    background: #262220;
+    color: #e8e3da;
+  }
+}
+[data-bpmnr-theme='dark'] .bpmnr-review-thread {
+  background: #262220;
+  color: #e8e3da;
+}
+@media (pointer: coarse) {
+  .bpmnr-review-thread header button,
+  .bpmnr-review-thread [data-review-resolve],
+  .bpmnr-review-compose button,
+  .bpmnr-review-orphans button {
+    min-height: 44px;
+  }
+  /* Pin hit stays ≥44px world-adjacent (r=22 → 44px diameter). */
+}

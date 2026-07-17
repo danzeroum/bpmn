@@ -30,6 +30,7 @@ const TRANSIENT_SELECTORS = [
   '[data-layout-preview]',
   '[data-layout-settle]',
   '[data-diff-overlay]',
+  '[data-review-pins]',
 ];
 
 /** Transient state ATTRIBUTES on otherwise-permanent elements (e.g. the node
