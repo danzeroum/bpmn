@@ -169,6 +169,8 @@ const EXPECTED_EXPORTS = [
   'reducedMotion',
   // Handoff 15 §2a — review diff painted on the read-only viewer.
   'BpmnDiffViewer',
+  // Handoff 15 §2c — host-injected review threads (reference store).
+  'createInMemoryReviewStore',
   // Handoff 14 §1e — auto-layout as a PROPOSAL (card + preview + crossfade).
   'LayoutProposalCard',
   'buildLayoutProposal',

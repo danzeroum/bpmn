@@ -1964,6 +1964,9 @@ single console warning per session.
   \| `"promotion.completed"`
   \| `"render.slow"`
   \| `"shape.render.error"`
+  \| `"review.thread.opened"`
+  \| `"review.thread.resolved"`
+  \| `"review.changes.requested"`
 
 ###### Parameters
 
@@ -2492,6 +2495,60 @@ nodeType: string;
 
 ```ts
 message: string;
+```
+
+##### review.thread.opened
+
+```ts
+review.thread.opened: object;
+```
+
+A review thread was opened on an element (Handoff 15 §2c).
+
+###### threadId
+
+```ts
+threadId: string;
+```
+
+###### elementId
+
+```ts
+elementId: string;
+```
+
+##### review.thread.resolved
+
+```ts
+review.thread.resolved: object;
+```
+
+A review thread was resolved (Handoff 15 §2c).
+
+###### threadId
+
+```ts
+threadId: string;
+```
+
+##### review.changes.requested
+
+```ts
+review.changes.requested: object;
+```
+
+A signed "request changes" was issued (Handoff 15 §2e — emitted by V-6).
+
+###### versionId
+
+```ts
+versionId: string;
+```
+
+###### threadRefs
+
+```ts
+threadRefs: string[];
 ```
 
 ***
@@ -3567,6 +3624,200 @@ Node id → resolved variant node sequence (for the overlay).
 ###### Returns
 
 `string`
+
+***
+
+### ReviewMessage
+
+ReviewStore — the host-injected comment contract (Handoff 15 §2c, V-4).
+Same mold as `AIProvider`/`AnchorAdapter`/`EngineBridge`: the editor NEVER
+persists review data — threads live wherever the host decides (its ledger,
+its backend), reachable only through this contract. Without an injected
+store the review surface simply does not exist (declared degradation,
+cerca §1.5). Nothing here ever touches the BPMN model — review stays out
+of the XML by construction (cerca §1.2).
+
+The contract is SYNCHRONOUS with a `subscribe` seam (registered decision):
+`list()` must return a STABLE array identity until a mutation happens —
+the UI reads it through `useSyncExternalStore`. Hosts with async backends
+wrap this with an optimistic in-memory mirror (the reference
+implementation below is exactly that mirror).
+
+#### Properties
+
+##### id
+
+```ts
+id: string;
+```
+
+##### author
+
+```ts
+author: string;
+```
+
+Author id — `ia.copilot@…` authors render the ✦ mixed-authorship seal.
+
+##### text
+
+```ts
+text: string;
+```
+
+##### at
+
+```ts
+at: string;
+```
+
+ISO timestamp.
+
+##### aiAssisted?
+
+```ts
+optional aiAssisted?: boolean;
+```
+
+AI-drafted then human-committed (C4 discipline) — also renders ✦.
+
+***
+
+### ReviewThread
+
+#### Properties
+
+##### id
+
+```ts
+id: string;
+```
+
+##### elementId
+
+```ts
+elementId: string;
+```
+
+The ANCHOR: element id, never x/y — pins follow moves/layout for free.
+
+##### versionRef
+
+```ts
+versionRef: string;
+```
+
+The version under review this thread belongs to.
+
+##### resolved
+
+```ts
+resolved: boolean;
+```
+
+##### messages
+
+```ts
+messages: ReviewMessage[];
+```
+
+***
+
+### ReviewStore
+
+#### Methods
+
+##### list()
+
+```ts
+list(): readonly ReviewThread[];
+```
+
+Stable snapshot of every thread (open, resolved AND orphaned).
+
+###### Returns
+
+readonly [`ReviewThread`](#reviewthread)[]
+
+##### open()
+
+```ts
+open(elementId, message): ReviewThread;
+```
+
+Opens a thread anchored to an element; returns it.
+
+###### Parameters
+
+###### elementId
+
+`string`
+
+###### message
+
+`Pick`\<[`ReviewMessage`](#reviewmessage), `"author"` \| `"text"` \| `"aiAssisted"`\>
+
+###### Returns
+
+[`ReviewThread`](#reviewthread)
+
+##### reply()
+
+```ts
+reply(threadId, message): ReviewThread;
+```
+
+Appends a reply to a thread; returns the updated thread.
+
+###### Parameters
+
+###### threadId
+
+`string`
+
+###### message
+
+`Pick`\<[`ReviewMessage`](#reviewmessage), `"author"` \| `"text"` \| `"aiAssisted"`\>
+
+###### Returns
+
+[`ReviewThread`](#reviewthread)
+
+##### resolve()
+
+```ts
+resolve(threadId): ReviewThread;
+```
+
+Marks a thread resolved; returns the updated thread.
+
+###### Parameters
+
+###### threadId
+
+`string`
+
+###### Returns
+
+[`ReviewThread`](#reviewthread)
+
+##### subscribe()?
+
+```ts
+optional subscribe(cb): () => void;
+```
+
+Change notification (external edits, other reviewers).
+
+###### Parameters
+
+###### cb
+
+() => `void`
+
+###### Returns
+
+() => `void`
 
 ***
 
@@ -5876,11 +6127,29 @@ optional messages?: Messages;
 optional onClose?: () => void;
 ```
 
-Host-owned "close diff mode" (Esc reaches it after the popover).
+Host-owned "close diff mode" (Esc reaches it after the popovers).
 
 ###### Returns
 
 `void`
+
+##### reviewStore?
+
+```ts
+optional reviewStore?: ReviewStore;
+```
+
+Host-injected comment store (Handoff 15 §2c). Absent → the review
+surface (pins, threads, orphan notice) does not exist — declared
+degradation, cerca §1.5; the diff surface is untouched.
+
+##### author?
+
+```ts
+optional author?: string;
+```
+
+Author recorded on comments written here (e.g. "ana.ruiz").
 
 ***
 
@@ -6515,7 +6784,7 @@ English (see `EN`), so a fragment may lag a key without breaking the UI.
 ### EDITOR\_EVENTS
 
 ```ts
-const EDITOR_EVENTS: readonly ["diagram.loaded", "element.added", "element.changed", "element.removed", "edge.connected", "selection.changed", "command.executed", "command.undone", "validation.changed", "promotion.completed", "import.warning", "render.slow", "shape.render.error"];
+const EDITOR_EVENTS: readonly ["diagram.loaded", "element.added", "element.changed", "element.removed", "edge.connected", "selection.changed", "command.executed", "command.undone", "validation.changed", "promotion.completed", "import.warning", "render.slow", "shape.render.error", "review.thread.opened", "review.thread.resolved", "review.changes.requested"];
 ```
 
 The PUBLIC editor event catalog (Handoff 11 N-3) — the complete, stable
@@ -9227,6 +9496,32 @@ token (one token over a top variant, never one per event — cerca §0.3).
 #### Returns
 
 [`UseReplayResult`](#usereplayresult)
+
+***
+
+### createInMemoryReviewStore()
+
+```ts
+function createInMemoryReviewStore(versionRef, seed?): ReviewStore;
+```
+
+Reference in-memory implementation — the optimistic mirror a host wraps
+around its real persistence, and the store the tests/demos use. Keeps
+`list()` identity stable between mutations.
+
+#### Parameters
+
+##### versionRef
+
+`string`
+
+##### seed?
+
+readonly [`ReviewThread`](#reviewthread)[] = `[]`
+
+#### Returns
+
+[`ReviewStore`](#reviewstore)
 
 ***
 

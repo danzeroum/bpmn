@@ -108,6 +108,11 @@ export const EDITOR_EVENTS = [
   'import.warning',
   'render.slow',
   'shape.render.error',
+  // Handoff 15 (review) — V-0 decision 5: the catalog grows to 16 with the
+  // three review.* events (additive = minor per the stability contract).
+  'review.thread.opened',
+  'review.thread.resolved',
+  'review.changes.requested',
 ] as const;
 
 export type EditorEventName = (typeof EDITOR_EVENTS)[number];
@@ -143,6 +148,12 @@ export interface EditorEventPayloads {
   'render.slow': { frameMs: number };
   /** A shape component threw during render (error boundary caught it). */
   'shape.render.error': { nodeId: string; nodeType: string; message: string };
+  /** A review thread was opened on an element (Handoff 15 §2c). */
+  'review.thread.opened': { threadId: string; elementId: string };
+  /** A review thread was resolved (Handoff 15 §2c). */
+  'review.thread.resolved': { threadId: string };
+  /** A signed "request changes" was issued (Handoff 15 §2e — emitted by V-6). */
+  'review.changes.requested': { versionId: string; threadRefs: string[] };
 }
 
 /**

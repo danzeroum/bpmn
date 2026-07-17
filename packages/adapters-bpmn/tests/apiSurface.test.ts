@@ -45,6 +45,11 @@ const EXPECTED_EXPORTS = [
   // Handoff 14 §1d — lint profiles as promotable Biblioteca artifacts.
   'activeLintProfileVersion',
   'lintProfileAdapter',
+  // Handoff 15 §2c — review threads → ledger glue (host appends).
+  'reviewCommentEntry',
+  'reviewThreadResolvedEntry',
+  'REVIEW_COMMENT_TYPE',
+  'REVIEW_THREAD_RESOLVED_TYPE',
 ].sort();
 
 describe('@buildtovalue/adapters-bpmn public API surface', () => {

@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type MouseEvent,
+} from 'react';
 import {
   diffDiagrams,
   type BpmnDiagram,
@@ -15,6 +23,7 @@ import { panViewportTo, reducedMotion } from '../canvas/viewport.js';
 import { I18nProvider, useT } from '../i18n/I18nContext.js';
 import type { Messages } from '../i18n/messages.js';
 import type { BpmnPlugin } from '../plugins/types.js';
+import type { ReviewStore, ReviewThread } from '../review/ReviewStore.js';
 import { ViewerCanvas, type DiffPaintKind } from './ViewerCanvas.js';
 
 /**
@@ -54,8 +63,16 @@ export interface BpmnDiffViewerProps {
   target: BpmnDiagram;
   plugins?: BpmnPlugin[];
   messages?: Messages;
-  /** Host-owned "close diff mode" (Esc reaches it after the popover). */
+  /** Host-owned "close diff mode" (Esc reaches it after the popovers). */
   onClose?: () => void;
+  /**
+   * Host-injected comment store (Handoff 15 §2c). Absent → the review
+   * surface (pins, threads, orphan notice) does not exist — declared
+   * degradation, cerca §1.5; the diff surface is untouched.
+   */
+  reviewStore?: ReviewStore;
+  /** Author recorded on comments written here (e.g. "ana.ruiz"). */
+  author?: string;
 }
 
 interface PopoverState {
@@ -69,17 +86,37 @@ interface PulseState {
   token: number;
 }
 
-export function BpmnDiffViewer({ base, target, plugins, messages, onClose }: BpmnDiffViewerProps) {
+export function BpmnDiffViewer({
+  base,
+  target,
+  plugins,
+  messages,
+  onClose,
+  reviewStore,
+  author,
+}: BpmnDiffViewerProps) {
   const body = (
     <EditorConfigProvider plugins={plugins}>
-      <DiagramShell base={base} target={target} onClose={onClose} />
+      <DiagramShell
+        base={base}
+        target={target}
+        onClose={onClose}
+        reviewStore={reviewStore}
+        author={author}
+      />
     </EditorConfigProvider>
   );
   // Compose, don't shadow (N-6) — same discipline as BpmnViewer.
   return messages !== undefined ? <I18nProvider messages={messages}>{body}</I18nProvider> : body;
 }
 
-function DiagramShell({ base, target, onClose }: Omit<BpmnDiffViewerProps, 'plugins' | 'messages'>) {
+function DiagramShell({
+  base,
+  target,
+  onClose,
+  reviewStore,
+  author,
+}: Omit<BpmnDiffViewerProps, 'plugins' | 'messages'>) {
   const config = useEditorConfig();
   return (
     <DiagramProvider
@@ -90,7 +127,13 @@ function DiagramShell({ base, target, onClose }: Omit<BpmnDiffViewerProps, 'plug
     >
       {/* Read-only from birth — no gesture can mutate the diagram (N-7). */}
       <CanvasProvider initial={{ readOnly: true }}>
-        <DiffViewerBody base={base} target={target} onClose={onClose} />
+        <DiffViewerBody
+          base={base}
+          target={target}
+          onClose={onClose}
+          reviewStore={reviewStore}
+          author={author}
+        />
       </CanvasProvider>
     </DiagramProvider>
   );
@@ -114,9 +157,25 @@ function focusPointOf(entry: DiffEntry, base: BpmnDiagram, target: BpmnDiagram):
 
 const ALL_KINDS: DiffKind[] = ['added', 'removed', 'moved', 'changed', 'rerouted'];
 
-function DiffViewerBody({ base, target, onClose }: Omit<BpmnDiffViewerProps, 'plugins' | 'messages'>) {
+const EMPTY_THREADS: readonly ReviewThread[] = [];
+const NO_SUBSCRIBE = () => () => {};
+
+interface ThreadPopoverState {
+  elementId: string;
+  x: number;
+  y: number;
+}
+
+function DiffViewerBody({
+  base,
+  target,
+  onClose,
+  reviewStore,
+  author = 'anônimo',
+}: Omit<BpmnDiffViewerProps, 'plugins' | 'messages'>) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const store = useCanvasStore();
+  const config = useEditorConfig();
   const t = useT();
   const panRaf = useRef<number | null>(null);
   const entries = useMemo(() => diffDiagrams(base, target), [base, target]);
@@ -129,7 +188,35 @@ function DiffViewerBody({ base, target, onClose }: Omit<BpmnDiffViewerProps, 'pl
   }, [entries]);
 
   const [popover, setPopover] = useState<PopoverState | null>(null);
+  const [threadPopover, setThreadPopover] = useState<ThreadPopoverState | null>(null);
   const [pulse, setPulse] = useState<PulseState | null>(null);
+
+  // §2c — threads read through the injected contract (stable snapshot).
+  const subscribeThreads = useCallback(
+    (cb: () => void) => reviewStore?.subscribe?.(cb) ?? NO_SUBSCRIBE(),
+    [reviewStore],
+  );
+  const threads = useSyncExternalStore(subscribeThreads, () =>
+    reviewStore ? reviewStore.list() : EMPTY_THREADS,
+  );
+  const threadsByElement = useMemo(() => {
+    const map = new Map<string, ReviewThread[]>();
+    for (const thread of threads) {
+      const bucket = map.get(thread.elementId) ?? [];
+      bucket.push(thread);
+      map.set(thread.elementId, bucket);
+    }
+    return map;
+  }, [threads]);
+  // Orphans (§2c): the anchor left the TARGET diagram — the thread is never
+  // dropped; it lists with a warning and stays navigable via the v-base ghost.
+  const orphans = useMemo(
+    () =>
+      threads.filter(
+        (thread) => !target.nodes[thread.elementId] && !target.edges[thread.elementId],
+      ),
+    [threads, target],
+  );
   // Combinable category filters — empty set = show everything (§2b).
   const [filters, setFilters] = useState<ReadonlySet<DiffKind>>(new Set());
   // Active position INSIDE the filtered list, plus a visited flag so the
@@ -196,16 +283,61 @@ function DiffViewerBody({ base, target, onClose }: Omit<BpmnDiffViewerProps, 'pl
         step(event.shiftKey ? -1 : 1);
       }
       if (event.key === 'Escape') {
-        setPopover((open) => {
-          if (open) return null;
-          onClose?.();
-          return open;
+        // Standalone-surface order (V-2 decision): thread popover → ΔN
+        // popover → the host's close.
+        setThreadPopover((threadOpen) => {
+          if (threadOpen) return null;
+          setPopover((open) => {
+            if (open) return null;
+            onClose?.();
+            return open;
+          });
+          return threadOpen;
         });
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [step, onClose]);
+
+  const wrapperPointOf = (event: MouseEvent) => {
+    const bounds = wrapperRef.current?.getBoundingClientRect();
+    return { x: event.clientX - (bounds?.left ?? 0), y: event.clientY - (bounds?.top ?? 0) };
+  };
+
+  const openThreadPopover = (elementId: string, event: MouseEvent) => {
+    setThreadPopover({ elementId, ...wrapperPointOf(event) });
+  };
+
+  const onOpenThread = (elementId: string, text: string, aiAssisted?: boolean) => {
+    if (!reviewStore) return;
+    const thread = reviewStore.open(elementId, { author, text, ...(aiAssisted ? { aiAssisted } : {}) });
+    config.emitEditorEvent('review.thread.opened', { threadId: thread.id, elementId });
+  };
+
+  const onResolveThread = (threadId: string) => {
+    if (!reviewStore) return;
+    reviewStore.resolve(threadId);
+    config.emitEditorEvent('review.thread.resolved', { threadId });
+  };
+
+  const goToOrphan = (thread: ReviewThread) => {
+    // Last known anchor: the v-base geometry (the removed ghost's home).
+    const node = base.nodes[thread.elementId];
+    const edge = base.edges[thread.elementId];
+    const point = node
+      ? { x: node.x + node.width / 2, y: node.y + node.height / 2 }
+      : edge
+        ? (() => {
+            const route = edgeRoute(base, edge);
+            return route.length >= 2 ? route[Math.floor(route.length / 2) - 1] : null;
+          })()
+        : null;
+    if (!point) return;
+    const { viewport } = store.getState();
+    panViewportTo(store, point.x - viewport.width / 2, point.y - viewport.height / 2, panRaf);
+    setPulse(reducedMotion() ? null : { point, token: Date.now() });
+  };
 
   const openPopover = (entry: DiffEntry, event: MouseEvent) => {
     const bounds = wrapperRef.current?.getBoundingClientRect();
@@ -230,6 +362,14 @@ function DiffViewerBody({ base, target, onClose }: Omit<BpmnDiffViewerProps, 'pl
         overlay={
           <>
             <DiffGhosts base={base} target={target} entries={entries} onBadgeClick={openPopover} />
+            {reviewStore && (
+              <ReviewPins
+                target={target}
+                threadsByElement={threadsByElement}
+                onPinClick={openThreadPopover}
+                pinAria={(count) => t('review.pin.aria', { count })}
+              />
+            )}
             {pulse && (
               <g data-diff-overlay pointerEvents="none" key={pulse.token}>
                 <circle
@@ -313,8 +453,213 @@ function DiffViewerBody({ base, target, onClose }: Omit<BpmnDiffViewerProps, 'pl
           </li>
         ))}
       </ul>
+      {/* §2c — orphan notice: never silent, never dropped, navigable. */}
+      {reviewStore && orphans.length > 0 && (
+        <div className="bpmnr-review-orphans" data-testid="review-orphans" role="status">
+          {/* i18n-exempt — warning glyph */}
+          <span aria-hidden="true">⚠</span> {t('review.orphans.notice', { count: orphans.length })}
+          {orphans.map((thread) => (
+            <button
+              key={thread.id}
+              type="button"
+              data-review-orphan={thread.id}
+              onClick={() => goToOrphan(thread)}
+            >
+              {base.nodes[thread.elementId]?.label ??
+                base.edges[thread.elementId]?.label ??
+                thread.elementId}
+            </button>
+          ))}
+        </div>
+      )}
       <DiffLegend entries={entries} />
       {popover && <DiffPopover popover={popover} onClose={() => setPopover(null)} />}
+      {threadPopover && reviewStore && (
+        <ThreadPopover
+          state={threadPopover}
+          threads={threadsByElement.get(threadPopover.elementId) ?? []}
+          elementLabel={
+            target.nodes[threadPopover.elementId]?.label ??
+            target.edges[threadPopover.elementId]?.label ??
+            threadPopover.elementId
+          }
+          author={author}
+          onOpen={(text) => onOpenThread(threadPopover.elementId, text)}
+          onReply={(threadId, text) => reviewStore.reply(threadId, { author, text })}
+          onResolve={onResolveThread}
+          onClose={() => setThreadPopover(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------- review pins
+
+/** ✦ mixed-authorship seal (C4 discipline) for AI-assisted messages. */
+function isAiAuthored(message: { author: string; aiAssisted?: boolean }): boolean {
+  return message.aiAssisted === true || message.author.startsWith('ia.copilot@');
+}
+
+function ReviewPins({
+  target,
+  threadsByElement,
+  onPinClick,
+  pinAria,
+}: {
+  target: BpmnDiagram;
+  threadsByElement: Map<string, ReviewThread[]>;
+  onPinClick: (elementId: string, event: MouseEvent) => void;
+  pinAria: (count: number) => string;
+}) {
+  return (
+    <g data-review-pins pointerEvents="none">
+      {/* Comment affordance: double-click an element to open its thread
+          popover (composer when empty). Transparent hits BUBBLE pointerdown,
+          so pan still works — dblclick is the only capture. */}
+      {Object.values(target.nodes).map((node) => (
+        <rect
+          key={`hit:${node.id}`}
+          data-review-hit={node.id}
+          x={node.x}
+          y={node.y}
+          width={node.width}
+          height={node.height}
+          fill="transparent"
+          pointerEvents="all"
+          onDoubleClick={(event) => onPinClick(node.id, event)}
+        />
+      ))}
+      {[...threadsByElement.entries()].map(([elementId, elementThreads]) => {
+        // Anchor by id — the pin reads the CURRENT node geometry, so it
+        // follows moves/layout for free (issueBadges pattern).
+        const node = target.nodes[elementId];
+        if (!node) return null; // orphaned anchors surface in the notice bar
+        const open = elementThreads.filter((thread) => !thread.resolved);
+        const messageCount = open.reduce((sum, thread) => sum + thread.messages.length, 0);
+        const resolvedOnly = open.length === 0;
+        const cx = node.x + node.width;
+        const cy = node.y;
+        return (
+          <g
+            key={elementId}
+            className="bpmnr-review-pin"
+            data-review-pin={elementId}
+            data-review-pin-state={resolvedOnly ? 'resolved' : 'open'}
+            role="button"
+            aria-label={pinAria(messageCount)}
+            pointerEvents="all"
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onPinClick(elementId, event);
+            }}
+          >
+            {/* Generous invisible hit — ≥44px on coarse via CSS scale. */}
+            <circle className="bpmnr-review-pin-hit" cx={cx} cy={cy} r={22} />
+            <circle
+              className={
+                resolvedOnly ? 'bpmnr-review-pin-face-resolved' : 'bpmnr-review-pin-face'
+              }
+              cx={cx}
+              cy={cy}
+              r={11}
+            />
+            <text className="bpmnr-review-pin-text" x={cx} y={cy + 4}>
+              {/* i18n-exempt — glyph+número, nunca só cor */}
+              {resolvedOnly ? '✓' : `💬${messageCount}`}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+function ThreadPopover({
+  state,
+  threads,
+  elementLabel,
+  author,
+  onOpen,
+  onReply,
+  onResolve,
+  onClose,
+}: {
+  state: ThreadPopoverState;
+  threads: ReviewThread[];
+  elementLabel: string;
+  author: string;
+  onOpen: (text: string) => void;
+  onReply: (threadId: string, text: string) => void;
+  onResolve: (threadId: string) => void;
+  onClose: () => void;
+}) {
+  const t = useT();
+  const [draft, setDraft] = useState('');
+  const submit = () => {
+    const text = draft.trim();
+    if (text === '') return;
+    if (threads.length === 0) onOpen(text);
+    else onReply(threads[threads.length - 1].id, text);
+    setDraft('');
+  };
+  return (
+    <div
+      className="bpmnr-review-thread"
+      data-testid="review-thread"
+      role="dialog"
+      aria-label={t('review.thread.aria')}
+      style={{ left: state.x, top: state.y }}
+    >
+      <header>
+        <strong>{elementLabel}</strong>
+        <button type="button" onClick={onClose} aria-label={t('review.thread.close')}>
+          ✕
+        </button>
+      </header>
+      {threads.map((thread) => (
+        <div key={thread.id} data-review-thread={thread.id} data-resolved={thread.resolved}>
+          {thread.messages.map((message) => (
+            <p key={message.id} className="bpmnr-review-msg">
+              <span className="bpmnr-review-msg-author">
+                {isAiAuthored(message) && (
+                  <span className="bpmnr-review-msg-ai" data-review-ai aria-hidden="true">
+                    {/* i18n-exempt — mixed-authorship seal glyph */}✦{' '}
+                  </span>
+                )}
+                {message.author}
+              </span>
+              {message.text}
+            </p>
+          ))}
+          {thread.resolved ? (
+            <span className="bpmnr-review-resolved" data-testid="review-resolved">
+              {/* i18n-exempt — check glyph */}✓ {t('review.thread.resolved')}
+            </span>
+          ) : (
+            <button
+              type="button"
+              data-review-resolve={thread.id}
+              onClick={() => onResolve(thread.id)}
+            >
+              {/* i18n-exempt — check glyph */}✓ {t('review.thread.resolve')}
+            </button>
+          )}
+        </div>
+      ))}
+      <div className="bpmnr-review-compose">
+        <textarea
+          value={draft}
+          placeholder={t('review.thread.placeholder')}
+          aria-label={t('review.thread.inputAria')}
+          onChange={(event) => setDraft(event.target.value)}
+        />
+        <button type="button" data-testid="review-send" disabled={draft.trim() === ''} onClick={submit}>
+          {threads.length === 0 ? t('review.thread.open') : t('review.thread.reply')}
+        </button>
+      </div>
+      <span className="bpmnr-review-author">{author}</span>
     </div>
   );
 }

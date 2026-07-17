@@ -832,6 +832,32 @@ timestamp: string;
 
 ***
 
+### ReviewThreadRef
+
+The thread fields the ledger needs — structural, no react import.
+
+#### Properties
+
+##### id
+
+```ts
+id: string;
+```
+
+##### elementId
+
+```ts
+elementId: string;
+```
+
+##### versionRef
+
+```ts
+versionRef: string;
+```
+
+***
+
 ### RoteiroRecord
 
 A recorded simulation session offered to the Biblioteca as a versioned
@@ -1116,6 +1142,26 @@ const REPLAY_ANALYSIS_TYPE: "REPLAY_ANALYSIS_ATTACHED" = 'REPLAY_ANALYSIS_ATTACH
 ```
 
 Ledger entry type for a replay analysis attached to a promotion request.
+
+***
+
+### REVIEW\_COMMENT\_TYPE
+
+```ts
+const REVIEW_COMMENT_TYPE: "REVIEW_COMMENT_ADDED" = 'REVIEW_COMMENT_ADDED';
+```
+
+A review comment (thread opening or reply) recorded on the chain.
+
+***
+
+### REVIEW\_THREAD\_RESOLVED\_TYPE
+
+```ts
+const REVIEW_THREAD_RESOLVED_TYPE: "REVIEW_THREAD_RESOLVED" = 'REVIEW_THREAD_RESOLVED';
+```
+
+A thread resolution recorded on the chain.
 
 ***
 
@@ -1648,6 +1694,66 @@ readonly `AuditEntry`[]
 #### Returns
 
 [`AttachedReplayAnalysis`](#attachedreplayanalysis) \| `undefined`
+
+***
+
+### reviewCommentEntry()
+
+```ts
+function reviewCommentEntry(thread, message): AuditEntryInput;
+```
+
+Maps a comment (the opening message or a reply) to a ledger append input.
+`details.artifactId` mirrors the element anchor so the Ledger Explorer's
+per-artifact filter works; `aiAssisted` records mixed authorship (C4).
+
+#### Parameters
+
+##### thread
+
+[`ReviewThreadRef`](#reviewthreadref)
+
+##### message
+
+###### author
+
+`string`
+
+###### text
+
+`string`
+
+###### aiAssisted?
+
+`boolean`
+
+#### Returns
+
+`AuditEntryInput`
+
+***
+
+### reviewThreadResolvedEntry()
+
+```ts
+function reviewThreadResolvedEntry(thread, actor): AuditEntryInput;
+```
+
+Maps a thread resolution to a ledger append input.
+
+#### Parameters
+
+##### thread
+
+[`ReviewThreadRef`](#reviewthreadref)
+
+##### actor
+
+`Pick`\<`UserContext`, `"id"`\>
+
+#### Returns
+
+`AuditEntryInput`
 
 ***
 

@@ -26,6 +26,13 @@ export { createRecipeAdapter } from './recipeAdapter.js';
 export type { RecipeAdapter } from './recipeAdapter.js';
 export { activeCopilotPromptVersion, copilotPromptAdapter } from './copilotPromptAdapter.js';
 export { activeLintProfileVersion, lintProfileAdapter } from './lintProfileAdapter.js';
+export {
+  reviewCommentEntry,
+  reviewThreadResolvedEntry,
+  REVIEW_COMMENT_TYPE,
+  REVIEW_THREAD_RESOLVED_TYPE,
+} from './reviewLedger.js';
+export type { ReviewThreadRef } from './reviewLedger.js';
 export { createRoteiroAdapter } from './roteiroAdapter.js';
 export type { RoteiroAdapter, RoteiroRecord } from './roteiroAdapter.js';
 export {
