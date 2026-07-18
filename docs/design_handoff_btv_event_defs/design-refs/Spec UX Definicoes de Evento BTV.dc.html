@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,500;9..144,600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #2b2824; }
+  a { color: #33567e; } a:hover { color: #24405f; }
+  ::selection { background: #e3ecf7; }
+</style>
+</helmet>
+<section style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; padding: 34px 30px 70px;">
+  <div style="max-width: 1560px; margin: 0 auto;">
+    <div style="color: #efece6; margin-bottom: 24px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 3px; color: #c9a94e;">SPEC DE REFERÊNCIA · HANDOFF 16 · DEFINIÇÕES DE EVENTO E REFS GOVERNADAS</div>
+      <h1 style="font-family: 'Fraunces', serif; font-weight: 600; font-size: 34px; margin: 8px 0 6px;">Definições de Evento — message/signal/error como cidadãs de primeira classe</h1>
+      <div style="font-size: 13px; color: #a49c8f; max-width: 96ch;">Hoje o event definition é inline e anônimo; um export Camunda com <span style="font-family: 'IBM Plex Mono', monospace;">messageRef</span> importa como warning/passthrough, não como modelo. Este handoff traz as definições nomeadas (padrão OMG root elements), refs governadas <span style="font-family: 'IBM Plex Mono', monospace;">nome@semver</span> via Biblioteca, I/O de eventos na aba Execução, regras de lint <span style="font-family: 'IBM Plex Mono', monospace;">EVT_*/TIMER_*</span> e matching honesto no simulador. <strong style="color: #c9a94e;">Pré-requisito: a PR do passthrough zeebe:*/camunda:* mergeada.</strong></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(560px, 1fr)); gap: 20px; align-items: start;">
+
+      <!-- ============ 3a DEFINICOES NOMEADAS ============ -->
+      <div id="3a" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">3a</span>
+          <span style="font-size: 14px; font-weight: 600;">Definições nomeadas de primeira classe</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">o coração do handoff</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; overflow: hidden;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; padding: 9px 12px; border-bottom: 1px solid #eee9df; background: #faf9f6;">PROPERTIES · GERAL — ◉ EVENTO DE MENSAGEM (CATCH)</div>
+              <div style="padding: 12px;">
+                <div style="font-size: 10px; font-weight: 600; color: #6b6357; margin-bottom: 5px;">Mensagem</div>
+                <div style="border: 1.5px solid #33567e; border-radius: 8px; background: #fdfcfa;">
+                  <div style="display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-bottom: 1px solid #eee9df;">
+                    <span style="font-size: 11px; font-weight: 600;">✉ Pedido aprovado</span>
+                    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #a49c8f; margin-left: auto;">msg-pedido-aprovado</span>
+                  </div>
+                  <div style="padding: 6px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #6b6357;">
+                    <div style="padding: 4px 6px; background: #e3ecf7; border-radius: 5px; color: #33567e;">✉ Pedido aprovado · <span style="opacity: 0.7;">usada em 2 eventos</span></div>
+                    <div style="padding: 4px 6px;">✉ Pagamento recebido</div>
+                    <div style="padding: 4px 6px; color: #1a6a54; font-weight: 600;">+ Nova mensagem (id auto, renomeável)</div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 6px; margin-top: 9px;">
+                  <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; border: 1px solid #b3372f; color: #b3372f; background: #fdf3f1; border-radius: 6px; padding: 3px 8px;">🗑 excluir — BLOQUEADO: usada em «Aguardar aprovação», «Start pedido»</span>
+                </div>
+              </div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #262220; overflow: hidden;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #a49c8f; padding: 9px 12px; border-bottom: 1px solid #3a352f;">XML — ROOT ELEMENTS OMG + REF</div>
+              <pre style="margin: 0; padding: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; line-height: 1.65; color: #d8d2c6; white-space: pre-wrap;">&lt;bpmn:definitions …&gt;
+  <span style="color: #7fb59a;">&lt;bpmn:message id="msg-pedido-aprovado"
+                name="Pedido aprovado"/&gt;</span>
+  <span style="color: #7fb59a;">&lt;bpmn:signal id="sig-estoque-baixo" …/&gt;</span>
+  <span style="color: #7fb59a;">&lt;bpmn:error id="err-limite"
+              <span>errorCode</span>="LIMIT_EXCEEDED"/&gt;</span>
+  &lt;bpmn:process&gt;
+    &lt;bpmn:intermediateCatchEvent id="evt-1"&gt;
+      &lt;bpmn:messageEventDefinition
+        <span style="color: #c9a94e;">messageRef="msg-pedido-aprovado"</span>/&gt;
+    …</pre>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Definição = objeto com id no nível de definitions (message · signal · error com errorCode)<br>Evento referencia via messageRef/signalRef/errorRef — nunca texto inline<br>Renomear a definição reflete em TODOS os eventos que a usam (1 comando)<br>Excluir definição em uso = bloqueado, listando os usos<br>Import externo com *Ref resolve para o modelo (deixa de ser warning)</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ core: diagram.definitions.{messages,signals,errors}[] + comandos undoáveis<br>□ export = root elements OMG; round-trip byte-estável entre os NOSSOS exports<br>□ picker + «+» cria com id auto (padrão Axelor validado); rename em cascata = 1 undo<br>□ corpus: ≥1 arquivo real com messageRef importa sem warning de descarte<br>□ matriz CONFORMANCE promove message/signal/error refs para supported</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 3b REFS GOVERNADAS ============ -->
+      <div id="3b" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">3b</span>
+          <span style="font-size: 14px; font-weight: 600;">Refs governadas cross-model (nome@semver)</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">supera camunda:modelRefCode</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; overflow: hidden;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; padding: 9px 12px; border-bottom: 1px solid #eee9df; background: #faf9f6;">PICKER DE SINAL — DUAS SEÇÕES</div>
+            <div style="padding: 10px 12px; font-size: 10.5px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; letter-spacing: 1.5px; color: #a49c8f; margin-bottom: 4px;">DESTE DIAGRAMA</div>
+              <div style="padding: 5px 8px;">⚡ Estoque baixo <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #a49c8f;">sig-estoque-baixo</span></div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; letter-spacing: 1.5px; color: #a49c8f; margin: 8px 0 4px;">DA BIBLIOTECA (GOVERNADO)</div>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 5px 8px; background: #eef6f0; border-radius: 6px;">
+                <span>⚡ Pedido aprovado</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #6b6357;">sig-pedido-aprovado@1.2.0</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; background: #1a6a54; color: #fff; border-radius: 999px; padding: 2px 8px; margin-left: auto;">● VIGENTE</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 5px 8px;">
+                <span>⚡ Fraude detectada</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #6b6357;">sig-fraude@0.9.0</span>
+                <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; background: #fdfaf1; color: #9a7b1e; border: 1px solid #9a7b1e; border-radius: 999px; padding: 2px 8px; margin-left: auto;">⚠ CANDIDATA — não vigente</span>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; border: 1px solid #e2ddd3; border-radius: 10px; background: #fdfcfa; padding: 10px 12px; margin-top: 12px;">
+            <svg width="150" height="54" viewBox="0 0 150 54">
+              <circle cx="30" cy="27" r="17" fill="#fdfcfa" stroke="#44403a" stroke-width="1.4"></circle>
+              <circle cx="30" cy="27" r="13" fill="none" stroke="#44403a" stroke-width="1.2"></circle>
+              <text x="30" y="32" text-anchor="middle" font-size="13">⚡</text>
+              <rect x="54" y="16" width="92" height="20" rx="10" fill="#eef6f0" stroke="#1a6a54"></rect>
+              <text x="100" y="29" text-anchor="middle" font-size="8" font-family="IBM Plex Mono, monospace" fill="#1a6a54">pedido-aprovado@1.2 ●</text>
+            </svg>
+            <div style="font-size: 10.5px; color: #3a352f; line-height: 1.6;">Chip no canvas quando a ref é da Biblioteca: <span style="font-family: 'IBM Plex Mono', monospace;">nome@semver</span> + selo de vigência — mesmo padrão do callActivity resolvido. Ref não-resolvível → chip em <span style="font-family: 'IBM Plex Mono', monospace;">--btv-error</span> com código <span style="font-family: 'IBM Plex Mono', monospace;">SIG_REF_MISSING</span>, nunca silencioso.</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Resolução INJETADA pelo host (molde resolveCallActivities) — o pacote nunca consulta registry<br>Serializa como extensão bpmnr: (nunca camunda:modelRefCode)<br>Warning de vigência idêntico ao do callActivity<br>Degradação: sem resolvedor → ref vira texto com aviso, nada quebra<br>Definições publicáveis na Biblioteca via adapter (padrão lintProfileAdapter)</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ contrato de resolução injetado + teste de degradação declarada<br>□ picker com as duas seções; seleção governada grava nome@semver<br>□ chip + selo no canvas; SIG_REF_MISSING com badge e código<br>□ troca de ref = comando undoável + entrada no ledger<br>□ round-trip da extensão bpmnr: byte-estável</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 3c I/O DE EVENTOS ============ -->
+      <div id="3c" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">3c</span>
+          <span style="font-size: 14px; font-weight: 600;">I/O de eventos na aba Execução (gated)</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">estende EngineBridge U-6</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; overflow: hidden;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; padding: 9px 12px; border-bottom: 1px solid #eee9df; background: #faf9f6;">THROW — ⚡ SINAL (INTERMEDIATE THROW) · ABA EXECUÇÃO</div>
+              <div style="padding: 12px;">
+                <div style="font-size: 10px; font-weight: 600; color: #6b6357; margin-bottom: 6px;">Payload do sinal <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 400; color: #a49c8f;">(variável → destino)</span></div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; line-height: 2; color: #3a352f;">
+                  <div style="display: flex; gap: 8px;"><span style="background: #eee9df; border-radius: 5px; padding: 1px 7px;">pedidoId</span> → <span style="background: #e3ecf7; border-radius: 5px; padding: 1px 7px;">pedidoId</span></div>
+                  <div style="display: flex; gap: 8px;"><span style="background: #eee9df; border-radius: 5px; padding: 1px 7px;">valorTotal</span> → <span style="background: #e3ecf7; border-radius: 5px; padding: 1px 7px;">valor</span></div>
+                  <div style="color: #1a6a54; font-weight: 600;">+ adicionar mapeamento</div>
+                </div>
+              </div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; overflow: hidden;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; padding: 9px 12px; border-bottom: 1px solid #eee9df; background: #faf9f6;">CATCH — ⚠ ERRO (BOUNDARY) · ABA EXECUÇÃO</div>
+              <div style="padding: 12px; font-size: 10.5px; line-height: 2.1; color: #3a352f;">
+                <div>Variável do código do erro: <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; background: #eee9df; border-radius: 5px; padding: 1px 7px;">errCode</span></div>
+                <div>Variável da mensagem: <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; background: #eee9df; border-radius: 5px; padding: 1px 7px;">errMsg</span></div>
+                <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #a49c8f;">▸ Avançado (headers, correlação) — dobrado</div>
+              </div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Aba SÓ com plugin de engine ativo (mesmo gate da U-6); sem plugin = painel idêntico ao atual<br>Assimetria imposta pela UI: payload SÓ em throw; captura em variável SÓ em catch (padrão Axelor/OMG)<br>Propriedades no namespace do engine (defaults configuráveis), tudo undoável<br>Lossless no XML via passthrough zeebe:*/camunda:* (pré-requisito)</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ teste de degradação: sem EngineBridge, zero mudança no painel de eventos<br>□ teste da assimetria: catch nunca mostra payload; throw nunca mostra captura<br>□ edições = updateNodeCommand undoável<br>□ progressive disclosure (essencial visível, avançado dobrado)<br>□ round-trip das props de engine intacto (fixture com throw+catch)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 3d LINT EVT/TIMER ============ -->
+      <div id="3d" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">3d</span>
+          <span style="font-size: 14px; font-weight: 600;">Lint EVT_* + TIMER_* e editor de timer</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">reusa o dock U-5, zero UI nova</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; overflow: hidden;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; padding: 9px 12px; border-bottom: 1px solid #eee9df; background: #faf9f6;">⚠ PROBLEMAS — política: lint-etiquette@1.1.0 ● VIGENTE</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; line-height: 2.1; padding: 8px 12px; color: #3a352f;">
+              <div><span style="color: #b3372f;">●</span> EVT_START_THROW — start event não lança: start só captura · «Start pedido» <span style="color: #1a6a54;">[corrigir: converter p/ catch]</span></div>
+              <div><span style="color: #b3372f;">●</span> EVT_ERROR_START_TOPLEVEL — error start só em event subprocess · «Erro geral»</div>
+              <div><span style="color: #b3372f;">●</span> EVT_END_CATCH — end event não captura: end só lança · «Fim aguardando»</div>
+              <div><span style="color: #b3372f;">●</span> TIMER_MALFORMED — «P1M» = 1 mês; para 1 minuto use «PT1M» · «Timeout» <span style="color: #1a6a54;">[corrigir: PT1M]</span></div>
+              <div><span style="color: #9a7b1e;">●</span> EVT_REF_MISSING — evento de mensagem sem messageRef · «Aguardar resposta»</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; border: 1px solid #e2ddd3; border-radius: 10px; background: #fdfcfa; padding: 10px 12px; margin-top: 12px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 8px; background: #fff; padding: 8px 10px; font-size: 10px;">
+              <div style="display: flex; gap: 5px; margin-bottom: 6px;">
+                <span style="border: 1px solid #e2ddd3; border-radius: 999px; padding: 2px 9px;">Data</span>
+                <span style="border: 1px solid #e2ddd3; border-radius: 999px; padding: 2px 9px;">Duração</span>
+                <span style="background: #262220; color: #efece6; border-radius: 999px; padding: 2px 9px;">Ciclo</span>
+              </div>
+              <span style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; background: #eee9df; border-radius: 5px; padding: 2px 8px;">R5/PT1H30M</span>
+            </div>
+            <div style="font-size: 10.5px; color: #3a352f; line-height: 1.6;">Editor de timer no properties panel: 3 tipos ISO 8601 (Data · Duração · Ciclo) com <strong>preview humano ao vivo</strong> — «5 ocorrências, a cada 1h30». Expressão malformada marca ⚠ na edição (disciplina S-FEEL), antes de qualquer simulação.</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Regras como ValidationRule no @buildtovalue/lint (perfil etiqueta, versão minor)<br>Quick-fix fix(ctx)→command SÓ onde mecânico (converter catch/throw, corrigir P1M/PT1M)<br>Parser ISO 8601 headless no core (date · duration · cycle), zero-dep<br>Severidade nunca só por cor: dot + código mono + mensagem</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ 5 regras com códigos estáveis + vetores positivos/negativos<br>□ quick-fixes undoáveis; «corrigir todos» segue 1 composto (U-5)<br>□ parser de timer: vetores das 3 formas + pegadinha P1M/PT1M + fuzzing<br>□ preview humano i18n EN/PT-BR<br>□ ⚠ na edição do timer antes de simular</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 3e MATCHING HONESTO NO SIMULADOR ============ -->
+      <div id="3e" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35); grid-column: 1 / -1; max-width: 780px;">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">3e</span>
+          <span style="font-size: 14px; font-weight: 600;">Matching honesto no simulador (catch-all declarado)</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">disciplina S-FEEL</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 12px; font-size: 10.5px; line-height: 1.9; color: #3a352f;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; margin-bottom: 6px;">TRILHA DE SIMULAÇÃO</div>
+            <div>t=4 · erro lançado: <span style="font-family: 'IBM Plex Mono', monospace; background: #fdf3f1; color: #b3372f; border-radius: 5px; padding: 1px 7px;">LIMIT_EXCEEDED</span> em «Validar limite»</div>
+            <div>t=4 · capturado por boundary «Tratar erro» — <strong>catch-all declarado</strong> (boundary sem errorCode captura QUALQUER erro)</div>
+            <div style="color: #b3372f;">t=7 · <strong>BlockedDecision</strong>: 2 boundaries casam o mesmo errorCode («Retry», «Abortar») — ambiguidade nomeada, token congela. Nunca rota adivinhada.</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">errorCode específico = matching exato; sem <span>errorCode</span> = catch-all, SEMPRE declarado na trilha<br>Ambiguidade (2+ catchers válidos) = parada honesta nomeando os candidatos<br>Seção nova em limitations.md</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ vetores: exato · catch-all declarado · ambíguo → BlockedDecision<br>□ trilha registra o modo de matching de cada captura<br>□ limitations.md atualizado no mesmo PR</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>
