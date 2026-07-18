@@ -51,7 +51,7 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:conditionalEventDefinition` | ✅ supported | analytic | `eventDefinition: 'conditional'` |  |
 | `bpmn:linkEventDefinition` | ✅ supported | analytic | `eventDefinition: 'link'` |  |
 | `bpmn:terminateEventDefinition` | ✅ supported | analytic | `eventDefinition: 'terminate'` |  |
-| `eventSubProcess` | ⛔ unsupported | extended | — | Deliberately out of scope before v2.x. |
+| `eventSubProcess` | ✅ supported | analytic | `subProcess (triggeredByEvent)` | Delivered in Handoff 17 (ES-1..ES-5): subProcess with triggeredByEvent (F7 containment reused, isEventSubprocess helper); interrupting/non-interrupting typed starts round-trip byte-stable (isInterrupting); lint EVT_SUBPROC_START/EVT_SUBPROC_FLOW and honest simulation start precedence. |
 | `bpmn:exclusiveGateway` | ✅ supported | descriptive | `exclusiveGateway` |  |
 | `bpmn:parallelGateway` | ✅ supported | descriptive | `parallelGateway` |  |
 | `bpmn:inclusiveGateway` | ✅ supported | analytic | `inclusiveGateway` |  |
@@ -115,7 +115,7 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:conditionalEventDefinition` | ✅ supported | modela (declarado) | — |
 | `bpmn:linkEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:terminateEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
-| `eventSubProcess` | ⛔ unsupported | modela (declarado) | executa (declarado) |
+| `eventSubProcess` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:exclusiveGateway` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:parallelGateway` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:inclusiveGateway` | ✅ supported | modela (declarado) | executa (declarado) |
