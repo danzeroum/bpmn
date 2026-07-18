@@ -1,7 +1,23 @@
 # E-0 — Reconciliação do Handoff 16 contra a main
 
-> Estado: **AGUARDA VALIDAÇÃO DO OWNER**. Nenhum código de feature antes dela.
+> Estado: **VALIDADA pelo owner** (2026-07-18) — decisões dos 5 pontos registradas abaixo.
 > Base: main `56fe142` (pós-merge do passthrough #119 — o pré-requisito declarado).
+
+## Decisões validadas (vinculantes para E-1..E-6)
+
+1. **Errata**: o aceite "deixa de ser warning" está reescrito como PRESERVAÇÃO REAL —
+   na main o descarte de roots OMG e `*Ref` era SILENCIOSO (nem warning havia);
+   warnings só nascem para o caso novo de ref órfã (decisão 2).
+2. **Ref órfã**: SINTETIZAR a definição (`id=X, name=X`) COM warning informativo
+   nomeando o evento — nunca silêncio; arquivo malformado deve aparecer.
+3. **Emenda de sequenciamento**: timer INTEIRO na E-5 — prop canônica
+   `properties.timer {kind: 'date'|'duration'|'cycle', expression}` + export OMG
+   `bpmn:timeDate/timeDuration/timeCycle` + parser ISO 8601 + editor. A E-1 não toca timer.
+4. **Escopo dos roots**: `bpmn:escalation` e demais roots não cobertos ficam na
+   pendência compensação/coreografia.
+5. **Forma canônica da ref**: `properties.eventDefinitionRef` (ID da definição; o kind
+   permanece em `properties.eventDefinition`). Rename NUNCA toca nós; o teste de
+   cascata com 2 eventos é vinculante.
 
 ## 3a — Definições nomeadas de primeira classe
 
