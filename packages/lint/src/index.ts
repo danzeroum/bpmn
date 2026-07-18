@@ -3,9 +3,13 @@ import {
   activeNodes,
   addEdgeCommand,
   addEventDefinitionCommand,
+  addNodeCommand,
+  childrenOf,
   compositeCommand,
   createEdge,
+  createNode,
   isContainerType,
+  isEventSubprocess,
   isEventType,
   isFlowEdge,
   isFlowNode,
@@ -199,6 +203,121 @@ const END_FORBIDDEN_KINDS = new Set(['timer', 'conditional', 'link']);
  * compensation/choreography pendency — deliberately absent from every set. */
 const NAMED_REF_KINDS = new Set(['message', 'signal', 'error']);
 
+/** Trigger kinds a typed event-subprocess start accepts (§3 of the handoff:
+ * escalation/compensation stay in their own pendency — declared, never
+ * silently accepted). */
+const SUBPROC_TRIGGER_KINDS = ['message', 'signal', 'error', 'timer', 'conditional'] as const;
+const SUBPROC_TRIGGER_SET = new Set<string>(SUBPROC_TRIGGER_KINDS);
+
+/**
+ * "Typed message start + referenced named definition" — THE shared builder
+ * (Handoff 17 ES-4, anti-drift): the palette's «Subprocesso de evento»
+ * composite (react, ES-2) and the EVT_SUBPROC_START 0-starts quick-fix both
+ * compose THIS — one FORM, one source (the 4d fix contract / ES-0 decision 4).
+ */
+export function typedMessageStartCommands(
+  diagram: BpmnDiagram,
+  options: { parentId?: string; x: number; y: number; definitionName?: string },
+): { commands: Command[]; startId: string; definitionId: string } {
+  const definitionId = nextEventDefinitionId(diagram, 'message');
+  const start = createNode({
+    type: 'startEvent',
+    x: options.x,
+    y: options.y,
+    properties: {
+      ...(options.parentId !== undefined ? { parentId: options.parentId } : {}),
+      eventDefinition: 'message',
+      eventDefinitionRef: definitionId,
+    },
+    versionId: diagram.version.id,
+  });
+  return {
+    commands: [
+      // Labels per LAYER (ES-0 decision 4): the lint fix keeps the EN default
+      // like every rule; the palette passes its i18n default. The FORM is one.
+      addEventDefinitionCommand('message', {
+        id: definitionId,
+        name: options.definitionName ?? 'New message',
+      }),
+      addNodeCommand(start),
+    ],
+    startId: start.id,
+    definitionId,
+  };
+}
+
+/**
+ * EVT_SUBPROC_FLOW (Handoff 17 §4d): sequence flow never touches the SHELL of
+ * an event subprocess — this catches the IMPORT path the editor's gesture
+ * veto cannot. ONE finding per edge, naming both endpoints (a shell↔shell
+ * edge never yields two findings — ES-4 reforço 7); common sub-processes and
+ * children connecting among themselves never trigger it.
+ */
+export const evtSubprocFlowRule: ValidationRule = (diagram) => {
+  const issues: ValidationIssue[] = [];
+  for (const edge of activeEdges(diagram)) {
+    if (!isFlowEdge(edge)) continue;
+    const source = diagram.nodes[edge.sourceId];
+    const target = diagram.nodes[edge.targetId];
+    const shells = [source, target].filter((node) => node !== undefined && isEventSubprocess(node));
+    if (shells.length === 0) continue;
+    const named = shells.map((node) => `"${node!.label || node!.id}"`).join(' and ');
+    issues.push({
+      code: 'EVT_SUBPROC_FLOW',
+      severity: 'error',
+      message: `Sequence flow "${edge.id}" touches the event-subprocess shell ${named} — it fires by its start event, never by flow`,
+      edgeId: edge.id,
+    });
+  }
+  return issues;
+};
+
+/**
+ * EVT_SUBPROC_START (Handoff 17 §4d): an event subprocess needs EXACTLY ONE
+ * typed start among its DIRECT children (`childrenOf` — a start inside a
+ * nested sub-process never counts, ES-4 reforço 7). Three distinct failures,
+ * each naming the container: zero starts (mechanical fix — the shared
+ * builder), more than one, or a start whose kind is missing/unsupported
+ * (escalation/compensation stay declared-out, naming the accepted kinds —
+ * reforço 8).
+ */
+export const evtSubprocStartRule: ValidationRule = (diagram) => {
+  const issues: ValidationIssue[] = [];
+  for (const node of activeNodes(diagram)) {
+    if (!isEventSubprocess(node)) continue;
+    const starts = childrenOf(diagram, node.id).filter(
+      (child) => child.type === 'startEvent' && !child.removedInVersion,
+    );
+    const label = node.label || node.id;
+    if (starts.length === 0) {
+      issues.push({
+        code: 'EVT_SUBPROC_START',
+        severity: 'error',
+        message: `Event subprocess "${label}" needs exactly 1 typed start — found: 0`,
+        nodeId: node.id,
+      });
+    } else if (starts.length > 1) {
+      issues.push({
+        code: 'EVT_SUBPROC_START',
+        severity: 'error',
+        message: `Event subprocess "${label}" needs exactly 1 typed start — found: ${starts.length}`,
+        nodeId: node.id,
+      });
+    } else {
+      const kind = eventKindOf(starts[0]);
+      if (kind === undefined || !SUBPROC_TRIGGER_SET.has(kind)) {
+        issues.push({
+          code: 'EVT_SUBPROC_START',
+          severity: 'error',
+          message: `Event subprocess "${label}" has an untyped start${kind !== undefined ? ` (kind "${kind}" is not supported)` : ''} — accepted triggers: ${SUBPROC_TRIGGER_KINDS.join(', ')}`,
+          nodeId: node.id,
+        });
+      }
+    }
+  }
+  return issues;
+};
+
 /** Start events only CATCH: a throw-only or intermediate-only kind is an error. */
 export const evtStartThrowRule: ValidationRule = (diagram) =>
   activeNodes(diagram)
@@ -224,21 +343,24 @@ export const evtEndCatchRule: ValidationRule = (diagram) =>
     }));
 
 /**
- * An error START event only exists inside an event sub-process — the SAME
- * containment predicate (`nodeParentId` → subProcess) the editor's Execução
- * matrix uses, so lint and tab agree by construction.
+ * An error START event only exists inside an EVENT subprocess — TIGHTENED in
+ * Handoff 17 ES-4: the predicate is the core `isEventSubprocess` helper, the
+ * SAME object the editor's Execução matrix consumes (ES-1 reforço 9) — lint
+ * and tab agree by construction, both sides tested. A COMMON subProcess now
+ * flags too.
  */
 export const evtErrorStartToplevelRule: ValidationRule = (diagram) =>
   activeNodes(diagram)
     .filter((node) => {
       if (node.type !== 'startEvent' || eventKindOf(node) !== 'error') return false;
       const parentId = nodeParentId(node);
-      return (parentId ? diagram.nodes[parentId]?.type : undefined) !== 'subProcess';
+      const parent = parentId ? diagram.nodes[parentId] : undefined;
+      return parent === undefined || !isEventSubprocess(parent);
     })
     .map((node) => ({
       code: 'EVT_ERROR_START_TOPLEVEL',
       severity: 'error' as const,
-      message: `Error start event "${node.label || node.id}" sits at the top level — an error start only catches inside an event sub-process`,
+      message: `Error start event "${node.label || node.id}" sits outside an event subprocess — an error start only catches inside one`,
       nodeId: node.id,
     }));
 
@@ -252,6 +374,8 @@ export const ETIQUETTE_RULES: ValidationRule[] = [
   evtStartThrowRule,
   evtEndCatchRule,
   evtErrorStartToplevelRule,
+  evtSubprocFlowRule,
+  evtSubprocStartRule,
 ];
 
 // -------------------------------------------------------------- executability
@@ -517,12 +641,32 @@ function fixEvtRefMissing(ctx: LintFixContext): Command | null {
   ]);
 }
 
-// E-5 (§3d): new rules = NEW promotable profile versions (1.0.0 → 1.1.0) —
-// the panel header and the Biblioteca adapter reflect it from this one source.
+/**
+ * EVT_SUBPROC_START quick-fix (Handoff 17 ES-4): MECHANICAL only for the
+ * 0-starts case — ONE composite through the SHARED `typedMessageStartCommands`
+ * builder (the exact FORM of the ES-2 palette composite — one form, one
+ * source). >1 starts and unsupported kinds route to ✦ C5 (`null`): choosing
+ * which start survives, or which trigger was meant, is never mechanical.
+ */
+function fixEvtSubprocStart(ctx: LintFixContext): Command | null {
+  if (!ctx.issue.message.includes('found: 0')) return null;
+  const container = ctx.issue.nodeId ? ctx.diagram.nodes[ctx.issue.nodeId] : undefined;
+  if (!container || !isEventSubprocess(container)) return null;
+  const { commands } = typedMessageStartCommands(ctx.diagram, {
+    parentId: container.id,
+    x: container.x + 24,
+    y: container.y + 48,
+  });
+  return compositeCommand('Create typed start for event subprocess', commands);
+}
+
+// E-5 (§3d) → 1.1.0; Handoff 17 ES-4 (§4d) → 1.2.0: new rules = NEW
+// promotable profile versions — the panel header and the Biblioteca adapter
+// reflect it from this one source.
 export const ETIQUETTE_PROFILE: LintProfile = {
   id: 'lint-etiquette',
   name: 'Etiqueta de modelagem',
-  version: '1.1.0',
+  version: '1.2.0',
   source: 'etiquette',
   rules: [
     { id: 'label-required', run: labelRequiredRule },
@@ -534,13 +678,15 @@ export const ETIQUETTE_PROFILE: LintProfile = {
     { id: 'evt-start-throw', run: evtStartThrowRule },
     { id: 'evt-end-catch', run: evtEndCatchRule },
     { id: 'evt-error-start-toplevel', run: evtErrorStartToplevelRule },
+    { id: 'evt-subproc-flow', run: evtSubprocFlowRule },
+    { id: 'evt-subproc-start', run: evtSubprocStartRule, fix: fixEvtSubprocStart },
   ],
 };
 
 export const EXECUTABILITY_PROFILE: LintProfile = {
   id: 'lint-engine',
   name: 'Prontidão de execução (engine)',
-  version: '1.1.0',
+  version: '1.2.0',
   source: 'executability',
   rules: [
     { id: 'service-task-implementation', run: serviceTaskImplementationRule },

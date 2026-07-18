@@ -56,15 +56,20 @@ describe('EVT_* etiquette rules (critério 3)', () => {
     expect(issues[0].code).toBe('EVT_END_CATCH');
   });
 
-  it('EVT_ERROR_START_TOPLEVEL: erro no topo é erro; DENTRO de subProcess passa (predicado da matriz E-4)', () => {
+  it('EVT_ERROR_START_TOPLEVEL APERTADO (ES-4): só EVENT subprocess legitima; comum e topo acusam', () => {
+    // Migração da E-5 (decisão 2 da ES-0): o caso `nested` que aceitava
+    // subProcess COMUM virou o POSITIVO do aperto; o event subprocess passa.
     const diagram = withNodes({
       top: node('top', 'startEvent', { eventDefinition: 'error' }),
-      sub: node('sub', 'subProcess', {}),
-      nested: node('nested', 'startEvent', { eventDefinition: 'error', parentId: 'sub' }),
+      sub: node('sub', 'subProcess', { triggeredByEvent: true }),
+      inEventSub: node('inEventSub', 'startEvent', { eventDefinition: 'error', parentId: 'sub' }),
+      common: node('common', 'subProcess', {}),
+      nested: node('nested', 'startEvent', { eventDefinition: 'error', parentId: 'common' }),
     });
     const issues = evtErrorStartToplevelRule(diagram);
-    expect(issues.map((issue) => issue.nodeId)).toEqual(['top']);
+    expect(issues.map((issue) => issue.nodeId).sort()).toEqual(['nested', 'top']);
     expect(issues[0].code).toBe('EVT_ERROR_START_TOPLEVEL');
+    expect(issues[0].message).toContain('outside an event subprocess');
   });
 });
 
@@ -151,8 +156,8 @@ describe('TIMER_MALFORMED via o parser (critério 5)', () => {
 
 describe('política versionada (critério 7)', () => {
   it('regras novas = versão nova dos perfis (1.1.0), refletida na MESMA fonte', () => {
-    expect(ETIQUETTE_PROFILE.version).toBe('1.1.0');
-    expect(EXECUTABILITY_PROFILE.version).toBe('1.1.0');
+    expect(ETIQUETTE_PROFILE.version).toBe('1.2.0'); // ES-4
+    expect(EXECUTABILITY_PROFILE.version).toBe('1.2.0');
     expect(ETIQUETTE_PROFILE.rules.map((rule) => rule.id)).toContain('evt-start-throw');
     expect(EXECUTABILITY_PROFILE.rules.map((rule) => rule.id)).toContain('timer-malformed');
   });

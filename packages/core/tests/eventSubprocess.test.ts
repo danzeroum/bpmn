@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BpmnXmlConverter,
   computeDiagramHash,
+  createDefaultRegistry,
   createDefaultRuleEngine,
   createDiagram,
   createEdge,
@@ -131,6 +132,38 @@ describe('converter (critérios 2–3, reforço 8)', () => {
     const second = converter.toXml(once);
     expect(second).toContain('isInterrupting="false"');
     expect(converter.toXml(converter.fromXml(second).diagram)).toBe(second);
+  });
+
+  it('ES-4 — emissão por TAG: tipo CUSTOM mapeado para a tag subProcess round-tripa os atributos', () => {
+    // Um host pode mapear a tag subProcess para um tipo próprio via
+    // preferredTypes (ex.: btv:squad do demo) — os atributos OMG round-tripam
+    // do mesmo jeito (a regra do reforço 8 é do ELEMENTO/tag, não do nosso
+    // tipo). Filhos de contêiner de tipo CUSTOM não são recursados pelo
+    // import (readFlowElements só desce em type === 'subProcess' —
+    // comportamento pré-existente, fora desta PR), então o isInterrupting é
+    // provado num start de TOPO, que também importa pela tag startEvent.
+    const registry = createDefaultRegistry();
+    registry.register({
+      type: 'x:squad',
+      label: 'Squad',
+      category: 'custom',
+      defaultSize: { width: 180, height: 100 },
+      xml: { tag: 'subProcess' },
+    });
+    const custom = new BpmnXmlConverter({ registry, preferredTypes: ['x:squad'] });
+    const diagram = eventSubDiagram();
+    diagram.nodes.start = {
+      ...diagram.nodes.start,
+      properties: { ...diagram.nodes.start.properties, isInterrupting: false },
+    };
+    const xml = new BpmnXmlConverter().toXml(diagram);
+    const imported = custom.fromXml(xml).diagram;
+    expect(imported.nodes.sub.type).toBe('x:squad'); // o tipo do host venceu…
+    expect(imported.nodes.sub.properties.triggeredByEvent).toBe(true); // …e o atributo sobreviveu
+    expect(imported.nodes.start.properties.isInterrupting).toBe(false);
+    const reExport = custom.toXml(imported);
+    expect(reExport).toContain('triggeredByEvent="true"');
+    expect(reExport).toContain('isInterrupting="false"');
   });
 
   it('cerca §1.4 — fixture congelada: sem triggeredByEvent, toXml e hash byte-idênticos aos de antes', async () => {

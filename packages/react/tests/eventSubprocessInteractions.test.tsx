@@ -7,6 +7,7 @@ import {
   createNode,
   type BpmnDiagram,
 } from '@buildtovalue/core';
+import { evtErrorStartToplevelRule } from '@buildtovalue/lint';
 import { BpmnEditor, eventExecutionModeOf, PT_BR } from '../src/index.js';
 
 /**
@@ -211,6 +212,26 @@ describe('aperto da matriz E-4 (critério 4)', () => {
     };
     expect(eventExecutionModeOf(diagram, diagram.nodes.st)).toBe('catch-error');
     expect(eventExecutionModeOf(diagram, diagram.nodes.commonStart)).toBeNull();
+  });
+
+  it('concordância lint⇄matriz (ES-4): os DOIS lados fecham sobre o MESMO predicado', () => {
+    const diagram = esubDiagram();
+    for (const id of ['st', 'commonStart', 'plainStart'] as const) {
+      diagram.nodes[id] = {
+        ...diagram.nodes[id],
+        properties: { ...diagram.nodes[id].properties, eventDefinition: 'error' },
+      };
+    }
+    const flagged = new Set(evtErrorStartToplevelRule(diagram).map((issue) => issue.nodeId));
+    // (a) event subprocess: lint PASSA e matriz → catch-error.
+    expect(flagged.has('st')).toBe(false);
+    expect(eventExecutionModeOf(diagram, diagram.nodes.st)).toBe('catch-error');
+    // (b) subProcess COMUM: lint ACUSA e matriz → null.
+    expect(flagged.has('commonStart')).toBe(true);
+    expect(eventExecutionModeOf(diagram, diagram.nodes.commonStart)).toBeNull();
+    // (c) top-level: lint acusa e matriz → null.
+    expect(flagged.has('plainStart')).toBe(true);
+    expect(eventExecutionModeOf(diagram, diagram.nodes.plainStart)).toBeNull();
   });
 });
 

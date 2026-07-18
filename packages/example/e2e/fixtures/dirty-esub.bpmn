@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmnr="http://bpmn-react.io/schema/1.0" id="dirty-esub" targetNamespace="http://example.com/dirty-esub">
+  <bpmn:process id="p1" isExecutable="false">
+    <bpmn:startEvent id="go" name="Início">
+      <bpmn:outgoing>f1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="t1" name="Preparar">
+      <bpmn:incoming>f1</bpmn:incoming>
+      <bpmn:outgoing>f2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:subProcess id="esub1" name="Sem start" triggeredByEvent="true">
+      <bpmn:extensionElements>
+        <bpmnr:meta type="subProcess" />
+      </bpmn:extensionElements>
+    </bpmn:subProcess>
+    <bpmn:subProcess id="esub2" name="Sem gatilho" triggeredByEvent="true">
+      <bpmn:extensionElements>
+        <bpmnr:meta type="subProcess" />
+      </bpmn:extensionElements>
+      <bpmn:startEvent id="sg" name="Solto" />
+    </bpmn:subProcess>
+    <bpmn:sequenceFlow id="f1" sourceRef="go" targetRef="t1" />
+    <bpmn:sequenceFlow id="f2" sourceRef="t1" targetRef="esub1" />
+  </bpmn:process>
+</bpmn:definitions>

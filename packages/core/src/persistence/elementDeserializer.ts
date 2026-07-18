@@ -205,11 +205,14 @@ export class ElementDeserializer {
       if (el.attributes.cancelActivity === 'false') properties.cancelActivity = false;
     }
     // Event subprocess (Handoff 17 §4a): the two standard OMG attributes read
-    // back symmetrically; the OMG defaults stay absent from the model.
-    if (type === 'subProcess' && el.attributes.triggeredByEvent === 'true') {
+    // back symmetrically; the OMG defaults stay absent from the model. Keyed
+    // by the XML TAG, not the resolved type (ES-4): a host may map the
+    // subProcess tag to a custom type via preferredTypes — the attribute
+    // still round-trips (the converter preserves, it never judges).
+    if (tag === 'subProcess' && el.attributes.triggeredByEvent === 'true') {
       properties.triggeredByEvent = true;
     }
-    if (type === 'startEvent' && el.attributes.isInterrupting === 'false') {
+    if (tag === 'startEvent' && el.attributes.isInterrupting === 'false') {
       properties.isInterrupting = false;
     }
     // Call activity target process / data element backing ids — all native

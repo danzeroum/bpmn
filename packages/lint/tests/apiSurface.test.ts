@@ -27,6 +27,10 @@ const EXPECTED_EXPORTS = [
   'evtErrorStartToplevelRule',
   'evtRefMissingRule',
   'timerMalformedRule',
+  // Handoff 17 ES-4 (§4d) — event-subprocess rules + the shared builder.
+  'evtSubprocFlowRule',
+  'evtSubprocStartRule',
+  'typedMessageStartCommands',
 ].sort();
 
 describe('@buildtovalue/lint public API surface', () => {
