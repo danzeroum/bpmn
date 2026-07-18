@@ -6962,6 +6962,58 @@ A boundary event is interrupting (`cancelActivity`) by default; a
 
 ***
 
+### isEventSubprocess()
+
+```ts
+function isEventSubprocess(node): boolean;
+```
+
+Event subprocess (Handoff 17 §4a): a COMMON subProcess whose
+`properties.triggeredByEvent` is true — F7 containment reused whole, zero
+new containment model. Serializes as the standard OMG attribute
+`triggeredByEvent="true"` (never a custom namespace).
+
+ES-1 reforço 9 — THE single source of the predicate: the E-4 execution
+matrix (`eventExecutionModeOf`, ES-3) and the tightened
+`EVT_ERROR_START_TOPLEVEL` lint rule (ES-4) must CONSUME this helper, never
+reimplement it — lint⇄matrix agreement holds by construction.
+
+#### Parameters
+
+##### node
+
+[`BpmnNode`](#bpmnnode)
+
+#### Returns
+
+`boolean`
+
+***
+
+### startIsInterrupting()
+
+```ts
+function startIsInterrupting(node): boolean;
+```
+
+A start event is interrupting by OMG default; `isInterrupting: false` makes
+it non-interrupting (dashed circle, boundary mold). The OMG default is
+OMITTED on export — `isInterrupting="false"` is the only value written.
+Same reforço-9 discipline as [isEventSubprocess](#iseventsubprocess): consumers read this
+helper, never the raw property.
+
+#### Parameters
+
+##### node
+
+[`BpmnNode`](#bpmnnode)
+
+#### Returns
+
+`boolean`
+
+***
+
 ### attachedBoundaryEventIds()
 
 ```ts

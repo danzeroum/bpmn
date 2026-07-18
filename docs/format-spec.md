@@ -175,6 +175,30 @@ vendor namespace for what the spec already names:
 - **Deletion.** `removeEventDefinitionCommand` is vetoed by the default rules while any
   active event references the definition; the veto reason lists every usage (label + id).
 
+## Event subprocess (`properties.triggeredByEvent` / `properties.isInterrupting`)
+
+An event subprocess (Handoff 17 §4a) is a COMMON `subProcess` whose
+`properties.triggeredByEvent` is `true` — F7 containment (`parentId`, nesting, DI) is reused
+whole, no new containment model. Its start event may carry `properties.isInterrupting: false`.
+
+- **Serialization (DECLARED emission rule).** Both are attributes the OMG names, emitted as
+  standard XML attributes on the element kinds that own them — `triggeredByEvent="true"` on
+  `<bpmn:subProcess>`, `isInterrupting="false"` on `<bpmn:startEvent>` — and reserved from the
+  property soup exactly when emitted (the `eventDefinitionRef` mold). The OMG default is
+  OMITTED: `triggeredByEvent` is only written when `true`, `isInterrupting` only when `false`
+  (`isInterrupting="true"` never appears).
+- **The converter preserves, it never judges.** The attributes round-trip byte-stably WHEREVER
+  they appear on their element kinds — e.g. an external file with `isInterrupting="false"` on a
+  top-level start with no event subprocess in sight round-trips unchanged. Whether that model
+  MAKES SENSE is the lint's job (`EVT_SUBPROC_*`, panel 4d), never the converter's.
+- **Structure.** Sequence flow to or from the event-subprocess SHELL is vetoed by the default
+  rules (children connect among themselves normally); the shell is exempt from
+  `UNREACHABLE_NODE` — it fires by its start event, like a boundary event receives control
+  from its host.
+- **Predicate source.** `isEventSubprocess`/`startIsInterrupting` are THE single source of the
+  classification — the execution-tab matrix and the lint rules consume these helpers, so
+  editor, lint and simulator agree by construction.
+
 ## Canonical timer (`properties.timer`)
 
 A timer event stores its expression as `properties.timer = { kind: 'date' | 'duration' |

@@ -137,6 +137,17 @@ export class ElementSerializer {
     // in the bpmnr: soup like everything else, never an orphan OMG child).
     const timer = eventDef === 'timer' ? timerPropertyOf(node) : undefined;
     if (timer !== undefined) reserved.add('timer');
+    // Event subprocess (Handoff 17 §4a) — DECLARED emission rule (reforço 8):
+    // the two OMG attributes round-trip WHEREVER they appear on the element
+    // kinds the OMG names them for; the converter preserves, it never judges
+    // (semantics are the 4d lint's job). The OMG default is omitted:
+    // triggeredByEvent only when true, isInterrupting only when false.
+    const triggeredByEvent =
+      node.type === 'subProcess' && node.properties.triggeredByEvent === true ? 'true' : undefined;
+    if (triggeredByEvent !== undefined) reserved.add('triggeredByEvent');
+    const isInterrupting =
+      node.type === 'startEvent' && node.properties.isInterrupting === false ? 'false' : undefined;
+    if (isInterrupting !== undefined) reserved.add('isInterrupting');
     if (marker) reserved.add('marker');
     if (attachedToRef !== undefined) reserved.add('attachedToRef');
     if (nonInterrupting) reserved.add('cancelActivity');
@@ -151,6 +162,8 @@ export class ElementSerializer {
       name: node.label,
       attachedToRef,
       cancelActivity: nonInterrupting ? 'false' : undefined,
+      triggeredByEvent,
+      isInterrupting,
       calledElement,
       dataStoreRef,
       dataObjectRef,

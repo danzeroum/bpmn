@@ -3,6 +3,7 @@ import {
   activeNodes,
   boundaryAttachedTo,
   isContainerType,
+  isEventSubprocess,
   laneFlowNodeRefs,
   nodeParentId,
   type BpmnDiagram,
@@ -87,7 +88,11 @@ export const unreachableNodeRule: ValidationRule = (diagram) => {
       node.type === 'startEvent' ||
       node.type === 'boundaryEvent' ||
       NON_FLOW_TYPES.has(node.type) ||
-      isContainerType(node.type)
+      isContainerType(node.type) ||
+      // Handoff 17 §4a: an event subprocess fires by its start event, never
+      // by incoming flow — exempt like boundary events. A COMMON subProcess
+      // still warns.
+      isEventSubprocess(node)
     )
       continue;
     const hasIncoming = edges.some((e) => e.targetId === node.id);
