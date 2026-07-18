@@ -1,9 +1,9 @@
 import type { CSSProperties } from 'react';
-import { addNodeCommand, createNode } from '@buildtovalue/core';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { useT } from '../i18n/I18nContext.js';
+import { insertPaletteItem, paletteItemLabel } from './paletteInsert.js';
 import type { PaletteGroup, PaletteItem } from '../plugins/types.js';
 
 /**
@@ -19,31 +19,11 @@ export function Palette() {
   const readOnly = store.getState().readOnly;
   if (readOnly) return null;
 
-  const createAt = (nodeType: string, defaultProperties?: Record<string, unknown>) => {
-    const { viewport, gridSize, snapEnabled } = store.getState();
-    const cx = viewport.x + viewport.width / 2;
-    const cy = viewport.y + viewport.height / 2;
-    const def = config.registry.get(nodeType);
-    // Offset repeated inserts so nodes don't stack exactly.
-    const jitter = (Object.keys(diagram.nodes).length % 5) * (gridSize || 20);
-    const x = snap(cx - def.defaultSize.width / 2 + jitter, snapEnabled ? gridSize : 0);
-    const y = snap(cy - def.defaultSize.height / 2 + jitter, snapEnabled ? gridSize : 0);
-    const node = createNode(
-      {
-        type: nodeType,
-        x,
-        y,
-        properties: defaultProperties ? { ...defaultProperties } : {},
-        versionId: diagram.version.id,
-      },
-      config.registry,
-    );
-    const verdict = execute(addNodeCommand(node));
-    if (verdict.allowed) {
-      store.setState({ selectedIds: [node.id], lastCreatedNodeId: node.id });
-      // N-3: `element.added` (with the deprecated `node.created` alias) is
-      // emitted by the command channel — no direct emission here anymore.
-    }
+  // ES-2 reforço 8: ONE code path (position + factory + selection) shared
+  // with the ⌘K entry — `insertPaletteItem`. N-3: `element.added` is emitted
+  // by the command channel, no direct emission here.
+  const createAt = (item: PaletteItem) => {
+    insertPaletteItem(item, { diagram, registry: config.registry, store, t, execute });
   };
 
   // Items render under their group (groups keep registration order); items
@@ -58,20 +38,25 @@ export function Palette() {
     else byGroup.set(group, [...(byGroup.get(group) ?? []), item]);
   }
 
+  // ES-2 i18n aditivo: `palette.item.{id}` traduz o rótulo quando a chave
+  // existe no dicionário; senão o label do item vale como sempre (os itens
+  // atuais e os de plugin ficam intactos).
+  const labelOf = (item: PaletteItem) => paletteItemLabel(t, item);
+
   const renderItem = (item: PaletteItem) => (
     <button
       key={item.id}
       type="button"
       className="bpmnr-palette-item"
-      title={item.label}
-      aria-label={t('palette.itemAria', { label: item.label })}
+      title={labelOf(item)}
+      aria-label={t('palette.itemAria', { label: labelOf(item) })}
       data-palette-item={item.id}
-      onClick={() => createAt(item.nodeType, item.defaultProperties)}
+      onClick={() => createAt(item)}
     >
       <span className="bpmnr-palette-icon" aria-hidden>
         {item.icon ?? '▢'}
       </span>
-      <span className="bpmnr-palette-label">{item.label}</span>
+      <span className="bpmnr-palette-label">{labelOf(item)}</span>
     </button>
   );
 
@@ -111,6 +96,3 @@ function groupStyle(group: PaletteGroup): CSSProperties | undefined {
   } as CSSProperties;
 }
 
-function snap(value: number, gridSize: number): number {
-  return gridSize > 0 ? Math.round(value / gridSize) * gridSize : value;
-}

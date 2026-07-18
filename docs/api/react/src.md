@@ -2378,6 +2378,61 @@ component: ComponentType<{
 
 ***
 
+### PaletteBuildContext
+
+What a composite palette item's [PaletteItem.build](#build) factory receives:
+the CURRENT diagram, the node-type registry and the insertion position the
+host computed (viewport center + snap/jitter). `t` resolves i18n defaults
+(e.g. the E-2 default definition names).
+
+#### Properties
+
+##### diagram
+
+```ts
+diagram: BpmnDiagram;
+```
+
+##### registry
+
+```ts
+registry: NodeTypeRegistry;
+```
+
+##### x
+
+```ts
+x: number;
+```
+
+##### y
+
+```ts
+y: number;
+```
+
+##### t
+
+```ts
+t: (key, params?) => string;
+```
+
+###### Parameters
+
+###### key
+
+`string`
+
+###### params?
+
+`Record`\<`string`, `string` \| `number`\>
+
+###### Returns
+
+`string`
+
+***
+
 ### PaletteItem
 
 #### Properties
@@ -2422,6 +2477,40 @@ optional group?: string;
 
 Id of the `PaletteGroup` this item renders under. Ungrouped items are
 appended after all groups, preserving pre-group behavior.
+
+##### build?
+
+```ts
+optional build?: (ctx) => object;
+```
+
+COMPOSITE factory (Handoff 17 ES-2, documented public surface): when
+present, inserting this item executes the returned command (usually a
+`compositeCommand` — one undo) instead of a plain addNode, and selects
+`selectId` afterwards. The palette click AND the ⌘K entry resolve through
+this ONE factory (`paletteInsertCommand`) — never two code paths.
+
+###### Parameters
+
+###### ctx
+
+[`PaletteBuildContext`](#palettebuildcontext)
+
+###### Returns
+
+`object`
+
+###### command
+
+```ts
+command: Command;
+```
+
+###### selectId
+
+```ts
+selectId: string;
+```
 
 ***
 
@@ -6644,7 +6733,7 @@ diagram: BpmnDiagram;
 
 ###### Inherited from
 
-[`ApprovalPayloadInput`](#approvalpayloadinput).[`diagram`](#diagram-10)
+[`ApprovalPayloadInput`](#approvalpayloadinput).[`diagram`](#diagram-11)
 
 ##### ledger?
 
@@ -10162,6 +10251,23 @@ function useDiagram(): DiagramContextValue;
 
 ***
 
+### useDiagramOrNull()
+
+```ts
+function useDiagramOrNull(): DiagramContextValue | null;
+```
+
+Tolerant variant for PURE shapes (Handoff 17 ES-2): a shape that needs
+sibling/child context (e.g. the collapsed event-subprocess trigger glyph)
+reads it through this and DEGRADES to `null` outside a provider — so
+standalone rendering (snapshots, server markup) never throws.
+
+#### Returns
+
+[`DiagramContextValue`](#diagramcontextvalue) \| `null`
+
+***
+
 ### resolveEditorConfig()
 
 ```ts
@@ -12512,6 +12618,148 @@ Assets are embedded first so a cross-origin image never taints the canvas.
 #### Returns
 
 `Promise`\<`void`\>
+
+***
+
+### paletteItemLabel()
+
+```ts
+function paletteItemLabel(t, item): string;
+```
+
+i18n-additive label: `palette.item.{id}` when the dictionary has it.
+
+#### Parameters
+
+##### t
+
+(`key`, `params?`) => `string`
+
+##### item
+
+[`PaletteItem`](#paletteitem)
+
+#### Returns
+
+`string`
+
+***
+
+### insertPaletteItem()
+
+```ts
+function insertPaletteItem(item, deps): RuleVerdict;
+```
+
+Insert a palette item near the viewport center (grid-snapped, jittered) —
+the ONE code path shared by the palette click and the ⌘K entry (ES-2
+reforço 8): position math + factory + selection in a single place.
+
+#### Parameters
+
+##### item
+
+[`PaletteItem`](#paletteitem)
+
+##### deps
+
+###### diagram
+
+`BpmnDiagram`
+
+###### registry
+
+`NodeTypeRegistry`
+
+###### store
+
+[`CanvasStore`](#canvasstore)
+
+###### t
+
+(`key`, `params?`) => `string`
+
+###### execute
+
+(`command`) => `RuleVerdict`
+
+#### Returns
+
+`RuleVerdict`
+
+***
+
+### paletteInsertCommand()
+
+```ts
+function paletteInsertCommand(item, ctx): object;
+```
+
+THE single insert factory of the palette (Handoff 17 ES-2, reforço 8): the
+palette click and the ⌘K entry both resolve an item through this function —
+one command, one source, never two code paths. Plain items produce an
+`addNodeCommand`; composite items delegate to their [PaletteItem.build](#build).
+
+#### Parameters
+
+##### item
+
+[`PaletteItem`](#paletteitem)
+
+##### ctx
+
+[`PaletteBuildContext`](#palettebuildcontext)
+
+#### Returns
+
+`object`
+
+##### command
+
+```ts
+command: Command;
+```
+
+##### selectId
+
+```ts
+selectId: string;
+```
+
+***
+
+### buildEventSubprocessInsert()
+
+```ts
+function buildEventSubprocessInsert(ctx): object;
+```
+
+«Subprocesso de evento» (§4b): container + typed message start + NAMED
+definition referenced — ONE composite (1 undo), the SAME FORM as the 4d
+quick-fix contract (ES-0 decision 4), so every fresh drop is LINT-CLEAN by
+construction (no EVT_REF_MISSING on a brand-new container).
+
+#### Parameters
+
+##### ctx
+
+[`PaletteBuildContext`](#palettebuildcontext)
+
+#### Returns
+
+`object`
+
+##### command
+
+```ts
+command: Command;
+```
+
+##### selectId
+
+```ts
+selectId: string;
+```
 
 ***
 

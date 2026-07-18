@@ -69,6 +69,13 @@ export * from './plugins/types.js';
 
 // UI
 export * from './ui/paletteItems.js';
+// Handoff 17 ES-2 (§4b) — the ONE palette insert factory (documented surface).
+export {
+  buildEventSubprocessInsert,
+  insertPaletteItem,
+  paletteInsertCommand,
+  paletteItemLabel,
+} from './ui/paletteInsert.js';
 export * from './ui/Palette.js';
 export * from './ui/PropertiesPanel.js';
 export * from './ui/Toolbar.js';

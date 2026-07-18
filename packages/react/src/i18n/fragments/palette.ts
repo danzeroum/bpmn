@@ -11,11 +11,15 @@ export const palette: { en: Messages; ptBR: Messages } = {
   en: {
     'palette.aria': 'Element palette',
     'palette.itemAria': 'Add {label}',
+    'palette.item.eventSubprocess': 'Event Subprocess',
+    'palette.compose.eventSubprocess': 'Insert event subprocess',
     'minimap.aria': 'Diagram overview',
   },
   ptBR: {
     'palette.aria': 'Paleta de elementos',
     'palette.itemAria': 'Adicionar {label}',
+    'palette.item.eventSubprocess': 'Subprocesso de evento',
+    'palette.compose.eventSubprocess': 'Inserir subprocesso de evento',
     'minimap.aria': 'Visão geral do diagrama',
   },
 };

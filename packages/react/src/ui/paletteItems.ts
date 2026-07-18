@@ -1,5 +1,6 @@
 import type { PaletteGroup, PaletteItem } from '../plugins/types.js';
 import { CORE_PALETTE_ICONS } from './paletteIcons.js';
+import { buildEventSubprocessInsert } from './paletteInsert.js';
 
 /** Built-in palette sections: the standard set plus the F6 event sub-menu. */
 export const BUILT_IN_PALETTE_GROUPS: PaletteGroup[] = [
@@ -31,5 +32,8 @@ export const BUILT_IN_PALETTE: PaletteItem[] = [
   { id: 'timerEvent', label: 'Timer Event', nodeType: 'intermediateCatchEvent', icon: CORE_PALETTE_ICONS.timerEvent, defaultProperties: { eventDefinition: 'timer' }, group: 'events' },
   { id: 'messageEvent', label: 'Message Event', nodeType: 'intermediateCatchEvent', icon: CORE_PALETTE_ICONS.messageEvent, defaultProperties: { eventDefinition: 'message' }, group: 'events' },
   { id: 'boundaryNonInterrupting', label: 'Boundary (NI)', nodeType: 'boundaryEvent', icon: CORE_PALETTE_ICONS.boundaryNonInterrupting, defaultProperties: { cancelActivity: false }, group: 'events' },
+  // Handoff 17 ES-2 (§4b): composite item — container + typed start + named
+  // definition in ONE undo, lint-clean by construction (the 4d fix's FORM).
+  { id: 'eventSubprocess', label: 'Event Subprocess', nodeType: 'subProcess', icon: CORE_PALETTE_ICONS.eventSubprocess, group: 'events', build: buildEventSubprocessInsert },
   { id: 'eventBasedGateway', label: 'Event Gateway', nodeType: 'eventBasedGateway', icon: CORE_PALETTE_ICONS.eventBasedGateway, group: 'events' },
 ];

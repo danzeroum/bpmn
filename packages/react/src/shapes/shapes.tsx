@@ -1,6 +1,14 @@
 import type { EventDefinitionKind } from '@buildtovalue/core';
-import { eventDefinitionOf, isNonInterrupting, isSubProcessExpanded } from '@buildtovalue/core';
+import {
+  childrenOf,
+  eventDefinitionOf,
+  isEventSubprocess,
+  isNonInterrupting,
+  isSubProcessExpanded,
+  startIsInterrupting,
+} from '@buildtovalue/core';
 import type { ShapeProps } from '../plugins/types.js';
+import { useDiagramOrNull } from '../contexts/DiagramContext.js';
 import { ActivityBox, ShapeLabel, strokeFor, strokeWidthFor, theme } from './common.js';
 
 /**
@@ -53,6 +61,10 @@ function eventGlyph(kind: EventDefinitionKind, cx: number, cy: number, r: number
 export function StartEventShape({ node, selected }: ShapeProps) {
   const r = Math.min(node.width, node.height) / 2;
   const kind = eventDefinitionOf(node);
+  // Handoff 17 ES-2 (§4b): a non-interrupting start (event subprocess) draws
+  // DASHED — the SAME dash as the H6 non-interrupting boundary; the predicate
+  // is the core helper (reforço 9 — never reimplemented here).
+  const dash = startIsInterrupting(node) ? undefined : '3,2';
   return (
     <g>
       <circle
@@ -62,6 +74,7 @@ export function StartEventShape({ node, selected }: ShapeProps) {
         fill={theme.fillEvent}
         stroke={strokeFor(selected)}
         strokeWidth={strokeWidthFor(selected)}
+        strokeDasharray={dash}
       />
       {kind && eventGlyph(kind, node.width / 2, node.height / 2, r, false)}
       <ShapeLabel
@@ -374,7 +387,27 @@ export function SubProcessShape({ node, selected }: ShapeProps) {
   // so the shape stays pure. Collapsed ones look like a regular activity
   // card. Collapse keeps the stored DI bounds (pendencias.md — Handoff 5
   // §3.0); the 160ms transition animates the fill, not the geometry.
+  //
+  // Handoff 17 ES-2 (§4b): an EVENT subprocess (isEventSubprocess — the core
+  // helper, reforço 9) draws the OMG thin DOTTED border (dashed = geometry,
+  // never transient CSS) and the `event subProcess` tag; collapsed it shows
+  // the trigger glyph of its start child top-left.
+  const diagramCtx = useDiagramOrNull();
+  const eventSub = isEventSubprocess(node);
+  const dash = eventSub ? '2,3' : undefined;
   const expanded = isSubProcessExpanded(node);
+  // Reforço 7 — DECLARED degradation, never a crash: the trigger glyph is the
+  // FIRST typed start child; 0 starts, >1 starts (dirty external import) or a
+  // kindless start degrade to NO glyph — fixing the model is the ES-4 lint's
+  // job, never the shape's. Outside a provider (standalone render) the
+  // context is null and the glyph simply doesn't draw.
+  const trigger =
+    eventSub && !expanded && diagramCtx
+      ? childrenOf(diagramCtx.diagram, node.id).find(
+          (child) => child.type === 'startEvent' && eventDefinitionOf(child) !== undefined,
+        )
+      : undefined;
+  const triggerKind = trigger ? eventDefinitionOf(trigger) : undefined;
   if (!expanded) {
     return (
       <g>
@@ -386,7 +419,14 @@ export function SubProcessShape({ node, selected }: ShapeProps) {
           fill={theme.fillActivity}
           stroke={strokeFor(selected)}
           strokeWidth={strokeWidthFor(selected)}
+          strokeDasharray={dash}
         />
+        {triggerKind && (
+          <g data-event-subprocess-trigger={triggerKind}>
+            <circle cx={16} cy={16} r={9} fill="none" stroke={theme.textMuted} strokeWidth={1} strokeDasharray={dash} />
+            {eventGlyph(triggerKind, 16, 16, 9, false)}
+          </g>
+        )}
         <ShapeLabel label={node.label} width={node.width} y={20} />
       </g>
     );
@@ -401,6 +441,7 @@ export function SubProcessShape({ node, selected }: ShapeProps) {
         fill={theme.fill}
         stroke={strokeFor(selected)}
         strokeWidth={strokeWidthFor(selected)}
+        strokeDasharray={dash}
       />
       <g data-subprocess-title>
         <line
@@ -422,7 +463,7 @@ export function SubProcessShape({ node, selected }: ShapeProps) {
           fontFamily="ui-monospace, monospace"
           fill={theme.textMuted}
         >
-          subProcess
+          {eventSub ? 'event subProcess' : 'subProcess'}
         </text>
       </g>
     </g>
