@@ -28,6 +28,12 @@ export interface GlobalCommandContext extends MenuBuildContext {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  /**
+   * 🔒 channel for declined inserts (Handoff 18 §5b reforço 7). Optional:
+   * contexts that only ENUMERATE commands (the cheatsheet) never insert, so
+   * they may omit it; the ⌘K runner falls back to a no-op when absent.
+   */
+  announceVeto?: (reason: string) => void;
 }
 
 export interface RegisteredGlobalCommand extends RegisteredMenuItem {

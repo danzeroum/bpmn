@@ -39,11 +39,20 @@ import { useT } from '../i18n/I18nContext.js';
  * rule) surfaces through the existing `lastVeto` channel. `errorCode` renders
  * ONLY for error definitions (régua 4).
  */
-const REF_KINDS = new Set(['message', 'signal', 'error']);
+const REF_KINDS = new Set(['message', 'signal', 'error', 'escalation']);
 
-/** `errorCode` of a definition, tolerant of the message/signal shape. */
+/** Kinds that carry a per-type code field (error → errorCode, escalation → escalationCode). */
+const CODE_KINDS = new Set(['error', 'escalation']);
+
+/** The per-type code (`errorCode`/`escalationCode`) of a definition, tolerant of the plain shape. */
 function codeOf(definition: NamedEventDefinition | ErrorEventDefinition | undefined): string {
-  return (definition as ErrorEventDefinition | undefined)?.errorCode ?? '';
+  const coded = definition as { errorCode?: string; escalationCode?: string } | undefined;
+  return coded?.errorCode ?? coded?.escalationCode ?? '';
+}
+
+/** The patch key for a kind's code field. */
+function codePatch(kind: EventDefinitionRefKind, code: string): { errorCode?: string; escalationCode?: string } {
+  return kind === 'escalation' ? { escalationCode: code } : { errorCode: code };
 }
 
 export function eventKindOf(node: BpmnNode): EventDefinitionRefKind | null {
@@ -80,6 +89,17 @@ export function EventDefinitionSection({ node, readOnly }: { node: BpmnNode; rea
     setName(definition?.name ?? '');
     setErrorCode(codeOf(definition));
   }, [definition]);
+  // Escalation authority (Handoff 18 §5b) — a NODE property (free text →
+  // bpmnr:), committed on blur so the transient chip reads the SETTLED value,
+  // never a keystroke. Empty commits as undefined (property removed → no chip).
+  const committedAuthority =
+    typeof node.properties.escalationAuthority === 'string'
+      ? node.properties.escalationAuthority
+      : '';
+  const [authority, setAuthority] = useState(committedAuthority);
+  useEffect(() => {
+    setAuthority(committedAuthority);
+  }, [committedAuthority]);
   if (!kind) return null;
 
   const list = eventDefinitionList(diagram, kind);
@@ -214,6 +234,34 @@ export function EventDefinitionSection({ node, readOnly }: { node: BpmnNode; rea
           {/* i18n-exempt — plus glyph */}+ {t('eventDefs.add')}
         </button>
       )}
+      {/* §5b — escalation authority: a free-text NODE property (bpmnr:),
+          committed on blur; empty removes it (chip degrades to absent). */}
+      {kind === 'escalation' && (
+        <label className="bpmnr-eventdefs-field">
+          <span>{t('eventDefs.authority.label')}</span>
+          <input
+            type="text"
+            value={authority}
+            disabled={readOnly}
+            aria-label={t('eventDefs.authority.label')}
+            data-testid="eventdefs-authority"
+            onChange={(event) => setAuthority(event.target.value)}
+            onBlur={() => {
+              const settled = authority.trim();
+              if (settled !== committedAuthority) {
+                void execute(
+                  updateNodeCommand(node.id, {
+                    properties: { escalationAuthority: settled === '' ? undefined : settled },
+                  }),
+                );
+              }
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') (event.target as HTMLInputElement).blur();
+            }}
+          />
+        </label>
+      )}
       {definition && (
         <>
           {/* E-3 reforço 10 — the gov-* mirror is Biblioteca-managed: rename
@@ -243,20 +291,29 @@ export function EventDefinitionSection({ node, readOnly }: { node: BpmnNode; rea
               }}
             />
           </label>
-          {/* Régua 4: errorCode SÓ para definições de erro. */}
-          {kind === 'error' && (
+          {/* Régua 4: código por tipo — errorCode (erro) / escalationCode
+              (escalação, Handoff 18 §5b); assimetria por tipo. */}
+          {kind && CODE_KINDS.has(kind) && (
             <label className="bpmnr-eventdefs-field">
-              <span>{t('eventDefs.errorCode.label')}</span>
+              <span>
+                {kind === 'escalation'
+                  ? t('eventDefs.escalationCode.label')
+                  : t('eventDefs.errorCode.label')}
+              </span>
               <input
                 type="text"
                 value={errorCode}
                 disabled={fieldsLocked}
-                aria-label={t('eventDefs.errorCode.label')}
+                aria-label={
+                  kind === 'escalation'
+                    ? t('eventDefs.escalationCode.label')
+                    : t('eventDefs.errorCode.label')
+                }
                 data-testid="eventdefs-errorcode"
                 onChange={(event) => setErrorCode(event.target.value)}
                 onBlur={() => {
                   if (!mirror && errorCode !== codeOf(definition) && kind) {
-                    void execute(updateEventDefinitionCommand(kind, definition.id, { errorCode }));
+                    void execute(updateEventDefinitionCommand(kind, definition.id, codePatch(kind, errorCode)));
                   }
                 }}
               />

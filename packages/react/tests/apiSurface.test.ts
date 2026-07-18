@@ -84,8 +84,12 @@ const EXPECTED_EXPORTS = [
   // Handoff 17 ES-3 (§4c) — event-subprocess start toggle.
   'InterruptingToggle',
   'isEventSubprocessStart',
+  // Handoff 18 §5b — interrupting toggle extended to boundary events.
+  'hasInterruptingToggle',
   // Handoff 17 ES-2 (§4b) — palette insert factory + tolerant diagram hook.
   'buildEventSubprocessInsert',
+  // Handoff 18 §5b — composite escalation-boundary palette factory.
+  'buildEscalationBoundaryInsert',
   'insertPaletteItem',
   'paletteInsertCommand',
   'paletteItemLabel',

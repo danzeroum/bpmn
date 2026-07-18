@@ -22,6 +22,7 @@ export function paletteInsertCommands(ctx: GlobalCommandContext): RegisteredGlob
           store: ctx.store,
           t: ctx.t,
           execute: ctx.execute,
+          announceVeto: ctx.announceVeto ?? (() => undefined),
         });
       },
     }));

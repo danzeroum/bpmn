@@ -96,6 +96,8 @@ describe('CommandPalette (§2f)', () => {
       // Handoff 17 ES-2 (reforço 8): itens COMPOSTOS da paleta entram pelo
       // registro paletteInsertCommands — mesma fábrica do clique da paleta.
       'palette.insert.eventSubprocess',
+      // Handoff 18 §5b: o boundary de escalação (composto) também entra.
+      'palette.insert.escalationBoundary',
     ].filter((id) => id !== 'global.undo' && id !== 'global.redo');
     // Direção 2 — tudo dos registros presente, mesma ordem de agregação.
     expect(ids).toEqual(expected);

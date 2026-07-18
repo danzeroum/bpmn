@@ -1750,6 +1750,26 @@ canUndo: boolean;
 canRedo: boolean;
 ```
 
+##### announceVeto?
+
+```ts
+optional announceVeto?: (reason) => void;
+```
+
+🔒 channel for declined inserts (Handoff 18 §5b reforço 7). Optional:
+contexts that only ENUMERATE commands (the cheatsheet) never insert, so
+they may omit it; the ⌘K runner falls back to a no-op when absent.
+
+###### Parameters
+
+###### reason
+
+`string`
+
+###### Returns
+
+`void`
+
 ##### execute
 
 ```ts
@@ -2503,14 +2523,17 @@ appended after all groups, preserving pre-group behavior.
 ##### build?
 
 ```ts
-optional build?: (ctx) => object;
+optional build?: (ctx) => PaletteInsertResult;
 ```
 
 COMPOSITE factory (Handoff 17 ES-2, documented public surface): when
 present, inserting this item executes the returned command (usually a
 `compositeCommand` — one undo) instead of a plain addNode, and selects
 `selectId` afterwards. The palette click AND the ⌘K entry resolve through
-this ONE factory (`paletteInsertCommand`) — never two code paths.
+this ONE factory (`paletteInsertCommand`) — never two code paths. A build
+may DECLINE the insert (Handoff 18 §5b reforço 7: a boundary dropped away
+from a host) by returning `{ veto }` — the caller announces it on the 🔒
+channel instead of creating an orphan node.
 
 ###### Parameters
 
@@ -2520,19 +2543,7 @@ this ONE factory (`paletteInsertCommand`) — never two code paths.
 
 ###### Returns
 
-`object`
-
-###### command
-
-```ts
-command: Command;
-```
-
-###### selectId
-
-```ts
-selectId: string;
-```
+[`PaletteInsertResult`](#paletteinsertresult)
 
 ***
 
@@ -3642,6 +3653,12 @@ name: string;
 
 ```ts
 optional errorCode?: string;
+```
+
+###### escalationCode?
+
+```ts
+optional escalationCode?: string;
 ```
 
 ***
@@ -7360,6 +7377,23 @@ type TFunction = (key, params?) => string;
 ```ts
 type ShapeComponent = ComponentType<ShapeProps>;
 ```
+
+***
+
+### PaletteInsertResult
+
+```ts
+type PaletteInsertResult = 
+  | {
+  command: Command;
+  selectId: string;
+}
+  | {
+  veto: string;
+};
+```
+
+Result of a palette [PaletteItem.build](#build): a command to run, or a declared veto.
 
 ***
 
@@ -12151,12 +12185,38 @@ import for both (aceite 10.5.3).
 function isEventSubprocessStart(diagram, node): boolean;
 ```
 
-"Interrompe o escopo" (Handoff 17 ES-3, §4c): ONLY on the start event of an
-event subprocess — both sides of the predicate come from the ES-1 core
-helpers (`startIsInterrupting` + `isEventSubprocess` on the parent), never
-a local reimplementation. The commit is one undoable `updateNodeCommand`;
-the OMG default (interrupting) is the ABSENT field — clean model, so
-toggling back removes the property entirely.
+"Interrompe o escopo" (Handoff 17 ES-3, §4c; extended to boundaries in
+Handoff 18 §5b): the interrupting toggle serves the two OMG catches whose
+default the personality flips — an event-subprocess START (`isInterrupting`)
+and a boundary event (`cancelActivity`). Both sides of every predicate come
+from the core helpers (`startIsInterrupting`/`isNonInterrupting`), never a
+local reimplementation. The commit is one undoable `updateNodeCommand`; the
+OMG default (interrupting) is the ABSENT field, so toggling back to
+interrupting removes the property entirely.
+
+#### Parameters
+
+##### diagram
+
+`BpmnDiagram`
+
+##### node
+
+`BpmnNode`
+
+#### Returns
+
+`boolean`
+
+***
+
+### hasInterruptingToggle()
+
+```ts
+function hasInterruptingToggle(diagram, node): boolean;
+```
+
+The node kinds the interrupting toggle applies to (esub start or boundary).
 
 #### Parameters
 
@@ -12803,6 +12863,12 @@ reforço 8): position math + factory + selection in a single place.
 
 (`command`) => `RuleVerdict`
 
+###### announceVeto
+
+(`reason`) => `void`
+
+🔒 channel — a build that declines (reforço 7) announces here, never a silent no-op.
+
 #### Returns
 
 `RuleVerdict`
@@ -12812,7 +12878,7 @@ reforço 8): position math + factory + selection in a single place.
 ### paletteInsertCommand()
 
 ```ts
-function paletteInsertCommand(item, ctx): object;
+function paletteInsertCommand(item, ctx): PaletteInsertResult;
 ```
 
 THE single insert factory of the palette (Handoff 17 ES-2, reforço 8): the
@@ -12832,19 +12898,7 @@ one command, one source, never two code paths. Plain items produce an
 
 #### Returns
 
-`object`
-
-##### command
-
-```ts
-command: Command;
-```
-
-##### selectId
-
-```ts
-selectId: string;
-```
+[`PaletteInsertResult`](#paletteinsertresult)
 
 ***
 
@@ -12882,6 +12936,31 @@ command: Command;
 ```ts
 selectId: string;
 ```
+
+***
+
+### buildEscalationBoundaryInsert()
+
+```ts
+function buildEscalationBoundaryInsert(ctx): PaletteInsertResult;
+```
+
+«Escalation (boundary)» (Handoff 18 §5b, decisão 3): a composite born
+lint-clean — boundary + LOCAL escalation definition + ref in ONE undo,
+`cancelActivity:false` explicit (the declared non-interrupting personality).
+Reforço 7: a boundary needs a host — the drop must land on an activity
+(attaches via the N-1 side/t anchor); on empty canvas it DECLINES with a
+declared veto (announced on the 🔒), never an orphan boundary.
+
+#### Parameters
+
+##### ctx
+
+[`PaletteBuildContext`](#palettebuildcontext)
+
+#### Returns
+
+[`PaletteInsertResult`](#paletteinsertresult)
 
 ***
 

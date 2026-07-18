@@ -136,6 +136,12 @@ export const CORE_PALETTE_ICONS: Record<string, ReactNode> = {
       <circle cx={6.2} cy={7.6} r={1.9} strokeWidth={1.1} />
     </Icon>
   ),
+  escalationBoundary: (
+    <Icon>
+      <circle cx={9} cy={9} r={6.5} strokeDasharray="2.8,2.2" strokeWidth={1.3} />
+      <path d="M 6 11 L 9 6 L 12 11" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round" />
+    </Icon>
+  ),
   businessRuleTask: (
     <Icon>
       <rect x={2.5} y={4.75} width={13} height={8.5} rx={2} />

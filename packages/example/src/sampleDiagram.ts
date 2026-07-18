@@ -944,3 +944,42 @@ export function buildEventDefsDiagram(withLibrary = false): BpmnDiagram {
   }
   return diagram;
 }
+
+/**
+ * `?escalation=1` — Handoff 18 §5b: an approval task with a non-interrupting
+ * escalation boundary already attached (named `esc-1`, code OVER_BUDGET) for the
+ * full 5b e2e — escalationCode + authority fields, the transient authority chip
+ * (settled on blur) and the interrupting toggle. The palette-drop veto is driven
+ * on the empty canvas (`?empty=1`).
+ */
+export function buildEscalationDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-escalation', name: 'Escalação', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 60, 150),
+    approve: make('userTask', 'approve', 'Aprovar despesa', 220, 128),
+    bnd: make('boundaryEvent', 'bnd', 'Acima da alçada', 262, 170, {
+      attachedToRef: 'approve',
+      cancelActivity: false,
+      eventDefinition: 'escalation',
+      eventDefinitionRef: 'esc-1',
+      boundarySide: 'bottom',
+      boundaryT: 0.5,
+    }),
+    end: make('endEvent', 'end', 'Fim', 460, 150),
+  };
+  diagram.edges = {
+    f1: createEdge({ id: 'f1', sourceId: 'start', targetId: 'approve', versionId: v }),
+    f2: createEdge({ id: 'f2', sourceId: 'approve', targetId: 'end', versionId: v }),
+  };
+  diagram.definitions = {
+    messages: [],
+    signals: [],
+    errors: [],
+    escalations: [{ id: 'esc-1', name: 'Acima da alçada', escalationCode: 'OVER_BUDGET' }],
+  };
+  return diagram;
+}
