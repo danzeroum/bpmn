@@ -1165,6 +1165,16 @@ A thread resolution recorded on the chain.
 
 ***
 
+### REVIEW\_THREAD\_DISMISSED\_TYPE
+
+```ts
+const REVIEW_THREAD_DISMISSED_TYPE: "REVIEW_THREAD_DISMISSED" = 'REVIEW_THREAD_DISMISSED';
+```
+
+A justified dismissal (gate release WITHOUT resolving) on the chain.
+
+***
+
 ### SIMULATION\_SESSION\_TYPE
 
 ```ts
@@ -1726,6 +1736,38 @@ per-artifact filter works; `aiAssisted` records mixed authorship (C4).
 ###### aiAssisted?
 
 `boolean`
+
+#### Returns
+
+`AuditEntryInput`
+
+***
+
+### reviewThreadDismissedEntry()
+
+```ts
+function reviewThreadDismissedEntry(
+   thread, 
+   actor, 
+   justification): AuditEntryInput;
+```
+
+Maps a justified dismissal to a ledger append input (§2d) — never silent:
+the justification text travels in the entry.
+
+#### Parameters
+
+##### thread
+
+[`ReviewThreadRef`](#reviewthreadref)
+
+##### actor
+
+`Pick`\<`UserContext`, `"id"`\>
+
+##### justification
+
+`string`
 
 #### Returns
 

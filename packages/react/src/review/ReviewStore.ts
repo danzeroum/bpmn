@@ -34,7 +34,16 @@ export interface ReviewThread {
   versionRef: string;
   resolved: boolean;
   messages: ReviewMessage[];
+  /**
+   * Dismissed WITHOUT resolving (Handoff 15 §2d): releases the approval gate
+   * but is never silent — the justification is mandatory (min 10 chars) and
+   * the host records its own ledger entry (`reviewThreadDismissedEntry`).
+   */
+  dismissed?: { by: string; justification: string };
 }
+
+/** Minimum justification length for a dismissal — never a silent release. */
+export const MIN_DISMISS_JUSTIFICATION = 10;
 
 export interface ReviewStore {
   /** Stable snapshot of every thread (open, resolved AND orphaned). */
@@ -45,6 +54,12 @@ export interface ReviewStore {
   reply(threadId: string, message: Pick<ReviewMessage, 'author' | 'text' | 'aiAssisted'>): ReviewThread;
   /** Marks a thread resolved; returns the updated thread. */
   resolve(threadId: string): ReviewThread;
+  /**
+   * Dismisses WITHOUT resolving (gate release with audit trail, §2d).
+   * Implementations MUST reject justifications shorter than
+   * {@link MIN_DISMISS_JUSTIFICATION}. Optional — absent hides the action.
+   */
+  dismiss?(threadId: string, by: string, justification: string): ReviewThread;
   /** Change notification (external edits, other reviewers). */
   subscribe?(cb: () => void): () => void;
 }
@@ -93,6 +108,18 @@ export function createInMemoryReviewStore(
       const current = threads.find((t) => t.id === threadId);
       if (!current) throw new Error(`review thread "${threadId}" not found`);
       const next: ReviewThread = { ...current, resolved: true };
+      replace(next);
+      return next;
+    },
+    dismiss(threadId, by, justification) {
+      if (justification.trim().length < MIN_DISMISS_JUSTIFICATION) {
+        throw new Error(
+          `dismissal justification must have at least ${MIN_DISMISS_JUSTIFICATION} characters`,
+        );
+      }
+      const current = threads.find((t) => t.id === threadId);
+      if (!current) throw new Error(`review thread "${threadId}" not found`);
+      const next: ReviewThread = { ...current, dismissed: { by, justification } };
       replace(next);
       return next;
     },

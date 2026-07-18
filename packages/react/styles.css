@@ -3612,7 +3612,11 @@
   font-size: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   max-width: calc(100% - 24px);
-  flex-wrap: wrap;
+  /* One row always — narrow hosts (the §2d embed) scroll the bar instead of
+     wrapping it over the gate banner / side tabs below. */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  white-space: nowrap;
 }
 .bpmnr-diff-nav-title {
   font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
@@ -3867,4 +3871,139 @@
     min-height: 44px;
   }
   /* Pin hit stays ≥44px world-adjacent (r=22 → 44px diameter). */
+}
+
+/* --- Review panel embed (Handoff 15 §2d): gate banner + tabs + dismiss. --- */
+.bpmnr-review-gate {
+  position: absolute;
+  top: 56px;
+  /* Left-anchored, width capped clear of the 240px side tabs — banner and
+     tabs share the same row without ever fighting for pointer events. */
+  left: 12px;
+  z-index: 34;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--btv-error, #b3372f);
+  border-radius: 8px;
+  background: var(--btv-error-soft, #fdf3f1);
+  color: var(--btv-error, #b3372f);
+  font-size: 12px;
+  max-width: calc(100% - 288px);
+}
+.bpmnr-review-gate button {
+  border: none;
+  background: transparent;
+  color: var(--btv-ink, #33567e);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 11px;
+}
+.bpmnr-diff-side { display: contents; }
+.bpmnr-diff-side-tabs {
+  position: absolute;
+  top: 56px;
+  right: 10px;
+  z-index: 31;
+  width: 240px;
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--bpmnr-border, #d8d2c6);
+  background: var(--bpmnr-canvas-bg, #faf9f6);
+  border-radius: 8px 8px 0 0;
+  padding: 4px 6px 0;
+}
+.bpmnr-diff-side-tabs button {
+  border: none;
+  background: transparent;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: var(--bpmnr-text-muted, #6f675a);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.bpmnr-diff-side-tabs button[aria-selected='true'] {
+  color: var(--bpmnr-text, #262220);
+  border-bottom-color: var(--btv-ink, #33567e);
+}
+/* With tabs the list sits right below them. */
+.bpmnr-diff-side-tabs ~ .bpmnr-diff-list,
+.bpmnr-diff-side:has(.bpmnr-diff-side-tabs) .bpmnr-diff-list {
+  top: 88px;
+}
+.bpmnr-diff-list-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+}
+.bpmnr-review-dismiss-toggle {
+  border: none;
+  background: transparent;
+  color: var(--bpmnr-text-muted, #6f675a);
+  font-size: 10px;
+  text-decoration: underline;
+  cursor: pointer;
+  flex: none;
+}
+.bpmnr-review-dismiss {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  margin-top: 4px;
+}
+.bpmnr-review-dismiss textarea {
+  flex: 1;
+  min-height: 36px;
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid var(--bpmnr-warning-border, #e8d9ae);
+  border-radius: 6px;
+  padding: 4px;
+  background: transparent;
+  color: inherit;
+}
+.bpmnr-review-dismiss button {
+  border: 1px solid var(--bpmnr-warning-border, #e8d9ae);
+  border-radius: 6px;
+  background: var(--bpmnr-warning-bg, #fdf6e8);
+  color: var(--bpmnr-warning-fg, #7a611e);
+  font-size: 10px;
+  padding: 2px 8px;
+  cursor: pointer;
+  align-self: flex-end;
+}
+.bpmnr-review-dismiss button:disabled { opacity: 0.4; cursor: default; }
+.btv-studio-review-canvas {
+  position: relative;
+  height: 440px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  border-radius: 8px;
+  overflow: hidden;
+}
+@media (pointer: coarse) {
+  .bpmnr-diff-side-tabs button,
+  .bpmnr-review-dismiss button,
+  .bpmnr-review-gate button,
+  .bpmnr-review-dismiss-toggle {
+    min-height: 44px;
+  }
+  /* The 44px nav bar is taller on touch — keep banner/tabs clear of it. */
+  .bpmnr-review-gate,
+  .bpmnr-diff-side-tabs {
+    top: 68px;
+  }
+  .bpmnr-diff-side-tabs ~ .bpmnr-diff-list,
+  .bpmnr-diff-side:has(.bpmnr-diff-side-tabs) .bpmnr-diff-list {
+    top: 112px;
+  }
 }

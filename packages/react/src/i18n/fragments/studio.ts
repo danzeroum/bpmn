@@ -53,6 +53,8 @@ export const studio: { en: Messages; ptBR: Messages } = {
       'Activation is NOT automatic — the requester performs the final promotion.',
     'review.decision.sign': 'Sign approval with my key',
     'review.decision.approveAs': 'Approve as {role}',
+    'review.gate.blockedTitle_one': 'Approval blocked — {count} open review thread',
+    'review.gate.blockedTitle_other': 'Approval blocked — {count} open review threads',
     'review.decision.rejectToggle': 'Reject with justification…',
     'review.reject.aria': 'Rejection justification',
     'review.reject.placeholder':
@@ -156,6 +158,8 @@ export const studio: { en: Messages; ptBR: Messages } = {
       'A ativação NÃO é automática — a solicitante executa a promoção final.',
     'review.decision.sign': 'Assinar aprovação com minha chave',
     'review.decision.approveAs': 'Aprovar como {role}',
+    'review.gate.blockedTitle_one': 'Aprovação bloqueada — {count} thread de review aberta',
+    'review.gate.blockedTitle_other': 'Aprovação bloqueada — {count} threads de review abertas',
     'review.decision.rejectToggle': 'Rejeitar com justificativa…',
     'review.reject.aria': 'Justificativa da rejeição',
     'review.reject.placeholder':

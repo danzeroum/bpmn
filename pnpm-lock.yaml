@@ -348,6 +348,9 @@ importers:
 
   packages/studio:
     dependencies:
+      '@buildtovalue/adapters-bpmn':
+        specifier: workspace:*
+        version: link:../adapters-bpmn
       '@buildtovalue/audit':
         specifier: workspace:*
         version: link:../audit
@@ -381,10 +384,6 @@ importers:
       react:
         specifier: '>=18'
         version: 18.3.1
-    devDependencies:
-      '@buildtovalue/adapters-bpmn':
-        specifier: workspace:*
-        version: link:../adapters-bpmn
 
 packages:
 

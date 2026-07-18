@@ -27,7 +27,7 @@ import type { ArtifactAction, ArtifactAdapter, ArtifactRef, LibraryQuery, Lifecy
 import type { Signer } from '@buildtovalue/identity';
 import { createGitAnchor, type GitAnchorTransport } from '@buildtovalue/anchor-git';
 import { StudioShell } from '@buildtovalue/studio';
-import { PT_BR } from '@buildtovalue/react';
+import { createInMemoryReviewStore, reviewThreadsRule, PT_BR } from '@buildtovalue/react';
 import '@buildtovalue/library-react/styles.css';
 import '@buildtovalue/studio/styles.css';
 
@@ -327,6 +327,15 @@ export function StudioSurface() {
     void buildWorld().then(setWorld);
   }, []);
 
+  // Handoff 15 V-5 (`?threads=1`): the review panel with an OPEN thread on the
+  // candidate — the gate blocks approval until it's resolved (spec 2d e2e).
+  const reviewStore = useMemo(() => {
+    if (!new URLSearchParams(window.location.search).has('threads')) return undefined;
+    const store = createInMemoryReviewStore('onb-v2');
+    store.open('work', { author: 'carla', text: 'Quem cobre o passo manual durante a transição?' });
+    return store;
+  }, []);
+
   // Handoff 8 I-2 — the HOST owns the key (cerca §1.1): generated here (SSO/
   // YubiKey stand-in), NEVER in the library. Only the private handle is kept;
   // the library receives a `Signer` that exposes `sign(bytes)` only.
@@ -379,7 +388,11 @@ export function StudioSurface() {
     if (!world) return undefined;
     return {
       candidates: world.candidates,
-      engine: new LifecycleEngine(),
+      // V-5: with `?threads=1` the engine also carries the reviewThreadsRule —
+      // open threads surface as a failed `rule:` gate in evaluateGates.
+      engine: new LifecycleEngine(
+        reviewStore ? { promotionRules: [reviewThreadsRule(() => reviewStore.list())] } : undefined,
+      ),
       ledger: world.ledger,
       registry: world.registry,
       baselineOf: () => world.baseline,
@@ -400,8 +413,10 @@ export function StudioSurface() {
       // Handoff 8 I-2/I-3: sign approvals and anchor the head when wired.
       ...(signer ? { signer } : {}),
       ...(anchor ? { anchor } : {}),
+      // Handoff 15 V-5: threads anchored to the candidate (split canvas + gate).
+      ...(reviewStore ? { reviewStore } : {}),
     };
-  }, [world, signer, anchor]);
+  }, [world, signer, anchor, reviewStore]);
 
   const onLibraryAction = (ref: ArtifactRef, action: ArtifactAction) => {
     setLastAction(`${action.id} → ${ref.adapterId}:${ref.artifactId}`);

@@ -43,6 +43,30 @@ export function reviewCommentEntry(
   };
 }
 
+/** A justified dismissal (gate release WITHOUT resolving) on the chain. */
+export const REVIEW_THREAD_DISMISSED_TYPE = 'REVIEW_THREAD_DISMISSED';
+
+/**
+ * Maps a justified dismissal to a ledger append input (§2d) — never silent:
+ * the justification text travels in the entry.
+ */
+export function reviewThreadDismissedEntry(
+  thread: ReviewThreadRef,
+  actor: Pick<UserContext, 'id'>,
+  justification: string,
+): AuditEntryInput {
+  return {
+    type: REVIEW_THREAD_DISMISSED_TYPE,
+    userId: actor.id,
+    versionId: thread.versionRef,
+    details: {
+      threadId: thread.id,
+      artifactId: thread.elementId,
+      justification,
+    },
+  };
+}
+
 /** Maps a thread resolution to a ledger append input. */
 export function reviewThreadResolvedEntry(
   thread: ReviewThreadRef,
