@@ -11,6 +11,7 @@ import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { backToAutoPatch, isManualEdge } from '../canvas/routeEdge.js';
 import { useT } from '../i18n/I18nContext.js';
 import type { EngineBridge } from '../plugins/types.js';
+import { EventDefinitionSection, eventKindOf } from './EventDefinitionSection.js';
 
 /**
  * Inspector for the selected element: label, purpose (edges) and free-form
@@ -80,6 +81,10 @@ export function PropertiesPanel() {
       ) : (
         <>
           {node && <NodeInspector node={node} readOnly={readOnly} />}
+          {/* Named event definitions (Handoff 16 E-2, §3a) — event nodes only. */}
+          {node && eventKindOf(node) && (
+            <EventDefinitionSection node={node} readOnly={readOnly} />
+          )}
           {/* Plugin sections (Handoff 5, wireframe 2d) — e.g. DMN "Decisão". */}
           {node &&
             inspectorSections

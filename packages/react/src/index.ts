@@ -104,6 +104,7 @@ export { SearchPanel } from './ui/SearchPanel.js';
 export { CommandPalette, paletteEntries, fuzzyScore } from './ui/CommandPalette.js';
 export { Cheatsheet } from './ui/Cheatsheet.js';
 export { EmptyState, buildGovernedExample } from './ui/EmptyState.js';
+export { EventDefinitionSection, eventKindOf } from './ui/EventDefinitionSection.js';
 export * from './commands/menuRegistry.js';
 export * from './commands/globalCommands.js';
 export { KEYBOARD_SHORTCUT_CATALOG, type ShortcutCatalogEntry } from './gestures/useKeyboardShortcuts.js';

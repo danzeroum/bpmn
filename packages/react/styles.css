@@ -4229,3 +4229,90 @@
     min-height: 44px;
   }
 }
+
+/* --- Named event definitions section (Handoff 16 E-2, §3a). --- */
+.bpmnr-eventdefs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--bpmnr-border, #d8d2c6);
+}
+.bpmnr-eventdefs-picker,
+.bpmnr-eventdefs-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--bpmnr-text-muted, #6f675a);
+}
+.bpmnr-eventdefs-picker select,
+.bpmnr-eventdefs-field input {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 8px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--bpmnr-text, #262220);
+}
+.bpmnr-eventdefs-add {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border: 1px dashed var(--btv-ink, #33567e);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--btv-ink, #33567e);
+  cursor: pointer;
+}
+.bpmnr-eventdefs-usages ul {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bpmnr-eventdefs-usages button {
+  border: none;
+  background: transparent;
+  color: var(--btv-ink, #33567e);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 2px 0;
+}
+.bpmnr-eventdefs-delete {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border: 1px solid var(--bpmnr-status-deprecated-fg, #b3372f);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--bpmnr-status-deprecated-fg, #b3372f);
+  cursor: pointer;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-bpmnr-theme]) .bpmnr-eventdefs-picker select,
+  :root:not([data-bpmnr-theme]) .bpmnr-eventdefs-field input {
+    color: #e8e3da;
+    border-color: #44403a;
+  }
+}
+[data-bpmnr-theme='dark'] .bpmnr-eventdefs-picker select,
+[data-bpmnr-theme='dark'] .bpmnr-eventdefs-field input {
+  color: #e8e3da;
+  border-color: #44403a;
+}
+@media (pointer: coarse) {
+  .bpmnr-eventdefs-add,
+  .bpmnr-eventdefs-delete,
+  .bpmnr-eventdefs-usages button {
+    min-height: 44px;
+  }
+}
