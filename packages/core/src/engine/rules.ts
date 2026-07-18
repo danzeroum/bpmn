@@ -1,3 +1,4 @@
+import { isEventSubprocess } from '../model/types.js';
 import type { BpmnDiagram } from '../model/types.js';
 import type { Command, CommandInterceptor, RuleVerdict } from '../commands/types.js';
 import { isEventDefinitionRemoval } from '../commands/commands.js';
@@ -77,6 +78,23 @@ export function registerDefaultRules(engine: RuleEngine): void {
   engine.register<ConnectPayload>('edge.connect.pre', (payload) => {
     if (payload.sourceId === payload.targetId) {
       return { allowed: false, reason: 'A node cannot connect to itself' };
+    }
+    return { allowed: true };
+  });
+
+  // Handoff 17 §4a: sequence flow never touches the SHELL of an event
+  // subprocess — it fires by its start event (OMG). Both directions, always
+  // DECLARED (children connect among themselves normally); the import path is
+  // the 4d lint's job.
+  engine.register<ConnectPayload>('edge.connect.pre', (payload, diagram) => {
+    for (const id of [payload.sourceId, payload.targetId]) {
+      const node = diagram.nodes[id];
+      if (node && isEventSubprocess(node)) {
+        return {
+          allowed: false,
+          reason: `Event subprocess "${node.label || node.id}" não recebe fluxo de sequência — ele dispara pelo evento do start (OMG). Conecte ao conteúdo, não ao contêiner.`,
+        };
+      }
     }
     return { allowed: true };
   });

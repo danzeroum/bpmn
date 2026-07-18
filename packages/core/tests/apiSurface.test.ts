@@ -134,6 +134,9 @@ const EXPECTED_EXPORTS = [
   'isContainerType',
   'isEmptyDiff',
   'isNonInterrupting',
+  // Handoff 17 ES-1 (§4a) — event subprocess: THE single-source predicates.
+  'isEventSubprocess',
+  'startIsInterrupting',
   'laneFlowNodeRefs',
   'localName',
   'missingStartEventRule',

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BpmnXmlConverter,
   createDefaultRegistry,
+  isEventSubprocess,
   normalizeForDiff,
 } from '@buildtovalue/core';
 import { EXTERNAL_CORPUS_MAX, EXTERNAL_CORPUS_MIN } from '../src/index.js';
@@ -112,6 +113,45 @@ describe.skipIf(files.length === 0)('external interoperability corpus (real file
       const reExport = converter().toXml(diagram);
       expect(reExport).toContain('<bpmn:message');
       expect(reExport).toContain('messageRef="');
+    }
+    expect(exercised).toBeGreaterThanOrEqual(1);
+  });
+
+  // Handoff 17 ES-1 (§4a): marcação REAL com triggeredByEvent importa como
+  // contêiner de PRIMEIRA CLASSE (antes: subProcess comum silencioso). No
+  // corpus atual o único event subprocess real vive no SEGUNDO <bpmn:process>
+  // de bpmn-js-examples__22 — que o importador single-process descarta com o
+  // warning documentado. O subtree do processo é saída REAL do bpmn-js,
+  // extraída INTOCADA e importada sozinha: a asserção de primeira classe
+  // roda sobre a marcação real, não sobre uma síntese nossa.
+  it('importa event subprocess de marcação real como contêiner de primeira classe', () => {
+    let exercised = 0;
+    for (const name of files) {
+      const xml = readFileSync(join(CORPUS_DIR, name), 'utf8');
+      if (!xml.includes('triggeredByEvent="true"')) continue;
+      // Isola o <bpmn:process> real que carrega o contêiner (bytes intactos).
+      const processes = [...xml.matchAll(/<bpmn:process[\s\S]*?<\/bpmn:process>/g)].map(
+        (m) => m[0],
+      );
+      const real = processes.find((p) => p.includes('triggeredByEvent="true"'));
+      if (!real) continue;
+      exercised++;
+      const header = xml.slice(0, xml.indexOf('>', xml.indexOf('<bpmn:definitions')) + 1);
+      const single = `${header}\n${real}\n</bpmn:definitions>`;
+      const { diagram, warnings } = converter().fromXml(single);
+      const containers = Object.values(diagram.nodes).filter(isEventSubprocess);
+      expect(containers.length, `${name}: contêineres capturados`).toBeGreaterThan(0);
+      // O start interno não-interrupting do arquivo real também é capturado.
+      const nonInterrupting = Object.values(diagram.nodes).filter(
+        (node) => node.type === 'startEvent' && node.properties.isInterrupting === false,
+      );
+      expect(nonInterrupting.length, `${name}: isInterrupting capturado`).toBeGreaterThan(0);
+      expect(
+        warnings.filter((w) => w.includes('triggeredByEvent') || w.includes('isInterrupting')),
+      ).toEqual([]);
+      const reExport = converter().toXml(diagram);
+      expect(reExport, `${name}: atributo re-exportado`).toContain('triggeredByEvent="true"');
+      expect(reExport, `${name}: isInterrupting preservado`).toContain('isInterrupting="false"');
     }
     expect(exercised).toBeGreaterThanOrEqual(1);
   });

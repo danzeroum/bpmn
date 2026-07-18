@@ -24,6 +24,8 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:manualTask` | ✅ supported | analytic | `manualTask` |  |
 | `bpmn:businessRuleTask` | ✅ supported | analytic | `businessRuleTask` | DMN table glyph + decision-link badge (properties.decisionRef); decision table editor lands with Handoff 5 F-B. |
 | `bpmn:subProcess` | ✅ supported | descriptive | `subProcess` | Nested children as first-class nodes (lossless round-trip, DI isExpanded); expand/collapse and drill-down in the editor. |
+| `bpmn:subProcess @triggeredByEvent` | ✅ supported | analytic | `properties.triggeredByEvent` | Event subprocess (F7 containment reused whole); sequence flow to/from the shell is vetoed by the default rules; exempt from UNREACHABLE_NODE. |
+| `bpmn:startEvent @isInterrupting` | ✅ supported | analytic | `properties.isInterrupting` | OMG default (true) omitted on export; only isInterrupting="false" is written. Round-trips wherever it appears — semantics are policed by lint, never the converter. |
 | `bpmn:callActivity` | ✅ supported | descriptive | `callActivity` | Native calledElement; @buildtovalue/registry resolves the called process version (resolveCallActivities/activeAt). |
 | `btv:agentTask (extension)` | ✅ supported | extended | `agentTask` | Agent Lane (Handoff 12): a governed AI-agent sub-workflow. Exports as bpmn:task (external editors read it as a plain task — graceful degradation); agentWorkflowRef/autonomyLevel/mappings + an optional read-degraded snapshot ride in extensionElements. The @buildtovalue/agentflow schema/simulation back it. |
 | `bpmn:transaction` | ⛔ unsupported | extended | — | Deliberately out of scope before v2.x. |
@@ -86,6 +88,8 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:manualTask` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:businessRuleTask` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:subProcess` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:subProcess @triggeredByEvent` | ✅ supported | modela (declarado) | — |
+| `bpmn:startEvent @isInterrupting` | ✅ supported | modela (declarado) | — |
 | `bpmn:callActivity` | ✅ supported | modela (declarado) | executa (declarado) |
 | `btv:agentTask (extension)` | ✅ supported | — | — |
 | `bpmn:transaction` | ⛔ unsupported | modela (declarado) | — |

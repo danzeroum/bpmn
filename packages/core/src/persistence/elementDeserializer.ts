@@ -204,6 +204,14 @@ export class ElementDeserializer {
       if (el.attributes.attachedToRef) properties.attachedToRef = el.attributes.attachedToRef;
       if (el.attributes.cancelActivity === 'false') properties.cancelActivity = false;
     }
+    // Event subprocess (Handoff 17 §4a): the two standard OMG attributes read
+    // back symmetrically; the OMG defaults stay absent from the model.
+    if (type === 'subProcess' && el.attributes.triggeredByEvent === 'true') {
+      properties.triggeredByEvent = true;
+    }
+    if (type === 'startEvent' && el.attributes.isInterrupting === 'false') {
+      properties.isInterrupting = false;
+    }
     // Call activity target process / data element backing ids — all native
     // BPMN attributes, round-tripped without bpmnr:property double-encoding.
     if (type === 'callActivity' && el.attributes.calledElement) {
