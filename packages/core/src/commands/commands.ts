@@ -190,6 +190,16 @@ export interface NodePatch {
   properties?: Record<string, unknown>;
 }
 
+/**
+ * Merged property bags drop keys patched to `undefined`: "absent field" is
+ * the model's only removal semantics — an OWN key holding `undefined` would
+ * leak into `Object.entries` and pollute the XML property soup with a
+ * value-less `bpmnr:property`.
+ */
+function withoutUndefined(bag: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(bag).filter(([, value]) => value !== undefined));
+}
+
 export function updateNodeCommand(nodeId: string, patch: NodePatch): Command {
   let previous: NodePatch | undefined;
   return {
@@ -203,7 +213,7 @@ export function updateNodeCommand(nodeId: string, patch: NodePatch): Command {
         ...node,
         ...(patch.label !== undefined ? { label: patch.label } : {}),
         ...(patch.properties !== undefined
-          ? { properties: { ...node.properties, ...patch.properties } }
+          ? { properties: withoutUndefined({ ...node.properties, ...patch.properties }) }
           : {}),
       });
     },
@@ -247,7 +257,7 @@ export function updateEdgeCommand(edgeId: string, patch: EdgePatch): Command {
         ...(patch.label !== undefined ? { label: patch.label } : {}),
         ...(patch.purpose !== undefined ? { purpose: patch.purpose } : {}),
         ...(patch.properties !== undefined
-          ? { properties: { ...edge.properties, ...patch.properties } }
+          ? { properties: withoutUndefined({ ...edge.properties, ...patch.properties }) }
           : {}),
       };
       if (patch.waypoints === null) delete next.waypoints;

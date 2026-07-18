@@ -128,6 +128,18 @@ describe('commands', () => {
     expect(stack.current.nodes[node.id].properties).toEqual({});
   });
 
+  it('patching a property to undefined REMOVES the key — never an own undefined (E-4 reforço 7)', () => {
+    const { stack, node } = setup();
+    stack.execute(addNodeCommand(node));
+    stack.execute(updateNodeCommand(node.id, { properties: { k: 1 } }));
+    stack.execute(updateNodeCommand(node.id, { properties: { k: undefined } }));
+    // The absent field keeps prior exports byte-identical — an own key with
+    // undefined would leak a value-less bpmnr:property into the XML soup.
+    expect('k' in stack.current.nodes[node.id].properties).toBe(false);
+    stack.undo();
+    expect(stack.current.nodes[node.id].properties).toEqual({ k: 1 });
+  });
+
   it('resizeNodeCommand changes the rect and restores the exact original on undo', () => {
     const { stack, node } = setup();
     stack.execute(addNodeCommand(node));

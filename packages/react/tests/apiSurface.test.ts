@@ -73,6 +73,10 @@ const EXPECTED_EXPORTS = [
   'eventBindingRule',
   'isMirrorDefinition',
   'mirrorIdOf',
+  // Handoff 16 E-4 (§3c) — executable-event matrix + payload helpers.
+  'eventExecutionModeOf',
+  'payloadMappingsOf',
+  'prunePayloadMappings',
   'EditorConfigProvider',
   'EndEventShape',
   'ComplexGatewayShape',

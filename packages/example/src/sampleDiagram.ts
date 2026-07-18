@@ -705,6 +705,49 @@ export function buildBoundaryDiagram(): BpmnDiagram {
 }
 
 /**
+ * `?eventio=1` — Handoff 16 E-4 (§3c): the executable-event matrix on one
+ * canvas — message THROW (payload), error BOUNDARY + error START inside a
+ * subProcess (captura), and a message CATCH as the negative (no tab: runtime
+ * correlation is host-owned). Paired with the engine plugin in App.
+ */
+export function buildEventIoDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-eventio', name: 'I/O de eventos', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 60, 150),
+    host: make('task', 'host', 'Cobrar pagamento', 180, 120),
+    b1: make('boundaryEvent', 'b1', 'Falhou', 260, 180, {
+      eventDefinition: 'error',
+      attachedToRef: 'host',
+    }),
+    t1: make('intermediateThrowEvent', 't1', 'Avisar aprovação', 420, 150, {
+      eventDefinition: 'message',
+    }),
+    mc: make('intermediateCatchEvent', 'mc', 'Aguardar retorno', 560, 150, {
+      eventDefinition: 'message',
+    }),
+    sub: make('subProcess', 'sub', 'Tratamento', 180, 300, { isExpanded: true }),
+    es1: make('startEvent', 'es1', 'Erro capturado', 200, 340, {
+      eventDefinition: 'error',
+      parentId: 'sub',
+    }),
+    end: make('endEvent', 'end', 'Fim', 720, 150),
+  };
+  const mkEdge = (id: string, sourceId: string, targetId: string) =>
+    createEdge({ id, sourceId, targetId, versionId: v });
+  diagram.edges = {
+    f1: mkEdge('f1', 'start', 'host'),
+    f2: mkEdge('f2', 'host', 't1'),
+    f3: mkEdge('f3', 't1', 'mc'),
+    f4: mkEdge('f4', 'mc', 'end'),
+  };
+  return diagram;
+}
+
+/**
  * `?events=1` — Handoff 16 E-2 (§3a): two loose message catch events with NO
  * named definition yet, for the full e2e flow — create via «+», reference in
  * both, rename (cascade), see the usage list, hit the deletion veto, unlink
