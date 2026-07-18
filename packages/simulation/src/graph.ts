@@ -2,16 +2,20 @@ import {
   activeEdges,
   activeNodes,
   boundaryAttachedTo,
+  childrenOf,
   eventDefinitionRefOf,
   findEventDefinition,
   flowScopeOf,
+  isEventSubprocess,
   isFlowNode,
   isNonInterrupting,
   NON_FLOW_EDGE_TYPES,
+  startIsInterrupting,
   type BpmnDiagram,
+  type BpmnNode,
   type EventDefinitionRefKind,
 } from '@buildtovalue/core';
-import type { GatewayKind, SimEdge, SimNode } from './types.js';
+import type { EsubStartInfo, GatewayKind, SimEdge, SimNode } from './types.js';
 
 /**
  * The control-flow graph the token engine walks. It is built from a diagram
@@ -33,6 +37,35 @@ export interface SimGraph {
 // Flow classification is hosted in core (`model/flow.ts`) — the same
 // functions soundness uses, so the two analyses agree by construction.
 export { isFlowNode, flowScopeOf } from '@buildtovalue/core';
+
+/**
+ * The single typed start of an eligible event subprocess, or undefined for a
+ * degenerate shell. Consumes the ES-1 single-source helpers (reforço 9):
+ * `startIsInterrupting` decides the mode, never a local predicate.
+ */
+function eligibleStartOf(diagram: BpmnDiagram, subId: string): EsubStartInfo | undefined {
+  const starts = childrenOf(diagram, subId).filter(
+    (child: BpmnNode) => !child.removedInVersion && child.type === 'startEvent',
+  );
+  if (starts.length !== 1) return undefined;
+  const start = starts[0];
+  const kind = start.properties.eventDefinition;
+  if (typeof kind !== 'string') return undefined;
+  const info: EsubStartInfo = {
+    startId: start.id,
+    kind,
+    interrupting: startIsInterrupting(start),
+  };
+  const ref = eventDefinitionRefOf(start);
+  if (ref !== undefined) {
+    info.ref = ref;
+    if (kind === 'message' || kind === 'signal' || kind === 'error') {
+      info.refLabel =
+        findEventDefinition(diagram, kind as EventDefinitionRefKind, ref)?.name ?? ref;
+    }
+  }
+  return info;
+}
 
 /** Resolves the gateway control-flow role for a node type (undefined if none). */
 export function gatewayKindOf(type: string): GatewayKind | undefined {
@@ -104,6 +137,16 @@ export function buildSimGraph(diagram: BpmnDiagram, scope: string | undefined = 
       const list = boundariesByHost.get(host) ?? [];
       list.push(node.id);
       boundariesByHost.set(host, list);
+    }
+    // ES-5 (§4e): an event-subprocess shell in this scope never seeds a token
+    // (it fires by its start event — the same rule as the editor's veto). It
+    // becomes a CANDIDATE for thrown events / the manual card only when it is
+    // eligible: exactly one TYPED start among its direct children. Degenerate
+    // shells (0, >1, untyped) are never candidates — the lint (4d) owns that.
+    if (isEventSubprocess(node)) {
+      sim.eventSubprocess = true;
+      const esubStart = eligibleStartOf(diagram, node.id);
+      if (esubStart) sim.esubStart = esubStart;
     }
     nodes.set(node.id, sim);
     if (sim.isStart) starts.push(node.id);

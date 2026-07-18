@@ -3,6 +3,7 @@ import type {
   BoundaryOption,
   CoverageSummary,
   ErrorThrowOption,
+  EventSubprocessOption,
   TransitionRecord,
 } from '@buildtovalue/simulation';
 import { useT } from '../i18n/I18nContext.js';
@@ -19,6 +20,10 @@ export interface SimulationPanelProps {
   /** "Throw error" cards (E-6 §3e) — user picks the ERROR, engine matches. */
   errorThrowOptions?: ErrorThrowOption[];
   onThrowError?: (host: string, errorRef?: string) => void;
+  /** Manual timer/conditional event-subprocess cards (ES-5 §4e): those kinds
+   * NEVER auto-fire; the mode is shown so the user decides informed. */
+  eventSubprocessOptions?: EventSubprocessOption[];
+  onFireEventSubprocess?: (subId: string) => void;
   stepMode: boolean;
   onToggleStepMode: (on: boolean) => void;
   coverage: CoverageSummary;
@@ -47,6 +52,8 @@ export function SimulationPanel(props: SimulationPanelProps) {
     onFireBoundary,
     errorThrowOptions = [],
     onThrowError,
+    eventSubprocessOptions = [],
+    onFireEventSubprocess,
     stepMode,
     onToggleStepMode,
     coverage,
@@ -119,6 +126,33 @@ export function SimulationPanel(props: SimulationPanelProps) {
                   : t('sim.error.uncatalogued')}
               </button>
             ))}
+          </div>
+        ))}
+
+      {/* ES-5 (§4e): timer/conditional event subprocess NEVER auto-fires —
+          this is the declared manual decision. The MODE is glyph + text
+          (reforço 10) so the user knows an interrupting fire cancels the
+          scope's tokens BEFORE deciding. */}
+      {onFireEventSubprocess &&
+        eventSubprocessOptions.map((option) => (
+          <div key={option.sub} className="bpmnr-sim-card" data-sim-esub-card={option.sub}>
+            <div className="bpmnr-sim-card-title">
+              {t('sim.esub.title', { label: option.subLabel })}
+            </div>
+            <div className="bpmnr-sim-esub-mode" data-sim-esub-mode={option.interrupting ? 'interrupting' : 'non-interrupting'}>
+              {option.interrupting
+                ? <>{/* i18n-exempt — stop glyph */}⛔ {t('sim.esub.interrupting')}</>
+                : <>{/* i18n-exempt — parallel glyph */}⇉ {t('sim.esub.nonInterrupting')}</>}
+            </div>
+            <button
+              type="button"
+              data-sim-esub-fire={option.sub}
+              onClick={() => onFireEventSubprocess(option.sub)}
+              className="bpmnr-sim-btn bpmnr-sim-btn-boundary"
+            >
+              {/* i18n-exempt — timer glyph */}⏱{' '}
+              {t(option.kind === 'timer' ? 'sim.esub.fireTimer' : 'sim.esub.fireConditional')}
+            </button>
           </div>
         ))}
 

@@ -79,27 +79,44 @@ Documented deliberately so expectations are managed — none of these fail silen
 What the simulator **decides** — same S-FEEL discipline: exact where possible, a DECLARED stop
 everywhere else, never a guessed route:
 
-- **Error throws** (`throwError`): a specific `errorRef` match fires ONLY the boundary whose ref
-  resolves the thrown definition; a boundary WITHOUT `errorRef` is the **declared catch-all** and
-  the trail names it. Precedence is documented: **specific beats catch-all** (both present is NOT
-  ambiguity). Two eligible specifics — or two catch-alls with no specific — are a
-  `BlockedDecision` naming node, reason and candidates.
-- **Signals** (`throwSignal`): broadcast — every WAITING matching catch advances (deterministic).
-- **Messages** (`throwMessage`): single destination — **more than one waiting candidate is a
-  `BlockedDecision`**: runtime message correlation (correlation keys) is host/engine semantics the
-  simulator does not model.
+- **Error throws** (`throwError`): the candidates are the host's error boundaries AND (Handoff 17
+  ES-5) the eligible ERROR-start **event subprocesses of the token's scope**. The TOTAL precedence
+  order is declared (`especificidade > escopo > catch-all`) and applied tier by tier — the first
+  non-empty tier resolves the throw:
+  1. event subprocess with the **exact** `errorRef` (same scope — wins);
+  2. boundary with the **exact** `errorRef` (outer scope — preterido);
+  3. event subprocess **catch-all** (error start with no ref);
+  4. boundary **catch-all**.
+  A specific + a catch-all, or an event subprocess + a boundary in different tiers, is **NOT**
+  ambiguity. More than one candidate in the winning tier IS — a `BlockedDecision` naming node,
+  reason and candidates. The trail names the catching start, its ref and its mode.
+- **Signals** (`throwSignal`): broadcast — every WAITING matching catch advances and every
+  matching SIGNAL-start event subprocess fires (deterministic).
+- **Messages** (`throwMessage`): single destination — the candidate set includes matching
+  MESSAGE-start event subprocesses; **more than one candidate in total is a `BlockedDecision`**:
+  runtime message correlation (correlation keys) is host/engine semantics the simulator does not
+  model.
+- **Event subprocess firing** (ES-5, decisão 1): the token goes to the **container shell** —
+  descent into its children is not simulated (the shell is consumed as an opaque activity; drill
+  into the sub-process scope to simulate its inside). An INTERRUPTING start (via
+  `startIsInterrupting`, OMG default true) cancels every token of the host scope that existed
+  before the throw, exactly once per throw — the tokens the same throw just placed survive (the
+  declared broadcast rule); the trail names the cancelled COUNT and the scope. A non-interrupting
+  start adds a parallel token and the scope continues. **Timer/conditional starts NEVER
+  auto-fire** — they are a manual card (`eventSubprocessOptions` / `fireEventSubprocess`), and the
+  manual-fire decision is anchored to WHEN it fired (`atStep`) so replay reproduces the run bit
+  for bit. A degenerate container (0, >1 or untyped starts) is never a candidate — correcting it
+  is the lint's job (`EVT_SUBPROC_START`, 4d).
 
 What it deliberately does **NOT** decide:
 
 - **Runtime message correlation** — correlation keys, instance targeting. One waiting candidate
   delivers; more is a declared stop; zero is a declared no-op in the trail.
-- **Error propagation to a parent scope** — an uncaught error is a declared stop, not an escalation
-  up the containment chain (sub-process descent is not modelled, above).
+- **Error propagation beyond the direct scope** — an error uncaught by the host's boundaries and
+  the scope's event subprocesses is a declared stop, not an escalation up the containment chain
+  (sub-process descent is not modelled, above).
 - **Escalation and compensation events** — the compensation/choreography pendency
   ([`pendencias.md`](../pendencias.md)); they carry no matching semantics here.
-- **Event sub-process containers** — the error-start approximation is containment in a
-  `subProcess` (same predicate as the editor's Execução matrix); a real event sub-process
-  container is its own pendency.
 
 ## Replay / conformance (`@buildtovalue/replay`, Handoff 7B)
 - **Token-replay fitness only, never alignments (cerca §0.2).** Conformance means: a transition in

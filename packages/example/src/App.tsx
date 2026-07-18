@@ -66,6 +66,7 @@ import {
   buildStressDiagram,
   DEMO_DECISION_TABLE,
   buildErrorSimDiagram,
+  buildEsubSimDiagram,
   buildEventDefsDiagram,
   buildEventIoDiagram,
   buildTimerDiagram,
@@ -491,7 +492,13 @@ export function App() {
     return (
       <I18nProvider messages={PT_BR}>
         <BpmnSimulator
-          diagram={params.get('errors') ? buildErrorSimDiagram() : buildSimulationDiagram()}
+          diagram={
+            params.get('esub')
+              ? buildEsubSimDiagram()
+              : params.get('errors')
+                ? buildErrorSimDiagram()
+                : buildSimulationDiagram()
+          }
           plugins={PLUGINS}
           author="demo"
           // Handoff 7A-3: register the session as an auditable ledger entry (host

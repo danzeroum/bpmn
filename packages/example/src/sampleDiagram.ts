@@ -806,6 +806,69 @@ export function buildErrorSimDiagram(): BpmnDiagram {
 }
 
 /**
+ * `?simulate=1&esub=1` — Handoff 17 ES-5 (§4e): event-subprocess firing demo.
+ * `host` carries a SPECIFIC error boundary on err-pay AND the scope has an
+ * INTERRUPTING event subprocess on the SAME err-pay (same scope WINS the
+ * boundary — the binding precedence), plus a NON-interrupting one on err-late
+ * (the parallel variant).
+ */
+export function buildEsubSimDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-esub-sim', name: 'Plantões', createdBy: 'demo' });
+  const v = diagram.version.id;
+  diagram.definitions = {
+    messages: [],
+    signals: [],
+    errors: [
+      { id: 'err-pay', name: 'Falha de pagamento' },
+      { id: 'err-late', name: 'Atraso' },
+    ],
+  };
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 40, 150),
+    host: make('task', 'host', 'Cobrar pagamento', 160, 120),
+    end: make('endEvent', 'end', 'Fim', 380, 150),
+    b1: make('boundaryEvent', 'b1', 'Pagamento falhou', 240, 180, {
+      eventDefinition: 'error',
+      attachedToRef: 'host',
+      eventDefinitionRef: 'err-pay',
+    }),
+    r1: make('task', 'r1', 'Reprocessar', 240, 300),
+    f1: make('endEvent', 'f1', 'Fim (retry)', 240, 420),
+    esubI: make('subProcess', 'esubI', 'Tratar exceções', 60, 480, {
+      triggeredByEvent: true,
+      isExpanded: true,
+    }),
+    stI: make('startEvent', 'stI', 'Começo', 80, 540, {
+      parentId: 'esubI',
+      eventDefinition: 'error',
+      eventDefinitionRef: 'err-pay',
+    }),
+    esubN: make('subProcess', 'esubN', 'Plantão de atrasos', 360, 480, {
+      triggeredByEvent: true,
+      isExpanded: true,
+    }),
+    stN: make('startEvent', 'stN', 'Começo', 380, 540, {
+      parentId: 'esubN',
+      eventDefinition: 'error',
+      eventDefinitionRef: 'err-late',
+      isInterrupting: false,
+    }),
+  };
+  const mkEdge = (id: string, sourceId: string, targetId: string) =>
+    createEdge({ id, sourceId, targetId, versionId: v });
+  diagram.edges = {
+    e1: mkEdge('e1', 'start', 'host'),
+    e2: mkEdge('e2', 'host', 'end'),
+    e3: mkEdge('e3', 'b1', 'r1'),
+    e4: mkEdge('e4', 'r1', 'f1'),
+  };
+  return diagram;
+}
+
+/**
  * `?timer=1` — Handoff 16 E-5 (§3d): a timer catch with a MALFORMED duration
  * (`P1H` — hours require the T designator) and a message catch with no named
  * definition, so the lint dock lists TIMER_MALFORMED (no mechanical fix) and

@@ -32,6 +32,8 @@ export type {
   Decision,
   DecisionEvaluator,
   ErrorThrowOption,
+  EsubStartInfo,
+  EventSubprocessOption,
   DecisionOutcome,
   PendingDecisionInput,
   GatewayKind,

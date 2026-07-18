@@ -4746,6 +4746,31 @@ optional onThrowError?: (host, errorRef?) => void;
 
 `void`
 
+##### eventSubprocessOptions?
+
+```ts
+optional eventSubprocessOptions?: EventSubprocessOption[];
+```
+
+Manual timer/conditional event-subprocess cards (ES-5 §4e): those kinds
+NEVER auto-fire; the mode is shown so the user decides informed.
+
+##### onFireEventSubprocess?
+
+```ts
+optional onFireEventSubprocess?: (subId) => void;
+```
+
+###### Parameters
+
+###### subId
+
+`string`
+
+###### Returns
+
+`void`
+
 ##### stepMode
 
 ```ts
@@ -4971,6 +4996,24 @@ fireBoundary: (boundaryId) => void;
 ###### Parameters
 
 ###### boundaryId
+
+`string`
+
+###### Returns
+
+`void`
+
+##### fireEventSubprocess
+
+```ts
+fireEventSubprocess: (subId) => void;
+```
+
+Manually fire a timer/conditional event subprocess (ES-5 §4e).
+
+###### Parameters
+
+###### subId
 
 `string`
 

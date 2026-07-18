@@ -245,13 +245,32 @@ get errorThrowOptions(): ErrorThrowOption[];
 ```
 
 "Throw error" cards (E-6): one per host with a resting token and ≥1 error
-boundary. The options are the DISTINCT named definitions its boundaries
-match on, plus the UNCATALOGUED error (`errorRef: undefined`, reforço 10)
-— the UI path that exercises the declared catch-all.
+boundary — and, since ES-5, also for activity hosts when the SCOPE has an
+eligible event subprocess with an ERROR start (the error can be caught
+without any boundary). The options are the DISTINCT named definitions the
+candidates match on, plus the UNCATALOGUED error (`errorRef: undefined`,
+reforço 10) — the UI path that exercises the declared catch-all.
 
 ###### Returns
 
 [`ErrorThrowOption`](#errorthrowoption)[]
+
+##### eventSubprocessOptions
+
+###### Get Signature
+
+```ts
+get eventSubprocessOptions(): EventSubprocessOption[];
+```
+
+Manual timer/conditional event-subprocess cards (ES-5, §4e): those kinds
+NEVER auto-fire — the user fires them via [fireEventSubprocess](#fireeventsubprocess)
+while the scope is live. The mode is part of the option (reforço 10) so
+the card can show it before the user decides.
+
+###### Returns
+
+[`EventSubprocessOption`](#eventsubprocessoption)[]
 
 ##### canAdvance
 
@@ -367,10 +386,20 @@ throwError(host, errorRef?): StepResult;
 
 Throw an error on a host: the USER picks the error (a named definition id
 or the uncatalogued `undefined`), the ENGINE resolves the destination by
-MATCHING — a specific `errorRef` match beats the declared catch-all
-(documented precedence: specific + catch-all present is NOT ambiguity);
-genuinely ambiguous or uncaught throws are DECLARED stops naming node,
-reason and candidates ([BlockedDecision](#blockeddecision)) — never a guess (§5).
+MATCHING. Since ES-5 the candidates include the eligible ERROR-start
+event subprocesses of the token's scope, and the TOTAL precedence order
+is declared (especificidade > escopo > catch-all, documented in
+limitations.md):
+
+  1. event subprocess with the EXACT ref  (same scope — WINS)
+  2. boundary with the EXACT ref          (outer scope — preterido)
+  3. event subprocess catch-all (error start with no ref)
+  4. boundary catch-all
+
+The first non-empty tier resolves the throw; MORE than one candidate in
+that tier is a DECLARED stop naming the candidates ([BlockedDecision](#blockeddecision))
+— never a guess (§5). Uncaught remains a declared stop (propagation
+beyond the direct scope is not simulated).
 
 ###### Parameters
 
@@ -386,6 +415,26 @@ reason and candidates ([BlockedDecision](#blockeddecision)) — never a guess (�
 
 [`StepResult`](#stepresult)
 
+##### fireEventSubprocess()
+
+```ts
+fireEventSubprocess(subId): StepResult;
+```
+
+Manually fire a timer/conditional event subprocess (ES-5): those kinds
+NEVER auto-fire — [eventSubprocessOptions](#eventsubprocessoptions) is the declared manual
+card. Applies the SAME named interruption as the throw path (reforço 10).
+
+###### Parameters
+
+###### subId
+
+`string`
+
+###### Returns
+
+[`StepResult`](#stepresult)
+
 ##### throwSignal()
 
 ```ts
@@ -393,8 +442,12 @@ throwSignal(ref): StepResult;
 ```
 
 Broadcast a signal by named definition: EVERY waiting catch that matches
-advances — deterministic, no ambiguity possible. Zero recipients is a
-DECLARED no-op in the trail, never a guessed route.
+advances, and (ES-5) every matching event subprocess of the scope fires —
+deterministic, no ambiguity possible. Zero recipients is a DECLARED
+no-op in the trail, never a guessed route. When any recipient subprocess
+is INTERRUPTING, the scope's pre-existing tokens are cancelled exactly
+once AFTER all deliveries — the tokens this throw placed survive
+(reforço 9, the declared rule).
 
 ###### Parameters
 
@@ -412,10 +465,11 @@ DECLARED no-op in the trail, never a guessed route.
 throwMessage(ref): StepResult;
 ```
 
-Deliver a message by named definition: a SINGLE destination. More than
-one waiting candidate means runtime correlation — not simulable, so the
-stop is DECLARED naming the candidates (see limitations.md); zero is a
-declared no-op.
+Deliver a message by named definition: a SINGLE destination. Since ES-5
+the candidate set includes matching MESSAGE-start event subprocesses of
+the scope. More than one candidate in total means runtime correlation —
+not simulable, so the stop is DECLARED naming ALL the candidates (see
+limitations.md); zero is a declared no-op.
 
 ###### Parameters
 
@@ -895,6 +949,26 @@ optional eventRefLabel?: string;
 
 Resolved definition name for UI labels (falls back to the ref).
 
+##### eventSubprocess?
+
+```ts
+optional eventSubprocess?: boolean;
+```
+
+True when this node is an event-subprocess SHELL (ES-5): it never seeds
+an implicit start token — it only fires by its start event.
+
+##### esubStart?
+
+```ts
+optional esubStart?: EsubStartInfo;
+```
+
+The shell's single typed start (ES-5) — present ONLY when the container
+is eligible: exactly one typed start among its DIRECT children. A
+degenerate container (0, >1 or untyped starts) is never a candidate —
+correcting it is the lint's job (4d), not the simulator's.
+
 ##### isStart
 
 ```ts
@@ -906,6 +980,55 @@ isStart: boolean;
 ```ts
 isEnd: boolean;
 ```
+
+***
+
+### EsubStartInfo
+
+The typed start of an eligible event-subprocess shell (ES-5). Derived with
+the core single-source helpers (`isEventSubprocess`/`startIsInterrupting`,
+reforço 9 da ES-1) — never a local predicate.
+
+#### Properties
+
+##### startId
+
+```ts
+startId: string;
+```
+
+##### kind
+
+```ts
+kind: string;
+```
+
+Event kind of the start (`message`, `signal`, `error`, `timer`, …).
+
+##### ref?
+
+```ts
+optional ref?: string;
+```
+
+Named-definition ref the start matches on; absent on an ERROR start =
+the DECLARED catch-all (same tiering as E-6 boundaries).
+
+##### refLabel?
+
+```ts
+optional refLabel?: string;
+```
+
+Resolved definition name for UI labels (falls back to the ref).
+
+##### interrupting
+
+```ts
+interrupting: boolean;
+```
+
+From `startIsInterrupting` (OMG default true).
 
 ***
 
@@ -1068,6 +1191,49 @@ optional errorRef?: string;
 
 ```ts
 optional label?: string;
+```
+
+***
+
+### EventSubprocessOption
+
+A timer/conditional event subprocess the user may fire MANUALLY (ES-5, §4e):
+those kinds NEVER auto-fire in simulation — the card is the declared manual
+decision (molde [BoundaryOption](#boundaryoption)). The mode is shown so the user
+decides informed (reforço 10): interrupting cancels the scope's tokens.
+
+#### Properties
+
+##### sub
+
+```ts
+sub: string;
+```
+
+##### subLabel
+
+```ts
+subLabel: string;
+```
+
+##### startId
+
+```ts
+startId: string;
+```
+
+##### kind
+
+```ts
+kind: string;
+```
+
+`timer` or `conditional` — the kinds without a throw counterpart.
+
+##### interrupting
+
+```ts
+interrupting: boolean;
 ```
 
 ***
@@ -1405,6 +1571,14 @@ errorThrowOptions: ErrorThrowOption[];
 
 "Throw error" cards per host with a resting token (E-6, §3e).
 
+##### eventSubprocessOptions
+
+```ts
+eventSubprocessOptions: EventSubprocessOption[];
+```
+
+Manual timer/conditional event-subprocess cards (ES-5, §4e).
+
 ##### pendingDecisionInput
 
 ```ts
@@ -1496,6 +1670,11 @@ type Decision =
   | {
   kind: "message";
   ref: string;
+}
+  | {
+  kind: "eventSubprocess";
+  sub: string;
+  atStep: number;
 };
 ```
 

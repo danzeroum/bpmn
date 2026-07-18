@@ -8,6 +8,7 @@ import type {
   Decision,
   DecisionEvaluator,
   ErrorThrowOption,
+  EventSubprocessOption,
   PendingChoice,
   PendingDecisionInput,
   SimNode,
@@ -90,10 +91,14 @@ export class SimulationEngine {
     this.started = true;
     // Start events, then any source node when a scope has no explicit start
     // (BPMN allows an implicit start) — keeps the engine and soundness aligned.
+    // An event-subprocess shell is NEVER an implicit start (ES-5): it has no
+    // flow by construction (the editor's veto) and only fires by its event.
     const seeds =
       this.graph.starts.length > 0
         ? this.graph.starts
-        : [...this.graph.nodes.values()].filter((n) => n.incoming.length === 0).map((n) => n.id);
+        : [...this.graph.nodes.values()]
+            .filter((n) => n.incoming.length === 0 && !n.eventSubprocess)
+            .map((n) => n.id);
     for (const nodeId of seeds) this.placeToken(nodeId);
   }
 
@@ -111,6 +116,7 @@ export class SimulationEngine {
       pendingChoice: this.pendingChoice,
       boundaryOptions: this.boundaryOptions,
       errorThrowOptions: this.errorThrowOptions,
+      eventSubprocessOptions: this.eventSubprocessOptions,
       pendingDecisionInput: this.pendingDecisionInput,
       blockedDecision: this.blocked ? { ...this.blocked } : null,
     };
@@ -179,19 +185,22 @@ export class SimulationEngine {
 
   /**
    * "Throw error" cards (E-6): one per host with a resting token and ≥1 error
-   * boundary. The options are the DISTINCT named definitions its boundaries
-   * match on, plus the UNCATALOGUED error (`errorRef: undefined`, reforço 10)
-   * — the UI path that exercises the declared catch-all.
+   * boundary — and, since ES-5, also for activity hosts when the SCOPE has an
+   * eligible event subprocess with an ERROR start (the error can be caught
+   * without any boundary). The options are the DISTINCT named definitions the
+   * candidates match on, plus the UNCATALOGUED error (`errorRef: undefined`,
+   * reforço 10) — the UI path that exercises the declared catch-all.
    */
   get errorThrowOptions(): ErrorThrowOption[] {
     const cards: ErrorThrowOption[] = [];
+    const esubErrors = this.errorEventSubprocesses();
     const hosts = new Set(this.tokens.map((t) => t.nodeId));
     for (const host of hosts) {
+      const hostNode = this.graph.nodes.get(host)!;
       const errors = (this.graph.boundariesByHost.get(host) ?? [])
         .map((id) => this.graph.nodes.get(id)!)
         .filter((node) => node.eventKind === 'error');
-      if (errors.length === 0) continue;
-      const hostNode = this.graph.nodes.get(host)!;
+      if (errors.length === 0 && (esubErrors.length === 0 || !this.isActivity(hostNode))) continue;
       const seen = new Set<string>();
       const options: ErrorThrowOption['options'] = [];
       for (const boundary of errors) {
@@ -199,10 +208,57 @@ export class SimulationEngine {
         seen.add(boundary.eventRef);
         options.push({ errorRef: boundary.eventRef, label: boundary.eventRefLabel });
       }
+      for (const esub of esubErrors) {
+        const ref = esub.esubStart!.ref;
+        if (ref === undefined || seen.has(ref)) continue;
+        seen.add(ref);
+        options.push({ errorRef: ref, label: esub.esubStart!.refLabel });
+      }
       options.push({}); // the uncatalogued error — label is the UI's
       cards.push({ host, hostLabel: hostNode.label || host, options });
     }
     return cards;
+  }
+
+  /**
+   * Manual timer/conditional event-subprocess cards (ES-5, §4e): those kinds
+   * NEVER auto-fire — the user fires them via {@link fireEventSubprocess}
+   * while the scope is live. The mode is part of the option (reforço 10) so
+   * the card can show it before the user decides.
+   */
+  get eventSubprocessOptions(): EventSubprocessOption[] {
+    if (this.tokens.length === 0) return [];
+    const options: EventSubprocessOption[] = [];
+    for (const node of this.graph.nodes.values()) {
+      const start = node.esubStart;
+      if (!start || (start.kind !== 'timer' && start.kind !== 'conditional')) continue;
+      options.push({
+        sub: node.id,
+        subLabel: node.label || node.id,
+        startId: start.startId,
+        kind: start.kind,
+        interrupting: start.interrupting,
+      });
+    }
+    return options;
+  }
+
+  /** Eligible ERROR-start event subprocesses of this scope (graph order). */
+  private errorEventSubprocesses(): SimNode[] {
+    return [...this.graph.nodes.values()].filter((n) => n.esubStart?.kind === 'error');
+  }
+
+  /** A host an error can be thrown on: a task/subProcess-like activity — not
+   * a gateway, event, boundary or event-subprocess shell. */
+  private isActivity(node: SimNode): boolean {
+    return (
+      !node.gateway &&
+      !node.isStart &&
+      !node.isEnd &&
+      node.boundaryHost === undefined &&
+      node.eventSubprocess !== true &&
+      !node.type.toLowerCase().includes('event')
+    );
   }
 
   /** A token exists that can be advanced without a decision. */
@@ -269,6 +325,7 @@ export class SimulationEngine {
     if (decision.kind === 'error') return this.throwError(decision.host, decision.errorRef);
     if (decision.kind === 'signal') return this.throwSignal(decision.ref);
     if (decision.kind === 'message') return this.throwMessage(decision.ref);
+    if (decision.kind === 'eventSubprocess') return this.fireEventSubprocess(decision.sub);
     const token = this.tokens.find((t) => t.nodeId === decision.gateway);
     if (!token) throw new SimulationError(`No token at gateway ${decision.gateway}`);
     const node = this.graph.nodes.get(token.nodeId)!;
@@ -328,10 +385,20 @@ export class SimulationEngine {
   /**
    * Throw an error on a host: the USER picks the error (a named definition id
    * or the uncatalogued `undefined`), the ENGINE resolves the destination by
-   * MATCHING — a specific `errorRef` match beats the declared catch-all
-   * (documented precedence: specific + catch-all present is NOT ambiguity);
-   * genuinely ambiguous or uncaught throws are DECLARED stops naming node,
-   * reason and candidates ({@link BlockedDecision}) — never a guess (§5).
+   * MATCHING. Since ES-5 the candidates include the eligible ERROR-start
+   * event subprocesses of the token's scope, and the TOTAL precedence order
+   * is declared (especificidade > escopo > catch-all, documented in
+   * limitations.md):
+   *
+   *   1. event subprocess with the EXACT ref  (same scope — WINS)
+   *   2. boundary with the EXACT ref          (outer scope — preterido)
+   *   3. event subprocess catch-all (error start with no ref)
+   *   4. boundary catch-all
+   *
+   * The first non-empty tier resolves the throw; MORE than one candidate in
+   * that tier is a DECLARED stop naming the candidates ({@link BlockedDecision})
+   * — never a guess (§5). Uncaught remains a declared stop (propagation
+   * beyond the direct scope is not simulated).
    */
   throwError(host: string, errorRef?: string): StepResult {
     const token = this.tokens.find((t) => t.nodeId === host);
@@ -340,38 +407,62 @@ export class SimulationEngine {
     const boundaries = (this.graph.boundariesByHost.get(host) ?? [])
       .map((id) => this.graph.nodes.get(id)!)
       .filter((node) => node.eventKind === 'error');
+    const esubs = this.errorEventSubprocesses();
     const start = this.trail.length;
     const thrown = errorRef !== undefined ? `error "${errorRef}"` : 'uncatalogued error';
-    const exact = errorRef !== undefined ? boundaries.filter((b) => b.eventRef === errorRef) : [];
-    const catchAll = boundaries.filter((b) => b.eventRef === undefined);
-    const eligible = exact.length > 0 ? exact : catchAll;
-    if (eligible.length === 1) {
-      const target = eligible[0];
-      const via =
-        exact.length > 0
-          ? `errorRef match "${errorRef}"`
-          : 'the DECLARED catch-all (no errorRef)';
-      this.record(
-        'event',
-        `Thrown ${thrown} on "${hostNode.label || host}": caught by boundary "${target.label || target.id}" via ${via}`,
-        { nodeId: target.id },
-      );
-      this.applyBoundary(target, token);
-    } else if (eligible.length === 0) {
+    const tiers: { candidates: SimNode[]; esub: boolean; exact: boolean }[] = [
+      {
+        candidates:
+          errorRef !== undefined ? esubs.filter((e) => e.esubStart!.ref === errorRef) : [],
+        esub: true,
+        exact: true,
+      },
+      {
+        candidates: errorRef !== undefined ? boundaries.filter((b) => b.eventRef === errorRef) : [],
+        esub: false,
+        exact: true,
+      },
+      { candidates: esubs.filter((e) => e.esubStart!.ref === undefined), esub: true, exact: false },
+      { candidates: boundaries.filter((b) => b.eventRef === undefined), esub: false, exact: false },
+    ];
+    const winner = tiers.find((tier) => tier.candidates.length > 0);
+    if (winner && winner.candidates.length === 1) {
+      const target = winner.candidates[0];
+      const via = winner.exact
+        ? `errorRef "${errorRef}"`
+        : 'the DECLARED catch-all (no errorRef)';
+      if (winner.esub) {
+        const preExisting = new Set(this.tokens.map((t) => t.id));
+        this.catchByEventSubprocess(
+          [target],
+          preExisting,
+          (esub) =>
+            `Thrown ${thrown} on "${hostNode.label || host}": caught by event subprocess "${esub.label || esub.id}" (start ${esub.esubStart!.startId}, ${via}`,
+        );
+      } else {
+        this.record(
+          'event',
+          `Thrown ${thrown} on "${hostNode.label || host}": caught by boundary "${target.label || target.id}" via ${winner.exact ? `errorRef match "${errorRef}"` : via}`,
+          { nodeId: target.id },
+        );
+        this.applyBoundary(target, token);
+      }
+    } else if (!winner) {
       // Uncaught: propagation to a parent scope is not simulated (limitations).
       this.blocked = {
         nodeId: host,
         cell: errorRef ?? '(uncatalogued)',
-        reason: `thrown ${thrown} is caught by NO boundary on "${hostNode.label || host}" — parent-scope propagation is not simulated`,
+        reason: `thrown ${thrown} is caught by NO boundary or event subprocess on "${hostNode.label || host}" — parent-scope propagation is not simulated`,
       };
       this.record(
         'decision-blocked',
-        `Thrown ${thrown} on "${hostNode.label || host}" not caught: no eligible boundary — declared stop`,
+        `Thrown ${thrown} on "${hostNode.label || host}" not caught: no eligible boundary or event subprocess — declared stop`,
         { nodeId: host },
       );
     } else {
-      // Honest ambiguity: two specifics for the same ref, or two catch-alls.
-      const candidates = eligible.map((b) => `${b.id} ("${b.label || b.id}")`).join(', ');
+      // Honest ambiguity: >1 candidates in the SAME tier (e.g. two event
+      // subprocesses with the same ref, or two catch-alls of one kind).
+      const candidates = winner.candidates.map((c) => `${c.id} ("${c.label || c.id}")`).join(', ');
       this.blocked = {
         nodeId: host,
         cell: errorRef ?? '(uncatalogued)',
@@ -384,6 +475,76 @@ export class SimulationEngine {
       );
     }
     this.decisions.push({ kind: 'error', host, ...(errorRef !== undefined ? { errorRef } : {}) });
+    this.settleOrJoins();
+    return { moved: true, transitions: this.trail.slice(start) };
+  }
+
+  /**
+   * Shared catch semantics of event subprocesses for ONE throw (ES-5,
+   * decisão 1 da ES-0): the token goes to the CONTAINER shell — descent into
+   * its children is not simulated (declared in limitations.md). Interrupting
+   * (via `startIsInterrupting`, single source) cancels every token of the
+   * host scope that existed BEFORE the throw, exactly ONCE per throw — the
+   * tokens this same throw just placed survive (reforço 9, the declared
+   * broadcast rule). The trail names start, mode, and on interruption the
+   * cancelled COUNT and the scope.
+   */
+  private catchByEventSubprocess(
+    esubs: SimNode[],
+    preExisting: Set<string>,
+    describe: (esub: SimNode) => string,
+  ): void {
+    for (const esub of esubs) {
+      const mode = esub.esubStart!.interrupting
+        ? 'interrupting'
+        : 'non-interrupting: scope continues';
+      this.placeToken(esub.id);
+      this.record('event', `${describe(esub)}, ${mode})`, { nodeId: esub.id });
+    }
+    if (esubs.some((esub) => esub.esubStart!.interrupting)) {
+      const victims = this.tokens.filter((t) => preExisting.has(t.id));
+      for (const victim of victims) this.removeToken(victim.id);
+      this.record(
+        'event',
+        `interrupting: ${victims.length} token(s) cancelled in scope "${this.scopeLabel()}"`,
+        {},
+      );
+    }
+  }
+
+  /** Human name of the simulated scope for the interruption trail line. */
+  private scopeLabel(): string {
+    if (this.graph.scope !== undefined) {
+      return this.diagram.nodes[this.graph.scope]?.label || this.graph.scope;
+    }
+    return this.diagram.name || 'process';
+  }
+
+  /**
+   * Manually fire a timer/conditional event subprocess (ES-5): those kinds
+   * NEVER auto-fire — {@link eventSubprocessOptions} is the declared manual
+   * card. Applies the SAME named interruption as the throw path (reforço 10).
+   */
+  fireEventSubprocess(subId: string): StepResult {
+    const node = this.graph.nodes.get(subId);
+    const esubStart = node?.esubStart;
+    if (!node || !esubStart) {
+      throw new SimulationError(`${subId} is not an eligible event subprocess`);
+    }
+    if (esubStart.kind !== 'timer' && esubStart.kind !== 'conditional') {
+      throw new SimulationError(
+        `Event subprocess ${subId} has a "${esubStart.kind}" start — fire it by throwing the event, not manually`,
+      );
+    }
+    const start = this.trail.length;
+    const preExisting = new Set(this.tokens.map((t) => t.id));
+    this.catchByEventSubprocess(
+      [node],
+      preExisting,
+      (esub) =>
+        `Event subprocess "${esub.label || esub.id}" manually fired (start ${esubStart.startId}, ${esubStart.kind} never auto-fires in simulation`,
+    );
+    this.decisions.push({ kind: 'eventSubprocess', sub: subId, atStep: start });
     this.settleOrJoins();
     return { moved: true, transitions: this.trail.slice(start) };
   }
@@ -401,40 +562,67 @@ export class SimulationEngine {
     });
   }
 
+  /** Eligible event subprocesses whose start is `kind` matching `ref`. */
+  private matchingEventSubprocesses(kind: 'signal' | 'message', ref: string): SimNode[] {
+    return [...this.graph.nodes.values()].filter(
+      (n) => n.esubStart?.kind === kind && n.esubStart.ref === ref,
+    );
+  }
+
   /**
    * Broadcast a signal by named definition: EVERY waiting catch that matches
-   * advances — deterministic, no ambiguity possible. Zero recipients is a
-   * DECLARED no-op in the trail, never a guessed route.
+   * advances, and (ES-5) every matching event subprocess of the scope fires —
+   * deterministic, no ambiguity possible. Zero recipients is a DECLARED
+   * no-op in the trail, never a guessed route. When any recipient subprocess
+   * is INTERRUPTING, the scope's pre-existing tokens are cancelled exactly
+   * once AFTER all deliveries — the tokens this throw placed survive
+   * (reforço 9, the declared rule).
    */
   throwSignal(ref: string): StepResult {
     const start = this.trail.length;
     const waiting = this.waitingCatches('signal', ref);
+    const esubs = this.matchingEventSubprocesses('signal', ref);
+    const total = waiting.length + esubs.length;
+    // Trail wording is part of the E-6 compat contract: without event
+    // subprocesses in play the line stays byte-identical to E-6.
     this.record(
       'event',
-      waiting.length === 0
+      total === 0
         ? `Signal "${ref}" thrown: no waiting catch — declared no-op`
-        : `Signal "${ref}" thrown: broadcast to ${waiting.length} waiting catch(es)`,
+        : esubs.length === 0
+          ? `Signal "${ref}" thrown: broadcast to ${waiting.length} waiting catch(es)`
+          : `Signal "${ref}" thrown: broadcast to ${total} recipient(s)`,
       {},
     );
+    const preExisting = new Set(this.tokens.map((t) => t.id));
     for (const token of waiting) {
       const node = this.graph.nodes.get(token.nodeId)!;
       this.emit(token, node.outgoing, node.outgoing.length > 1 ? 'split' : 'move');
     }
+    this.catchByEventSubprocess(
+      esubs,
+      preExisting,
+      (esub) =>
+        `Signal "${ref}" caught by event subprocess "${esub.label || esub.id}" (start ${esub.esubStart!.startId}`,
+    );
     this.decisions.push({ kind: 'signal', ref });
     this.settleOrJoins();
-    return { moved: waiting.length > 0, transitions: this.trail.slice(start) };
+    return { moved: total > 0, transitions: this.trail.slice(start) };
   }
 
   /**
-   * Deliver a message by named definition: a SINGLE destination. More than
-   * one waiting candidate means runtime correlation — not simulable, so the
-   * stop is DECLARED naming the candidates (see limitations.md); zero is a
-   * declared no-op.
+   * Deliver a message by named definition: a SINGLE destination. Since ES-5
+   * the candidate set includes matching MESSAGE-start event subprocesses of
+   * the scope. More than one candidate in total means runtime correlation —
+   * not simulable, so the stop is DECLARED naming ALL the candidates (see
+   * limitations.md); zero is a declared no-op.
    */
   throwMessage(ref: string): StepResult {
     const start = this.trail.length;
     const waiting = this.waitingCatches('message', ref);
-    if (waiting.length === 1) {
+    const esubs = this.matchingEventSubprocesses('message', ref);
+    const total = waiting.length + esubs.length;
+    if (total === 1 && waiting.length === 1) {
       const node = this.graph.nodes.get(waiting[0].nodeId)!;
       this.record(
         'event',
@@ -442,29 +630,39 @@ export class SimulationEngine {
         { nodeId: node.id },
       );
       this.emit(waiting[0], node.outgoing, node.outgoing.length > 1 ? 'split' : 'move');
-    } else if (waiting.length === 0) {
+    } else if (total === 1) {
+      const preExisting = new Set(this.tokens.map((t) => t.id));
+      this.catchByEventSubprocess(
+        esubs,
+        preExisting,
+        (esub) =>
+          `Message "${ref}" caught by event subprocess "${esub.label || esub.id}" (start ${esub.esubStart!.startId}`,
+      );
+    } else if (total === 0) {
       this.record('event', `Message "${ref}" thrown: no waiting catch — declared no-op`, {});
     } else {
-      const candidates = waiting
-        .map((t) => {
+      const candidates = [
+        ...waiting.map((t) => {
           const node = this.graph.nodes.get(t.nodeId)!;
           return `${node.id} ("${node.label || node.id}")`;
-        })
-        .join(', ');
+        }),
+        ...esubs.map((esub) => `${esub.id} ("${esub.label || esub.id}", event subprocess)`),
+      ].join(', ');
+      const anchor = waiting[0]?.nodeId ?? esubs[0].id;
       this.blocked = {
-        nodeId: waiting[0].nodeId,
+        nodeId: anchor,
         cell: ref,
-        reason: `message "${ref}" has ${waiting.length} waiting recipients (${candidates}) — runtime correlation is not simulable`,
+        reason: `message "${ref}" has ${total} waiting recipients (${candidates}) — runtime correlation is not simulable`,
       };
       this.record(
         'decision-blocked',
-        `Message "${ref}" has ${waiting.length} waiting recipients (${candidates}) — declared stop (runtime correlation is not simulable)`,
-        { nodeId: waiting[0].nodeId },
+        `Message "${ref}" has ${total} waiting recipients (${candidates}) — declared stop (runtime correlation is not simulable)`,
+        { nodeId: anchor },
       );
     }
     this.decisions.push({ kind: 'message', ref });
     this.settleOrJoins();
-    return { moved: waiting.length === 1, transitions: this.trail.slice(start) };
+    return { moved: total === 1, transitions: this.trail.slice(start) };
   }
 
   /**
@@ -591,6 +789,19 @@ export class SimulationEngine {
         if (engine.blocked) break; // declared stop — the scenario ends here
         continue;
       }
+      // ES-5: a manual event-subprocess fire is anchored to WHEN it happened
+      // (`atStep`) — an interrupting fire cancels whatever is live at that
+      // moment, so replay advances up to the anchor before applying it.
+      if (next && next.kind === 'eventSubprocess') {
+        if (engine.trail.length < next.atStep && engine.canAdvance) {
+          engine.advance();
+          continue;
+        }
+        engine.choose(next);
+        queue.shift();
+        if (engine.blocked) break; // declared stop — the scenario ends here
+        continue;
+      }
       if (engine.canAdvance) {
         engine.advance();
         continue;
@@ -609,7 +820,8 @@ export class SimulationEngine {
       decision.kind === 'decision' ||
       decision.kind === 'error' ||
       decision.kind === 'signal' ||
-      decision.kind === 'message'
+      decision.kind === 'message' ||
+      decision.kind === 'eventSubprocess'
     ) {
       return false;
     }
