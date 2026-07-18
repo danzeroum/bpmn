@@ -33,6 +33,12 @@ const FORBIDDEN = [
   'ui/PropertiesPanel.js',
   'ui/MiniMap.js',
   'ui/ContextMenu.js',
+  // Handoff 15 §2f — designer-only chrome (commands mutate; the viewer is inert).
+  'ui/CommandPalette.js',
+  'ui/Cheatsheet.js',
+  'ui/EmptyState.js',
+  'commands/menuRegistry.js',
+  'commands/globalCommands.js',
   'ui/exporters.js',
   'state/autosave.js',
   'BpmnDesigner.js',

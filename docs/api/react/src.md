@@ -1696,6 +1696,276 @@ The translated route now crosses a shape — flag ⚠, never re-route.
 
 ***
 
+### GlobalCommandContext
+
+Global (toolbar-level) commands of the registry (Handoff 15 §2f): the
+actions that need no element target — undo/redo, viewport, arrange
+proposal, exports, find. Presence rules mirror the Toolbar's own guards
+(disabled undo → absent here; unarrangeable diagram → absent), which is the
+palette's `when()` for built-ins. Labels reuse the cmdk.* dictionary keys,
+`shortcut` is display notation only — dispatch stays in
+`useKeyboardShortcuts` (its catalog is the cheatsheet's other half).
+
+#### Extends
+
+- [`MenuBuildContext`](#menubuildcontext)
+
+#### Properties
+
+##### diagram
+
+```ts
+diagram: BpmnDiagram;
+```
+
+##### undo
+
+```ts
+undo: () => void;
+```
+
+###### Returns
+
+`void`
+
+##### redo
+
+```ts
+redo: () => void;
+```
+
+###### Returns
+
+`void`
+
+##### canUndo
+
+```ts
+canUndo: boolean;
+```
+
+##### canRedo
+
+```ts
+canRedo: boolean;
+```
+
+##### execute
+
+```ts
+execute: (command) => RuleVerdict;
+```
+
+###### Parameters
+
+###### command
+
+`Command`
+
+###### Returns
+
+`RuleVerdict`
+
+###### Inherited from
+
+[`MenuBuildContext`](#menubuildcontext).[`execute`](#execute-1)
+
+##### store
+
+```ts
+store: CanvasStore;
+```
+
+###### Inherited from
+
+[`MenuBuildContext`](#menubuildcontext).[`store`](#store-1)
+
+##### config
+
+```ts
+config: EditorConfig;
+```
+
+###### Inherited from
+
+[`MenuBuildContext`](#menubuildcontext).[`config`](#config-1)
+
+##### t
+
+```ts
+t: TFunction;
+```
+
+###### Inherited from
+
+[`MenuBuildContext`](#menubuildcontext).[`t`](#t-1)
+
+***
+
+### RegisteredGlobalCommand
+
+One executable entry of the registry (menu row / palette row).
+
+#### Extends
+
+- [`RegisteredMenuItem`](#registeredmenuitem)
+
+#### Properties
+
+##### shortcut?
+
+```ts
+optional shortcut?: string;
+```
+
+Display shortcut (notation), when the command also has a key binding.
+
+##### id
+
+```ts
+id: string;
+```
+
+###### Inherited from
+
+[`RegisteredMenuItem`](#registeredmenuitem).[`id`](#id-2)
+
+##### label
+
+```ts
+label: string;
+```
+
+###### Inherited from
+
+[`RegisteredMenuItem`](#registeredmenuitem).[`label`](#label-1)
+
+##### section?
+
+```ts
+optional section?: string;
+```
+
+Section kicker (plugin id) — undefined for built-ins.
+
+###### Inherited from
+
+[`RegisteredMenuItem`](#registeredmenuitem).[`section`](#section-1)
+
+##### run
+
+```ts
+run: () => void;
+```
+
+###### Returns
+
+`void`
+
+###### Inherited from
+
+[`RegisteredMenuItem`](#registeredmenuitem).[`run`](#run-1)
+
+***
+
+### MenuBuildContext
+
+THE command registry of the editor surfaces (Handoff 15 §2f, V-0 decisão 4):
+the ContextMenu's conditional built-ins extracted VERBATIM into a pure
+builder — proven identical by tests/menuRegistryEquivalence.test.tsx, which
+was frozen BEFORE this extraction (N-7 discipline). The ContextMenu, the
+Ctrl/Cmd+K command palette and the "?" cheatsheet all consume THIS source —
+no surface defines its own items, so they can never drift apart.
+
+Rules carried over unchanged:
+- Every action dispatches COMMANDS through `execute` — never a direct
+  diagram mutation.
+- `when()` of plugin items is evaluated against the REAL target context.
+
+#### Extended by
+
+- [`GlobalCommandContext`](#globalcommandcontext)
+
+#### Properties
+
+##### execute
+
+```ts
+execute: (command) => RuleVerdict;
+```
+
+###### Parameters
+
+###### command
+
+`Command`
+
+###### Returns
+
+`RuleVerdict`
+
+##### store
+
+```ts
+store: CanvasStore;
+```
+
+##### config
+
+```ts
+config: EditorConfig;
+```
+
+##### t
+
+```ts
+t: TFunction;
+```
+
+***
+
+### RegisteredMenuItem
+
+One executable entry of the registry (menu row / palette row).
+
+#### Extended by
+
+- [`RegisteredGlobalCommand`](#registeredglobalcommand)
+
+#### Properties
+
+##### id
+
+```ts
+id: string;
+```
+
+##### label
+
+```ts
+label: string;
+```
+
+##### section?
+
+```ts
+optional section?: string;
+```
+
+Section kicker (plugin id) — undefined for built-ins.
+
+##### run
+
+```ts
+run: () => void;
+```
+
+###### Returns
+
+`void`
+
+***
+
 ### DiagramContextValue
 
 #### Properties
@@ -1997,6 +2267,47 @@ engine: EngineBridge | null;
 ```
 
 Execution-engine bridge (Handoff 14 §1f); null → no "Execução" tab.
+
+***
+
+### ShortcutCatalogEntry
+
+The declared shortcut catalog (Handoff 15 §2f) — the "?" cheatsheet renders
+FROM this table, and the anti-drift sweep test (cheatsheet.test) asserts
+every key literal the handler below matches appears in some entry's
+`matches`. Add a branch → add (or extend) an entry, or the test fails.
+
+#### Properties
+
+##### id
+
+```ts
+id: string;
+```
+
+##### keys
+
+```ts
+keys: string;
+```
+
+Display combo, e.g. 'Ctrl/⌘+Z'. Key names are notation, not prose.
+
+##### labelKey
+
+```ts
+labelKey: string;
+```
+
+i18n key (shortcuts.*) of the description.
+
+##### matches
+
+```ts
+matches: readonly string[];
+```
+
+Raw `event.key` literals the handler matches (sweep-test contract).
 
 ***
 
@@ -2697,7 +3008,7 @@ id: string;
 
 ###### Inherited from
 
-[`ContextMenuItem`](#contextmenuitem).[`id`](#id-5)
+[`ContextMenuItem`](#contextmenuitem).[`id`](#id-8)
 
 ##### label
 
@@ -2707,7 +3018,7 @@ label: string;
 
 ###### Inherited from
 
-[`ContextMenuItem`](#contextmenuitem).[`label`](#label-2)
+[`ContextMenuItem`](#contextmenuitem).[`label`](#label-4)
 
 ##### when?
 
@@ -2757,7 +3068,7 @@ Dispatches commands through `execute` — the menu never mutates state.
 
 ###### Inherited from
 
-[`ContextMenuItem`](#contextmenuitem).[`run`](#run)
+[`ContextMenuItem`](#contextmenuitem).[`run`](#run-2)
 
 ##### glyph
 
@@ -4737,6 +5048,22 @@ searchOpen: boolean;
 
 Find bar visibility (Ctrl/Cmd+F — item 4).
 
+##### paletteOpen
+
+```ts
+paletteOpen: boolean;
+```
+
+Command palette visibility (Ctrl/Cmd+K — Handoff 15 §2f).
+
+##### cheatsheetOpen
+
+```ts
+cheatsheetOpen: boolean;
+```
+
+Keyboard cheatsheet visibility ("?" — Handoff 15 §2f).
+
 ##### lintOpen
 
 ```ts
@@ -6093,7 +6420,7 @@ diagram: BpmnDiagram;
 
 ###### Inherited from
 
-[`ApprovalPayloadInput`](#approvalpayloadinput).[`diagram`](#diagram-9)
+[`ApprovalPayloadInput`](#approvalpayloadinput).[`diagram`](#diagram-10)
 
 ##### ledger?
 
@@ -6917,6 +7244,14 @@ const NAMED_ROUTERS: Record<RouterName, EdgeRouterFn>;
 ```
 
 The four built-in named routers (Handoff 10 §1.1 / §3).
+
+***
+
+### KEYBOARD\_SHORTCUT\_CATALOG
+
+```ts
+const KEYBOARD_SHORTCUT_CATALOG: readonly ShortcutCatalogEntry[];
+```
 
 ***
 
@@ -9103,6 +9438,102 @@ Fits the viewport around a bounding box with padding.
 
 ***
 
+### builtinGlobalCommands()
+
+```ts
+function builtinGlobalCommands(ctx): RegisteredGlobalCommand[];
+```
+
+#### Parameters
+
+##### ctx
+
+[`GlobalCommandContext`](#globalcommandcontext)
+
+#### Returns
+
+[`RegisteredGlobalCommand`](#registeredglobalcommand)[]
+
+***
+
+### builtinMenuItems()
+
+```ts
+function builtinMenuItems(target, ctx): RegisteredMenuItem[];
+```
+
+Conditional BUILT-INS per target kind (edge complete; node minimal —
+pendencias §13). Body moved verbatim from `<ContextMenu>`; the equivalence
+test pins ids/labels/order per scenario.
+
+#### Parameters
+
+##### target
+
+[`MenuTarget`](#menutarget)
+
+##### ctx
+
+[`MenuBuildContext`](#menubuildcontext)
+
+#### Returns
+
+[`RegisteredMenuItem`](#registeredmenuitem)[]
+
+***
+
+### pluginMenuItems()
+
+```ts
+function pluginMenuItems(target, ctx): RegisteredMenuItem[];
+```
+
+PLUGIN sections (contract §N-5): `when()` decides presence against the REAL
+target; `run()` only receives the command dispatcher.
+
+#### Parameters
+
+##### target
+
+[`MenuTarget`](#menutarget)
+
+##### ctx
+
+[`MenuBuildContext`](#menubuildcontext)
+
+#### Returns
+
+[`RegisteredMenuItem`](#registeredmenuitem)[]
+
+***
+
+### pluginPadItems()
+
+```ts
+function pluginPadItems(target, ctx): RegisteredMenuItem[];
+```
+
+PLUGIN context-pad actions (Handoff 14 §1a contract) surfaced as registry
+entries — the palette aggregates them for single-node targets so a pad-only
+plugin action is still reachable by keyboard. Ids share the plugin prefix,
+so a plugin exposing the same id in menu AND pad dedupes naturally.
+
+#### Parameters
+
+##### target
+
+[`MenuTarget`](#menutarget)
+
+##### ctx
+
+[`MenuBuildContext`](#menubuildcontext)
+
+#### Returns
+
+[`RegisteredMenuItem`](#registeredmenuitem)[]
+
+***
+
 ### CanvasProvider()
 
 ```ts
@@ -10683,7 +11114,7 @@ function createStore<T>(initial): Store<T>;
 
 #### Returns
 
-[`Store`](#store)\<`T`\>
+[`Store`](#store-2)\<`T`\>
 
 ***
 
@@ -10710,7 +11141,7 @@ only when the selected value changes (`Object.is`).
 
 ##### store
 
-[`Store`](#store)\<`T`\>
+[`Store`](#store-2)\<`T`\>
 
 ##### selector
 
@@ -10755,6 +11186,91 @@ function CanonicalPayloadCard(__namedParameters): Element;
 #### Returns
 
 `Element`
+
+***
+
+### Cheatsheet()
+
+```ts
+function Cheatsheet(): Element | null;
+```
+
+"?" cheatsheet (Handoff 15 §2f) — generated, never written by hand:
+shortcuts come from `KEYBOARD_SHORTCUT_CATALOG` (declared beside the very
+handler that binds them; the sweep test fails on any undeclared key) and
+the command list is `paletteEntries` — the SAME aggregate the Ctrl/Cmd+K
+palette renders. Anti-drift by construction: there is no third list.
+
+#### Returns
+
+`Element` \| `null`
+
+***
+
+### paletteEntries()
+
+```ts
+function paletteEntries(target, ctx): RegisteredGlobalCommand[];
+```
+
+Ctrl/Cmd+K command palette (Handoff 15 §2f). The palette has NO list of its
+own — every row comes from the registries that already exist: the extracted
+`builtinMenuItems` (equivalence-tested against the ContextMenu), the plugin
+`contextMenuItems`/`contextPadItems` contracts (respecting `when()` against
+the REAL selection context) and `builtinGlobalCommands` (toolbar-level
+actions). Anti-drift by construction: `paletteEntries` below is exported and
+the sweep test asserts the rendered rows equal the aggregate of the sources
+— in both directions. Execution is ALWAYS via `run()` → `execute` commands.
+
+#### Parameters
+
+##### target
+
+[`MenuTarget`](#menutarget)
+
+##### ctx
+
+[`GlobalCommandContext`](#globalcommandcontext)
+
+#### Returns
+
+[`RegisteredGlobalCommand`](#registeredglobalcommand)[]
+
+***
+
+### fuzzyScore()
+
+```ts
+function fuzzyScore(label, query): number | null;
+```
+
+Substring beats subsequence; either must hold, case-insensitive.
+
+#### Parameters
+
+##### label
+
+`string`
+
+##### query
+
+`string`
+
+#### Returns
+
+`number` \| `null`
+
+***
+
+### CommandPalette()
+
+```ts
+function CommandPalette(): Element | null;
+```
+
+#### Returns
+
+`Element` \| `null`
 
 ***
 
@@ -10809,6 +11325,43 @@ DiffView of the two adjacent versions; hover surfaces the ledger hash.
 ##### \_\_namedParameters
 
 [`EdgePedigreeStripProps`](#edgepedigreestripprops)
+
+#### Returns
+
+`Element` \| `null`
+
+***
+
+### buildGovernedExample()
+
+```ts
+function buildGovernedExample(t): BpmnDiagram;
+```
+
+Empty-canvas teaching state (Handoff 15 §2f): shows ONLY while the diagram
+has zero active elements (it disappears at the first element and comes back
+if the canvas empties again — pure derivation, no flag), teaches the three
+entry points (palette drag / Tab chaining / Ctrl+⌘K) and offers a ONE-CLICK
+governed example — a diagram with a real version block (semver, status,
+change summary, author), never a loose sample.
+
+#### Parameters
+
+##### t
+
+[`TFunction`](#tfunction)
+
+#### Returns
+
+`BpmnDiagram`
+
+***
+
+### EmptyState()
+
+```ts
+function EmptyState(): Element | null;
+```
 
 #### Returns
 

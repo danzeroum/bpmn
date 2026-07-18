@@ -8,6 +8,9 @@ import { ResilienceLayer } from './canvas/ResilienceLayer.js';
 import { VersionBanner } from './ui/VersionBanner.js';
 import { ContextMenu } from './ui/ContextMenu.js';
 import { SearchPanel } from './ui/SearchPanel.js';
+import { CommandPalette } from './ui/CommandPalette.js';
+import { Cheatsheet } from './ui/Cheatsheet.js';
+import { EmptyState } from './ui/EmptyState.js';
 import { LayoutProposalCard } from './ui/LayoutProposalCard.js';
 import { I18nProvider } from './i18n/I18nContext.js';
 import type { Messages } from './i18n/messages.js';
@@ -59,6 +62,10 @@ function DesignerBody({
           <BpmnCanvas overlay={overlay} showClosed={showClosed} />
           <ContextMenu />
           <SearchPanel />
+          {/* Handoff 15 §2f — palette/cheatsheet/empty state, all self-gating. */}
+          <CommandPalette />
+          <Cheatsheet />
+          <EmptyState />
           {/* Auto-layout proposal (Handoff 14 §1e) — self-gating. */}
           <LayoutProposalCard />
           {/* Version context banner — self-gating (read-only / superseded). */}

@@ -100,6 +100,10 @@ export interface CanvasState {
   }> | null;
   /** Find bar visibility (Ctrl/Cmd+F — item 4). */
   searchOpen: boolean;
+  /** Command palette visibility (Ctrl/Cmd+K — Handoff 15 §2f). */
+  paletteOpen: boolean;
+  /** Keyboard cheatsheet visibility ("?" — Handoff 15 §2f). */
+  cheatsheetOpen: boolean;
   /** Lint panel visibility — the bottom problems dock (Handoff 14 §1d). */
   lintOpen: boolean;
   /**
@@ -247,6 +251,8 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     alignGuides: null,
     spacingBadges: null,
     searchOpen: false,
+    paletteOpen: false,
+    cheatsheetOpen: false,
     lintOpen: false,
     layoutProposal: null,
     layoutSettle: null,

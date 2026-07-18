@@ -24,6 +24,58 @@ import {
   writeClipboardPayload,
 } from './clipboard.js';
 
+/**
+ * The declared shortcut catalog (Handoff 15 §2f) — the "?" cheatsheet renders
+ * FROM this table, and the anti-drift sweep test (cheatsheet.test) asserts
+ * every key literal the handler below matches appears in some entry's
+ * `matches`. Add a branch → add (or extend) an entry, or the test fails.
+ */
+export interface ShortcutCatalogEntry {
+  id: string;
+  /** Display combo, e.g. 'Ctrl/⌘+Z'. Key names are notation, not prose. */
+  keys: string;
+  /** i18n key (shortcuts.*) of the description. */
+  labelKey: string;
+  /** Raw `event.key` literals the handler matches (sweep-test contract). */
+  matches: readonly string[];
+}
+
+export const KEYBOARD_SHORTCUT_CATALOG: readonly ShortcutCatalogEntry[] = [
+  { id: 'pan', keys: 'Space', labelKey: 'shortcuts.pan', matches: [' '] },
+  { id: 'find', keys: 'Ctrl/⌘+F', labelKey: 'shortcuts.find', matches: ['f'] },
+  { id: 'palette', keys: 'Ctrl/⌘+K', labelKey: 'shortcuts.palette', matches: ['k'] },
+  { id: 'cheatsheet', keys: '?', labelKey: 'shortcuts.cheatsheet', matches: ['?'] },
+  { id: 'undo', keys: 'Ctrl/⌘+Z', labelKey: 'shortcuts.undo', matches: ['z'] },
+  { id: 'redo', keys: 'Ctrl/⌘+Shift+Z · Ctrl+Y', labelKey: 'shortcuts.redo', matches: ['y', 'z'] },
+  { id: 'select-all', keys: 'Ctrl/⌘+A', labelKey: 'shortcuts.selectAll', matches: ['a'] },
+  { id: 'copy', keys: 'Ctrl/⌘+C', labelKey: 'shortcuts.copy', matches: ['c'] },
+  { id: 'cut', keys: 'Ctrl/⌘+X', labelKey: 'shortcuts.cut', matches: ['x'] },
+  { id: 'paste', keys: 'Ctrl/⌘+V', labelKey: 'shortcuts.paste', matches: ['v'] },
+  { id: 'duplicate', keys: 'Ctrl/⌘+D', labelKey: 'shortcuts.duplicate', matches: ['d'] },
+  { id: 'quick-add', keys: 'Tab', labelKey: 'shortcuts.quickAdd', matches: ['Tab'] },
+  {
+    id: 'context-menu',
+    keys: 'Menu · Shift+F10',
+    labelKey: 'shortcuts.contextMenu',
+    matches: ['ContextMenu', 'F10'],
+  },
+  { id: 'dismiss', keys: 'Esc', labelKey: 'shortcuts.dismiss', matches: ['Escape'] },
+  {
+    id: 'delete',
+    keys: 'Delete · Backspace',
+    labelKey: 'shortcuts.delete',
+    matches: ['Delete', 'Backspace'],
+  },
+  {
+    id: 'browse',
+    keys: '↑ ↓ ← →',
+    labelKey: 'shortcuts.browse',
+    matches: ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'],
+  },
+  { id: 'nudge', keys: '↑↓←→ · Shift+↑↓←→', labelKey: 'shortcuts.nudge', matches: [] },
+  { id: 'select-focused', keys: 'Enter', labelKey: 'shortcuts.selectFocused', matches: ['Enter'] },
+];
+
 function isEditingTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return (
@@ -63,6 +115,19 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
       if (meta && event.key.toLowerCase() === 'f') {
         event.preventDefault();
         store.setState({ searchOpen: true });
+        return;
+      }
+      // §2f: the "?" cheatsheet is pure information — read-only-safe.
+      if (event.key === '?' && !meta) {
+        event.preventDefault();
+        store.setState({ cheatsheetOpen: true });
+        return;
+      }
+      // §2f: Ctrl/Cmd+K command palette — commands mutate, so it respects
+      // read-only exactly like the shortcuts below.
+      if (meta && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        if (!state.readOnly && !state.contextMenu) store.setState({ paletteOpen: true });
         return;
       }
       // Every shortcut below can mutate the diagram (undo/redo replay

@@ -31,6 +31,9 @@ const TRANSIENT_SELECTORS = [
   '[data-layout-settle]',
   '[data-diff-overlay]',
   '[data-review-pins]',
+  '.bpmnr-cmdk',
+  '.bpmnr-cheatsheet',
+  '[data-bpmnr-empty-state]',
 ];
 
 /** Transient state ATTRIBUTES on otherwise-permanent elements (e.g. the node
