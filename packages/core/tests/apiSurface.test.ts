@@ -99,6 +99,8 @@ const EXPECTED_EXPORTS = [
   'eventDefinitionUsages',
   'findEventDefinition',
   'nextEventDefinitionId',
+  // Handoff 18 §5d/§5e — shared escalation catch enumeration (lint + sim).
+  'eligibleEscalationCatches',
   // Handoff 16 E-5 (§3d) — headless ISO 8601 timer parser + canonical prop.
   'parseTimerExpression',
   'timerPropertyOf',

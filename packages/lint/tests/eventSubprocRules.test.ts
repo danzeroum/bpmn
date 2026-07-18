@@ -110,15 +110,24 @@ describe('EVT_SUBPROC_START (critério 2, reforços 7–8)', () => {
     expect(issues[0].message).toContain('found: 0');
   });
 
-  it('reforço 8 — kind fora da lista (escalation) acusa NOMEANDO os aceitos, nunca passa em silêncio', () => {
+  it('§5d — start de escalação em esub é LEGAL (migração da rejeição ES-4)', () => {
+    // Handoff 18 §5d: escalation entrou em SUBPROC_TRIGGER_KINDS → não acusa mais.
     const diagram = withGraph({
       esub: node('esub', 'subProcess', { triggeredByEvent: true }, 'Escalado'),
       s: node('s', 'startEvent', { parentId: 'esub', eventDefinition: 'escalation' }),
     });
+    expect(evtSubprocStartRule(diagram)).toHaveLength(0);
+  });
+
+  it('reforço 8 — kind AINDA fora da lista (compensation, pendência) acusa NOMEANDO os aceitos', () => {
+    const diagram = withGraph({
+      esub: node('esub', 'subProcess', { triggeredByEvent: true }, 'Compensado'),
+      s: node('s', 'startEvent', { parentId: 'esub', eventDefinition: 'compensation' }),
+    });
     const issues = evtSubprocStartRule(diagram);
     expect(issues).toHaveLength(1);
-    expect(issues[0].message).toContain('kind "escalation" is not supported');
-    expect(issues[0].message).toContain('message, signal, error, timer, conditional');
+    expect(issues[0].message).toContain('kind "compensation" is not supported');
+    expect(issues[0].message).toContain('message, signal, error, timer, conditional, escalation');
   });
 });
 
@@ -230,8 +239,8 @@ describe('guardas e ramos do builder', () => {
 
 describe('política 1.2.0 (critério 5)', () => {
   it('perfis em 1.2.0 com as regras novas registradas na MESMA fonte', () => {
-    expect(ETIQUETTE_PROFILE.version).toBe('1.2.0');
-    expect(EXECUTABILITY_PROFILE.version).toBe('1.2.0');
+    expect(ETIQUETTE_PROFILE.version).toBe('1.3.0');
+    expect(EXECUTABILITY_PROFILE.version).toBe('1.3.0');
     const ids = ETIQUETTE_PROFILE.rules.map((rule) => rule.id);
     expect(ids).toContain('evt-subproc-flow');
     expect(ids).toContain('evt-subproc-start');

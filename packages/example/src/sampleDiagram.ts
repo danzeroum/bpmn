@@ -985,6 +985,50 @@ export function buildEscalationDiagram(): BpmnDiagram {
 }
 
 /**
+ * `?escno=1` — Handoff 18 §5d: an escalation END-throw (ref `esc-1`) with a
+ * matching boundary catch, so the ESC_NO_CATCH warning is ABSENT at rest.
+ * Deleting the catch surfaces the WARNING (the escalation would dissolve —
+ * legal, but flagged); undo restores the catch and the warning clears. Drives
+ * the lint-dock e2e of the throw⇄catch dependency (both directions).
+ */
+export function buildEscalationNoCatchDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-escno', name: 'Escalação sem catch', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 60, 120),
+    analisar: make('userTask', 'analisar', 'Analisar despesa', 200, 98),
+    bnd: make('boundaryEvent', 'bnd', 'Acima da alçada', 242, 140, {
+      attachedToRef: 'analisar',
+      cancelActivity: false,
+      eventDefinition: 'escalation',
+      eventDefinitionRef: 'esc-1',
+      boundarySide: 'bottom',
+      boundaryT: 0.5,
+    }),
+    escThrow: make('endEvent', 'escThrow', 'Escalar', 420, 120, {
+      eventDefinition: 'escalation',
+      eventDefinitionRef: 'esc-1',
+    }),
+    review: make('userTask', 'review', 'Rever alçada', 220, 260),
+  };
+  diagram.edges = {
+    f1: createEdge({ id: 'f1', sourceId: 'start', targetId: 'analisar', versionId: v }),
+    f2: createEdge({ id: 'f2', sourceId: 'analisar', targetId: 'escThrow', versionId: v }),
+    f3: createEdge({ id: 'f3', sourceId: 'bnd', targetId: 'review', versionId: v }),
+  };
+  diagram.definitions = {
+    messages: [],
+    signals: [],
+    errors: [],
+    escalations: [{ id: 'esc-1', name: 'Acima da alçada', escalationCode: 'OVER_BUDGET' }],
+  };
+  return diagram;
+}
+
+/**
  * `?agentbridge=1` — Handoff 18 §5c: the agent→human escalation bridge. An
  * agentTask (autonomy declared via its governed workflow ref) carries a
  * NON-INTERRUPTING escalation boundary GOVERNED-bound to `esc-alcada@1.2.0`
