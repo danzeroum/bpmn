@@ -221,6 +221,33 @@ describe('critérios 3/4 — converter OMG', () => {
     expect(converter.toXml(second.diagram)).toBe(exported);
   });
 
+  it('ref órfã COMPARTILHADA: warning UMA vez por definição sintetizada, não por evento', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D2" targetNamespace="http://x">
+  <bpmn:process id="p2" name="Órfã compartilhada">
+    <bpmn:startEvent id="s1" name="Começo">
+      <bpmn:messageEventDefinition messageRef="shared-msg"/>
+    </bpmn:startEvent>
+    <bpmn:intermediateCatchEvent id="c1" name="Aguardar de novo">
+      <bpmn:messageEventDefinition messageRef="shared-msg"/>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:sequenceFlow id="f1" sourceRef="s1" targetRef="c1"/>
+  </bpmn:process>
+</bpmn:definitions>`;
+    const converter = new BpmnXmlConverter();
+    const { diagram, warnings } = converter.fromXml(xml);
+    // UMA definição sintetizada, UM warning — mesmo com 2 eventos usando a ref.
+    expect(diagram.definitions?.messages).toEqual([{ id: 'shared-msg', name: 'shared-msg' }]);
+    expect(warnings.filter((w) => w.includes('synthesized'))).toHaveLength(1);
+    // Ambos os eventos ligados; 2º passe limpo e byte-estável.
+    expect(diagram.nodes.s1.properties.eventDefinitionRef).toBe('shared-msg');
+    expect(diagram.nodes.c1.properties.eventDefinitionRef).toBe('shared-msg');
+    const exported = converter.toXml(diagram);
+    const second = converter.fromXml(exported);
+    expect(second.warnings).toEqual([]);
+    expect(converter.toXml(second.diagram)).toBe(exported);
+  });
+
   it('critério 5 — JSON serializer preserva as definições', () => {
     const serializer = new JsonSerializer();
     const diagram = definedDiagram();
