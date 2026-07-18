@@ -32,6 +32,12 @@ Re-exports [createInMemoryReviewStore](../src.md#createinmemoryreviewstore)
 
 ***
 
+### MIN\_DISMISS\_JUSTIFICATION
+
+Re-exports [MIN_DISMISS_JUSTIFICATION](../src.md#min_dismiss_justification)
+
+***
+
 ### ReviewMessage
 
 Re-exports [ReviewMessage](../src.md#reviewmessage)
@@ -47,6 +53,12 @@ Re-exports [ReviewStore](../src.md#reviewstore)
 ### ReviewThread
 
 Re-exports [ReviewThread](../src.md#reviewthread)
+
+***
+
+### reviewThreadsRule
+
+Re-exports [reviewThreadsRule](../src.md#reviewthreadsrule)
 
 ***
 

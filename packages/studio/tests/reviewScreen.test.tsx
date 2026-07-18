@@ -253,6 +253,67 @@ describe('ReviewScreen — TELA 2 (§5)', () => {
   });
 });
 
+describe('ReviewScreen — split canvas de review (Handoff 15 §2d)', () => {
+  it('sem ReviewStore a tela é IDÊNTICA à atual (degradação §1.5)', async () => {
+    const baseline = candidateDiagram({ versionId: 'v1', semver: '1.0.0', status: 'active' });
+    const { container } = setup({ baselineOf: () => baseline });
+    expect(await screen.findByText('DIFF VS V1.0.0')).toBeInTheDocument();
+    // DiffView em lista, sem canvas embutido nem artefatos de review.
+    expect(container.querySelector('[data-testid="review-split-canvas"]')).toBeNull();
+    expect(container.querySelector('svg.bpmnr-canvas')).toBeNull();
+    expect(container.querySelector('[data-review-pins]')).toBeNull();
+  });
+
+  it('com ReviewStore + baseline: split canvas embutido, READ-ONLY herdado, dispensa auditada', async () => {
+    const { createInMemoryReviewStore } = await import('@buildtovalue/react');
+    const { REVIEW_THREAD_DISMISSED_TYPE } = await import('@buildtovalue/adapters-bpmn');
+    const baseline = candidateDiagram({ versionId: 'v1', semver: '1.0.0', status: 'active' });
+    const reviewStore = createInMemoryReviewStore('v-cand');
+    // Âncora num nó que existe no candidato (fixtures compartilham os ids).
+    const anchorId = Object.keys(candidateDiagram({}).nodes)[0];
+    reviewStore.open(anchorId, { author: 'ana.ruiz', text: 'Revisar este passo?' });
+    const { container, ledger } = setup({ baselineOf: () => baseline, reviewStore });
+
+    // Split canvas: o BpmnDiffViewer (viewer N-7) embutido no lugar da lista.
+    const embed = await waitFor(() => {
+      const el = container.querySelector('[data-testid="review-split-canvas"]');
+      expect(el).not.toBeNull();
+      return el!;
+    });
+    expect(embed.querySelector('svg.bpmnr-canvas')).not.toBeNull();
+    expect(embed.querySelector('[data-review-pins]')).not.toBeNull();
+    // READ-ONLY herdado: nenhuma affordance de edição alcança o embed.
+    fireEvent.keyDown(window, { key: 'Delete' });
+    fireEvent.doubleClick(embed.querySelector(`[data-node-id="${anchorId}"]`) ?? embed);
+    expect(embed.querySelector('[data-ports]')).toBeNull();
+    expect(embed.querySelector('[data-context-pad]')).toBeNull();
+    expect(embed.querySelector('[data-selected="true"]')).toBeNull();
+
+    // Abas + banner do gate presentes (1 thread aberta).
+    expect(embed.querySelector('[data-review-tab="threads"]')).not.toBeNull();
+    expect(embed.querySelector('[data-testid="review-gate-banner"]')).not.toBeNull();
+
+    // Dispensa com justificativa → entrada própria no ledger (nunca silenciosa).
+    fireEvent.click(embed.querySelector('[data-review-tab="threads"]')!);
+    fireEvent.click(embed.querySelector('[data-review-dismiss-toggle]')!);
+    fireEvent.change(embed.querySelector('[data-review-dismiss] textarea')!, {
+      target: { value: 'risco aceito pelo comitê de crédito' },
+    });
+    fireEvent.click(embed.querySelector('[data-review-dismiss-confirm]')!);
+    await waitFor(() => {
+      expect(
+        ledger.getEntries().some((entry) => entry.type === REVIEW_THREAD_DISMISSED_TYPE),
+      ).toBe(true);
+    });
+    const entry = ledger.getEntries().find((e) => e.type === REVIEW_THREAD_DISMISSED_TYPE)!;
+    expect(entry.details).toMatchObject({
+      artifactId: anchorId,
+      justification: 'risco aceito pelo comitê de crédito',
+    });
+    expect(entry.userId).toBe('bruna');
+  });
+});
+
 describe('ReviewScreen — C3 Explicar (Handoff 9 CP-3, read-only ABSOLUTO)', () => {
   it('renders the explanation and touches NOTHING — no ledger entry, no mutation', async () => {
     const explain = vi.fn(async () => 'Processo de reembolso: análise, decisão e pagamento.');

@@ -45,10 +45,12 @@ const EXPECTED_EXPORTS = [
   // Handoff 14 §1d — lint profiles as promotable Biblioteca artifacts.
   'activeLintProfileVersion',
   'lintProfileAdapter',
-  // Handoff 15 §2c — review threads → ledger glue (host appends).
+  // Handoff 15 §2c/§2d — review threads → ledger glue (host appends).
   'reviewCommentEntry',
+  'reviewThreadDismissedEntry',
   'reviewThreadResolvedEntry',
   'REVIEW_COMMENT_TYPE',
+  'REVIEW_THREAD_DISMISSED_TYPE',
   'REVIEW_THREAD_RESOLVED_TYPE',
 ].sort();
 

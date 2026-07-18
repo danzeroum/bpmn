@@ -349,6 +349,18 @@ Baseline for the diff block (e.g. the active version); absent → first version.
 
 `BpmnDiagram` \| `undefined`
 
+##### reviewStore?
+
+```ts
+optional reviewStore?: ReviewStore;
+```
+
+Review threads (Handoff 15 §2d, host injection): with a store AND a
+baseline, the diff block becomes the SPLIT CANVAS — the embedded
+BpmnDiffViewer with pins and the Threads/Mudanças tabs; dismissals are
+appended to the ledger (justified, never silent). Absent → this screen
+is IDENTICAL to before (declared degradation, §1.5).
+
 ##### onDecided?
 
 ```ts

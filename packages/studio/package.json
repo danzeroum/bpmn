@@ -32,6 +32,7 @@
     "react": ">=18"
   },
   "dependencies": {
+    "@buildtovalue/adapters-bpmn": "workspace:*",
     "@buildtovalue/audit": "workspace:*",
     "@buildtovalue/conformance": "workspace:*",
     "@buildtovalue/copilot": "workspace:*",
@@ -42,9 +43,6 @@
     "@buildtovalue/react": "workspace:*",
     "@buildtovalue/registry": "workspace:*",
     "@buildtovalue/soundness": "workspace:*"
-  },
-  "devDependencies": {
-    "@buildtovalue/adapters-bpmn": "workspace:*"
   },
   "keywords": [
     "governance",

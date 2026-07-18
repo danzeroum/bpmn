@@ -7,8 +7,9 @@ export * from './BpmnEditor.js';
 export { BpmnViewer, type BpmnViewerProps } from './viewer/BpmnViewer.js';
 export { ViewerCanvas, type ViewerCanvasProps } from './viewer/ViewerCanvas.js';
 export { BpmnDiffViewer, type BpmnDiffViewerProps } from './viewer/BpmnDiffViewer.js';
-export { createInMemoryReviewStore } from './review/ReviewStore.js';
+export { createInMemoryReviewStore, MIN_DISMISS_JUSTIFICATION } from './review/ReviewStore.js';
 export type { ReviewMessage, ReviewStore, ReviewThread } from './review/ReviewStore.js';
+export { reviewThreadsRule } from './review/reviewThreadsRule.js';
 
 // Contexts & hooks
 export * from './contexts/DiagramContext.js';

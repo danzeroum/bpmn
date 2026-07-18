@@ -9,6 +9,7 @@ import {
 import type { VersionRegistry } from '@buildtovalue/registry';
 import {
   AnchorSeal,
+  BpmnDiffViewer,
   buildApprovalPayloadFor,
   CanonicalPayloadCard,
   DiffView,
@@ -16,7 +17,9 @@ import {
   StatusBadge,
   useAnchorCycle,
   useT,
+  type ReviewStore,
 } from '@buildtovalue/react';
+import { reviewThreadDismissedEntry } from '@buildtovalue/adapters-bpmn';
 import {
   signApproval,
   type AnchorAdapter,
@@ -46,6 +49,14 @@ export interface ReviewScreenProps {
   converter?: { toXml(diagram: BpmnDiagram): string };
   /** Baseline for the diff block (e.g. the active version); absent → first version. */
   baselineOf?: (diagram: BpmnDiagram) => BpmnDiagram | undefined;
+  /**
+   * Review threads (Handoff 15 §2d, host injection): with a store AND a
+   * baseline, the diff block becomes the SPLIT CANVAS — the embedded
+   * BpmnDiffViewer with pins and the Threads/Mudanças tabs; dismissals are
+   * appended to the ledger (justified, never silent). Absent → this screen
+   * is IDENTICAL to before (declared degradation, §1.5).
+   */
+  reviewStore?: ReviewStore;
   /** Notifies the host so it persists the approval / reacts to the rejection. */
   onDecided?: (result: DecisionResult) => void;
   /** Renders the "abrir no canvas →" link when provided (read-only Designer). */
@@ -107,7 +118,7 @@ function signatureFingerprintOf(signed: SignedApproval): string {
  */
 export function ReviewScreen(props: ReviewScreenProps) {
   const t = useT();
-  const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onOpenInDesigner, replayAnalysisFor, explain, now, signer, anchor } =
+  const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onOpenInDesigner, replayAnalysisFor, explain, now, signer, anchor, reviewStore } =
     props;
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
@@ -239,6 +250,29 @@ export function ReviewScreen(props: ReviewScreenProps) {
     setReason('');
     onDecided?.(result);
   };
+
+  // §2d — the SAME blocking definition as reviewThreadsRule: open threads
+  // (not resolved, not dismissed, anchor still present) BLOCK the approve
+  // button; orphans never do. Re-render on store changes via subscribe.
+  const [threadsTick, setThreadsTick] = useState(0);
+  useEffect(
+    () => reviewStore?.subscribe?.(() => setThreadsTick((tick) => tick + 1)),
+    [reviewStore],
+  );
+  const blockingReviewThreads = useMemo(() => {
+    if (!reviewStore || !selected) return 0;
+    const diagram = selected.diagram;
+    return reviewStore
+      .list()
+      .filter(
+        (thread) =>
+          !thread.resolved &&
+          !thread.dismissed &&
+          (thread.elementId in diagram.nodes || thread.elementId in diagram.edges),
+      ).length;
+    // threadsTick força a recomputação quando o store notifica.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reviewStore, selected?.diagram, threadsTick]);
 
   const baseline = selected && baselineOf ? baselineOf(selected.diagram) : undefined;
   const diff = useMemo(
@@ -390,7 +424,26 @@ export function ReviewScreen(props: ReviewScreenProps) {
                   </button>
                 )}
               </div>
-              {diff ? (
+              {reviewStore && baseline ? (
+                /* §2d — split canvas: the SAME BpmnDiffViewer (V-2) with pins
+                   (V-4) and the Threads/Mudanças tabs, embedded read-only.
+                   Dismissals are audited: the host-owned ledger records the
+                   justified entry through onDismissThread. */
+                <div className="btv-studio-review-canvas" data-testid="review-split-canvas">
+                  <BpmnDiffViewer
+                    base={baseline}
+                    target={selected.diagram}
+                    reviewStore={reviewStore}
+                    author={actor.id}
+                    threadsTab
+                    onDismissThread={(thread, justification) => {
+                      void ledger.append(
+                        reviewThreadDismissedEntry(thread, actor, justification),
+                      );
+                    }}
+                  />
+                </div>
+              ) : diff ? (
                 <DiffView diff={diff} diagram={selected.diagram} />
               ) : (
                 <p className="btv-studio-muted">{t('review.diff.firstVersion')}</p>
@@ -498,6 +551,12 @@ export function ReviewScreen(props: ReviewScreenProps) {
                       type="button"
                       className="btv-studio-approve"
                       data-signing={signer ? true : undefined}
+                      disabled={blockingReviewThreads > 0}
+                      title={
+                        blockingReviewThreads > 0
+                          ? t('review.gate.blockedTitle', { count: blockingReviewThreads })
+                          : undefined
+                      }
                       onClick={() => void decide('approve')}
                     >
                       {signer ? (

@@ -19,6 +19,7 @@ import {
 import { EditorConfigProvider, useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { DiagramProvider } from '../contexts/DiagramContext.js';
 import { CanvasProvider, useCanvasStore } from '../contexts/CanvasContext.js';
+import { useDismissal } from '../gestures/useDismissal.js';
 import { panViewportTo, reducedMotion } from '../canvas/viewport.js';
 import { I18nProvider, useT } from '../i18n/I18nContext.js';
 import type { Messages } from '../i18n/messages.js';
@@ -73,6 +74,18 @@ export interface BpmnDiffViewerProps {
   reviewStore?: ReviewStore;
   /** Author recorded on comments written here (e.g. "ana.ruiz"). */
   author?: string;
+  /**
+   * Studio embed mode (§2d): the side list becomes the Threads/Mudanças tab
+   * pair, the "⚑ Aprovação bloqueada" banner appears while open threads
+   * block, and dismissals become available (justified, audited via
+   * `onDismissThread`).
+   */
+  threadsTab?: boolean;
+  /**
+   * Called AFTER a justified dismissal so the host records the audit entry
+   * (`reviewThreadDismissedEntry`) — a dismissal is never silent (§2d).
+   */
+  onDismissThread?: (thread: ReviewThread, justification: string) => void;
 }
 
 interface PopoverState {
@@ -94,6 +107,8 @@ export function BpmnDiffViewer({
   onClose,
   reviewStore,
   author,
+  threadsTab,
+  onDismissThread,
 }: BpmnDiffViewerProps) {
   const body = (
     <EditorConfigProvider plugins={plugins}>
@@ -103,6 +118,8 @@ export function BpmnDiffViewer({
         onClose={onClose}
         reviewStore={reviewStore}
         author={author}
+        threadsTab={threadsTab}
+        onDismissThread={onDismissThread}
       />
     </EditorConfigProvider>
   );
@@ -116,6 +133,8 @@ function DiagramShell({
   onClose,
   reviewStore,
   author,
+  threadsTab,
+  onDismissThread,
 }: Omit<BpmnDiffViewerProps, 'plugins' | 'messages'>) {
   const config = useEditorConfig();
   return (
@@ -133,6 +152,8 @@ function DiagramShell({
           onClose={onClose}
           reviewStore={reviewStore}
           author={author}
+          threadsTab={threadsTab}
+          onDismissThread={onDismissThread}
         />
       </CanvasProvider>
     </DiagramProvider>
@@ -172,6 +193,8 @@ function DiffViewerBody({
   onClose,
   reviewStore,
   author = 'anônimo',
+  threadsTab,
+  onDismissThread,
 }: Omit<BpmnDiffViewerProps, 'plugins' | 'messages'>) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const store = useCanvasStore();
@@ -274,8 +297,13 @@ function DiffViewerBody({
     if (survivor < 0) setVisited(false);
   };
 
-  // Standalone-surface keyboard (V-2 decision): F7 / Shift+F7 navigate; Esc
-  // closes the popover first, then hands off to the host's onClose.
+  // V-5: Esc rides the SINGLE dismissal stack (the debt declared in
+  // V-2/V-3/V-4 closes here — standalone AND embedded). Registration order
+  // fixes the pop order: diff mode (bottom) → ΔN popover → thread popover
+  // (top). One listener pops the top; never independent Esc handlers.
+  useDismissal('diff-mode', Boolean(onClose), () => onClose?.());
+  useDismissal('diff-popover', popover !== null, () => setPopover(null));
+  useDismissal('review-thread', threadPopover !== null, () => setThreadPopover(null));
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'F7') {
@@ -283,22 +311,13 @@ function DiffViewerBody({
         step(event.shiftKey ? -1 : 1);
       }
       if (event.key === 'Escape') {
-        // Standalone-surface order (V-2 decision): thread popover → ΔN
-        // popover → the host's close.
-        setThreadPopover((threadOpen) => {
-          if (threadOpen) return null;
-          setPopover((open) => {
-            if (open) return null;
-            onClose?.();
-            return open;
-          });
-          return threadOpen;
-        });
+        const stack = store.getState().dismissals;
+        stack[stack.length - 1]?.close();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [step, onClose]);
+  }, [step, store]);
 
   const wrapperPointOf = (event: MouseEvent) => {
     const bounds = wrapperRef.current?.getBoundingClientRect();
@@ -307,6 +326,49 @@ function DiffViewerBody({
 
   const openThreadPopover = (elementId: string, event: MouseEvent) => {
     setThreadPopover({ elementId, ...wrapperPointOf(event) });
+  };
+
+  // §2d — the same "blocking" definition as reviewThreadsRule: open, not
+  // dismissed, anchor still in the target. Counters stay consistent with the
+  // gate by construction.
+  const blockingThreads = useMemo(
+    () =>
+      threads.filter(
+        (thread) =>
+          !thread.resolved &&
+          !thread.dismissed &&
+          (thread.elementId in target.nodes || thread.elementId in target.edges),
+      ),
+    [threads, target],
+  );
+  const [sideTab, setSideTab] = useState<'threads' | 'changes'>('changes');
+
+  /** Pan to a thread's anchor (pin, or the v-base ghost for orphans) and
+   * open its popover — the Threads tab / banner navigation (§2d). */
+  const goToThread = (thread: ReviewThread) => {
+    const inTarget = target.nodes[thread.elementId] || target.edges[thread.elementId];
+    if (inTarget) {
+      const node = target.nodes[thread.elementId];
+      const point = node
+        ? { x: node.x + node.width / 2, y: node.y + node.height / 2 }
+        : (() => {
+            const route = edgeRoute(target, target.edges[thread.elementId]);
+            return route.length >= 2 ? route[Math.floor(route.length / 2) - 1] : null;
+          })();
+      if (!point) return;
+      const { viewport } = store.getState();
+      panViewportTo(store, point.x - viewport.width / 2, point.y - viewport.height / 2, panRaf);
+      setPulse(reducedMotion() ? null : { point, token: Date.now() });
+      setThreadPopover({ elementId: thread.elementId, x: 24, y: 72 });
+    } else {
+      goToOrphan(thread);
+    }
+  };
+
+  const dismissThread = (thread: ReviewThread, justification: string) => {
+    if (!reviewStore?.dismiss) return;
+    const updated = reviewStore.dismiss(thread.id, author, justification);
+    onDismissThread?.(updated, justification);
   };
 
   const onOpenThread = (elementId: string, text: string, aiAssisted?: boolean) => {
@@ -430,29 +492,122 @@ function DiffViewerBody({
           </button>
         )}
       </div>
-      {/* §2b — synced change list: click navigates, active follows. */}
-      <ul className="bpmnr-diff-list" data-testid="diff-list" role="listbox" aria-label={t('review.list.aria')}>
-        {filtered.map((entry, i) => (
-          <li
-            key={`${entry.elementKind}:${entry.elementId}`}
-            role="option"
-            aria-selected={visited && i === index}
-            data-diff-item={entry.elementId}
-            data-diff-item-kind={entry.kind}
-            className={visited && i === index ? 'bpmnr-diff-list-active' : undefined}
-            onClick={() => goTo(i)}
+      {/* §2d — approval-gate banner: same blocking definition as the rule. */}
+      {threadsTab && reviewStore && blockingThreads.length > 0 && (
+        <div className="bpmnr-review-gate" data-testid="review-gate-banner" role="alert">
+          {/* i18n-exempt — blocked flag glyph */}
+          <strong>⚑ {t('review.gate.blocked')}</strong>{' '}
+          {t('review.gate.count', { count: blockingThreads.length })}
+          <button
+            type="button"
+            data-testid="review-gate-goto"
+            onClick={() => goToThread(blockingThreads[0])}
           >
-            {/* i18n-exempt — notation codes */}
-            <span className="bpmnr-diff-list-code" data-kind={entry.kind}>
-              {TAG_TEXT[entry.kind] ?? `Δ${Object.keys(entry.changes ?? {}).length}`}
-            </span>
-            <span className="bpmnr-diff-list-label">{entry.label ?? entry.elementId}</span>
-            {entry.changes && (
-              <span className="bpmnr-diff-list-fields">{Object.keys(entry.changes).join(' · ')}</span>
-            )}
-          </li>
-        ))}
-      </ul>
+            {t('review.gate.goto')}
+          </button>
+        </div>
+      )}
+      {/* Side panel: plain change list (V-3), or the Threads/Mudanças tab
+          pair in the Studio embed (§2d) — SAME sources, no re-derivation. */}
+      <div className="bpmnr-diff-side">
+        {threadsTab && reviewStore && (
+          <div className="bpmnr-diff-side-tabs" role="tablist" aria-label={t('review.tabs.aria')}>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={sideTab === 'threads'}
+              data-review-tab="threads"
+              onClick={() => setSideTab('threads')}
+            >
+              {t('review.tabs.threads', { count: threads.length })}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={sideTab === 'changes'}
+              data-review-tab="changes"
+              onClick={() => setSideTab('changes')}
+            >
+              {t('review.tabs.changes', { count: filtered.length })}
+            </button>
+          </div>
+        )}
+        {threadsTab && reviewStore && sideTab === 'threads' ? (
+          <ul className="bpmnr-diff-list" data-testid="review-threads-list" role="listbox" aria-label={t('review.tabs.threadsAria')}>
+            {threads.map((thread) => {
+              const orphaned =
+                !target.nodes[thread.elementId] && !target.edges[thread.elementId];
+              const state = thread.resolved
+                ? 'resolved'
+                : thread.dismissed
+                  ? 'dismissed'
+                  : orphaned
+                    ? 'orphan'
+                    : 'open';
+              const label =
+                target.nodes[thread.elementId]?.label ??
+                target.edges[thread.elementId]?.label ??
+                base.nodes[thread.elementId]?.label ??
+                base.edges[thread.elementId]?.label ??
+                thread.elementId;
+              return (
+                <li
+                  key={thread.id}
+                  role="option"
+                  aria-selected={false}
+                  data-review-thread-item={thread.id}
+                  data-review-thread-state={state}
+                >
+                  <button type="button" className="bpmnr-diff-list-row" onClick={() => goToThread(thread)}>
+                    {/* i18n-exempt — state glyphs */}
+                    <span className="bpmnr-diff-list-code" data-kind={state}>
+                      {state === 'resolved' ? '✓' : state === 'orphan' ? '⚠' : state === 'dismissed' ? '◌' : '🟡'}
+                    </span>
+                    <span className="bpmnr-diff-list-label">{label}</span>
+                    <span className="bpmnr-diff-list-fields">
+                      {state === 'open'
+                        ? t('review.threadState.open', { count: thread.messages.length })
+                        : state === 'resolved'
+                          ? t('review.threadState.resolved')
+                          : state === 'dismissed'
+                            ? t('review.threadState.dismissed')
+                            : t('review.threadState.orphan')}
+                    </span>
+                  </button>
+                  {state === 'open' && reviewStore.dismiss && (
+                    <DismissControl
+                      onDismiss={(justification) => dismissThread(thread, justification)}
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <ul className="bpmnr-diff-list" data-testid="diff-list" role="listbox" aria-label={t('review.list.aria')}>
+            {filtered.map((entry, i) => (
+              <li
+                key={`${entry.elementKind}:${entry.elementId}`}
+                role="option"
+                aria-selected={visited && i === index}
+                data-diff-item={entry.elementId}
+                data-diff-item-kind={entry.kind}
+                className={visited && i === index ? 'bpmnr-diff-list-active' : undefined}
+                onClick={() => goTo(i)}
+              >
+                {/* i18n-exempt — notation codes */}
+                <span className="bpmnr-diff-list-code" data-kind={entry.kind}>
+                  {TAG_TEXT[entry.kind] ?? `Δ${Object.keys(entry.changes ?? {}).length}`}
+                </span>
+                <span className="bpmnr-diff-list-label">{entry.label ?? entry.elementId}</span>
+                {entry.changes && (
+                  <span className="bpmnr-diff-list-fields">{Object.keys(entry.changes).join(' · ')}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       {/* §2c — orphan notice: never silent, never dropped, navigable. */}
       {reviewStore && orphans.length > 0 && (
         <div className="bpmnr-review-orphans" data-testid="review-orphans" role="status">
@@ -949,6 +1104,50 @@ function DiffPopover({ popover, onClose }: { popover: PopoverState; onClose: () 
           </div>
         ))}
       </dl>
+    </div>
+  );
+}
+
+/** Justified dismissal control (§2d): never silent — the confirm button only
+ * enables at MIN_DISMISS_JUSTIFICATION characters; the host records the
+ * ledger entry through `onDismissThread`. */
+function DismissControl({ onDismiss }: { onDismiss: (justification: string) => void }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const [justification, setJustification] = useState('');
+  if (!open) {
+    return (
+      <button
+        type="button"
+        className="bpmnr-review-dismiss-toggle"
+        data-review-dismiss-toggle
+        onClick={() => setOpen(true)}
+      >
+        {t('review.dismiss.action')}
+      </button>
+    );
+  }
+  const valid = justification.trim().length >= 10;
+  return (
+    <div className="bpmnr-review-dismiss" data-review-dismiss>
+      <textarea
+        value={justification}
+        placeholder={t('review.dismiss.placeholder')}
+        aria-label={t('review.dismiss.inputAria')}
+        onChange={(event) => setJustification(event.target.value)}
+      />
+      <button
+        type="button"
+        data-review-dismiss-confirm
+        disabled={!valid}
+        onClick={() => {
+          onDismiss(justification.trim());
+          setOpen(false);
+          setJustification('');
+        }}
+      >
+        {t('review.dismiss.confirm')}
+      </button>
     </div>
   );
 }

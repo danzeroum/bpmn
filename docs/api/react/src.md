@@ -3721,6 +3721,28 @@ resolved: boolean;
 messages: ReviewMessage[];
 ```
 
+##### dismissed?
+
+```ts
+optional dismissed?: object;
+```
+
+Dismissed WITHOUT resolving (Handoff 15 §2d): releases the approval gate
+but is never silent — the justification is mandatory (min 10 chars) and
+the host records its own ledger entry (`reviewThreadDismissedEntry`).
+
+###### by
+
+```ts
+by: string;
+```
+
+###### justification
+
+```ts
+justification: string;
+```
+
 ***
 
 ### ReviewStore
@@ -3794,6 +3816,37 @@ Marks a thread resolved; returns the updated thread.
 ###### Parameters
 
 ###### threadId
+
+`string`
+
+###### Returns
+
+[`ReviewThread`](#reviewthread)
+
+##### dismiss()?
+
+```ts
+optional dismiss(
+   threadId, 
+   by, 
+   justification): ReviewThread;
+```
+
+Dismisses WITHOUT resolving (gate release with audit trail, §2d).
+Implementations MUST reject justifications shorter than
+[MIN\_DISMISS\_JUSTIFICATION](#min_dismiss_justification). Optional — absent hides the action.
+
+###### Parameters
+
+###### threadId
+
+`string`
+
+###### by
+
+`string`
+
+###### justification
 
 `string`
 
@@ -6151,6 +6204,40 @@ optional author?: string;
 
 Author recorded on comments written here (e.g. "ana.ruiz").
 
+##### threadsTab?
+
+```ts
+optional threadsTab?: boolean;
+```
+
+Studio embed mode (§2d): the side list becomes the Threads/Mudanças tab
+pair, the "⚑ Aprovação bloqueada" banner appears while open threads
+block, and dismissals become available (justified, audited via
+`onDismissThread`).
+
+##### onDismissThread?
+
+```ts
+optional onDismissThread?: (thread, justification) => void;
+```
+
+Called AFTER a justified dismissal so the host records the audit entry
+(`reviewThreadDismissedEntry`) — a dismissal is never silent (§2d).
+
+###### Parameters
+
+###### thread
+
+[`ReviewThread`](#reviewthread)
+
+###### justification
+
+`string`
+
+###### Returns
+
+`void`
+
 ***
 
 ### BpmnViewerProps
@@ -6818,6 +6905,16 @@ readonly node.created: "element.added" = 'element.added';
 ```
 
 Old palette-insert event — superseded by `element.added` (kind: 'node').
+
+***
+
+### MIN\_DISMISS\_JUSTIFICATION
+
+```ts
+const MIN_DISMISS_JUSTIFICATION: 10 = 10;
+```
+
+Minimum justification length for a dismissal — never a silent release.
 
 ***
 
@@ -9522,6 +9619,35 @@ readonly [`ReviewThread`](#reviewthread)[] = `[]`
 #### Returns
 
 [`ReviewStore`](#reviewstore)
+
+***
+
+### reviewThreadsRule()
+
+```ts
+function reviewThreadsRule(threads): PromotionRule;
+```
+
+Approval gate for review threads (Handoff 15 §2d) — the EXACT mold of
+`soundnessPromotionRule`: a `PromotionRule` the host plugs into
+`LifecycleConfig.promotionRules`, surfaced by `evaluateGates` as a
+`rule:N` checklist gate and enforced by `promote()`.
+
+Discipline (checklist 2d + C2 of H9): only OPEN threads block —
+`resolved` and `dismissed` (justified, audited) release the gate, and
+ORPHANED threads (anchor no longer in the diagram under promotion) never
+block: the element already left. Blocking is an ERROR verdict, never a
+warning.
+
+#### Parameters
+
+##### threads
+
+() => readonly [`ReviewThread`](#reviewthread)[]
+
+#### Returns
+
+`PromotionRule`
 
 ***
 
