@@ -142,6 +142,10 @@ export function BpmnSimulator({
           advanceLabel={advanceLabel}
           boundaryOptions={state.boundaryOptions}
           onFireBoundary={sim.fireBoundary}
+          errorThrowOptions={state.errorThrowOptions}
+          onThrowError={(host, errorRef) =>
+            sim.choose({ kind: 'error', host, ...(errorRef !== undefined ? { errorRef } : {}) })
+          }
           stepMode={sim.stepMode}
           onToggleStepMode={sim.setStepMode}
           coverage={sim.coverage}

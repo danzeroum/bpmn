@@ -1,5 +1,10 @@
 import type { ReactNode } from 'react';
-import type { BoundaryOption, CoverageSummary, TransitionRecord } from '@buildtovalue/simulation';
+import type {
+  BoundaryOption,
+  CoverageSummary,
+  ErrorThrowOption,
+  TransitionRecord,
+} from '@buildtovalue/simulation';
 import { useT } from '../i18n/I18nContext.js';
 
 export interface SimulationPanelProps {
@@ -11,6 +16,9 @@ export interface SimulationPanelProps {
   advanceLabel: string;
   boundaryOptions: BoundaryOption[];
   onFireBoundary: (boundaryId: string) => void;
+  /** "Throw error" cards (E-6 §3e) — user picks the ERROR, engine matches. */
+  errorThrowOptions?: ErrorThrowOption[];
+  onThrowError?: (host: string, errorRef?: string) => void;
   stepMode: boolean;
   onToggleStepMode: (on: boolean) => void;
   coverage: CoverageSummary;
@@ -37,6 +45,8 @@ export function SimulationPanel(props: SimulationPanelProps) {
     advanceLabel,
     boundaryOptions,
     onFireBoundary,
+    errorThrowOptions = [],
+    onThrowError,
     stepMode,
     onToggleStepMode,
     coverage,
@@ -85,6 +95,32 @@ export function SimulationPanel(props: SimulationPanelProps) {
           {boundary.interrupting ? '' : t('sim.boundary.nonInterrupting')}
         </button>
       ))}
+
+      {/* E-6 (§3e): the INVERTED card — the user picks the ERROR (named
+          definition or the uncatalogued one, reforço 10), the ENGINE resolves
+          the boundary by matching; ambiguity is a declared stop. */}
+      {onThrowError &&
+        errorThrowOptions.map((card) => (
+          <div key={card.host} className="bpmnr-sim-card" data-sim-throw-card={card.host}>
+            <div className="bpmnr-sim-card-title">
+              {t('sim.error.title', { host: card.hostLabel })}
+            </div>
+            {card.options.map((option) => (
+              <button
+                key={option.errorRef ?? '(uncatalogued)'}
+                type="button"
+                data-sim-throw-error={option.errorRef ?? ''}
+                onClick={() => onThrowError(card.host, option.errorRef)}
+                className="bpmnr-sim-btn bpmnr-sim-btn-boundary"
+              >
+                {/* i18n-exempt — lightning glyph */}⚡{' '}
+                {option.errorRef !== undefined
+                  ? t('sim.error.throw', { label: option.label ?? option.errorRef })
+                  : t('sim.error.uncatalogued')}
+              </button>
+            ))}
+          </div>
+        ))}
 
       <label className="bpmnr-sim-checkbox">
         <input

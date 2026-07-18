@@ -41,6 +41,13 @@ export interface SimNode {
   boundaryHost?: string;
   /** Interrupting boundary (cancels the host) vs non-interrupting (spawns). */
   interrupting?: boolean;
+  /** Event kind (`properties.eventDefinition`) — E-6 matching input. */
+  eventKind?: string;
+  /** Named-definition reference (`properties.eventDefinitionRef`) — the
+   * matching KEY (3a ids; E-3 `gov-*` mirrors match identically). */
+  eventRef?: string;
+  /** Resolved definition name for UI labels (falls back to the ref). */
+  eventRefLabel?: string;
   isStart: boolean;
   isEnd: boolean;
 }
@@ -67,6 +74,25 @@ export interface BoundaryOption {
   boundary: string;
   interrupting: boolean;
   label: string;
+  /** Event kind of the boundary (`timer`, `message`, `error`…), when any. */
+  eventKind?: string;
+  /** Named-definition reference the boundary matches on (E-6). */
+  eventRef?: string;
+  /** Error boundary WITHOUT errorRef — the DECLARED catch-all (E-6). */
+  catchAll?: boolean;
+}
+
+/**
+ * "Throw error" choices for one host with a resting token (E-6, §3e): the
+ * user picks the ERROR (by named definition), the ENGINE resolves the
+ * boundary by matching — the inverse of the manual boundary card. The
+ * `errorRef: undefined` entry is the UNCATALOGUED error (reforço 10), the UI
+ * path that exercises the catch-all.
+ */
+export interface ErrorThrowOption {
+  host: string;
+  hostLabel: string;
+  options: Array<{ errorRef?: string; label?: string }>;
 }
 
 /** A decision applied to the engine; the ordered list of these IS a scenario. */
@@ -74,7 +100,12 @@ export type Decision =
   | { kind: 'exclusive' | 'eventBased'; gateway: string; edge: string }
   | { kind: 'inclusive'; gateway: string; edges: string[] }
   | { kind: 'boundary'; host: string; boundary: string }
-  | { kind: 'decision'; node: string; context: Record<string, number | string | boolean> };
+  | { kind: 'decision'; node: string; context: Record<string, number | string | boolean> }
+  // E-6 (§3e): thrown events — the engine resolves the destination by
+  // matching; serialized in scenarios and replayed through the SAME matching.
+  | { kind: 'error'; host: string; errorRef?: string }
+  | { kind: 'signal'; ref: string }
+  | { kind: 'message'; ref: string };
 
 /**
  * Outcome of evaluating a node's decision table (Handoff 9 SF-2). Produced by
@@ -138,6 +169,7 @@ export interface TransitionRecord {
     | 'join-wait' // a token arrived at a sync join, still waiting
     | 'join-fire' // a sync join completed
     | 'boundary' // a boundary event fired
+    | 'event' // a thrown error/signal/message resolved by MATCHING (E-6, §3e)
     | 'decision' // a businessRuleTask decision table fired (SF-2)
     | 'decision-blocked' // declared non-simulable decision — token stopped (§5)
     | 'end'; // a token reached an end/sink and was consumed
@@ -170,6 +202,8 @@ export interface SimulationState {
   deadlocked: boolean;
   pendingChoice: PendingChoice | null;
   boundaryOptions: BoundaryOption[];
+  /** "Throw error" cards per host with a resting token (E-6, §3e). */
+  errorThrowOptions: ErrorThrowOption[];
   /** A businessRuleTask waiting for decision inputs (SF-2), if any. */
   pendingDecisionInput: PendingDecisionInput | null;
   /** Token stopped on a declared non-simulable decision (§5), if any. */

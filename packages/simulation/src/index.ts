@@ -31,6 +31,7 @@ export type {
   BoundaryOption,
   Decision,
   DecisionEvaluator,
+  ErrorThrowOption,
   DecisionOutcome,
   PendingDecisionInput,
   GatewayKind,

@@ -2,11 +2,14 @@ import {
   activeEdges,
   activeNodes,
   boundaryAttachedTo,
+  eventDefinitionRefOf,
+  findEventDefinition,
   flowScopeOf,
   isFlowNode,
   isNonInterrupting,
   NON_FLOW_EDGE_TYPES,
   type BpmnDiagram,
+  type EventDefinitionRefKind,
 } from '@buildtovalue/core';
 import type { GatewayKind, SimEdge, SimNode } from './types.js';
 
@@ -80,6 +83,21 @@ export function buildSimGraph(diagram: BpmnDiagram, scope: string | undefined = 
       isStart: node.type === 'startEvent',
       isEnd: node.type === 'endEvent',
     };
+    // E-6 (§3e): event kind + named-definition ref feed the matching; the
+    // resolved name (E-3 gov-* mirrors are ordinary definitions — identical
+    // lookup by id) labels the "throw" cards.
+    const eventKind = node.properties.eventDefinition;
+    if (typeof eventKind === 'string') {
+      sim.eventKind = eventKind;
+      const ref = eventDefinitionRefOf(node);
+      if (ref !== undefined) {
+        sim.eventRef = ref;
+        if (eventKind === 'message' || eventKind === 'signal' || eventKind === 'error') {
+          sim.eventRefLabel =
+            findEventDefinition(diagram, eventKind as EventDefinitionRefKind, ref)?.name ?? ref;
+        }
+      }
+    }
     if (host && inScope.has(host)) {
       sim.boundaryHost = host;
       sim.interrupting = !isNonInterrupting(node);

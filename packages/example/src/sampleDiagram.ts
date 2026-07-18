@@ -748,6 +748,63 @@ export function buildEventIoDiagram(): BpmnDiagram {
 }
 
 /**
+ * `?simulate=1&errors=1` — Handoff 16 E-6 (§3e): error-matching demo. `host`
+ * carries a SPECIFIC error boundary (err-pay) + a declared CATCH-ALL; `dup`
+ * carries TWO boundaries on the SAME error (genuine ambiguity → honest stop).
+ */
+export function buildErrorSimDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-error-sim', name: 'Matching de erros', createdBy: 'demo' });
+  const v = diagram.version.id;
+  diagram.definitions = {
+    messages: [],
+    signals: [],
+    errors: [
+      { id: 'err-pay', name: 'Falha de pagamento' },
+      { id: 'err-dup', name: 'Erro duplicado' },
+    ],
+  };
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  const boundary = (id: string, label: string, host: string, x: number, y: number, ref?: string) =>
+    make('boundaryEvent', id, label, x, y, {
+      eventDefinition: 'error',
+      attachedToRef: host,
+      ...(ref ? { eventDefinitionRef: ref } : {}),
+    });
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 40, 150),
+    host: make('task', 'host', 'Cobrar pagamento', 160, 120),
+    dup: make('task', 'dup', 'Conciliar', 360, 120, {}),
+    end: make('endEvent', 'end', 'Fim', 560, 150),
+    b1: boundary('b1', 'Pagamento falhou', 'host', 240, 180, 'err-pay'),
+    ball: boundary('ball', 'Qualquer erro', 'host', 200, 180),
+    d1: boundary('d1', 'Duplicata A', 'dup', 420, 180, 'err-dup'),
+    d2: boundary('d2', 'Duplicata B', 'dup', 460, 180, 'err-dup'),
+    r1: make('task', 'r1', 'Reprocessar', 240, 300),
+    r2: make('task', 'r2', 'Registrar falha', 80, 300),
+    f1: make('endEvent', 'f1', 'Fim (retry)', 240, 420),
+    f2: make('endEvent', 'f2', 'Fim (falha)', 80, 420),
+    g1: make('endEvent', 'g1', 'Fim (A)', 420, 300),
+    g2: make('endEvent', 'g2', 'Fim (B)', 460, 300),
+  };
+  const mkEdge = (id: string, sourceId: string, targetId: string) =>
+    createEdge({ id, sourceId, targetId, versionId: v });
+  diagram.edges = {
+    e1: mkEdge('e1', 'start', 'host'),
+    e2: mkEdge('e2', 'host', 'dup'),
+    e3: mkEdge('e3', 'dup', 'end'),
+    e4: mkEdge('e4', 'b1', 'r1'),
+    e5: mkEdge('e5', 'ball', 'r2'),
+    e6: mkEdge('e6', 'r1', 'f1'),
+    e7: mkEdge('e7', 'r2', 'f2'),
+    e8: mkEdge('e8', 'd1', 'g1'),
+    e9: mkEdge('e9', 'd2', 'g2'),
+  };
+  return diagram;
+}
+
+/**
  * `?timer=1` — Handoff 16 E-5 (§3d): a timer catch with a MALFORMED duration
  * (`P1H` — hours require the T designator) and a message catch with no named
  * definition, so the lint dock lists TIMER_MALFORMED (no mechanical fix) and
