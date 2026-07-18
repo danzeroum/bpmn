@@ -263,6 +263,38 @@ Start events don't take incoming sequence flow; end events don't emit.
 
 ***
 
+### evtStartThrowRule
+
+```ts
+const evtStartThrowRule: ValidationRule;
+```
+
+Start events only CATCH: a throw-only or intermediate-only kind is an error.
+
+***
+
+### evtEndCatchRule
+
+```ts
+const evtEndCatchRule: ValidationRule;
+```
+
+End events only THROW: a catch-only or intermediate-only kind is an error.
+
+***
+
+### evtErrorStartToplevelRule
+
+```ts
+const evtErrorStartToplevelRule: ValidationRule;
+```
+
+An error START event only exists inside an event sub-process — the SAME
+containment predicate (`nodeParentId` → subProcess) the editor's Execução
+matrix uses, so lint and tab agree by construction.
+
+***
+
 ### ETIQUETTE\_RULES
 
 ```ts
@@ -293,6 +325,31 @@ const conditionalFlowsRule: ValidationRule;
 Every outgoing flow of a forking exclusive/inclusive gateway needs a
 condition (or must be the default flow) — otherwise the engine picks
 arbitrarily or rejects the deploy.
+
+***
+
+### evtRefMissingRule
+
+```ts
+const evtRefMissingRule: ValidationRule;
+```
+
+An executable message/signal/error event needs its NAMED definition (3a) —
+an engine correlates by the definition, not by the node label. Warning:
+the model still parses and renders. Distinct from the E-3 `SIG_REF_MISSING`
+(a GOVERNED binding that fails to resolve) — this is "no definition at all".
+
+***
+
+### timerMalformedRule
+
+```ts
+const timerMalformedRule: ValidationRule;
+```
+
+A present-but-malformed timer expression is an error the PARSER decides
+(E-5 §1 — the P1M/PT1M trap lives there, once). Absent timer = no issue:
+modelling can stay abstract; only a broken CLAIM is flagged.
 
 ***
 

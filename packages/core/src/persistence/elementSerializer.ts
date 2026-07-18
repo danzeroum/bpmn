@@ -8,6 +8,7 @@ import {
   eventDefinitionOf,
   nodeParentId,
 } from '../model/types.js';
+import { timerPropertyOf } from '../model/iso8601.js';
 import type { NodeTypeRegistry } from '../model/registry.js';
 import type { XmlBuilder } from '../xml/XmlBuilder.js';
 import type { ExtensionHandler } from './extensionHandler.js';
@@ -130,6 +131,12 @@ export class ElementSerializer {
         ? node.properties.eventDefinitionRef
         : undefined;
     if (eventRef !== undefined) reserved.add('eventDefinitionRef');
+    // Canonical timer (Handoff 16 E-5): emitted as the standard
+    // timeDate/timeDuration/timeCycle child of the timerEventDefinition —
+    // ONLY on timer events (reforço 10: on any other node the property stays
+    // in the bpmnr: soup like everything else, never an orphan OMG child).
+    const timer = eventDef === 'timer' ? timerPropertyOf(node) : undefined;
+    if (timer !== undefined) reserved.add('timer');
     if (marker) reserved.add('marker');
     if (attachedToRef !== undefined) reserved.add('attachedToRef');
     if (nonInterrupting) reserved.add('cancelActivity');
@@ -191,10 +198,23 @@ export class ElementSerializer {
       });
     }
     if (eventDef !== undefined) {
-      xml.element(`bpmn:${eventDef}EventDefinition`, {
+      const defAttrs = {
         id: `${node.id}_def`,
         ...(refAttrName && eventRef !== undefined ? { [refAttrName]: eventRef } : {}),
-      });
+      };
+      if (timer !== undefined) {
+        const timerTag =
+          timer.kind === 'date'
+            ? 'bpmn:timeDate'
+            : timer.kind === 'duration'
+              ? 'bpmn:timeDuration'
+              : 'bpmn:timeCycle';
+        xml.open(`bpmn:${eventDef}EventDefinition`, defAttrs);
+        xml.element(timerTag, {}, timer.expression);
+        xml.close();
+      } else {
+        xml.element(`bpmn:${eventDef}EventDefinition`, defAttrs);
+      }
     }
     if (marker === 'loop') {
       xml.element('bpmn:standardLoopCharacteristics', {});

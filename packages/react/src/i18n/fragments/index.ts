@@ -16,6 +16,7 @@ import { lint } from './lint.js';
 import { review } from './review.js';
 import { commandPalette } from './commandPalette.js';
 import { eventDefs } from './eventDefs.js';
+import { timer } from './timer.js';
 
 /**
  * Every dictionary fragment (Handoff 11 N-6). One entry per migrated surface
@@ -40,4 +41,5 @@ export const FRAGMENTS: Array<{ en: Messages; ptBR: Messages }> = [
   review,
   commandPalette,
   eventDefs,
+  timer,
 ];

@@ -3061,6 +3061,76 @@ optional id?: string;
 
 ***
 
+### TimerProperty
+
+The canonical timer property of a timer event (E-0 decision 3).
+
+#### Properties
+
+##### kind
+
+```ts
+kind: TimerKind;
+```
+
+##### expression
+
+```ts
+expression: string;
+```
+
+***
+
+### DurationParts
+
+Numeric components of a parsed duration (absent units are 0).
+
+#### Properties
+
+##### years
+
+```ts
+years: number;
+```
+
+##### months
+
+```ts
+months: number;
+```
+
+##### weeks
+
+```ts
+weeks: number;
+```
+
+##### days
+
+```ts
+days: number;
+```
+
+##### hours
+
+```ts
+hours: number;
+```
+
+##### minutes
+
+```ts
+minutes: number;
+```
+
+##### seconds
+
+```ts
+seconds: number;
+```
+
+***
+
 ### NodeTypeDefinition
 
 #### Properties
@@ -4307,6 +4377,134 @@ type AlignMode = "left" | "centerX" | "right" | "top" | "centerY" | "bottom";
 
 ```ts
 type EventDefinitionRefKind = typeof EVENT_DEFINITION_REF_KINDS[number];
+```
+
+***
+
+### TimerKind
+
+```ts
+type TimerKind = "date" | "duration" | "cycle";
+```
+
+ISO 8601 timer expressions — headless parser (Handoff 16 E-5, §3d).
+Covers the three OMG timer flavors: `date` (`bpmn:timeDate`, a dateTime),
+`duration` (`bpmn:timeDuration`, `PnYnMnDTnHnMnS`) and `cycle`
+(`bpmn:timeCycle`, `Rn/…`). The result is STRUCTURED so the editor can
+build a human preview without re-parsing — and the P1M (1 month) vs PT1M
+(1 minute) trap is decided here, once, with a binding test.
+Never throws: any input, however broken, returns `{ valid: false }`.
+
+***
+
+### TimerParseResult
+
+```ts
+type TimerParseResult = 
+  | {
+  valid: true;
+  kind: "date";
+  date: string;
+}
+  | {
+  valid: true;
+  kind: "duration";
+  parts: DurationParts;
+}
+  | {
+  valid: true;
+  kind: "cycle";
+  repetitions: number | null;
+  start?: string;
+  parts: DurationParts;
+}
+  | {
+  valid: false;
+  error: string;
+};
+```
+
+#### Union Members
+
+##### Type Literal
+
+```ts
+{
+  valid: true;
+  kind: "date";
+  date: string;
+}
+```
+
+***
+
+##### Type Literal
+
+```ts
+{
+  valid: true;
+  kind: "duration";
+  parts: DurationParts;
+}
+```
+
+***
+
+##### Type Literal
+
+```ts
+{
+  valid: true;
+  kind: "cycle";
+  repetitions: number | null;
+  start?: string;
+  parts: DurationParts;
+}
+```
+
+###### valid
+
+```ts
+valid: true;
+```
+
+###### kind
+
+```ts
+kind: "cycle";
+```
+
+###### repetitions
+
+```ts
+repetitions: number | null;
+```
+
+`null` = unbounded (`R/…`).
+
+###### start?
+
+```ts
+optional start?: string;
+```
+
+Optional anchor dateTime (`R3/2026-01-01T00:00:00Z/P1D`).
+
+###### parts
+
+```ts
+parts: DurationParts;
+```
+
+***
+
+##### Type Literal
+
+```ts
+{
+  valid: false;
+  error: string;
+}
 ```
 
 ***
@@ -6610,6 +6808,53 @@ Scope a node's flow runs in: a boundary event works in its host's scope.
 #### Returns
 
 `string` \| `undefined`
+
+***
+
+### parseTimerExpression()
+
+```ts
+function parseTimerExpression(kind, expression): TimerParseResult;
+```
+
+Parses a timer expression for its declared kind. Total — never throws.
+
+#### Parameters
+
+##### kind
+
+[`TimerKind`](#timerkind)
+
+##### expression
+
+`string`
+
+#### Returns
+
+[`TimerParseResult`](#timerparseresult)
+
+***
+
+### timerPropertyOf()
+
+```ts
+function timerPropertyOf(node): TimerProperty | undefined;
+```
+
+The canonical `properties.timer` of a node, when well-shaped. Kind-agnostic
+on purpose: the CONVERTER additionally requires the node to be a TIMER
+event before emitting OMG children (E-5 reforço 10) — on any other node the
+property stays in the ordinary `bpmnr:` soup.
+
+#### Parameters
+
+##### node
+
+[`BpmnNode`](#bpmnnode)
+
+#### Returns
+
+[`TimerProperty`](#timerproperty) \| `undefined`
 
 ***
 

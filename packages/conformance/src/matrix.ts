@@ -55,6 +55,10 @@ export const CONFORMANCE_MATRIX: ConformanceEntry[] = [
   { element: 'bpmn:error (root)', status: 'supported', conformanceClass: 'analytic', mappedTo: 'definitions.errors[]', notes: 'Named definition with errorCode; referenced via errorRef.' },
   { element: 'bpmn:messageEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'message'" },
   { element: 'bpmn:timerEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'timer'" },
+  // Handoff 16 E-5 (§3d): canonical timer expression as the standard child.
+  { element: 'bpmn:timeDate', status: 'supported', conformanceClass: 'analytic', mappedTo: 'properties.timer', notes: "Canonical { kind: 'date', expression } — validated by the headless ISO 8601 parser (TIMER_MALFORMED)." },
+  { element: 'bpmn:timeDuration', status: 'supported', conformanceClass: 'analytic', mappedTo: 'properties.timer', notes: "Canonical { kind: 'duration', expression } (PnYnMnDTnHnMnS)." },
+  { element: 'bpmn:timeCycle', status: 'supported', conformanceClass: 'analytic', mappedTo: 'properties.timer', notes: "Canonical { kind: 'cycle', expression } (Rn/…)." },
   { element: 'bpmn:errorEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'error'" },
   { element: 'bpmn:signalEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'signal'" },
   { element: 'bpmn:escalationEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'escalation'" },

@@ -13,6 +13,7 @@ import {
   CopilotPanel,
   BpmnEditor,
   eventBindingRule,
+  LintPanel,
   BpmnReplay,
   BpmnSimulator,
   EdgePedigreeStrip,
@@ -66,6 +67,7 @@ import {
   DEMO_DECISION_TABLE,
   buildEventDefsDiagram,
   buildEventIoDiagram,
+  buildTimerDiagram,
 } from './sampleDiagram.js';
 import { LifecyclePanel } from './LifecyclePanel.js';
 import { AuditPanel } from './AuditPanel.js';
@@ -356,6 +358,7 @@ export function App() {
     if (params.get('deadlock')) return buildDeadlockDiagram();
     if (params.get('boundary')) return buildBoundaryDiagram();
     if (params.get('eventio')) return buildEventIoDiagram();
+    if (params.get('timer')) return buildTimerDiagram();
     if (params.get('events')) return buildEventDefsDiagram(params.get('lib') !== null);
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
@@ -585,6 +588,9 @@ export function App() {
           }}
         >
           <SidePanels />
+          {/* E-5 (§3d): the lint dock over the timer demo — TIMER_MALFORMED +
+              EVT_REF_MISSING ride the EXISTING U-5 surface, zero new UI. */}
+          {params.get('timer') && <LintPanel />}
           {!drdMode && (
             <DecisionPeek
               resolveDecision={(ref) => DEMO_DECISIONS.find((d) => d.ref === ref)}

@@ -21,6 +21,12 @@ const EXPECTED_EXPORTS = [
   'LINT_PROFILES',
   'lintFindings',
   'fixCommandFor',
+  // Handoff 16 E-5 (§3d) — EVT_* / TIMER_* rules.
+  'evtStartThrowRule',
+  'evtEndCatchRule',
+  'evtErrorStartToplevelRule',
+  'evtRefMissingRule',
+  'timerMalformedRule',
 ].sort();
 
 describe('@buildtovalue/lint public API surface', () => {

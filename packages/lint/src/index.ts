@@ -2,14 +2,20 @@ import {
   activeEdges,
   activeNodes,
   addEdgeCommand,
+  addEventDefinitionCommand,
   compositeCommand,
   createEdge,
   isContainerType,
   isEventType,
   isFlowEdge,
   isFlowNode,
+  nextEventDefinitionId,
+  nodeParentId,
+  parseTimerExpression,
   removeEdgeCommand,
   removeNodeCommand,
+  timerPropertyOf,
+  updateNodeCommand,
   type BpmnDiagram,
   type BpmnEdge,
   type BpmnNode,
@@ -177,6 +183,65 @@ export const eventEndpointsRule: ValidationRule = (diagram) => {
   return issues;
 };
 
+// ---------------------------------------- event-definition rules (E-5, §3d)
+
+/** The declared kind of an event node, if any. */
+function eventKindOf(node: BpmnNode): string | undefined {
+  const kind = node.properties.eventDefinition;
+  return typeof kind === 'string' ? kind : undefined;
+}
+
+/** Kinds a START event can never carry (throw-only / intermediate-only). */
+const START_FORBIDDEN_KINDS = new Set(['terminate', 'link']);
+/** Kinds an END event can never carry (catch-only / intermediate-only). */
+const END_FORBIDDEN_KINDS = new Set(['timer', 'conditional', 'link']);
+/** Kinds that reference a named definition (3a). `escalation` stays in the
+ * compensation/choreography pendency — deliberately absent from every set. */
+const NAMED_REF_KINDS = new Set(['message', 'signal', 'error']);
+
+/** Start events only CATCH: a throw-only or intermediate-only kind is an error. */
+export const evtStartThrowRule: ValidationRule = (diagram) =>
+  activeNodes(diagram)
+    .filter(
+      (node) => node.type === 'startEvent' && START_FORBIDDEN_KINDS.has(eventKindOf(node) ?? ''),
+    )
+    .map((node) => ({
+      code: 'EVT_START_THROW',
+      severity: 'error' as const,
+      message: `Start event "${node.label || node.id}" carries a ${eventKindOf(node)} definition — start events only catch`,
+      nodeId: node.id,
+    }));
+
+/** End events only THROW: a catch-only or intermediate-only kind is an error. */
+export const evtEndCatchRule: ValidationRule = (diagram) =>
+  activeNodes(diagram)
+    .filter((node) => node.type === 'endEvent' && END_FORBIDDEN_KINDS.has(eventKindOf(node) ?? ''))
+    .map((node) => ({
+      code: 'EVT_END_CATCH',
+      severity: 'error' as const,
+      message: `End event "${node.label || node.id}" carries a ${eventKindOf(node)} definition — end events only throw`,
+      nodeId: node.id,
+    }));
+
+/**
+ * An error START event only exists inside an event sub-process — the SAME
+ * containment predicate (`nodeParentId` → subProcess) the editor's Execução
+ * matrix uses, so lint and tab agree by construction.
+ */
+export const evtErrorStartToplevelRule: ValidationRule = (diagram) =>
+  activeNodes(diagram)
+    .filter((node) => {
+      if (node.type !== 'startEvent' || eventKindOf(node) !== 'error') return false;
+      const parentId = nodeParentId(node);
+      return (parentId ? diagram.nodes[parentId]?.type : undefined) !== 'subProcess';
+    })
+    .map((node) => ({
+      code: 'EVT_ERROR_START_TOPLEVEL',
+      severity: 'error' as const,
+      message: `Error start event "${node.label || node.id}" sits at the top level — an error start only catches inside an event sub-process`,
+      nodeId: node.id,
+    }));
+
 export const ETIQUETTE_RULES: ValidationRule[] = [
   labelRequiredRule,
   superfluousGatewayRule,
@@ -184,6 +249,9 @@ export const ETIQUETTE_RULES: ValidationRule[] = [
   implicitJoinRule,
   duplicateFlowRule,
   eventEndpointsRule,
+  evtStartThrowRule,
+  evtEndCatchRule,
+  evtErrorStartToplevelRule,
 ];
 
 // -------------------------------------------------------------- executability
@@ -266,9 +334,55 @@ export const conditionalFlowsRule: ValidationRule = (diagram) => {
   return issues;
 };
 
+/**
+ * An executable message/signal/error event needs its NAMED definition (3a) —
+ * an engine correlates by the definition, not by the node label. Warning:
+ * the model still parses and renders. Distinct from the E-3 `SIG_REF_MISSING`
+ * (a GOVERNED binding that fails to resolve) — this is "no definition at all".
+ */
+export const evtRefMissingRule: ValidationRule = (diagram) =>
+  activeNodes(diagram)
+    .filter((node) => {
+      const kind = eventKindOf(node);
+      if (kind === undefined || !NAMED_REF_KINDS.has(kind) || !isEventType(node.type)) return false;
+      const ref = node.properties.eventDefinitionRef;
+      return typeof ref !== 'string' || ref === '';
+    })
+    .map((node) => ({
+      code: 'EVT_REF_MISSING',
+      severity: 'warning' as const,
+      message: `Event "${node.label || node.id}" carries a ${eventKindOf(node)} definition with no named ${eventKindOf(node)} — create one and reference it`,
+      nodeId: node.id,
+    }));
+
+/**
+ * A present-but-malformed timer expression is an error the PARSER decides
+ * (E-5 §1 — the P1M/PT1M trap lives there, once). Absent timer = no issue:
+ * modelling can stay abstract; only a broken CLAIM is flagged.
+ */
+export const timerMalformedRule: ValidationRule = (diagram) =>
+  activeNodes(diagram).flatMap((node) => {
+    if (eventKindOf(node) !== 'timer') return [];
+    const timer = timerPropertyOf(node);
+    if (timer === undefined) return [];
+    const parsed = parseTimerExpression(timer.kind, timer.expression);
+    return parsed.valid
+      ? []
+      : [
+          {
+            code: 'TIMER_MALFORMED',
+            severity: 'error' as const,
+            message: `Timer "${node.label || node.id}" has a malformed ${timer.kind} expression "${timer.expression}" — ${parsed.error}`,
+            nodeId: node.id,
+          },
+        ];
+  });
+
 export const EXECUTABILITY_RULES: ValidationRule[] = [
   serviceTaskImplementationRule,
   conditionalFlowsRule,
+  evtRefMissingRule,
+  timerMalformedRule,
 ];
 
 export const ALL_LINT_RULES: ValidationRule[] = [...ETIQUETTE_RULES, ...EXECUTABILITY_RULES];
@@ -379,10 +493,36 @@ function fixEventEndpoints(ctx: LintFixContext): Command | null {
     : compositeCommand('Remove invalid event flows', commands);
 }
 
+/**
+ * EVT_REF_MISSING quick-fix (E-5 reforço 9): ONE composite creating a
+ * definition of the event's OWN kind (message→messages, signal→signals,
+ * error→errors with an empty errorCode) and referencing it — the «+» mold
+ * from the properties panel, never a generic definition.
+ */
+const REF_FIX_NAMES: Record<'message' | 'signal' | 'error', string> = {
+  message: 'New message',
+  signal: 'New signal',
+  error: 'New error',
+};
+
+function fixEvtRefMissing(ctx: LintFixContext): Command | null {
+  const node = ctx.issue.nodeId ? ctx.diagram.nodes[ctx.issue.nodeId] : undefined;
+  if (!node) return null;
+  const kind = eventKindOf(node);
+  if (kind !== 'message' && kind !== 'signal' && kind !== 'error') return null;
+  const id = nextEventDefinitionId(ctx.diagram, kind);
+  return compositeCommand(`Create ${kind} definition and reference it`, [
+    addEventDefinitionCommand(kind, { id, name: REF_FIX_NAMES[kind] }),
+    updateNodeCommand(node.id, { properties: { eventDefinitionRef: id } }),
+  ]);
+}
+
+// E-5 (§3d): new rules = NEW promotable profile versions (1.0.0 → 1.1.0) —
+// the panel header and the Biblioteca adapter reflect it from this one source.
 export const ETIQUETTE_PROFILE: LintProfile = {
   id: 'lint-etiquette',
   name: 'Etiqueta de modelagem',
-  version: '1.0.0',
+  version: '1.1.0',
   source: 'etiquette',
   rules: [
     { id: 'label-required', run: labelRequiredRule },
@@ -391,17 +531,22 @@ export const ETIQUETTE_PROFILE: LintProfile = {
     { id: 'implicit-join', run: implicitJoinRule },
     { id: 'duplicate-flow', run: duplicateFlowRule, fix: fixDuplicateFlow },
     { id: 'event-endpoints', run: eventEndpointsRule, fix: fixEventEndpoints },
+    { id: 'evt-start-throw', run: evtStartThrowRule },
+    { id: 'evt-end-catch', run: evtEndCatchRule },
+    { id: 'evt-error-start-toplevel', run: evtErrorStartToplevelRule },
   ],
 };
 
 export const EXECUTABILITY_PROFILE: LintProfile = {
   id: 'lint-engine',
   name: 'Prontidão de execução (engine)',
-  version: '1.0.0',
+  version: '1.1.0',
   source: 'executability',
   rules: [
     { id: 'service-task-implementation', run: serviceTaskImplementationRule },
     { id: 'conditional-flows', run: conditionalFlowsRule },
+    { id: 'evt-ref-missing', run: evtRefMissingRule, fix: fixEvtRefMissing },
+    { id: 'timer-malformed', run: timerMalformedRule },
   ],
 };
 

@@ -6,6 +6,7 @@ import type {
   VersionStatus,
 } from '../model/types.js';
 import { DATA_ASSOCIATION_EDGE_TYPE, EVENT_DEFINITION_KINDS } from '../model/types.js';
+import type { TimerProperty } from '../model/iso8601.js';
 import type { NodeTypeRegistry } from '../model/registry.js';
 import { createVersion, generateId } from '../model/factory.js';
 import {
@@ -196,6 +197,7 @@ export class ElementDeserializer {
     if (eventDef) {
       properties.eventDefinition = eventDef.kind;
       if (eventDef.ref) properties.eventDefinitionRef = eventDef.ref;
+      if (eventDef.timer) properties.timer = eventDef.timer;
     }
     // Boundary event host + interrupting flag from native attributes.
     if (type === 'boundaryEvent') {
@@ -318,14 +320,34 @@ function withForeignAttributes(el: XmlElement): { foreignAttributes?: Record<str
  */
 function readEventDefinition(
   el: XmlElement,
-): { kind: EventDefinitionKind; ref?: string } | undefined {
+): { kind: EventDefinitionKind; ref?: string; timer?: TimerProperty } | undefined {
   for (const child of el.children) {
     const match = /^(.+)EventDefinition$/.exec(localName(child.tag));
     const kind = match?.[1];
     if (kind && (EVENT_DEFINITION_KINDS as readonly string[]).includes(kind)) {
       const ref =
         child.attributes.messageRef ?? child.attributes.signalRef ?? child.attributes.errorRef;
-      return { kind: kind as EventDefinitionKind, ...(ref ? { ref } : {}) };
+      // Canonical timer (E-5): the standard timeDate/timeDuration/timeCycle
+      // child of a timerEventDefinition → properties.timer.
+      let timer: TimerProperty | undefined;
+      if (kind === 'timer') {
+        for (const grandchild of child.children) {
+          const timerTag = localName(grandchild.tag);
+          const timerKind =
+            timerTag === 'timeDate'
+              ? 'date'
+              : timerTag === 'timeDuration'
+                ? 'duration'
+                : timerTag === 'timeCycle'
+                  ? 'cycle'
+                  : undefined;
+          if (timerKind) {
+            timer = { kind: timerKind, expression: grandchild.text.trim() };
+            break;
+          }
+        }
+      }
+      return { kind: kind as EventDefinitionKind, ...(ref ? { ref } : {}), ...(timer ? { timer } : {}) };
     }
   }
   return undefined;

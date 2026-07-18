@@ -99,6 +99,9 @@ const EXPECTED_EXPORTS = [
   'eventDefinitionUsages',
   'findEventDefinition',
   'nextEventDefinitionId',
+  // Handoff 16 E-5 (§3d) — headless ISO 8601 timer parser + canonical prop.
+  'parseTimerExpression',
+  'timerPropertyOf',
   'computeDiff',
   // Handoff 15 V-1 — review-grade semantic diff (classified + stable order).
   'diffDiagrams',
