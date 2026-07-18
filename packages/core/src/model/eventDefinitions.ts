@@ -6,6 +6,7 @@ import type {
   EventDefinitions,
   NamedEventDefinition,
 } from './types.js';
+import { activeNodes, isEventSubprocess, nodeParentId } from './types.js';
 
 /**
  * Named event definitions — headless helpers (Handoff 16 §3a, E-1).
@@ -104,4 +105,56 @@ export function eventDefinitionUsages(
         eventDefinitionRefOf(node) === id,
     )
     .map((node) => ({ nodeId: node.id, label: node.label || node.id }));
+}
+
+/**
+ * An escalation catch reachable in the diagram: a boundary event OR an event
+ * subprocess start carrying the escalation kind, tagged with how it matches a
+ * given throw ref (Handoff 18 §5d/§5e).
+ */
+export interface EscalationCatch {
+  node: BpmnNode;
+  /** Where the catch lives — the two OMG-legal escalation catch hosts. */
+  catchKind: 'boundary' | 'esubStart';
+  /** `exact` = same escalationRef as the throw; `catchAll` = the catch has no ref. */
+  matchType: 'exact' | 'catchAll';
+}
+
+/**
+ * SHARED SOURCE (Handoff 18) — the diagram-wide ENUMERATION of escalation
+ * catches eligible for a throw with ref `throwRef`. This is enumeration ONLY:
+ * NO scope, NO tier/precedence ordering. The lint (`ESC_NO_CATCH`, EC-4) reads
+ * it as "is there any eligible catch?"; the simulator (`throwEscalation`, EC-5)
+ * builds the scoped, tiered RESOLUTION ON TOP of this same list — consuming the
+ * structured `{node, catchKind, matchType}` tuples WITHOUT re-deriving them, so
+ * lint and simulation never fork the catch topology.
+ *
+ * Matching (OMG): a catch with NO ref is a catch-all (matches any throw); a
+ * catch with a ref matches only a throw with the SAME ref. A kind-puro throw
+ * (`throwRef === undefined`) is caught only by catch-all catches.
+ */
+export function eligibleEscalationCatches(
+  diagram: BpmnDiagram,
+  throwRef?: string,
+): EscalationCatch[] {
+  const catches: EscalationCatch[] = [];
+  for (const node of activeNodes(diagram)) {
+    if (node.properties.eventDefinition !== 'escalation') continue;
+    let catchKind: EscalationCatch['catchKind'] | undefined;
+    if (node.type === 'boundaryEvent') {
+      catchKind = 'boundary';
+    } else if (node.type === 'startEvent') {
+      const parentId = nodeParentId(node);
+      const parent = parentId ? diagram.nodes[parentId] : undefined;
+      if (parent !== undefined && isEventSubprocess(parent)) catchKind = 'esubStart';
+    }
+    if (catchKind === undefined) continue;
+    const catchRef = eventDefinitionRefOf(node);
+    if (catchRef === undefined) {
+      catches.push({ node, catchKind, matchType: 'catchAll' });
+    } else if (throwRef !== undefined && catchRef === throwRef) {
+      catches.push({ node, catchKind, matchType: 'exact' });
+    }
+  }
+  return catches;
 }

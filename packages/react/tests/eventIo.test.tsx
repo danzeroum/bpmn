@@ -14,6 +14,7 @@ import {
   PT_BR,
   type BpmnPlugin,
 } from '../src/index.js';
+import { evtEscalationStartToplevelRule } from '@buildtovalue/lint';
 
 /**
  * Handoff 16 E-4 — I/O de eventos na aba Execução (§3c): gate idêntico à U-6
@@ -134,6 +135,34 @@ describe('event I/O on the Execução tab (E-4)', () => {
     expect(eventExecutionModeOf(diagram, diagram.nodes.topErr)).toBeNull();
     expect(eventExecutionModeOf(diagram, diagram.nodes.host)).toBeNull();
     expect(eventExecutionModeOf(diagram, diagram.nodes.esPlain)).toBeNull();
+  });
+
+  it('§5d — concordância escalação: MESMO isEventSubprocess no lint e na matriz', () => {
+    // A concordância é do PREDICADO único (isEventSubprocess), não do modo:
+    // escalação NÃO carrega I/O de engine (payload/captura), então a matriz a
+    // trata como null — DECLARADO, como um catch de message. O que os dois
+    // lados COMPARTILHAM é "o que é um event subprocess": o lint acusa um start
+    // de escalação FORA de esub e nunca DENTRO — exatamente o predicado que a
+    // matriz usa para o start de ERRO.
+    const diagram = createDiagram({ name: 'Esc concord' });
+    const mk = (id: string, type: string, properties: Record<string, unknown>) =>
+      createNode({ id, type, label: id, x: 0, y: 0, properties });
+    diagram.nodes = {
+      esub: mk('esub', 'subProcess', { triggeredByEvent: true }),
+      escIn: mk('escIn', 'startEvent', { parentId: 'esub', eventDefinition: 'escalation' }),
+      escTop: mk('escTop', 'startEvent', { eventDefinition: 'escalation' }),
+      t: mk('t', 'task', {}),
+      escBnd: mk('escBnd', 'boundaryEvent', { attachedToRef: 't', eventDefinition: 'escalation' }),
+      escThrow: mk('escThrow', 'endEvent', { eventDefinition: 'escalation' }),
+    };
+    // Matriz: escalação não tem I/O de engine → null em TODAS as posições
+    // (declarado — a captura errCode/errMsg é só do erro).
+    for (const id of ['escIn', 'escBnd', 'escThrow', 'escTop']) {
+      expect(eventExecutionModeOf(diagram, diagram.nodes[id])).toBeNull();
+    }
+    // Lint: acusa SÓ o start top-level — o mesmo isEventSubprocess (DENTRO nunca).
+    const flagged = evtEscalationStartToplevelRule(diagram).map((i) => i.nodeId);
+    expect(flagged).toEqual(['escTop']);
   });
 
   it('critério 1 — sem engine: zero tabs, aba geral inalterada; com engine: só a matriz ganha a aba', () => {

@@ -44,8 +44,8 @@ describe('lintFindings (Handoff 14 §1d)', () => {
 
   it('profiles carry the versioned identity the Biblioteca lists', () => {
     expect(LINT_PROFILES.map((p) => `${p.id}@${p.version}`)).toEqual([
-      'lint-etiquette@1.2.0',
-      'lint-engine@1.2.0',
+      'lint-etiquette@1.3.0',
+      'lint-engine@1.3.0',
     ]);
   });
 });

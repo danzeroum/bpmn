@@ -8,6 +8,8 @@ import {
   compositeCommand,
   createEdge,
   createNode,
+  eligibleEscalationCatches,
+  eventDefinitionRefOf,
   isContainerType,
   isEventSubprocess,
   isEventType,
@@ -199,14 +201,21 @@ function eventKindOf(node: BpmnNode): string | undefined {
 const START_FORBIDDEN_KINDS = new Set(['terminate', 'link']);
 /** Kinds an END event can never carry (catch-only / intermediate-only). */
 const END_FORBIDDEN_KINDS = new Set(['timer', 'conditional', 'link']);
-/** Kinds that reference a named definition (3a). `escalation` stays in the
- * compensation/choreography pendency — deliberately absent from every set. */
-const NAMED_REF_KINDS = new Set(['message', 'signal', 'error']);
+/** Kinds that reference a named definition (3a; `escalation` added Handoff 18
+ * §5d). Compensation stays in the compensation/choreography pendency. */
+const NAMED_REF_KINDS = new Set(['message', 'signal', 'error', 'escalation']);
 
-/** Trigger kinds a typed event-subprocess start accepts (§3 of the handoff:
- * escalation/compensation stay in their own pendency — declared, never
- * silently accepted). */
-const SUBPROC_TRIGGER_KINDS = ['message', 'signal', 'error', 'timer', 'conditional'] as const;
+/** Trigger kinds a typed event-subprocess start accepts. Handoff 18 §5d adds
+ * `escalation` (a start of escalation in an esub is now legal); compensation
+ * stays in its own pendency — declared, never silently accepted. */
+const SUBPROC_TRIGGER_KINDS = [
+  'message',
+  'signal',
+  'error',
+  'timer',
+  'conditional',
+  'escalation',
+] as const;
 const SUBPROC_TRIGGER_SET = new Set<string>(SUBPROC_TRIGGER_KINDS);
 
 /**
@@ -364,6 +373,70 @@ export const evtErrorStartToplevelRule: ValidationRule = (diagram) =>
       nodeId: node.id,
     }));
 
+/**
+ * An escalation START only exists inside an EVENT subprocess — the EXACT mould
+ * of `evtErrorStartToplevelRule` (Handoff 18 §5d), the SAME core
+ * `isEventSubprocess` predicate the editor's Execução matrix consumes, so lint
+ * and matrix agree by construction (both sides tested).
+ */
+export const evtEscalationStartToplevelRule: ValidationRule = (diagram) =>
+  activeNodes(diagram)
+    .filter((node) => {
+      if (node.type !== 'startEvent' || eventKindOf(node) !== 'escalation') return false;
+      const parentId = nodeParentId(node);
+      const parent = parentId ? diagram.nodes[parentId] : undefined;
+      return parent === undefined || !isEventSubprocess(parent);
+    })
+    .map((node) => ({
+      code: 'EVT_ESCALATION_START_TOPLEVEL',
+      severity: 'error' as const,
+      message: `Escalation start event "${node.label || node.id}" sits outside an event subprocess — an escalation start only catches inside one`,
+      nodeId: node.id,
+    }));
+
+/**
+ * A throw of escalation with NO eligible catch in the diagram — a WARNING, not
+ * an error: an escalation with no destination DISSOLVES (legal in the OMG,
+ * unlike an error, which is a declared STOP). Destination = escalation
+ * boundaries + escalation esub-starts, read from the SHARED core enumeration
+ * `eligibleEscalationCatches` — the SAME source the simulator's
+ * `throwEscalation` resolution (EC-5) consumes, never a forked predicate. A
+ * specific ref matches by ref OR a catch-all; a kind-puro throw (no ref) counts
+ * when a catch-all escalation catch exists.
+ */
+export const escNoCatchRule: ValidationRule = (diagram) =>
+  activeNodes(diagram)
+    .filter(
+      (node) =>
+        (node.type === 'endEvent' || node.type === 'intermediateThrowEvent') &&
+        eventKindOf(node) === 'escalation' &&
+        eligibleEscalationCatches(diagram, eventDefinitionRefOf(node)).length === 0,
+    )
+    .map((node) => ({
+      code: 'ESC_NO_CATCH',
+      severity: 'warning' as const,
+      message: `Escalation throw "${node.label || node.id}" has no eligible catch in the diagram — the escalation will dissolve (legal in the OMG, unlike an error; likely unintended)`,
+      nodeId: node.id,
+    }));
+
+/**
+ * An escalation caught by an intermediateCatchEvent is illegal (reforço 8): the
+ * OMG catches an escalation ONLY on a boundary or an event-subprocess start —
+ * an intermediate catch in normal flow is a destination no matching will ever
+ * reach, so it is flagged, never left silent. (Error has the same restriction;
+ * a general "catch-only kind on the wrong host" rule is a named follow-up in
+ * `pendencias.md`.)
+ */
+export const evtEscalationCatchIllegalRule: ValidationRule = (diagram) =>
+  activeNodes(diagram)
+    .filter((node) => node.type === 'intermediateCatchEvent' && eventKindOf(node) === 'escalation')
+    .map((node) => ({
+      code: 'EVT_ESCALATION_CATCH_ILLEGAL',
+      severity: 'error' as const,
+      message: `Intermediate catch event "${node.label || node.id}" catches an escalation — an escalation is caught only by a boundary or an event-subprocess start`,
+      nodeId: node.id,
+    }));
+
 export const ETIQUETTE_RULES: ValidationRule[] = [
   labelRequiredRule,
   superfluousGatewayRule,
@@ -374,6 +447,9 @@ export const ETIQUETTE_RULES: ValidationRule[] = [
   evtStartThrowRule,
   evtEndCatchRule,
   evtErrorStartToplevelRule,
+  evtEscalationStartToplevelRule,
+  evtEscalationCatchIllegalRule,
+  escNoCatchRule,
   evtSubprocFlowRule,
   evtSubprocStartRule,
 ];
@@ -623,17 +699,19 @@ function fixEventEndpoints(ctx: LintFixContext): Command | null {
  * error→errors with an empty errorCode) and referencing it — the «+» mold
  * from the properties panel, never a generic definition.
  */
-const REF_FIX_NAMES: Record<'message' | 'signal' | 'error', string> = {
+const REF_FIX_NAMES: Record<'message' | 'signal' | 'error' | 'escalation', string> = {
   message: 'New message',
   signal: 'New signal',
   error: 'New error',
+  escalation: 'New escalation',
 };
 
 function fixEvtRefMissing(ctx: LintFixContext): Command | null {
   const node = ctx.issue.nodeId ? ctx.diagram.nodes[ctx.issue.nodeId] : undefined;
   if (!node) return null;
   const kind = eventKindOf(node);
-  if (kind !== 'message' && kind !== 'signal' && kind !== 'error') return null;
+  if (kind !== 'message' && kind !== 'signal' && kind !== 'error' && kind !== 'escalation')
+    return null;
   const id = nextEventDefinitionId(ctx.diagram, kind);
   return compositeCommand(`Create ${kind} definition and reference it`, [
     addEventDefinitionCommand(kind, { id, name: REF_FIX_NAMES[kind] }),
@@ -660,13 +738,13 @@ function fixEvtSubprocStart(ctx: LintFixContext): Command | null {
   return compositeCommand('Create typed start for event subprocess', commands);
 }
 
-// E-5 (§3d) → 1.1.0; Handoff 17 ES-4 (§4d) → 1.2.0: new rules = NEW
-// promotable profile versions — the panel header and the Biblioteca adapter
-// reflect it from this one source.
+// E-5 (§3d) → 1.1.0; Handoff 17 ES-4 (§4d) → 1.2.0; Handoff 18 §5d → 1.3.0:
+// new rules = NEW promotable profile versions — the panel header and the
+// Biblioteca adapter reflect it from this one source.
 export const ETIQUETTE_PROFILE: LintProfile = {
   id: 'lint-etiquette',
   name: 'Etiqueta de modelagem',
-  version: '1.2.0',
+  version: '1.3.0',
   source: 'etiquette',
   rules: [
     { id: 'label-required', run: labelRequiredRule },
@@ -678,6 +756,9 @@ export const ETIQUETTE_PROFILE: LintProfile = {
     { id: 'evt-start-throw', run: evtStartThrowRule },
     { id: 'evt-end-catch', run: evtEndCatchRule },
     { id: 'evt-error-start-toplevel', run: evtErrorStartToplevelRule },
+    { id: 'evt-escalation-start-toplevel', run: evtEscalationStartToplevelRule },
+    { id: 'evt-escalation-catch-illegal', run: evtEscalationCatchIllegalRule },
+    { id: 'esc-no-catch', run: escNoCatchRule },
     { id: 'evt-subproc-flow', run: evtSubprocFlowRule },
     { id: 'evt-subproc-start', run: evtSubprocStartRule, fix: fixEvtSubprocStart },
   ],
@@ -686,7 +767,7 @@ export const ETIQUETTE_PROFILE: LintProfile = {
 export const EXECUTABILITY_PROFILE: LintProfile = {
   id: 'lint-engine',
   name: 'Prontidão de execução (engine)',
-  version: '1.2.0',
+  version: '1.3.0',
   source: 'executability',
   rules: [
     { id: 'service-task-implementation', run: serviceTaskImplementationRule },

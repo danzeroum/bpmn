@@ -260,10 +260,14 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
 Itens deferidos DE PROPÓSITO na sequência EC-0..EC-5 do Handoff 18, cada um com dono na EC seguinte
 (sem quebra intermediária):
 
-- **Lista de kinds do lint `EVT_SUBPROC_START` (EC-2 → EC-4):** a react já ACEITA e renderiza um
-  start de escalação em event subprocess (glifo colapsado), mas o lint `EVT_SUBPROC_START` ainda
-  sinaliza escalation como kind não suportado até a **EC-4** adicionar `escalation` a
-  `SUBPROC_TRIGGER_KINDS`. Sem quebra — o dock é advisório.
+- ~~**Lista de kinds do lint `EVT_SUBPROC_START` (EC-2 → EC-4):**~~ → **RESOLVIDO na EC-4**:
+  `escalation` entrou em `SUBPROC_TRIGGER_KINDS` — um start de escalação em event subprocess é
+  legal no lint (testes ES-4 que o rejeitavam migrados para positivos). Transitório fechado.
+- **Regra geral "catch-only kind no host errado" (follow-up da EC-4 reforço 8):** a EC-4 adicionou
+  `EVT_ESCALATION_CATCH_ILLEGAL` (um `intermediateCatchEvent` de escalação é ilegal — só boundary/
+  esub-start capturam escalação). O ERRO tem a mesma restrição e hoje NÃO é acusado nesse host; uma
+  regra geral "kind catch-only em intermediateCatchEvent" cobrindo erro+escalação de uma vez é um
+  follow-up nomeado (não silêncio: a escalação já é acusada; o erro fica registrado aqui).
 - **Cola runtime do `escalationRaisedEntry` no ledger (EC-3 → EC-5):** o builder
   `escalationRaisedEntry({actor, code, target})` existe no `adapters-bpmn` e a cadeia verifica
   (teste do builder + host-append com gatilho demonstrativo). Mas `ESCALATION_RAISED` significa

@@ -31,6 +31,10 @@ const EXPECTED_EXPORTS = [
   'evtSubprocFlowRule',
   'evtSubprocStartRule',
   'typedMessageStartCommands',
+  // Handoff 18 §5d — escalation rules (perfis 1.3.0).
+  'evtEscalationStartToplevelRule',
+  'evtEscalationCatchIllegalRule',
+  'escNoCatchRule',
 ].sort();
 
 describe('@buildtovalue/lint public API surface', () => {

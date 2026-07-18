@@ -734,6 +734,25 @@ a re-otimização global sob demanda.
 
 ---
 
+## 15. Handoff 18 (Escalation Governada) — decisões registradas
+
+- **Errata do mock 5c — autonomy pill:** o protótipo do painel 5c mostrava um *pill de autonomia*
+  sob o agentTask ("autonomia: propõe · budget 2h"). A implementação NÃO o pinta no canvas: vence
+  o princípio de arquitetura declarado no Handoff 12 (§6.1, comentário em `AgentTaskShape`) —
+  "autonomy/authorship live in the inspector and seals, never here". O elemento visível do
+  agentTask é o rodapé do ref governado (🤖 + `nome@semver`), que carrega a autonomia via o
+  workflow governado. Validado pelo owner na EC-3 (o princípio vence o mock).
+- **`escalationAuthority` no CATCH, não no userTask:** o mock 5c mostra "↟ autoridade" sob a
+  revisão humana; a implementação põe a prop no CATCH de escalação (o overlay de EC-2 renderiza o
+  chip para nós de escalação), coberto pela cláusula "no userTask OU no catch" da spec.
+- **Predicado de catch de escalação no CORE (`eligibleEscalationCatches`):** fonte única headless
+  (enumeração diagram-wide, sem escopo/tiers) que o lint (EC-4 `ESC_NO_CATCH`) e o simulador
+  (EC-5 `throwEscalation`) consomem — zero fork; o lint não importa simulation.
+- **`ESCALATION_RAISED` = "aconteceu", não "desenhado":** a entrada de ledger não é amarrada à
+  criação do boundary; a cola runtime (append no `throwEscalation`) é da EC-5 (`pendencias.md §9`).
+
+---
+
 ## Resolvidas (para histórico)
 
 - ~~Lane membership manual/data-only~~ → interativa na Fase 5a.

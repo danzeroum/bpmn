@@ -327,6 +327,51 @@ flags too.
 
 ***
 
+### evtEscalationStartToplevelRule
+
+```ts
+const evtEscalationStartToplevelRule: ValidationRule;
+```
+
+An escalation START only exists inside an EVENT subprocess — the EXACT mould
+of `evtErrorStartToplevelRule` (Handoff 18 §5d), the SAME core
+`isEventSubprocess` predicate the editor's Execução matrix consumes, so lint
+and matrix agree by construction (both sides tested).
+
+***
+
+### escNoCatchRule
+
+```ts
+const escNoCatchRule: ValidationRule;
+```
+
+A throw of escalation with NO eligible catch in the diagram — a WARNING, not
+an error: an escalation with no destination DISSOLVES (legal in the OMG,
+unlike an error, which is a declared STOP). Destination = escalation
+boundaries + escalation esub-starts, read from the SHARED core enumeration
+`eligibleEscalationCatches` — the SAME source the simulator's
+`throwEscalation` resolution (EC-5) consumes, never a forked predicate. A
+specific ref matches by ref OR a catch-all; a kind-puro throw (no ref) counts
+when a catch-all escalation catch exists.
+
+***
+
+### evtEscalationCatchIllegalRule
+
+```ts
+const evtEscalationCatchIllegalRule: ValidationRule;
+```
+
+An escalation caught by an intermediateCatchEvent is illegal (reforço 8): the
+OMG catches an escalation ONLY on a boundary or an event-subprocess start —
+an intermediate catch in normal flow is a destination no matching will ever
+reach, so it is flagged, never left silent. (Error has the same restriction;
+a general "catch-only kind on the wrong host" rule is a named follow-up in
+`pendencias.md`.)
+
+***
+
 ### ETIQUETTE\_RULES
 
 ```ts

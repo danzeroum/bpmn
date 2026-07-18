@@ -69,6 +69,7 @@ import {
   buildEsubSimDiagram,
   buildEscalationBridgeDiagram,
   buildEscalationDiagram,
+  buildEscalationNoCatchDiagram,
   buildEventDefsDiagram,
   buildEventIoDiagram,
   buildTimerDiagram,
@@ -365,6 +366,7 @@ export function App() {
     if (params.get('timer')) return buildTimerDiagram();
     if (params.get('events')) return buildEventDefsDiagram(params.get('lib') !== null);
     if (params.get('escalation')) return buildEscalationDiagram();
+    if (params.get('escno')) return buildEscalationNoCatchDiagram();
     if (params.get('agentbridge')) return buildEscalationBridgeDiagram();
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
@@ -604,8 +606,9 @@ export function App() {
         >
           <SidePanels />
           {/* E-5 (§3d): the lint dock over the timer demo — TIMER_MALFORMED +
-              EVT_REF_MISSING ride the EXISTING U-5 surface, zero new UI. */}
-          {params.get('timer') && <LintPanel />}
+              EVT_REF_MISSING ride the EXISTING U-5 surface, zero new UI.
+              Handoff 18 §5d: `?escno=1` reuses it for the ESC_NO_CATCH demo. */}
+          {(params.get('timer') || params.get('escno')) && <LintPanel />}
           {!drdMode && (
             <DecisionPeek
               resolveDecision={(ref) => DEMO_DECISIONS.find((d) => d.ref === ref)}
