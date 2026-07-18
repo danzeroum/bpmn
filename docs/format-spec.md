@@ -152,6 +152,29 @@ engine simply ignores it:
   the element tag stays standard.
 - `bpmnr:property name value` — free-form properties (`value` is JSON-encoded).
 
+## Named event definitions (`bpmn:message` / `bpmn:signal` / `bpmn:error`)
+
+First-class named definitions (Handoff 16 §3a) follow the OMG standard exactly — never a
+vendor namespace for what the spec already names:
+
+- **Model.** `diagram.definitions.{messages,signals,errors}[]` — `{ id, name }` entries
+  (`errors` additionally carry the OMG `errorCode`). The field is optional and additive:
+  absent, every pre-existing hash and export is byte-identical (frozen fixture
+  `eventDefsFrozen.json`).
+- **References.** An event keeps its KIND in `properties.eventDefinition` and references a
+  named definition via `properties.eventDefinitionRef` (the definition's `id`). Renaming a
+  definition never touches nodes — the cascade to every referencing event is by construction.
+- **Export.** Definitions emit as root elements (`<bpmn:message id name/>`,
+  `<bpmn:signal/>`, `<bpmn:error errorCode/>`) before `collaboration`/`process`, in stored
+  array order; the event's `<bpmn:{kind}EventDefinition>` child carries the standard
+  `messageRef`/`signalRef`/`errorRef` attribute. Round-trip is byte-stable between
+  bpmn-react exports.
+- **Import.** Root elements populate `diagram.definitions`; `*Ref` attributes populate the
+  node property. An ORPHAN ref (no matching root) is synthesized as `{ id: ref, name: ref }`
+  WITH an informative warning naming the event — never silence, never data loss.
+- **Deletion.** `removeEventDefinitionCommand` is vetoed by the default rules while any
+  active event references the definition; the veto reason lists every usage (label + id).
+
 ## Foreign extension passthrough (`zeebe:*`, `camunda:*`, …)
 
 Extension content from OTHER namespaces is preserved through the round-trip instead of being

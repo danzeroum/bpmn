@@ -1849,11 +1849,136 @@ Routed waypoints (Handoff 10 R-2b). `null` clears them back to auto.
 
 ***
 
+### EventDefinitionRemovalCommand
+
+Marker the default rules use to veto a referenced-definition removal with
+the honest usage list (id + label per node) — see `registerDefaultRules`.
+
+#### Extends
+
+- [`Command`](#command-1)
+
+#### Properties
+
+##### eventDefinitionRemoval
+
+```ts
+eventDefinitionRemoval: object;
+```
+
+###### kind
+
+```ts
+kind: "error" | "message" | "signal";
+```
+
+###### definitionId
+
+```ts
+definitionId: string;
+```
+
+##### id
+
+```ts
+id: string;
+```
+
+###### Inherited from
+
+[`Command`](#command-1).[`id`](#id-2)
+
+##### description
+
+```ts
+description: string;
+```
+
+###### Inherited from
+
+[`Command`](#command-1).[`description`](#description-1)
+
+#### Methods
+
+##### execute()
+
+```ts
+execute(diagram): BpmnDiagram;
+```
+
+###### Parameters
+
+###### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+###### Returns
+
+[`BpmnDiagram`](#bpmndiagram)
+
+###### Inherited from
+
+[`Command`](#command-1).[`execute`](#execute-2)
+
+##### undo()
+
+```ts
+undo(diagram): BpmnDiagram;
+```
+
+###### Parameters
+
+###### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+###### Returns
+
+[`BpmnDiagram`](#bpmndiagram)
+
+###### Inherited from
+
+[`Command`](#command-1).[`undo`](#undo-2)
+
+##### toAuditEvent()?
+
+```ts
+optional toAuditEvent(): object;
+```
+
+Optional structured payload for the audit ledger.
+
+###### Returns
+
+`object`
+
+###### type
+
+```ts
+type: string;
+```
+
+###### details
+
+```ts
+details: Record<string, unknown>;
+```
+
+###### Inherited from
+
+[`Command`](#command-1).[`toAuditEvent`](#toauditevent-1)
+
+***
+
 ### Command
 
 A command is a reversible, pure transformation of the diagram.
 `execute`/`undo` must not mutate their input — they return new diagram
 objects with structural sharing (spread only what changed).
+
+#### Extended by
+
+- [`EventDefinitionRemovalCommand`](#eventdefinitionremovalcommand)
 
 #### Properties
 
@@ -2098,6 +2223,14 @@ nodes: unknown[];
 ```ts
 edges: unknown[];
 ```
+
+##### definitions?
+
+```ts
+optional definitions?: unknown;
+```
+
+Named event definitions (§3a) — present only when the diagram has them.
 
 ***
 
@@ -3542,6 +3675,99 @@ optional parentVersionId?: string;
 
 ***
 
+### NamedEventDefinition
+
+A NAMED event definition of first class (Handoff 16 §3a) — the OMG root
+element (`bpmn:message`/`bpmn:signal`) an event references via
+`messageRef`/`signalRef`. Events keep their KIND in
+`properties.eventDefinition`; the reference to a named definition lives in
+`properties.eventDefinitionRef` (the definition's `id` — rename never
+touches nodes, E-0 decision 5).
+
+#### Extended by
+
+- [`ErrorEventDefinition`](#erroreventdefinition)
+
+#### Properties
+
+##### id
+
+```ts
+id: string;
+```
+
+##### name
+
+```ts
+name: string;
+```
+
+***
+
+### ErrorEventDefinition
+
+`bpmn:error` root element — carries the OMG `errorCode` used by matching.
+
+#### Extends
+
+- [`NamedEventDefinition`](#namedeventdefinition)
+
+#### Properties
+
+##### id
+
+```ts
+id: string;
+```
+
+###### Inherited from
+
+[`NamedEventDefinition`](#namedeventdefinition).[`id`](#id-10)
+
+##### name
+
+```ts
+name: string;
+```
+
+###### Inherited from
+
+[`NamedEventDefinition`](#namedeventdefinition).[`name`](#name-1)
+
+##### errorCode?
+
+```ts
+optional errorCode?: string;
+```
+
+***
+
+### EventDefinitions
+
+The named-definition buckets, one per referenceable kind.
+
+#### Properties
+
+##### messages
+
+```ts
+messages: NamedEventDefinition[];
+```
+
+##### signals
+
+```ts
+signals: NamedEventDefinition[];
+```
+
+##### errors
+
+```ts
+errors: ErrorEventDefinition[];
+```
+
+***
+
 ### BpmnDiagram
 
 #### Properties
@@ -3587,6 +3813,16 @@ edges: Record<string, BpmnEdge>;
 ```ts
 metadata: Record<string, unknown>;
 ```
+
+##### definitions?
+
+```ts
+optional definitions?: EventDefinitions;
+```
+
+Named event definitions (Handoff 16 §3a): export as OMG root elements,
+referenced by events via `properties.eventDefinitionRef`. Optional and
+additive — absent keeps every pre-existing hash and export byte-identical.
 
 ##### processForeignExtensions?
 
@@ -4067,6 +4303,14 @@ type AlignMode = "left" | "centerX" | "right" | "top" | "centerY" | "bottom";
 
 ***
 
+### EventDefinitionRefKind
+
+```ts
+type EventDefinitionRefKind = typeof EVENT_DEFINITION_REF_KINDS[number];
+```
+
+***
+
 ### NodeCategory
 
 ```ts
@@ -4274,6 +4518,49 @@ on each node before it is allowed to bend. It guarantees the edge — and the
 animated token that rides it (Handoff 7) — departs and arrives perpendicular
 to the node face, clearing the node body and its rounded corner instead of
 grazing across it. This is the cheap variant of `pendencias.md §2`.
+
+***
+
+### EVENT\_DEFINITION\_REF\_KINDS
+
+```ts
+const EVENT_DEFINITION_REF_KINDS: readonly ["message", "signal", "error"];
+```
+
+Named event definitions — headless helpers (Handoff 16 §3a, E-1).
+The three referenceable kinds map 1:1 to the OMG root elements
+(`bpmn:message`/`bpmn:signal`/`bpmn:error`) and to the event KINDS the
+nodes already carry in `properties.eventDefinition`.
+
+***
+
+### EVENT\_DEFINITION\_BUCKETS
+
+```ts
+const EVENT_DEFINITION_BUCKETS: object;
+```
+
+Bucket key of a kind inside [EventDefinitions](#eventdefinitions).
+
+#### Type Declaration
+
+##### message
+
+```ts
+readonly message: "messages" = 'messages';
+```
+
+##### signal
+
+```ts
+readonly signal: "signals" = 'signals';
+```
+
+##### error
+
+```ts
+readonly error: "errors" = 'errors';
+```
 
 ***
 
@@ -4824,6 +5111,113 @@ diagram as it was at execution time, captured on `execute`.
 #### Returns
 
 [`Command`](#command-1)
+
+***
+
+### addEventDefinitionCommand()
+
+```ts
+function addEventDefinitionCommand(kind, definition): Command;
+```
+
+Adds a named definition (the «+» flow builds the auto id via `nextEventDefinitionId`).
+
+#### Parameters
+
+##### kind
+
+`"error"` \| `"message"` \| `"signal"`
+
+##### definition
+
+[`ErrorEventDefinition`](#erroreventdefinition)
+
+#### Returns
+
+[`Command`](#command-1)
+
+***
+
+### updateEventDefinitionCommand()
+
+```ts
+function updateEventDefinitionCommand(
+   kind, 
+   definitionId, 
+   patch): Command;
+```
+
+Rename / errorCode patch — nodes reference by ID, so nothing else moves.
+
+#### Parameters
+
+##### kind
+
+`"error"` \| `"message"` \| `"signal"`
+
+##### definitionId
+
+`string`
+
+##### patch
+
+###### name?
+
+`string`
+
+###### errorCode?
+
+`string`
+
+#### Returns
+
+[`Command`](#command-1)
+
+***
+
+### removeEventDefinitionCommand()
+
+```ts
+function removeEventDefinitionCommand(kind, definitionId): EventDefinitionRemovalCommand;
+```
+
+Removes a definition. When ANY active event still references it, the
+default `command.pre` rule vetoes with the usage list — deletion is never
+silent and never cascades (§3a: excluir bloqueado listando usos).
+
+#### Parameters
+
+##### kind
+
+`"error"` \| `"message"` \| `"signal"`
+
+##### definitionId
+
+`string`
+
+#### Returns
+
+[`EventDefinitionRemovalCommand`](#eventdefinitionremovalcommand)
+
+***
+
+### isEventDefinitionRemoval()
+
+```ts
+function isEventDefinitionRemoval(command): command is EventDefinitionRemovalCommand;
+```
+
+Structural type guard for the removal marker (used by the default rule).
+
+#### Parameters
+
+##### command
+
+[`Command`](#command-1)
+
+#### Returns
+
+`command is EventDefinitionRemovalCommand`
 
 ***
 
@@ -5879,6 +6273,183 @@ New positions spreading `nodes` evenly along the axis (3+ nodes).
 #### Returns
 
 `Map`\<`string`, [`Point`](#point-1)\>
+
+***
+
+### emptyEventDefinitions()
+
+```ts
+function emptyEventDefinitions(): EventDefinitions;
+```
+
+Empty, frozen-shape buckets — the starting point when `definitions` is absent.
+
+#### Returns
+
+[`EventDefinitions`](#eventdefinitions)
+
+***
+
+### eventDefinitionsOf()
+
+```ts
+function eventDefinitionsOf(diagram): EventDefinitions;
+```
+
+The definitions bag of a diagram, tolerant of the absent field.
+
+#### Parameters
+
+##### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+#### Returns
+
+[`EventDefinitions`](#eventdefinitions)
+
+***
+
+### eventDefinitionList()
+
+```ts
+function eventDefinitionList(diagram, kind): readonly (
+  | NamedEventDefinition
+  | ErrorEventDefinition)[];
+```
+
+Definition list of one kind (empty array when absent).
+
+#### Parameters
+
+##### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+##### kind
+
+`"error"` \| `"message"` \| `"signal"`
+
+#### Returns
+
+readonly (
+  \| [`NamedEventDefinition`](#namedeventdefinition)
+  \| [`ErrorEventDefinition`](#erroreventdefinition))[]
+
+***
+
+### findEventDefinition()
+
+```ts
+function findEventDefinition(
+   diagram, 
+   kind, 
+   id): 
+  | NamedEventDefinition
+  | ErrorEventDefinition
+  | undefined;
+```
+
+Lookup by id inside a kind's bucket.
+
+#### Parameters
+
+##### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+##### kind
+
+`"error"` \| `"message"` \| `"signal"`
+
+##### id
+
+`string`
+
+#### Returns
+
+  \| [`NamedEventDefinition`](#namedeventdefinition)
+  \| [`ErrorEventDefinition`](#erroreventdefinition)
+  \| `undefined`
+
+***
+
+### nextEventDefinitionId()
+
+```ts
+function nextEventDefinitionId(diagram, kind): string;
+```
+
+Next collision-safe auto id for the «+» flow: `msg-1`, `msg-2`, … scanning
+the existing bucket (imported ids of any shape never collide — the counter
+skips taken ids).
+
+#### Parameters
+
+##### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+##### kind
+
+`"error"` \| `"message"` \| `"signal"`
+
+#### Returns
+
+`string`
+
+***
+
+### eventDefinitionRefOf()
+
+```ts
+function eventDefinitionRefOf(node): string | undefined;
+```
+
+The named-definition reference of an event node, when present.
+
+#### Parameters
+
+##### node
+
+[`BpmnNode`](#bpmnnode)
+
+#### Returns
+
+`string` \| `undefined`
+
+***
+
+### eventDefinitionUsages()
+
+```ts
+function eventDefinitionUsages(
+   diagram, 
+   kind, 
+   id): object[];
+```
+
+Every ACTIVE node referencing the definition (id + label, for honest veto
+messages): the kind must match the bucket, so an id reused across kinds
+never cross-matches.
+
+#### Parameters
+
+##### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+##### kind
+
+`"error"` \| `"message"` \| `"signal"`
+
+##### id
+
+`string`
+
+#### Returns
+
+`object`[]
 
 ***
 

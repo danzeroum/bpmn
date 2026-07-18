@@ -152,6 +152,31 @@ export interface BpmnVersion {
   parentVersionId?: string;
 }
 
+/**
+ * A NAMED event definition of first class (Handoff 16 §3a) — the OMG root
+ * element (`bpmn:message`/`bpmn:signal`) an event references via
+ * `messageRef`/`signalRef`. Events keep their KIND in
+ * `properties.eventDefinition`; the reference to a named definition lives in
+ * `properties.eventDefinitionRef` (the definition's `id` — rename never
+ * touches nodes, E-0 decision 5).
+ */
+export interface NamedEventDefinition {
+  id: string;
+  name: string;
+}
+
+/** `bpmn:error` root element — carries the OMG `errorCode` used by matching. */
+export interface ErrorEventDefinition extends NamedEventDefinition {
+  errorCode?: string;
+}
+
+/** The named-definition buckets, one per referenceable kind. */
+export interface EventDefinitions {
+  messages: NamedEventDefinition[];
+  signals: NamedEventDefinition[];
+  errors: ErrorEventDefinition[];
+}
+
 export interface BpmnDiagram {
   id: string;
   name: string;
@@ -160,6 +185,12 @@ export interface BpmnDiagram {
   nodes: Record<string, BpmnNode>;
   edges: Record<string, BpmnEdge>;
   metadata: Record<string, unknown>;
+  /**
+   * Named event definitions (Handoff 16 §3a): export as OMG root elements,
+   * referenced by events via `properties.eventDefinitionRef`. Optional and
+   * additive — absent keeps every pre-existing hash and export byte-identical.
+   */
+  definitions?: EventDefinitions;
   /**
    * Foreign `extensionElements` children of the `<bpmn:process>` element
    * (e.g. `zeebe:userTaskForm`) preserved verbatim (passthrough).

@@ -491,3 +491,159 @@ export function restoreDiagramCommand(
     }),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Named event definitions (Handoff 16 §3a, E-1) — undoable CRUD over
+// `diagram.definitions`. References live on nodes as
+// `properties.eventDefinitionRef` (the definition ID), so RENAME never touches
+// nodes — the cascade to every referencing event is by construction, and one
+// undo restores everything (binding test in eventDefinitions.test).
+
+import {
+  EVENT_DEFINITION_BUCKETS,
+  emptyEventDefinitions,
+  type EventDefinitionRefKind,
+} from '../model/eventDefinitions.js';
+import type { ErrorEventDefinition, EventDefinitions } from '../model/types.js';
+
+function withDefinitions(diagram: BpmnDiagram, definitions: EventDefinitions): BpmnDiagram {
+  return { ...diagram, definitions };
+}
+
+function bucketOf(diagram: BpmnDiagram, kind: EventDefinitionRefKind): ErrorEventDefinition[] {
+  return [...((diagram.definitions ?? emptyEventDefinitions())[EVENT_DEFINITION_BUCKETS[kind]])];
+}
+
+function replaceBucket(
+  diagram: BpmnDiagram,
+  kind: EventDefinitionRefKind,
+  list: ErrorEventDefinition[],
+): BpmnDiagram {
+  return withDefinitions(diagram, {
+    ...(diagram.definitions ?? emptyEventDefinitions()),
+    [EVENT_DEFINITION_BUCKETS[kind]]: list,
+  });
+}
+
+/** Adds a named definition (the «+» flow builds the auto id via `nextEventDefinitionId`). */
+export function addEventDefinitionCommand(
+  kind: EventDefinitionRefKind,
+  definition: ErrorEventDefinition,
+): Command {
+  let hadDefinitions = true;
+  return {
+    id: generateId(),
+    description: `Add ${kind} definition`,
+    execute: (diagram) => {
+      hadDefinitions = diagram.definitions !== undefined;
+      const list = bucketOf(diagram, kind);
+      if (list.some((existing) => existing.id === definition.id)) return diagram;
+      return replaceBucket(diagram, kind, [...list, definition]);
+    },
+    undo: (diagram) => {
+      const next = replaceBucket(
+        diagram,
+        kind,
+        bucketOf(diagram, kind).filter((existing) => existing.id !== definition.id),
+      );
+      // A diagram that never had the field goes back to not having it —
+      // hash-neutrality survives the undo (cerca §1.3).
+      if (!hadDefinitions) {
+        const { definitions: _definitions, ...rest } = next;
+        return rest as BpmnDiagram;
+      }
+      return next;
+    },
+    toAuditEvent: () => ({
+      type: 'EVENT_DEFINITION_ADDED',
+      details: { kind, definitionId: definition.id, name: definition.name },
+    }),
+  };
+}
+
+/** Rename / errorCode patch — nodes reference by ID, so nothing else moves. */
+export function updateEventDefinitionCommand(
+  kind: EventDefinitionRefKind,
+  definitionId: string,
+  patch: { name?: string; errorCode?: string },
+): Command {
+  let previous: ErrorEventDefinition | undefined;
+  return {
+    id: generateId(),
+    description: `Update ${kind} definition`,
+    execute: (diagram) => {
+      const list = bucketOf(diagram, kind);
+      const index = list.findIndex((existing) => existing.id === definitionId);
+      if (index < 0) return diagram;
+      previous = list[index];
+      list[index] = {
+        ...previous,
+        ...(patch.name !== undefined ? { name: patch.name } : {}),
+        ...(patch.errorCode !== undefined ? { errorCode: patch.errorCode } : {}),
+      };
+      return replaceBucket(diagram, kind, list);
+    },
+    undo: (diagram) => {
+      if (!previous) return diagram;
+      const list = bucketOf(diagram, kind);
+      const index = list.findIndex((existing) => existing.id === definitionId);
+      if (index < 0) return diagram;
+      list[index] = previous;
+      return replaceBucket(diagram, kind, list);
+    },
+    toAuditEvent: () => ({
+      type: 'EVENT_DEFINITION_UPDATED',
+      details: { kind, definitionId, patch },
+    }),
+  };
+}
+
+/**
+ * Marker the default rules use to veto a referenced-definition removal with
+ * the honest usage list (id + label per node) — see `registerDefaultRules`.
+ */
+export interface EventDefinitionRemovalCommand extends Command {
+  eventDefinitionRemoval: { kind: EventDefinitionRefKind; definitionId: string };
+}
+
+/**
+ * Removes a definition. When ANY active event still references it, the
+ * default `command.pre` rule vetoes with the usage list — deletion is never
+ * silent and never cascades (§3a: excluir bloqueado listando usos).
+ */
+export function removeEventDefinitionCommand(
+  kind: EventDefinitionRefKind,
+  definitionId: string,
+): EventDefinitionRemovalCommand {
+  let removed: ErrorEventDefinition | undefined;
+  return {
+    id: generateId(),
+    description: `Remove ${kind} definition`,
+    eventDefinitionRemoval: { kind, definitionId },
+    execute: (diagram) => {
+      const list = bucketOf(diagram, kind);
+      removed = list.find((existing) => existing.id === definitionId);
+      if (!removed) return diagram;
+      return replaceBucket(
+        diagram,
+        kind,
+        list.filter((existing) => existing.id !== definitionId),
+      );
+    },
+    undo: (diagram) => {
+      if (!removed) return diagram;
+      return replaceBucket(diagram, kind, [...bucketOf(diagram, kind), removed]);
+    },
+    toAuditEvent: () => ({
+      type: 'EVENT_DEFINITION_REMOVED',
+      details: { kind, definitionId },
+    }),
+  };
+}
+
+/** Structural type guard for the removal marker (used by the default rule). */
+export function isEventDefinitionRemoval(
+  command: Command,
+): command is EventDefinitionRemovalCommand {
+  return 'eventDefinitionRemoval' in command;
+}

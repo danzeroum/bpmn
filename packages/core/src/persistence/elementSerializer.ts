@@ -114,6 +114,22 @@ export class ElementSerializer {
     // appears as a bpmnr:property (the XML profile stays intact).
     const reserved = new Set<string>(['parentId', 'boundarySide', 'boundaryT']);
     if (eventDef) reserved.add('eventDefinition');
+    // Named-definition reference (Handoff 16 §3a): emitted as the standard
+    // messageRef/signalRef/errorRef attribute — reserved from the property
+    // soup exactly when it is emitted (other kinds keep it as a property).
+    const refAttrName =
+      eventDef === 'message'
+        ? 'messageRef'
+        : eventDef === 'signal'
+          ? 'signalRef'
+          : eventDef === 'error'
+            ? 'errorRef'
+            : undefined;
+    const eventRef =
+      refAttrName && typeof node.properties.eventDefinitionRef === 'string' && node.properties.eventDefinitionRef !== ''
+        ? node.properties.eventDefinitionRef
+        : undefined;
+    if (eventRef !== undefined) reserved.add('eventDefinitionRef');
     if (marker) reserved.add('marker');
     if (attachedToRef !== undefined) reserved.add('attachedToRef');
     if (nonInterrupting) reserved.add('cancelActivity');
@@ -175,7 +191,10 @@ export class ElementSerializer {
       });
     }
     if (eventDef !== undefined) {
-      xml.element(`bpmn:${eventDef}EventDefinition`, { id: `${node.id}_def` });
+      xml.element(`bpmn:${eventDef}EventDefinition`, {
+        id: `${node.id}_def`,
+        ...(refAttrName && eventRef !== undefined ? { [refAttrName]: eventRef } : {}),
+      });
     }
     if (marker === 'loop') {
       xml.element('bpmn:standardLoopCharacteristics', {});

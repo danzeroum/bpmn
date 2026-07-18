@@ -49,6 +49,10 @@ export const CONFORMANCE_MATRIX: ConformanceEntry[] = [
   { element: 'bpmn:intermediateCatchEvent', status: 'supported', conformanceClass: 'analytic', mappedTo: 'intermediateCatchEvent' },
   { element: 'bpmn:intermediateThrowEvent', status: 'supported', conformanceClass: 'analytic', mappedTo: 'intermediateThrowEvent' },
   { element: 'bpmn:boundaryEvent', status: 'supported', conformanceClass: 'analytic', mappedTo: 'boundaryEvent', notes: 'Interrupting and non-interrupting (cancelActivity).' },
+  // Handoff 16 E-1 (§3a): named definitions as first-class OMG root elements.
+  { element: 'bpmn:message (root)', status: 'supported', conformanceClass: 'analytic', mappedTo: 'definitions.messages[]', notes: 'Named definition; events reference via messageRef (properties.eventDefinitionRef). Orphan refs are synthesized with an informative warning.' },
+  { element: 'bpmn:signal (root)', status: 'supported', conformanceClass: 'analytic', mappedTo: 'definitions.signals[]', notes: 'Named definition; referenced via signalRef.' },
+  { element: 'bpmn:error (root)', status: 'supported', conformanceClass: 'analytic', mappedTo: 'definitions.errors[]', notes: 'Named definition with errorCode; referenced via errorRef.' },
   { element: 'bpmn:messageEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'message'" },
   { element: 'bpmn:timerEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'timer'" },
   { element: 'bpmn:errorEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'error'" },

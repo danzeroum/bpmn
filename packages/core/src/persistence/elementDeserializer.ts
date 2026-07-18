@@ -190,9 +190,13 @@ export class ElementDeserializer {
       warnings.push(`Ignored unsupported element <${el.tag}>`);
       return undefined;
     }
-    // Standard <bpmn:{kind}EventDefinition/> child → properties.eventDefinition.
+    // Standard <bpmn:{kind}EventDefinition/> child → properties.eventDefinition;
+    // messageRef/signalRef/errorRef → properties.eventDefinitionRef (§3a).
     const eventDef = readEventDefinition(el);
-    if (eventDef) properties.eventDefinition = eventDef;
+    if (eventDef) {
+      properties.eventDefinition = eventDef.kind;
+      if (eventDef.ref) properties.eventDefinitionRef = eventDef.ref;
+    }
     // Boundary event host + interrupting flag from native attributes.
     if (type === 'boundaryEvent') {
       if (el.attributes.attachedToRef) properties.attachedToRef = el.attributes.attachedToRef;
@@ -312,12 +316,16 @@ function withForeignAttributes(el: XmlElement): { foreignAttributes?: Record<str
  * `messageEventDefinition`, `timerEventDefinition`) and returns the kind, or
  * `undefined` when the element has no (recognized) event definition.
  */
-function readEventDefinition(el: XmlElement): EventDefinitionKind | undefined {
+function readEventDefinition(
+  el: XmlElement,
+): { kind: EventDefinitionKind; ref?: string } | undefined {
   for (const child of el.children) {
     const match = /^(.+)EventDefinition$/.exec(localName(child.tag));
     const kind = match?.[1];
     if (kind && (EVENT_DEFINITION_KINDS as readonly string[]).includes(kind)) {
-      return kind as EventDefinitionKind;
+      const ref =
+        child.attributes.messageRef ?? child.attributes.signalRef ?? child.attributes.errorRef;
+      return { kind: kind as EventDefinitionKind, ...(ref ? { ref } : {}) };
     }
   }
   return undefined;

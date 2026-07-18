@@ -1,5 +1,7 @@
 import type { BpmnDiagram } from '../model/types.js';
 import type { Command, CommandInterceptor, RuleVerdict } from '../commands/types.js';
+import { isEventDefinitionRemoval } from '../commands/commands.js';
+import { eventDefinitionUsages } from '../model/eventDefinitions.js';
 
 /**
  * A rule evaluates a payload against the current diagram *before* the
@@ -77,6 +79,21 @@ export function registerDefaultRules(engine: RuleEngine): void {
       return { allowed: false, reason: 'A node cannot connect to itself' };
     }
     return { allowed: true };
+  });
+
+  // Handoff 16 §3a: removing a REFERENCED named event definition is vetoed
+  // with the honest usage list — deletion never cascades and never silently
+  // orphans an event.
+  engine.register<Command>('command.pre', (command, diagram) => {
+    if (!isEventDefinitionRemoval(command)) return { allowed: true };
+    const { kind, definitionId } = command.eventDefinitionRemoval;
+    const usages = eventDefinitionUsages(diagram, kind, definitionId);
+    if (usages.length === 0) return { allowed: true };
+    const listing = usages.map((usage) => `${usage.label} (${usage.nodeId})`).join(', ');
+    return {
+      allowed: false,
+      reason: `Definição em uso por ${usages.length} evento(s): ${listing} — troque a referência antes de excluir`,
+    };
   });
 }
 
