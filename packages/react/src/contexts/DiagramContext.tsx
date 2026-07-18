@@ -186,3 +186,13 @@ export function useDiagram(): DiagramContextValue {
   if (!value) throw new Error('useDiagram must be used inside <BpmnDesigner>/<BpmnViewer>');
   return value;
 }
+
+/**
+ * Tolerant variant for PURE shapes (Handoff 17 ES-2): a shape that needs
+ * sibling/child context (e.g. the collapsed event-subprocess trigger glyph)
+ * reads it through this and DEGRADES to `null` outside a provider — so
+ * standalone rendering (snapshots, server markup) never throws.
+ */
+export function useDiagramOrNull(): DiagramContextValue | null {
+  return useContext(DiagramContext);
+}

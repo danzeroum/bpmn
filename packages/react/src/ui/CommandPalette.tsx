@@ -12,6 +12,7 @@ import {
   type RegisteredMenuItem,
 } from '../commands/menuRegistry.js';
 import { builtinGlobalCommands, type RegisteredGlobalCommand } from '../commands/globalCommands.js';
+import { paletteInsertCommands } from '../commands/paletteCommands.js';
 import type { MenuTarget } from '../plugins/types.js';
 
 /**
@@ -43,6 +44,9 @@ export function paletteEntries(
   push(pluginMenuItems(target, ctx));
   push(pluginPadItems(target, ctx));
   push(builtinGlobalCommands(ctx));
+  // ES-2 reforço 8: composite palette items surface via their REGISTRY
+  // (paletteInsertCommands) — same aggregation discipline as every block.
+  push(paletteInsertCommands(ctx));
   return rows;
 }
 

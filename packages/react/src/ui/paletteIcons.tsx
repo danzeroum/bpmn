@@ -129,6 +129,13 @@ export const CORE_PALETTE_ICONS: Record<string, ReactNode> = {
       <path d="M 9 11.3 V 13.2 M 8.3 12.25 H 9.7" strokeWidth={1.1} />
     </Icon>
   ),
+  // Handoff 17 ES-2 (§4b): dotted container + typed start top-left.
+  eventSubprocess: (
+    <Icon>
+      <rect x={2.5} y={4} width={13} height={10} rx={2} strokeDasharray="2,1.6" strokeWidth={1.2} />
+      <circle cx={6.2} cy={7.6} r={1.9} strokeWidth={1.1} />
+    </Icon>
+  ),
   businessRuleTask: (
     <Icon>
       <rect x={2.5} y={4.75} width={13} height={8.5} rx={2} />

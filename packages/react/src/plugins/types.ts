@@ -31,6 +31,20 @@ export interface InspectorSection {
   component: ComponentType<{ node: BpmnNode }>;
 }
 
+/**
+ * What a composite palette item's {@link PaletteItem.build} factory receives:
+ * the CURRENT diagram, the node-type registry and the insertion position the
+ * host computed (viewport center + snap/jitter). `t` resolves i18n defaults
+ * (e.g. the E-2 default definition names).
+ */
+export interface PaletteBuildContext {
+  diagram: BpmnDiagram;
+  registry: import('@buildtovalue/core').NodeTypeRegistry;
+  x: number;
+  y: number;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}
+
 export interface PaletteItem {
   id: string;
   label: string;
@@ -43,6 +57,14 @@ export interface PaletteItem {
    * appended after all groups, preserving pre-group behavior.
    */
   group?: string;
+  /**
+   * COMPOSITE factory (Handoff 17 ES-2, documented public surface): when
+   * present, inserting this item executes the returned command (usually a
+   * `compositeCommand` — one undo) instead of a plain addNode, and selects
+   * `selectId` afterwards. The palette click AND the ⌘K entry resolve through
+   * this ONE factory (`paletteInsertCommand`) — never two code paths.
+   */
+  build?: (ctx: PaletteBuildContext) => { command: Command; selectId: string };
 }
 
 /**

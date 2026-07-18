@@ -56,3 +56,28 @@ complete catalog lives in `EDITOR_EVENTS` with typed payloads in
   for at least one minor with a single console deprecation warning (see
   `DEPRECATED_EVENT_ALIASES` — currently `node.created` → `element.added`),
   then disappears in the next major.
+
+## Composite palette items (`PaletteItem.build`, Handoff 17 ES-2)
+
+A palette item may declare an optional **composite factory**:
+
+```ts
+build?: (ctx: PaletteBuildContext) => { command: Command; selectId: string };
+```
+
+`ctx` carries the current diagram, the node-type registry, the insertion
+position the host computed (viewport center, grid-snapped) and `t` for i18n
+defaults. When present, inserting the item executes the returned command —
+usually a `compositeCommand`, so ONE undo reverts the whole insertion — and
+selects `selectId`.
+
+**One factory, one source:** the palette click and the ⌘K command palette
+entry both resolve items through `paletteInsertCommand`/`insertPaletteItem`
+(anti-drift tested). Items without `build` keep the plain single-node
+behaviour. The shipped example is «Event Subprocess» —
+`buildEventSubprocessInsert` creates the container (`triggeredByEvent`), a
+typed message start inside it and the referenced named definition in one
+atomic composite, so a fresh drop is lint-clean by construction.
+
+Palette labels resolve `palette.item.{id}` from the i18n dictionary when the
+key exists, falling back to `item.label` — additive, existing items unchanged.
