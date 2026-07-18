@@ -101,6 +101,19 @@ describe('BpmnXmlConverter round-trip', () => {
     expect(after).toBe(before);
   });
 
+  it('round-trips the in-review status via bpmnr:version like every other (Handoff 15 §2e)', () => {
+    const diagram = sampleDiagram();
+    diagram.version = { ...diagram.version, status: 'in-review' };
+    const converter = new BpmnXmlConverter();
+    const xml = converter.toXml(diagram);
+    expect(xml).toContain('status="in-review"');
+    const { diagram: imported, warnings } = converter.fromXml(xml);
+    expect(warnings).toEqual([]);
+    expect(imported.version.status).toBe('in-review');
+    // Stable under a second pass — the status is a plain attribute value.
+    expect(converter.toXml(imported)).toBe(xml);
+  });
+
   it('round-trips temporal immutability metadata (closed + superseded edges)', () => {
     const diagram = sampleDiagram();
     diagram.edges.e1 = { ...diagram.edges.e1, removedInVersion: 'v42' };

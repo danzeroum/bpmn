@@ -5,6 +5,7 @@ import type { VersionRegistry } from '@buildtovalue/registry';
 import {
   logicalArtifacts,
   relevantEntry,
+  toLifecycleStatus,
   type LogicalArtifact,
   type ObserverTarget,
   type RegistryArtifactAdapter,
@@ -79,7 +80,7 @@ export function dmnDecisionAdapter(
       name: node.label || 'Decisão',
       typeLabel: 'DECISÃO',
       version: entry.version.semanticVersion,
-      status: publication?.status ?? entry.version.status,
+      status: toLifecycleStatus(publication?.status ?? entry.version.status),
       meta: table ? `hit policy ${table.hitPolicy ?? 'U'} · ${rules} regras` : 'sem tabela de decisão',
       thumbnail: decisionThumbnail(rules),
       updatedAt: entry.version.createdAt,
@@ -123,7 +124,7 @@ export function dmnDecisionAdapter(
           })
           .map((e) => ({
             version: e.version.semanticVersion,
-            status: e.version.status,
+            status: toLifecycleStatus(e.version.status),
             timestamp: e.version.createdAt,
             note: e.version.changeSummary,
           }))

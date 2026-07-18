@@ -62,6 +62,7 @@ const VERSION_STATUSES: VersionStatus[] = [
   'draft',
   'test',
   'candidate',
+  'in-review',
   'active',
   'deprecated',
   'retired',

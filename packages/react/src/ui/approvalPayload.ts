@@ -1,5 +1,10 @@
 import { BpmnXmlConverter, sha256Hex, type AuditLedger, type BpmnDiagram } from '@buildtovalue/core';
-import { buildApprovalPayload, type CanonicalApprovalPayload } from '@buildtovalue/identity';
+import {
+  buildApprovalPayload,
+  buildChangeRequestPayload,
+  type CanonicalApprovalPayload,
+  type CanonicalChangeRequestPayload,
+} from '@buildtovalue/identity';
 
 export interface ApprovalPayloadInput {
   diagram: BpmnDiagram;
@@ -37,5 +42,30 @@ export async function buildApprovalPayloadFor(
     ledgerHead,
     decision,
     role,
+  });
+}
+
+export interface ChangeRequestPayloadInput extends Omit<ApprovalPayloadInput, 'decision'> {
+  /** Ids of the OPEN threads attached to the request. */
+  threadRefs: readonly string[];
+  /** Mandatory reviewer comment the signature binds. */
+  justification: string;
+}
+
+/**
+ * Assemble the canonical request-changes payload (Handoff 15 §2e) — the same
+ * `xmlHash`/`ledgerHead` binding as the approval, plus the version entity id,
+ * the attached open threads and the mandatory comment. Decision is always
+ * `"request-changes"` so verifiers can tell the acts apart.
+ */
+export async function buildChangeRequestPayloadFor(
+  input: ChangeRequestPayloadInput,
+): Promise<CanonicalChangeRequestPayload> {
+  const base = await buildApprovalPayloadFor({ ...input, decision: 'request-changes' });
+  return buildChangeRequestPayload({
+    ...base,
+    versionRef: input.diagram.version.id,
+    threadRefs: [...input.threadRefs],
+    justification: input.justification,
   });
 }

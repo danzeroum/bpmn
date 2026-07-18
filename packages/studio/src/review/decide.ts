@@ -1,5 +1,6 @@
 import type { AuditEntry, AuditLedger, BpmnDiagram, LifecycleEngine, UserContext } from '@buildtovalue/core';
 import type { SignedApproval } from '@buildtovalue/identity';
+import { reviewChangesRequestedEntry, type SignedChangeRequestRef } from '@buildtovalue/adapters-bpmn';
 
 /**
  * Decision commands of the Revisão (Handoff 6 §5). Both write a ledger entry
@@ -26,8 +27,12 @@ export interface ApprovePromotionInput {
 }
 
 export interface DecisionResult {
-  kind: 'approved' | 'rejected';
-  /** The diagram carrying the new ApprovalRecord (approve only). */
+  kind: 'approved' | 'rejected' | 'changes-requested';
+  /**
+   * approve → the diagram carrying the new ApprovalRecord;
+   * changes-requested → the NEW `in-review` version the state machine minted
+   * (chained to the candidate via `parentVersionId`); reject → unchanged.
+   */
   diagram: BpmnDiagram;
   ledgerEntry: AuditEntry;
 }
@@ -59,6 +64,54 @@ export interface RejectPromotionInput {
   diagram: BpmnDiagram;
   actor: UserContext;
   reason: string;
+}
+
+export interface RequestChangesInput {
+  engine: LifecycleEngine;
+  ledger: AuditLedger;
+  diagram: BpmnDiagram;
+  actor: UserContext;
+  /** Mandatory reviewer comment (min 10 chars — same floor as rejection). */
+  justification: string;
+  /** Ids of the OPEN threads attached as context (may be empty — §2e régua 6). */
+  threadRefs?: readonly string[];
+  /** The signed request (Handoff 8 I-2 discipline); absent → legacy unsigned. */
+  signedRequest?: SignedChangeRequestRef;
+}
+
+/**
+ * "Pedir mudanças" (Handoff 15 §2e) — the Studio's DEFAULT soft path (V-0
+ * decision 3; `rejectPromotion` remains the documented HARD reject). The
+ * transition candidate → `in-review` runs through the core state machine
+ * (cerca §1.4 — the UI never sets status directly), then the act becomes its
+ * own `REVIEW_CHANGES_REQUESTED` ledger entry carrying the justification,
+ * the attached open threads and (when signed) the verifiable signature.
+ * Threads are CONTEXT, not a prerequisite: the request works without a
+ * ReviewStore (§1.5).
+ */
+export async function requestChanges(input: RequestChangesInput): Promise<DecisionResult> {
+  const { engine, ledger, diagram, actor, justification, threadRefs = [], signedRequest } = input;
+  const trimmed = justification.trim();
+  if (trimmed.length < MIN_REJECTION_REASON_LENGTH) {
+    throw new Error(`justificativa deve ter ao menos ${MIN_REJECTION_REASON_LENGTH} caracteres`);
+  }
+  const inReview = await engine.promote({
+    diagram,
+    target: 'in-review',
+    actor,
+    reason: trimmed,
+  });
+  const ledgerEntry = await ledger.append(
+    reviewChangesRequestedEntry({
+      diagramId: diagram.id,
+      versionId: diagram.version.id,
+      actor,
+      justification: trimmed,
+      threadRefs,
+      ...(signedRequest ? { signedRequest } : {}),
+    }),
+  );
+  return { kind: 'changes-requested', diagram: inReview, ledgerEntry };
 }
 
 /** Rejection requires a justification (min 10 chars) and becomes a ledger entry. */

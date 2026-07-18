@@ -1952,6 +1952,7 @@ single console warning per session.
 
 `T` *extends* 
   \| `"command.undone"`
+  \| `"review.changes.requested"`
   \| `"import.warning"`
   \| `"diagram.loaded"`
   \| `"element.added"`
@@ -1966,7 +1967,6 @@ single console warning per session.
   \| `"shape.render.error"`
   \| `"review.thread.opened"`
   \| `"review.thread.resolved"`
-  \| `"review.changes.requested"`
 
 ###### Parameters
 
@@ -6077,6 +6077,89 @@ core's `BpmnXmlConverter` so the react surface works without one.
 
 ***
 
+### ChangeRequestPayloadInput
+
+#### Extends
+
+- `Omit`\<[`ApprovalPayloadInput`](#approvalpayloadinput), `"decision"`\>
+
+#### Properties
+
+##### diagram
+
+```ts
+diagram: BpmnDiagram;
+```
+
+###### Inherited from
+
+[`ApprovalPayloadInput`](#approvalpayloadinput).[`diagram`](#diagram-9)
+
+##### ledger?
+
+```ts
+optional ledger?: AuditLedger;
+```
+
+The ledger whose head the approval binds to; omitted → empty head.
+
+###### Inherited from
+
+[`ApprovalPayloadInput`](#approvalpayloadinput).[`ledger`](#ledger-1)
+
+##### role
+
+```ts
+role: string;
+```
+
+Role asserted for the approval.
+
+###### Inherited from
+
+[`ApprovalPayloadInput`](#approvalpayloadinput).[`role`](#role)
+
+##### toXml?
+
+```ts
+optional toXml?: (diagram) => string;
+```
+
+Host XML exporter (Studio injects its configured converter). Defaults to
+core's `BpmnXmlConverter` so the react surface works without one.
+
+###### Parameters
+
+###### diagram
+
+`BpmnDiagram`
+
+###### Returns
+
+`string`
+
+###### Inherited from
+
+[`ApprovalPayloadInput`](#approvalpayloadinput).[`toXml`](#toxml)
+
+##### threadRefs
+
+```ts
+threadRefs: readonly string[];
+```
+
+Ids of the OPEN threads attached to the request.
+
+##### justification
+
+```ts
+justification: string;
+```
+
+Mandatory reviewer comment the signature binds.
+
+***
+
 ### AnchorCycle
 
 #### Properties
@@ -9639,6 +9722,10 @@ ORPHANED threads (anchor no longer in the diagram under promotion) never
 block: the element already left. Blocking is an ERROR verdict, never a
 warning.
 
+The rule guards APPROVAL only (`target: 'active'`): every other transition
+— including request-changes (candidate → in-review, §2e), whose very
+trigger is an open thread — passes freely.
+
 #### Parameters
 
 ##### threads
@@ -11029,6 +11116,29 @@ PromotionPanel and the Studio ReviewScreen so both sign identical bytes.
 #### Returns
 
 `Promise`\<`CanonicalApprovalPayload`\>
+
+***
+
+### buildChangeRequestPayloadFor()
+
+```ts
+function buildChangeRequestPayloadFor(input): Promise<CanonicalChangeRequestPayload>;
+```
+
+Assemble the canonical request-changes payload (Handoff 15 §2e) — the same
+`xmlHash`/`ledgerHead` binding as the approval, plus the version entity id,
+the attached open threads and the mandatory comment. Decision is always
+`"request-changes"` so verifiers can tell the acts apart.
+
+#### Parameters
+
+##### input
+
+[`ChangeRequestPayloadInput`](#changerequestpayloadinput)
+
+#### Returns
+
+`Promise`\<`CanonicalChangeRequestPayload`\>
 
 ***
 

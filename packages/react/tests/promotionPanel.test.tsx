@@ -136,6 +136,7 @@ describe('PromotionPanel — gates reflect the core state machine', () => {
             draft: ['test'],
             test: ['candidate'],
             candidate: ['test'],
+            'in-review': [],
             active: [],
             deprecated: [],
             retired: [],

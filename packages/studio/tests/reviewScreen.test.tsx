@@ -343,3 +343,121 @@ describe('ReviewScreen — C3 Explicar (Handoff 9 CP-3, read-only ABSOLUTO)', ()
     expect(container.querySelector('[data-testid="review-explain"]')).toBeNull();
   });
 });
+
+describe('ReviewScreen — pedir mudanças (Handoff 15 §2e)', () => {
+  it('pedido com threads anexadas: transição, ledger, evento N-3 e selo legado', async () => {
+    const { createInMemoryReviewStore } = await import('@buildtovalue/react');
+    const store = createInMemoryReviewStore('v2');
+    const thread = store.open('work', { author: 'bruna', text: 'Quem cobre a transição?' });
+    const onDecided = vi.fn();
+    const onReviewEvent = vi.fn();
+    const diagram = candidateDiagram();
+    const { ledger } = setup({
+      candidates: [diagram],
+      reviewStore: store,
+      baselineOf: () => candidateDiagram({ versionId: 'v1', semver: '1.0.0', status: 'active' }),
+      onDecided,
+      onReviewEvent,
+    });
+    const toggle = await screen.findByTestId('review-request-changes');
+    fireEvent.click(toggle);
+    const form = screen.getByTestId('review-request-form');
+    expect(form.textContent).toContain('1 thread aberta anexada ao pedido');
+    const confirm = () => screen.getByTestId('review-request-confirm') as HTMLButtonElement;
+    fireEvent.change(form.querySelector('textarea')!, { target: { value: 'curta' } });
+    expect(confirm().disabled).toBe(true);
+    fireEvent.change(form.querySelector('textarea')!, {
+      target: { value: 'Cobrir o passo manual durante a transição.' },
+    });
+    expect(confirm().disabled).toBe(false);
+    fireEvent.click(confirm());
+    await waitFor(() =>
+      expect(screen.getByText('Pedido de mudanças registrado no ledger')).toBeInTheDocument(),
+    );
+    // Sem signer → selo declarado como legado (mesma disciplina I-2).
+    expect(screen.getByText('NÃO ASSINADA (LEGADO)')).toBeInTheDocument();
+    const entry = ledger.getEntries().find((e) => e.type === 'REVIEW_CHANGES_REQUESTED')!;
+    expect(entry.details).toMatchObject({
+      justification: 'Cobrir o passo manual durante a transição.',
+      threadRefs: [thread.id],
+    });
+    expect(onDecided).toHaveBeenCalledTimes(1);
+    expect(onDecided.mock.calls[0][0].kind).toBe('changes-requested');
+    expect(onDecided.mock.calls[0][0].diagram.version.status).toBe('in-review');
+    expect(onReviewEvent).toHaveBeenCalledWith('review.changes.requested', {
+      versionId: diagram.version.id,
+      threadRefs: [thread.id],
+    });
+  });
+
+  it('assinado quando há signer: payload canônico do pedido vai ao ledger e verifica visualmente', async () => {
+    const signer = await makeSigner('bruna@empresa.com.br', 'process-owner');
+    const { ledger } = setup({ signer });
+    fireEvent.click(await screen.findByTestId('review-request-changes'));
+    const form = screen.getByTestId('review-request-form');
+    fireEvent.change(form.querySelector('textarea')!, {
+      target: { value: 'Cobrir o passo manual durante a transição.' },
+    });
+    const confirmBtn = screen.getByTestId('review-request-confirm');
+    expect(confirmBtn.textContent).toContain('Assinar pedido de mudanças');
+    fireEvent.click(confirmBtn);
+    await waitFor(() =>
+      expect(screen.getByText('Pedido de mudanças registrado no ledger')).toBeInTheDocument(),
+    );
+    expect(screen.getByText('ASSINADA · VERIFICADA')).toBeInTheDocument();
+    const entry = ledger.getEntries().find((e) => e.type === 'REVIEW_CHANGES_REQUESTED')!;
+    const signed = (entry.details as { signedRequest: { payload: Record<string, unknown> } })
+      .signedRequest;
+    expect(signed.payload).toMatchObject({
+      decision: 'request-changes',
+      versionRef: 'v2',
+      justification: 'Cobrir o passo manual durante a transição.',
+      threadRefs: [],
+    });
+  });
+
+  it('régua 6 — sem ReviewStore o pedido funciona (threads são contexto, não pré-requisito)', async () => {
+    const { ledger } = setup();
+    fireEvent.click(await screen.findByTestId('review-request-changes'));
+    const form = screen.getByTestId('review-request-form');
+    expect(form.textContent).toContain('Nenhuma thread aberta anexada');
+    fireEvent.change(form.querySelector('textarea')!, {
+      target: { value: 'O comentário vale por si (§2e).' },
+    });
+    fireEvent.click(screen.getByTestId('review-request-confirm'));
+    await waitFor(() =>
+      expect(screen.getByText('Pedido de mudanças registrado no ledger')).toBeInTheDocument(),
+    );
+    const entry = ledger.getEntries().find((e) => e.type === 'REVIEW_CHANGES_REQUESTED')!;
+    expect(entry.details.threadRefs).toEqual([]);
+  });
+
+  it('régua 5 — re-submissão abre o diff contra a v-pedido, com as threads da rodada anterior', async () => {
+    const { VersionRegistry } = await import('@buildtovalue/registry');
+    const { createInMemoryReviewStore } = await import('@buildtovalue/react');
+    const registry = new VersionRegistry();
+    // v-pedido: a versão EM REVISÃO registrada quando as mudanças foram pedidas.
+    const requested = candidateDiagram({ versionId: 'v-req', semver: '2.0.0', status: 'in-review' });
+    await registry.register(requested);
+    // v-nova: a re-submissão encadeada à v-pedido pela state machine.
+    const resubmitted = candidateDiagram({ versionId: 'v3', semver: '2.1.0' });
+    resubmitted.version = { ...resubmitted.version, parentVersionId: 'v-req' };
+    const store = createInMemoryReviewStore('v2');
+    const previous = store.open('work', { author: 'bruna', text: 'Rodada anterior.' });
+    store.resolve(previous.id);
+    setup({
+      candidates: [resubmitted],
+      registry,
+      reviewStore: store,
+      // O host ainda aponta a base original — a v-pedido tem precedência.
+      baselineOf: () => candidateDiagram({ versionId: 'v1', semver: '1.0.0', status: 'active' }),
+    });
+    const kicker = await screen.findByTestId('review-diff-kicker');
+    expect(kicker.textContent).toContain('DIFF DA RE-SUBMISSÃO VS V2.0.0 (PEDIDO DE MUDANÇAS)');
+    // Threads da rodada anterior visíveis com estado (split canvas herdado).
+    expect(screen.getByTestId('review-split-canvas')).toBeInTheDocument();
+    fireEvent.click(document.querySelector('[data-review-tab="threads"]')!);
+    const row = screen.getByTestId('review-threads-list').querySelector('[data-review-thread-item]')!;
+    expect(row.getAttribute('data-review-thread-state')).toBe('resolved');
+  });
+});

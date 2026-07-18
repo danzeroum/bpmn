@@ -13,6 +13,7 @@ export const SEAL_LABELS: Record<VersionStatus, string> = {
   draft: 'RASCUNHO',
   test: 'TESTE INTERNO',
   candidate: 'CANDIDATA',
+  'in-review': '⟲ EM REVISÃO',
   active: 'ATIVA',
   deprecated: 'DESCONTINUADA',
   retired: 'ARQUIVADA',

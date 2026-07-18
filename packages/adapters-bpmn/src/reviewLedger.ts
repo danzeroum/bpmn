@@ -67,6 +67,51 @@ export function reviewThreadDismissedEntry(
   };
 }
 
+/** A signed request-changes act (§2e) on the chain. */
+export const REVIEW_CHANGES_REQUESTED_TYPE = 'REVIEW_CHANGES_REQUESTED';
+
+/**
+ * The signed-request fields the ledger persists — structural mirror of
+ * identity's `SignedApproval` (no nominal dependency, same discipline as
+ * `ReviewThreadRef`).
+ */
+export interface SignedChangeRequestRef {
+  payload: Record<string, unknown>;
+  signature: string;
+  signer: Record<string, unknown>;
+  signedAt: string;
+}
+
+/**
+ * Maps a request-changes decision (§2e: comentário obrigatório + threads
+ * abertas anexadas) to a ledger append input. `versionId` is the CANDIDATE
+ * version the request targets; the resulting `in-review` version chains to it
+ * via `parentVersionId`. When the act was signed, the full signed request
+ * (payload + Ed25519 signature + signer identity) joins the entry so any
+ * third party can verify it offline.
+ */
+export function reviewChangesRequestedEntry(input: {
+  diagramId: string;
+  versionId: string;
+  actor: Pick<UserContext, 'id' | 'role'>;
+  justification: string;
+  threadRefs: readonly string[];
+  signedRequest?: SignedChangeRequestRef;
+}): AuditEntryInput {
+  return {
+    type: REVIEW_CHANGES_REQUESTED_TYPE,
+    userId: input.actor.id,
+    versionId: input.versionId,
+    details: {
+      artifactId: input.diagramId,
+      role: input.actor.role,
+      justification: input.justification,
+      threadRefs: [...input.threadRefs],
+      ...(input.signedRequest ? { signedRequest: input.signedRequest } : {}),
+    },
+  };
+}
+
 /** Maps a thread resolution to a ledger append input. */
 export function reviewThreadResolvedEntry(
   thread: ReviewThreadRef,

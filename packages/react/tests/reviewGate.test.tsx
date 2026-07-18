@@ -211,6 +211,12 @@ describe('reviewThreadsRule (molde soundnessPromotionRule)', () => {
     expect(blocked).toMatchObject({ allowed: false });
     expect((blocked as { reason?: string }).reason).toContain('1 thread');
 
+    // §2e: a regra guarda só a APROVAÇÃO — pedir mudanças (candidate →
+    // in-review) passa livre justamente COM threads abertas.
+    expect(rule({ ...promoteInput(diagram), target: 'in-review' as const })).toEqual({
+      allowed: true,
+    });
+
     store.resolve(open.id);
     expect(rule(promoteInput(diagram))).toEqual({ allowed: true });
 

@@ -26,7 +26,7 @@ import {
 import type { ArtifactAction, ArtifactAdapter, ArtifactRef, LibraryQuery, LifecycleStatus, LibrarySort } from '@buildtovalue/library';
 import type { Signer } from '@buildtovalue/identity';
 import { createGitAnchor, type GitAnchorTransport } from '@buildtovalue/anchor-git';
-import { StudioShell } from '@buildtovalue/studio';
+import { StudioShell, type DecisionResult } from '@buildtovalue/studio';
 import { createInMemoryReviewStore, reviewThreadsRule, PT_BR } from '@buildtovalue/react';
 import '@buildtovalue/library-react/styles.css';
 import '@buildtovalue/studio/styles.css';
@@ -336,6 +336,54 @@ export function StudioSurface() {
     return store;
   }, []);
 
+  // Handoff 15 V-6 (§2e): one engine for the whole cycle — the review screen
+  // AND the demo re-submission promote through the SAME state machine.
+  const engine = useMemo(
+    () =>
+      new LifecycleEngine(
+        reviewStore ? { promotionRules: [reviewThreadsRule(() => reviewStore.list())] } : undefined,
+      ),
+    [reviewStore],
+  );
+  // The in-review version waiting for the designer's re-submission (§2e demo).
+  const [inReview, setInReview] = useState<BpmnDiagram>();
+
+  const onReviewDecided = (result: DecisionResult) => {
+    if (result.kind !== 'changes-requested' || !world) return;
+    // The N-3 event line (`review.changes.requested → …`) stays visible in
+    // last-action; here we only react to the state change.
+    // Register the freshly minted in-review version so lineage lookups (the
+    // re-submission diff v-pedido → v-nova) resolve through the registry.
+    void world.registry.register(result.diagram).then(() => setInReview(result.diagram));
+  };
+
+  // Papel da DESIGNER no demo: edita o fluxo em resposta ao pedido e
+  // re-submete (in-review → candidate pela state machine).
+  const resubmit = async () => {
+    if (!inReview || !world) return;
+    const edited: BpmnDiagram = {
+      ...inReview,
+      nodes: {
+        ...inReview.nodes,
+        sla: demoNode('sla', 'task', 690, 'Monitorar SLA da automação'),
+      },
+      edges: {
+        ...inReview.edges,
+        e5: demoEdge('e5', 'auto', 'sla'),
+      },
+    };
+    const candidate = await engine.promote({
+      diagram: edited,
+      target: 'candidate',
+      actor: { id: 'ana', role: 'process-owner' },
+      reason: 'Re-submissão: monitoramento de SLA cobre a transição pedida na revisão.',
+    });
+    await world.registry.register(candidate);
+    setWorld({ ...world, candidates: [candidate] });
+    setInReview(undefined);
+    setLastAction(`re-submissão → ${candidate.version.id}`);
+  };
+
   // Handoff 8 I-2 — the HOST owns the key (cerca §1.1): generated here (SSO/
   // YubiKey stand-in), NEVER in the library. Only the private handle is kept;
   // the library receives a `Signer` that exposes `sign(bytes)` only.
@@ -388,11 +436,9 @@ export function StudioSurface() {
     if (!world) return undefined;
     return {
       candidates: world.candidates,
-      // V-5: with `?threads=1` the engine also carries the reviewThreadsRule —
-      // open threads surface as a failed `rule:` gate in evaluateGates.
-      engine: new LifecycleEngine(
-        reviewStore ? { promotionRules: [reviewThreadsRule(() => reviewStore.list())] } : undefined,
-      ),
+      // V-5/V-6: the shared engine carries the reviewThreadsRule with
+      // `?threads=1` — open threads surface as a failed `rule:` gate.
+      engine,
       ledger: world.ledger,
       registry: world.registry,
       baselineOf: () => world.baseline,
@@ -415,8 +461,14 @@ export function StudioSurface() {
       ...(anchor ? { anchor } : {}),
       // Handoff 15 V-5: threads anchored to the candidate (split canvas + gate).
       ...(reviewStore ? { reviewStore } : {}),
+      // Handoff 15 V-6 (§2e): register the in-review version on pedido de
+      // mudanças; bridge the catalog event to the demo status line.
+      onDecided: onReviewDecided,
+      onReviewEvent: (name: string, payload: { versionId: string; threadRefs: string[] }) =>
+        setLastAction(`${name} → ${payload.threadRefs.length} thread(s)`),
     };
-  }, [world, signer, anchor, reviewStore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [world, signer, anchor, reviewStore, engine]);
 
   const onLibraryAction = (ref: ArtifactRef, action: ArtifactAction) => {
     setLastAction(`${action.id} → ${ref.adapterId}:${ref.artifactId}`);
@@ -434,6 +486,16 @@ export function StudioSurface() {
         <span data-testid="last-action" style={{ fontSize: 10, opacity: 0.6 }}>
           {lastAction}
         </span>
+        {inReview && (
+          <button
+            type="button"
+            data-testid="demo-resubmit"
+            style={{ fontSize: 10 }}
+            onClick={() => void resubmit()}
+          >
+            ✏️ Re-submeter (designer)
+          </button>
+        )}
         <label style={{ fontSize: 10, opacity: 0.8 }}>
           papel:{' '}
           <select

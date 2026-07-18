@@ -305,6 +305,23 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+/* §2e — pedir mudanças: the gold soft path (default), distinct from the
+   hard reject red. */
+.btv-studio-request-changes,
+.btv-studio-request-confirm {
+  font: inherit;
+  font-size: 12.5px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--bpmnr-status-in-review-fg, #7a611e);
+  background: transparent;
+  color: var(--bpmnr-status-in-review-fg, #7a611e);
+  cursor: pointer;
+}
+.btv-studio-request-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .btv-studio-reject-form {
   display: flex;
   flex-direction: column;

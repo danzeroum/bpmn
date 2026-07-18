@@ -108,6 +108,8 @@ const EXPECTED_EXPORTS = [
   'VERIFICATION_LABELS',
   'useAnchorCycle',
   'buildApprovalPayloadFor',
+  // Handoff 15 §2e — canonical payload of the signed request-changes act.
+  'buildChangeRequestPayloadFor',
   'SEMANTIC_ZOOM_MIN',
   'SHADOW_FILTER_ID',
   'SHADOW_HOVER_FILTER_ID',

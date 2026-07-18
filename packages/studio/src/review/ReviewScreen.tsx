@@ -11,15 +11,17 @@ import {
   AnchorSeal,
   BpmnDiffViewer,
   buildApprovalPayloadFor,
+  buildChangeRequestPayloadFor,
   CanonicalPayloadCard,
   DiffView,
   SignatureBadge,
   StatusBadge,
   useAnchorCycle,
   useT,
+  type EditorEventPayloads,
   type ReviewStore,
 } from '@buildtovalue/react';
-import { reviewThreadDismissedEntry } from '@buildtovalue/adapters-bpmn';
+import { reviewThreadDismissedEntry, type SignedChangeRequestRef } from '@buildtovalue/adapters-bpmn';
 import {
   signApproval,
   type AnchorAdapter,
@@ -33,6 +35,7 @@ import { runReviewChecks, type ReviewCheck } from './checks.js';
 import {
   approvePromotion,
   rejectPromotion,
+  requestChanges,
   MIN_REJECTION_REASON_LENGTH,
   type DecisionResult,
 } from './decide.js';
@@ -59,6 +62,15 @@ export interface ReviewScreenProps {
   reviewStore?: ReviewStore;
   /** Notifies the host so it persists the approval / reacts to the rejection. */
   onDecided?: (result: DecisionResult) => void;
+  /**
+   * N-3 bridge (Handoff 15 §2e): the Studio has no editor plugin bus, so the
+   * host receives the catalog event here and re-emits it on its own bus. The
+   * payload type IS the catalog's (`EditorEventPayloads`) — no drift.
+   */
+  onReviewEvent?: (
+    name: 'review.changes.requested',
+    payload: EditorEventPayloads['review.changes.requested'],
+  ) => void;
   /** Renders the "abrir no canvas →" link when provided (read-only Designer). */
   onOpenInDesigner?: (diagram: BpmnDiagram) => void;
   /**
@@ -118,13 +130,16 @@ function signatureFingerprintOf(signed: SignedApproval): string {
  */
 export function ReviewScreen(props: ReviewScreenProps) {
   const t = useT();
-  const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onOpenInDesigner, replayAnalysisFor, explain, now, signer, anchor, reviewStore } =
+  const { candidates, engine, ledger, actor, registry, converter, baselineOf, onDecided, onReviewEvent, onOpenInDesigner, replayAnalysisFor, explain, now, signer, anchor, reviewStore } =
     props;
   const [requests, setRequests] = useState<PromotionRequest[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
   const [checks, setChecks] = useState<ReviewCheck[]>();
   const [decisions, setDecisions] = useState<Record<string, DecisionResult>>({});
   const [rejecting, setRejecting] = useState(false);
+  // §2e — the Studio's DEFAULT soft path: pedir mudanças (assinado).
+  const [requesting, setRequesting] = useState(false);
+  const [requestReason, setRequestReason] = useState('');
   // C3: read-only explanations by candidate id — no ledger, no commands.
   const [explanations, setExplanations] = useState<Record<string, string>>({});
   const [explaining, setExplaining] = useState(false);
@@ -251,6 +266,45 @@ export function ReviewScreen(props: ReviewScreenProps) {
     onDecided?.(result);
   };
 
+  // §2e — pedir mudanças: signed when a signer is wired (I-2 discipline),
+  // state-machine transition candidate → in-review, own ledger entry, and the
+  // catalog event re-emitted through the host bridge.
+  const confirmRequestChanges = async () => {
+    if (!selected) return;
+    const justification = requestReason.trim();
+    let signedRequest: SignedChangeRequestRef | undefined;
+    if (signer) {
+      const payload = await buildChangeRequestPayloadFor({
+        diagram: selected.diagram,
+        ledger,
+        role: actor.role,
+        threadRefs: openThreadRefs,
+        justification,
+        ...(converter ? { toXml: (d: BpmnDiagram) => converter.toXml(d) } : {}),
+      });
+      const signed = await signApproval(signer, payload, now ? now() : new Date().toISOString());
+      signedRequest = signed as unknown as SignedChangeRequestRef;
+    }
+    const result = await requestChanges({
+      engine,
+      ledger,
+      diagram: selected.diagram,
+      actor,
+      justification,
+      threadRefs: openThreadRefs,
+      ...(signedRequest ? { signedRequest } : {}),
+    });
+    setDecisions((prev) => ({ ...prev, [selected.diagram.version.id]: result }));
+    setSelectedId(selected.diagram.version.id);
+    setRequesting(false);
+    setRequestReason('');
+    onReviewEvent?.('review.changes.requested', {
+      versionId: selected.diagram.version.id,
+      threadRefs: openThreadRefs,
+    });
+    onDecided?.(result);
+  };
+
   // §2d — the SAME blocking definition as reviewThreadsRule: open threads
   // (not resolved, not dismissed, anchor still present) BLOCK the approve
   // button; orphans never do. Re-render on store changes via subscribe.
@@ -259,8 +313,8 @@ export function ReviewScreen(props: ReviewScreenProps) {
     () => reviewStore?.subscribe?.(() => setThreadsTick((tick) => tick + 1)),
     [reviewStore],
   );
-  const blockingReviewThreads = useMemo(() => {
-    if (!reviewStore || !selected) return 0;
+  const openThreadRefs = useMemo(() => {
+    if (!reviewStore || !selected) return [] as string[];
     const diagram = selected.diagram;
     return reviewStore
       .list()
@@ -269,12 +323,27 @@ export function ReviewScreen(props: ReviewScreenProps) {
           !thread.resolved &&
           !thread.dismissed &&
           (thread.elementId in diagram.nodes || thread.elementId in diagram.edges),
-      ).length;
+      )
+      .map((thread) => thread.id);
     // threadsTick força a recomputação quando o store notifica.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reviewStore, selected?.diagram, threadsTick]);
+  const blockingReviewThreads = openThreadRefs.length;
 
-  const baseline = selected && baselineOf ? baselineOf(selected.diagram) : undefined;
+  // §2e régua 5 — re-submission diff: when the candidate chains to an
+  // `in-review` parent (the version on which changes were formally requested),
+  // the diff opens against THAT version (v-pedido → v-nova), never the
+  // original base. The lookup is pure lineage (registry), no host wiring.
+  const selectedDiagram = selected?.diagram;
+  const requestedFrom = useMemo(() => {
+    if (!registry || !selectedDiagram) return undefined;
+    const parentId = selectedDiagram.version.parentVersionId;
+    if (!parentId) return undefined;
+    const parent = registry.get(parentId);
+    return parent?.version.status === 'in-review' ? parent.snapshot : undefined;
+  }, [registry, selectedDiagram]);
+  const baseline =
+    requestedFrom ?? (selected && baselineOf ? baselineOf(selected.diagram) : undefined);
   const diff = useMemo(
     () => (selected && baseline ? computeDiff(baseline, selected.diagram) : undefined),
     [baseline, selected?.diagram],
@@ -409,10 +478,14 @@ export function ReviewScreen(props: ReviewScreenProps) {
 
             <section className="btv-studio-block">
               <div className="btv-studio-block-head">
-                <span className="btv-studio-kicker">
-                  {baseline
-                    ? t('review.diff.kicker', { version: baseline.version.semanticVersion })
-                    : t('review.diff.kickerNoBaseline')}
+                <span className="btv-studio-kicker" data-testid="review-diff-kicker">
+                  {requestedFrom
+                    ? t('review.diff.resubmissionKicker', {
+                        version: requestedFrom.version.semanticVersion,
+                      })
+                    : baseline
+                      ? t('review.diff.kicker', { version: baseline.version.semanticVersion })
+                      : t('review.diff.kickerNoBaseline')}
                 </span>
                 {onOpenInDesigner && (
                   <button
@@ -508,7 +581,9 @@ export function ReviewScreen(props: ReviewScreenProps) {
                   <strong>
                     {decision.kind === 'approved'
                       ? t('review.decision.approved')
-                      : t('review.decision.rejected')}
+                      : decision.kind === 'changes-requested'
+                        ? t('review.decision.changesRequested')
+                        : t('review.decision.rejected')}
                   </strong>
                   <code className="btv-studio-mono">{decision.ledgerEntry.hash}</code>
                   {decision.kind === 'approved' &&
@@ -516,6 +591,21 @@ export function ReviewScreen(props: ReviewScreenProps) {
                       const signed = (
                         decision.ledgerEntry.details as { signedApproval?: SignedApproval }
                       ).signedApproval;
+                      return signed ? (
+                        <SignatureBadge
+                          state="valid"
+                          signer={signed.signer}
+                          signatureFingerprint={signatureFingerprintOf(signed)}
+                        />
+                      ) : (
+                        <SignatureBadge state="legacy" />
+                      );
+                    })()}
+                  {decision.kind === 'changes-requested' &&
+                    (() => {
+                      const signed = (
+                        decision.ledgerEntry.details as { signedRequest?: SignedApproval }
+                      ).signedRequest;
                       return signed ? (
                         <SignatureBadge
                           state="valid"
@@ -567,13 +657,62 @@ export function ReviewScreen(props: ReviewScreenProps) {
                     </button>
                     <button
                       type="button"
+                      className="btv-studio-request-changes"
+                      data-testid="review-request-changes"
+                      aria-expanded={requesting}
+                      onClick={() => {
+                        setRequesting((r) => !r);
+                        setRejecting(false);
+                      }}
+                    >
+                      {/* i18n-exempt — request-changes seal glyph */}⟲{' '}
+                      {t('review.requestChanges.toggle')}
+                    </button>
+                    <button
+                      type="button"
                       className="btv-studio-reject"
                       aria-expanded={rejecting}
-                      onClick={() => setRejecting((r) => !r)}
+                      onClick={() => {
+                        setRejecting((r) => !r);
+                        setRequesting(false);
+                      }}
                     >
                       {t('review.decision.rejectToggle')}
                     </button>
                   </div>
+                  {requesting && (
+                    <div className="btv-studio-reject-form" data-testid="review-request-form">
+                      <p className="btv-studio-muted">
+                        {openThreadRefs.length === 0
+                          ? t('review.requestChanges.noThreads')
+                          : t('review.requestChanges.threadsAttached', {
+                              count: openThreadRefs.length,
+                            })}
+                      </p>
+                      <textarea
+                        aria-label={t('review.requestChanges.aria')}
+                        placeholder={t('review.requestChanges.placeholder', {
+                          min: MIN_REJECTION_REASON_LENGTH,
+                        })}
+                        value={requestReason}
+                        onChange={(e) => setRequestReason(e.target.value)}
+                        rows={3}
+                      />
+                      <button
+                        type="button"
+                        className="btv-studio-request-confirm"
+                        data-testid="review-request-confirm"
+                        disabled={requestReason.trim().length < MIN_REJECTION_REASON_LENGTH}
+                        onClick={() => void confirmRequestChanges()}
+                      >
+                        {signer ? (
+                          <>🔏 {t('review.requestChanges.confirmSigned')}</>
+                        ) : (
+                          t('review.requestChanges.confirm')
+                        )}
+                      </button>
+                    </div>
+                  )}
                   {rejecting && (
                     <div className="btv-studio-reject-form">
                       <textarea

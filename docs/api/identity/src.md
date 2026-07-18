@@ -76,6 +76,10 @@ What an approval signature covers. Deterministically serialized via
 change to `xmlHash`, `ledgerHead`, `decision` or `role` invalidates the
 signature on verification.
 
+#### Extended by
+
+- [`CanonicalChangeRequestPayload`](#canonicalchangerequestpayload)
+
 #### Properties
 
 ##### diagramId
@@ -123,6 +127,117 @@ role: string;
 ```
 
 The role asserted for this approval (mirrors the signer identity).
+
+***
+
+### CanonicalChangeRequestPayload
+
+What a request-changes signature covers (Handoff 15 §2e) — the approval
+payload plus the request specifics: the exact version entity the request
+targets, the open threads attached as context and the mandatory reviewer
+comment. A superset of [CanonicalApprovalPayload](#canonicalapprovalpayload), so the existing
+`signApproval`/`verifySignature` flow signs and verifies it unchanged
+(`canonicalJsonExact` serializes every field deterministically).
+
+#### Extends
+
+- [`CanonicalApprovalPayload`](#canonicalapprovalpayload)
+
+#### Properties
+
+##### diagramId
+
+```ts
+diagramId: string;
+```
+
+###### Inherited from
+
+[`CanonicalApprovalPayload`](#canonicalapprovalpayload).[`diagramId`](#diagramid)
+
+##### version
+
+```ts
+version: string;
+```
+
+Semantic version of the approved artifact, e.g. "2.1.0".
+
+###### Inherited from
+
+[`CanonicalApprovalPayload`](#canonicalapprovalpayload).[`version`](#version)
+
+##### xmlHash
+
+```ts
+xmlHash: string;
+```
+
+SHA-256 of the canonical BPMN XML at approval time.
+
+###### Inherited from
+
+[`CanonicalApprovalPayload`](#canonicalapprovalpayload).[`xmlHash`](#xmlhash)
+
+##### ledgerHead
+
+```ts
+ledgerHead: string;
+```
+
+Ledger head hash the approval is bound to.
+
+###### Inherited from
+
+[`CanonicalApprovalPayload`](#canonicalapprovalpayload).[`ledgerHead`](#ledgerhead)
+
+##### decision
+
+```ts
+decision: string;
+```
+
+The governance decision, e.g. "approve" | "reject".
+
+###### Inherited from
+
+[`CanonicalApprovalPayload`](#canonicalapprovalpayload).[`decision`](#decision)
+
+##### role
+
+```ts
+role: string;
+```
+
+The role asserted for this approval (mirrors the signer identity).
+
+###### Inherited from
+
+[`CanonicalApprovalPayload`](#canonicalapprovalpayload).[`role`](#role-1)
+
+##### versionRef
+
+```ts
+versionRef: string;
+```
+
+Version entity id the request targets (`version.id`, not the semver).
+
+##### threadRefs
+
+```ts
+threadRefs: string[];
+```
+
+Ids of the open threads attached to the request (sorted, deterministic).
+
+##### justification
+
+```ts
+justification: string;
+```
+
+The mandatory reviewer comment the signature binds.
 
 ***
 
@@ -425,6 +540,29 @@ identity), so any later mutation of those is detectable on verification.
 #### Returns
 
 [`CanonicalApprovalPayload`](#canonicalapprovalpayload)
+
+***
+
+### buildChangeRequestPayload()
+
+```ts
+function buildChangeRequestPayload(input): CanonicalChangeRequestPayload;
+```
+
+Build the canonical payload a request-changes signature covers (Handoff 15
+§2e — same discipline as [buildApprovalPayload](#buildapprovalpayload)): the approval fields
+plus versionRef + attached open threadRefs + the mandatory justification.
+`threadRefs` is sorted so the bytes never depend on collection order.
+
+#### Parameters
+
+##### input
+
+[`CanonicalChangeRequestPayload`](#canonicalchangerequestpayload)
+
+#### Returns
+
+[`CanonicalChangeRequestPayload`](#canonicalchangerequestpayload)
 
 ***
 

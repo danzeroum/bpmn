@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { AuditLedger, LifecycleEngine, type UserContext } from '@buildtovalue/core';
 import type { SignedApproval } from '@buildtovalue/identity';
+import { REVIEW_CHANGES_REQUESTED_TYPE } from '@buildtovalue/adapters-bpmn';
 import {
   APPROVAL_RECORDED,
   PROMOTION_REJECTED,
   approvePromotion,
   rejectPromotion,
+  requestChanges,
 } from '../src/index.js';
 import { candidateDiagram } from './fixtures.js';
 
@@ -74,6 +76,90 @@ describe('approvePromotion — aprovar ≠ ativar (§5/§11)', () => {
     });
     await expect(approvePromotion({ engine, ledger, diagram, actor })).rejects.toThrow();
     expect(ledger.getEntries()).toHaveLength(0);
+  });
+});
+
+describe('requestChanges — pedir mudanças pela state machine (§2e)', () => {
+  it('transiciona candidate → in-review pelo core e grava REVIEW_CHANGES_REQUESTED', async () => {
+    const engine = new LifecycleEngine();
+    const ledger = new AuditLedger();
+    const diagram = candidateDiagram();
+    const result = await requestChanges({
+      engine,
+      ledger,
+      diagram,
+      actor,
+      justification: '  Cobrir o passo manual durante a transição.  ',
+      threadRefs: ['th1', 'th2'],
+    });
+    expect(result.kind).toBe('changes-requested');
+    // The NEW in-review version chains to the candidate (never mutated).
+    expect(result.diagram.version.status).toBe('in-review');
+    expect(result.diagram.version.parentVersionId).toBe(diagram.version.id);
+    expect(diagram.version.status).toBe('candidate');
+    expect(result.ledgerEntry.type).toBe(REVIEW_CHANGES_REQUESTED_TYPE);
+    expect(result.ledgerEntry.versionId).toBe(diagram.version.id);
+    expect(result.ledgerEntry.details).toMatchObject({
+      artifactId: 'onboarding',
+      role: 'process-owner',
+      justification: 'Cobrir o passo manual durante a transição.',
+      threadRefs: ['th1', 'th2'],
+    });
+    expect((await ledger.verify()).valid).toBe(true);
+  });
+
+  it('justificativa curta não transiciona nem toca o ledger', async () => {
+    const engine = new LifecycleEngine();
+    const ledger = new AuditLedger();
+    await expect(
+      requestChanges({ engine, ledger, diagram: candidateDiagram(), actor, justification: 'curta' }),
+    ).rejects.toThrow(/ao menos 10 caracteres/);
+    expect(ledger.getEntries()).toHaveLength(0);
+  });
+
+  it('persiste o pedido assinado nos details; sem assinatura a chave não existe', async () => {
+    const engine = new LifecycleEngine();
+    const ledger = new AuditLedger();
+    const signedRequest = {
+      payload: { decision: 'request-changes' },
+      signature: 'c2ln',
+      signer: { subject: 'bruna@x' },
+      signedAt: '2026-07-17T00:00:00.000Z',
+    };
+    const signed = await requestChanges({
+      engine,
+      ledger,
+      diagram: candidateDiagram(),
+      actor,
+      justification: 'Cobrir o passo manual durante a transição.',
+      signedRequest,
+    });
+    expect(signed.ledgerEntry.details).toMatchObject({ signedRequest, threadRefs: [] });
+    const legacy = await requestChanges({
+      engine,
+      ledger,
+      diagram: candidateDiagram({ versionId: 'onb-v9' }),
+      actor,
+      justification: 'Sem assinatura, caminho legado declarado.',
+    });
+    expect(legacy.ledgerEntry.details).not.toHaveProperty('signedRequest');
+  });
+
+  it('rejectPromotion segue intacto como rejeição dura: nenhuma transição de status (decisão 3 da V-0)', async () => {
+    const ledger = new AuditLedger();
+    const diagram = candidateDiagram();
+    const result = await rejectPromotion({
+      ledger,
+      diagram,
+      actor,
+      reason: 'O diff remove a validação manual sem contingência.',
+    });
+    // The hard path writes the ledger entry and leaves the status machine
+    // alone — exactly as before §2e.
+    expect(result.kind).toBe('rejected');
+    expect(result.diagram).toBe(diagram);
+    expect(result.diagram.version.status).toBe('candidate');
+    expect(result.ledgerEntry.type).toBe(PROMOTION_REJECTED);
   });
 });
 

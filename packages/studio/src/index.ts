@@ -22,5 +22,6 @@ export {
   PROMOTION_REJECTED,
   approvePromotion,
   rejectPromotion,
+  requestChanges,
 } from './review/decide.js';
-export type { ApprovePromotionInput, DecisionResult, RejectPromotionInput } from './review/decide.js';
+export type { ApprovePromotionInput, DecisionResult, RejectPromotionInput, RequestChangesInput } from './review/decide.js';

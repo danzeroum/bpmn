@@ -52,6 +52,31 @@ describe('logicalArtifacts / relevantEntry', () => {
   });
 });
 
+describe('EM REVISÃO ⟲ na Biblioteca (Handoff 15 §2e, V-0 decisão 2)', () => {
+  it('mapeia in-review → candidate (perda documentada) e o selo ⟲ sobrevive no meta', async () => {
+    const registry = new VersionRegistry();
+    await registry.register(
+      await diagramAt({
+        id: 'onboarding',
+        name: 'Onboarding de clientes',
+        versionId: 'onb-v3',
+        semver: '2.1.0',
+        status: 'in-review',
+        createdAt: '2026-07-01T00:00:00.000Z',
+        changeSummary: 'Aguardando re-submissão após pedido de mudanças.',
+      }),
+    );
+    const adapter = bpmnDiagramAdapter(registry, { now: NOW });
+    const [summary] = await adapter.list({});
+    // The library keeps its fixed six states — never a seventh.
+    expect(summary.status).toBe('candidate');
+    // …but the gallery still shows the request-changes seal.
+    expect(summary.meta).toContain('⟲ EM REVISÃO');
+    const detail = await adapter.get('onboarding');
+    expect(detail.versions[0].status).toBe('candidate');
+  });
+});
+
 describe('createRegistryAdapter — list()', () => {
   it('lists one summary per logical artifact with registry-backed fields', async () => {
     const registry = await seededRegistry();

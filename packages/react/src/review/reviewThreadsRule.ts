@@ -12,9 +12,14 @@ import type { ReviewThread } from './ReviewStore.js';
  * ORPHANED threads (anchor no longer in the diagram under promotion) never
  * block: the element already left. Blocking is an ERROR verdict, never a
  * warning.
+ *
+ * The rule guards APPROVAL only (`target: 'active'`): every other transition
+ * — including request-changes (candidate → in-review, §2e), whose very
+ * trigger is an open thread — passes freely.
  */
 export function reviewThreadsRule(threads: () => readonly ReviewThread[]): PromotionRule {
-  return ({ diagram }) => {
+  return ({ diagram, target }) => {
+    if (target !== 'active') return { allowed: true };
     const blocking = threads().filter(
       (thread) =>
         !thread.resolved &&

@@ -51,6 +51,45 @@ describe('LifecycleEngine transitions', () => {
     expect(engine.allowedTargets('retired')).toEqual([]);
   });
 
+  it('EM REVISÃO ⟲ (Handoff 15 §2e) is strictly the request-changes cycle', () => {
+    // Only candidate → in-review (pedir mudanças) and in-review → candidate
+    // (re-submissão). No shortcut in or out.
+    expect(engine.canTransition('candidate', 'in-review')).toBe(true);
+    expect(engine.canTransition('in-review', 'candidate')).toBe(true);
+    expect(engine.allowedTargets('in-review')).toEqual(['candidate']);
+    expect(engine.canTransition('in-review', 'active')).toBe(false);
+    expect(engine.canTransition('in-review', 'test')).toBe(false);
+    expect(engine.canTransition('in-review', 'draft')).toBe(false);
+    expect(engine.canTransition('draft', 'in-review')).toBe(false);
+    expect(engine.canTransition('test', 'in-review')).toBe(false);
+    expect(engine.canTransition('active', 'in-review')).toBe(false);
+  });
+
+  it('promote() drives the full request-changes cycle through the state machine', async () => {
+    const candidate = diagramIn('candidate');
+    const inReview = await engine.promote({
+      diagram: candidate,
+      target: 'in-review',
+      actor: compliance,
+      reason: 'Cobrir o passo manual durante a transição.',
+    });
+    expect(inReview.version.status).toBe('in-review');
+    expect(inReview.version.parentVersionId).toBe(candidate.version.id);
+    expect(inReview.version.changeSummary).toBe('Cobrir o passo manual durante a transição.');
+    const resubmitted = await engine.promote({
+      diagram: inReview,
+      target: 'candidate',
+      actor: owner,
+      reason: 'Re-submissão com o monitoramento pedido.',
+    });
+    expect(resubmitted.version.status).toBe('candidate');
+    expect(resubmitted.version.parentVersionId).toBe(inReview.version.id);
+    // Straight to active from in-review stays vetoed by the machine.
+    await expect(
+      engine.promote({ diagram: inReview, target: 'active', actor: owner, reason: 'atalho' }),
+    ).rejects.toThrow(BpmnLifecycleError);
+  });
+
   it('echoes the required approval roles from the config (default 2)', () => {
     expect(engine.requiredApprovalRoles).toBe(2);
     expect(new LifecycleEngine({ minApprovalRoles: 3 }).requiredApprovalRoles).toBe(3);
@@ -249,6 +288,7 @@ describe('promotion to active', () => {
         draft: ['active'],
         test: [],
         candidate: [],
+        'in-review': [],
         active: [],
         deprecated: [],
         retired: [],

@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { canonicalJson } from '@buildtovalue/core';
 import {
   buildApprovalPayload,
+  buildChangeRequestPayload,
   encodePayload,
   signApproval,
   verificationState,
   verifySignature,
   type CanonicalApprovalPayload,
+  type CanonicalChangeRequestPayload,
   type Signer,
 } from '../src/index.js';
 
@@ -81,6 +83,54 @@ describe('sign → verify round-trip', () => {
       diagramId: BASE.diagramId,
     };
     expect(encodePayload(reordered)).toEqual(encodePayload(BASE));
+  });
+
+  it('a signed change request (Handoff 15 §2e) verifies and tampering breaks it', async () => {
+    const { signer, publicKey } = await makeSigner('process-owner');
+    const payload = buildChangeRequestPayload({
+      ...BASE,
+      decision: 'request-changes',
+      versionRef: 'onb-v2',
+      threadRefs: ['t-b', 't-a'],
+      justification: 'Cobrir o passo manual durante a transição.',
+    });
+    // Deterministic: threadRefs come back sorted.
+    expect(payload.threadRefs).toEqual(['t-a', 't-b']);
+    const signed = await signApproval(signer, payload, '2026-07-17T10:00:00.000Z');
+    expect(await verifySignature(signed, publicKey)).toBe('valid');
+    // The signature binds the request specifics too.
+    const tamperedJustification = {
+      ...signed,
+      payload: { ...(signed.payload as CanonicalChangeRequestPayload), justification: 'outra' },
+    };
+    expect(await verifySignature(tamperedJustification, publicKey)).toBe('invalid');
+    const tamperedThreads = {
+      ...signed,
+      payload: { ...(signed.payload as CanonicalChangeRequestPayload), threadRefs: ['t-a'] },
+    };
+    expect(await verifySignature(tamperedThreads, publicKey)).toBe('invalid');
+  });
+
+  it('buildChangeRequestPayload encodes deterministically regardless of field/ref order', () => {
+    const a = buildChangeRequestPayload({
+      ...BASE,
+      decision: 'request-changes',
+      versionRef: 'onb-v2',
+      threadRefs: ['t2', 't1'],
+      justification: 'mesma justificativa',
+    });
+    const b = buildChangeRequestPayload({
+      justification: 'mesma justificativa',
+      threadRefs: ['t1', 't2'],
+      versionRef: 'onb-v2',
+      decision: 'request-changes',
+      role: BASE.role,
+      ledgerHead: BASE.ledgerHead,
+      xmlHash: BASE.xmlHash,
+      version: BASE.version,
+      diagramId: BASE.diagramId,
+    });
+    expect(encodePayload(a)).toEqual(encodePayload(b));
   });
 
   it('encodePayload bytes match the legacy canonicalJson encoding (string-only payloads)', () => {
