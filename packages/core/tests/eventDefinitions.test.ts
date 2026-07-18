@@ -68,6 +68,7 @@ function definedDiagram(): BpmnDiagram {
     messages: [{ id: 'msg-1', name: 'Pedido aprovado' }],
     signals: [{ id: 'sig-1', name: 'Estoque baixo' }],
     errors: [{ id: 'err-1', name: 'Falha de cobrança', errorCode: 'PAY-42' }],
+    escalations: [],
   };
   diagram.nodes.wait = {
     ...diagram.nodes.wait,

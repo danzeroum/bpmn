@@ -105,6 +105,12 @@ const LOCAL_TO_MATRIX: Record<string, string> = {
   conditionalEventDefinition: 'bpmn:conditionalEventDefinition',
   linkEventDefinition: 'bpmn:linkEventDefinition',
   terminateEventDefinition: 'bpmn:terminateEventDefinition',
+  // Named-definition roots (Handoff 16 §3a / Handoff 18 §5a): supported model
+  // elements carrying the definitions that events reference by *Ref.
+  message: 'bpmn:message (root)',
+  signal: 'bpmn:signal (root)',
+  error: 'bpmn:error (root)',
+  escalation: 'bpmn:escalation (root)',
   exclusiveGateway: 'bpmn:exclusiveGateway',
   parallelGateway: 'bpmn:parallelGateway',
   inclusiveGateway: 'bpmn:inclusiveGateway',

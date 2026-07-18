@@ -2,17 +2,21 @@ import type {
   BpmnDiagram,
   BpmnNode,
   ErrorEventDefinition,
+  EscalationEventDefinition,
   EventDefinitions,
   NamedEventDefinition,
 } from './types.js';
 
 /**
  * Named event definitions — headless helpers (Handoff 16 §3a, E-1).
- * The three referenceable kinds map 1:1 to the OMG root elements
- * (`bpmn:message`/`bpmn:signal`/`bpmn:error`) and to the event KINDS the
- * nodes already carry in `properties.eventDefinition`.
+ * The referenceable kinds map 1:1 to the OMG root elements
+ * (`bpmn:message`/`bpmn:signal`/`bpmn:error`/`bpmn:escalation`) and to the
+ * event KINDS the nodes already carry in `properties.eventDefinition`.
+ * Handoff 18 §5a adds `escalation` as the 4th kind through this SAME single
+ * source (zero fork) — buckets, id prefix, picker and refs follow by
+ * construction.
  */
-export const EVENT_DEFINITION_REF_KINDS = ['message', 'signal', 'error'] as const;
+export const EVENT_DEFINITION_REF_KINDS = ['message', 'signal', 'error', 'escalation'] as const;
 export type EventDefinitionRefKind = (typeof EVENT_DEFINITION_REF_KINDS)[number];
 
 /** Bucket key of a kind inside {@link EventDefinitions}. */
@@ -20,6 +24,7 @@ export const EVENT_DEFINITION_BUCKETS = {
   message: 'messages',
   signal: 'signals',
   error: 'errors',
+  escalation: 'escalations',
 } as const satisfies Record<EventDefinitionRefKind, keyof EventDefinitions>;
 
 /** Id prefix per kind — the «+» auto-id convention (Axelor-validated). */
@@ -27,23 +32,30 @@ const ID_PREFIX: Record<EventDefinitionRefKind, string> = {
   message: 'msg',
   signal: 'sig',
   error: 'err',
+  escalation: 'esc',
 };
 
 /** Empty, frozen-shape buckets — the starting point when `definitions` is absent. */
 export function emptyEventDefinitions(): EventDefinitions {
-  return { messages: [], signals: [], errors: [] };
+  return { messages: [], signals: [], errors: [], escalations: [] };
 }
 
-/** The definitions bag of a diagram, tolerant of the absent field. */
-export function eventDefinitionsOf(diagram: BpmnDiagram): EventDefinitions {
-  return diagram.definitions ?? emptyEventDefinitions();
+/**
+ * The definitions bag of a diagram, tolerant of the absent field AND of the
+ * additive `escalations` bucket being absent from an older literal — every
+ * bucket is filled so callers treat all four as always-present (Handoff 18).
+ */
+export function eventDefinitionsOf(diagram: BpmnDiagram): Required<EventDefinitions> {
+  const defs = diagram.definitions;
+  if (!defs) return emptyEventDefinitions() as Required<EventDefinitions>;
+  return { ...defs, escalations: defs.escalations ?? [] };
 }
 
 /** Definition list of one kind (empty array when absent). */
 export function eventDefinitionList(
   diagram: BpmnDiagram,
   kind: EventDefinitionRefKind,
-): readonly (NamedEventDefinition | ErrorEventDefinition)[] {
+): readonly (NamedEventDefinition | ErrorEventDefinition | EscalationEventDefinition)[] {
   return eventDefinitionsOf(diagram)[EVENT_DEFINITION_BUCKETS[kind]];
 }
 
@@ -52,7 +64,7 @@ export function findEventDefinition(
   diagram: BpmnDiagram,
   kind: EventDefinitionRefKind,
   id: string,
-): NamedEventDefinition | ErrorEventDefinition | undefined {
+): NamedEventDefinition | ErrorEventDefinition | EscalationEventDefinition | undefined {
   return eventDefinitionList(diagram, kind).find((definition) => definition.id === id);
 }
 

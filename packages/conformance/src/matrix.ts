@@ -56,6 +56,7 @@ export const CONFORMANCE_MATRIX: ConformanceEntry[] = [
   { element: 'bpmn:message (root)', status: 'supported', conformanceClass: 'analytic', mappedTo: 'definitions.messages[]', notes: 'Named definition; events reference via messageRef (properties.eventDefinitionRef). Orphan refs are synthesized with an informative warning.' },
   { element: 'bpmn:signal (root)', status: 'supported', conformanceClass: 'analytic', mappedTo: 'definitions.signals[]', notes: 'Named definition; referenced via signalRef.' },
   { element: 'bpmn:error (root)', status: 'supported', conformanceClass: 'analytic', mappedTo: 'definitions.errors[]', notes: 'Named definition with errorCode; referenced via errorRef.' },
+  { element: 'bpmn:escalation (root)', status: 'supported', conformanceClass: 'analytic', mappedTo: 'definitions.escalations[]', notes: 'Named definition with escalationCode (Handoff 18 §5a); referenced via escalationRef on throw (intermediate/end) and catch (boundary/event-subprocess start). Orphan refs are synthesized with an informative warning.' },
   { element: 'bpmn:messageEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'message'" },
   { element: 'bpmn:timerEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'timer'" },
   // Handoff 16 E-5 (§3d): canonical timer expression as the standard child.

@@ -40,6 +40,7 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:message (root)` | ✅ supported | analytic | `definitions.messages[]` | Named definition; events reference via messageRef (properties.eventDefinitionRef). Orphan refs are synthesized with an informative warning. |
 | `bpmn:signal (root)` | ✅ supported | analytic | `definitions.signals[]` | Named definition; referenced via signalRef. |
 | `bpmn:error (root)` | ✅ supported | analytic | `definitions.errors[]` | Named definition with errorCode; referenced via errorRef. |
+| `bpmn:escalation (root)` | ✅ supported | analytic | `definitions.escalations[]` | Named definition with escalationCode (Handoff 18 §5a); referenced via escalationRef on throw (intermediate/end) and catch (boundary/event-subprocess start). Orphan refs are synthesized with an informative warning. |
 | `bpmn:messageEventDefinition` | ✅ supported | analytic | `eventDefinition: 'message'` |  |
 | `bpmn:timerEventDefinition` | ✅ supported | analytic | `eventDefinition: 'timer'` |  |
 | `bpmn:timeDate` | ✅ supported | analytic | `properties.timer` | Canonical { kind: 'date', expression } — validated by the headless ISO 8601 parser (TIMER_MALFORMED). |
@@ -104,6 +105,7 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:message (root)` | ✅ supported | modela (declarado) | — |
 | `bpmn:signal (root)` | ✅ supported | modela (declarado) | — |
 | `bpmn:error (root)` | ✅ supported | modela (declarado) | — |
+| `bpmn:escalation (root)` | ✅ supported | modela (declarado) | — |
 | `bpmn:messageEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:timerEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:timeDate` | ✅ supported | modela (declarado) | — |
@@ -150,7 +152,7 @@ detalhes em `docs/format-spec.md` §"Foreign extension passthrough".
 
 ## Corpus real vs gerado (Handoff 11 N-2)
 
-- **Gerados (commitados):** 58 arquivos em `corpus/` — equivalentes
+- **Gerados (commitados):** 59 arquivos em `corpus/` — equivalentes
   estruturais, zero material proprietário.
 - **Reais (fetch em CI):** ≥ 20 exigidos pelo gate (cap 40), baixados por
   `pnpm fetch:corpus` para `corpus-external/` (git-ignorado) a partir de:

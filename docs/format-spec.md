@@ -152,23 +152,29 @@ engine simply ignores it:
   the element tag stays standard.
 - `bpmnr:property name value` — free-form properties (`value` is JSON-encoded).
 
-## Named event definitions (`bpmn:message` / `bpmn:signal` / `bpmn:error`)
+## Named event definitions (`bpmn:message` / `bpmn:signal` / `bpmn:error` / `bpmn:escalation`)
 
-First-class named definitions (Handoff 16 §3a) follow the OMG standard exactly — never a
-vendor namespace for what the spec already names:
+First-class named definitions (Handoff 16 §3a; escalation added in Handoff 18 §5a) follow the
+OMG standard exactly — never a vendor namespace for what the spec already names:
 
-- **Model.** `diagram.definitions.{messages,signals,errors}[]` — `{ id, name }` entries
-  (`errors` additionally carry the OMG `errorCode`). The field is optional and additive:
-  absent, every pre-existing hash and export is byte-identical (frozen fixture
-  `eventDefsFrozen.json`).
+- **Model.** `diagram.definitions.{messages,signals,errors,escalations}[]` — `{ id, name }`
+  entries (`errors` carry the OMG `errorCode`; `escalations` carry `escalationCode`, the exact
+  mould, per-type asymmetry). The whole field is optional and additive; `escalations` is itself
+  additionally optional so a pre-existing `definitions` literal stays valid, and every read goes
+  through `eventDefinitionsOf`, which fills the missing bucket. Absent, every pre-existing hash
+  and export is byte-identical (frozen fixtures `eventDefsFrozen.json` / `escalationFrozen.json`).
 - **References.** An event keeps its KIND in `properties.eventDefinition` and references a
   named definition via `properties.eventDefinitionRef` (the definition's `id`). Renaming a
   definition never touches nodes — the cascade to every referencing event is by construction.
 - **Export.** Definitions emit as root elements (`<bpmn:message id name/>`,
-  `<bpmn:signal/>`, `<bpmn:error errorCode/>`) before `collaboration`/`process`, in stored
-  array order; the event's `<bpmn:{kind}EventDefinition>` child carries the standard
-  `messageRef`/`signalRef`/`errorRef` attribute. Round-trip is byte-stable between
-  bpmn-react exports.
+  `<bpmn:signal/>`, `<bpmn:error errorCode/>`, `<bpmn:escalation escalationCode/>`) before
+  `collaboration`/`process`, in stored array order (escalation after error in the XSD
+  rootElement group); the code attribute is OMITTED when undefined (never `escalationCode=""`).
+  The event's `<bpmn:{kind}EventDefinition>` child carries the standard
+  `messageRef`/`signalRef`/`errorRef`/`escalationRef` attribute — for escalation across all
+  four hosts: throw (intermediate/end) and catch (boundary + event-subprocess start). Round-trip
+  is byte-stable between bpmn-react exports. Authority (`properties.escalationAuthority`) is NOT
+  an OMG concept — it stays a common `bpmnr:property`, never a root attribute.
 - **Import.** Root elements populate `diagram.definitions`; `*Ref` attributes populate the
   node property. An ORPHAN ref (no matching root) is synthesized as `{ id: ref, name: ref }`
   WITH an informative warning naming the event — never silence, never data loss.

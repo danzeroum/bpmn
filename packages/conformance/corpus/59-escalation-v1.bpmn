@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Interoperability corpus (bpmn-react). Structural equivalent of: OMG spec examples (governed escalation).
+  Pattern: named escalation root + non-interrupting boundary catch + end throw (variant 1).
+  Generated content (scripts/gen-corpus.mjs) - no proprietary material.
+  License: Apache-2.0.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_esc0" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:escalation id="esc-alcada" name="Acima da alçada" escalationCode="OVER_BUDGET" />
+  <bpmn:process id="Process_esc0" isExecutable="true">
+    <bpmn:startEvent id="Start_1" />
+    <bpmn:userTask id="Task_approve" name="Aprovar despesa" />
+    <bpmn:boundaryEvent id="Bnd_esc" name="Acima da alçada" attachedToRef="Task_approve" cancelActivity="false">
+      <bpmn:escalationEventDefinition id="Bnd_esc_def" escalationRef="esc-alcada" />
+    </bpmn:boundaryEvent>
+    <bpmn:task id="Task_review" name="Rever alçada" />
+    <bpmn:endEvent id="End_ok" />
+    <bpmn:endEvent id="End_esc" name="Escalar">
+      <bpmn:escalationEventDefinition id="End_esc_def" escalationRef="esc-alcada" />
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Task_approve" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_approve" targetRef="End_ok" />
+    <bpmn:sequenceFlow id="Flow_esc" sourceRef="Bnd_esc" targetRef="Task_review" />
+    <bpmn:sequenceFlow id="Flow_r2" sourceRef="Task_review" targetRef="End_esc" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Definitions_esc0_diagram">
+    <bpmndi:BPMNPlane id="Definitions_esc0_plane" bpmnElement="Process_esc0">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_approve_di" bpmnElement="Task_approve">
+        <dc:Bounds x="260" y="78" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Bnd_esc_di" bpmnElement="Bnd_esc">
+        <dc:Bounds x="342" y="120" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_review_di" bpmnElement="Task_review">
+        <dc:Bounds x="440" y="200" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_ok_di" bpmnElement="End_ok">
+        <dc:Bounds x="460" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_esc_di" bpmnElement="End_esc">
+        <dc:Bounds x="620" y="212" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="196" y="118" />
+        <di:waypoint x="260" y="108" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="380" y="108" />
+        <di:waypoint x="460" y="118" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_esc_di" bpmnElement="Flow_esc">
+        <di:waypoint x="360" y="156" />
+        <di:waypoint x="360" y="230" />
+        <di:waypoint x="440" y="230" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_r2_di" bpmnElement="Flow_r2">
+        <di:waypoint x="560" y="230" />
+        <di:waypoint x="620" y="230" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

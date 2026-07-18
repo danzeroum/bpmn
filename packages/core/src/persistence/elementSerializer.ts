@@ -125,7 +125,9 @@ export class ElementSerializer {
           ? 'signalRef'
           : eventDef === 'error'
             ? 'errorRef'
-            : undefined;
+            : eventDef === 'escalation'
+              ? 'escalationRef'
+              : undefined;
     const eventRef =
       refAttrName && typeof node.properties.eventDefinitionRef === 'string' && node.properties.eventDefinitionRef !== ''
         ? node.properties.eventDefinitionRef

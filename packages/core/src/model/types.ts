@@ -170,11 +170,31 @@ export interface ErrorEventDefinition extends NamedEventDefinition {
   errorCode?: string;
 }
 
+/**
+ * `bpmn:escalation` root element (Handoff 18 §5a) — carries the OMG
+ * `escalationCode`, the exact mould of `errorCode` (per-type asymmetry). The
+ * code is optional and OMITTED from the XML when undefined (never an empty
+ * attribute), like `errorCode`. Authority (`escalationAuthority`) is NOT an OMG
+ * concept — it stays a common `bpmnr:property`, never a root attribute.
+ */
+export interface EscalationEventDefinition extends NamedEventDefinition {
+  escalationCode?: string;
+}
+
 /** The named-definition buckets, one per referenceable kind. */
 export interface EventDefinitions {
   messages: NamedEventDefinition[];
   signals: NamedEventDefinition[];
   errors: ErrorEventDefinition[];
+  /**
+   * Escalation definitions (Handoff 18 §5a) — the 4th bucket, entering the
+   * SAME single sources as messages/signals/errors (zero fork). OPTIONAL and
+   * additive so pre-existing `definitions` literals stay valid; every read
+   * goes through {@link eventDefinitionsOf}, which fills the missing bucket, so
+   * downstream code treats it as always-present. Absent/empty emits nothing —
+   * the pre-existing frozen fixtures stay byte-identical.
+   */
+  escalations?: EscalationEventDefinition[];
 }
 
 export interface BpmnDiagram {

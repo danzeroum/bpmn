@@ -4,6 +4,7 @@ import type {
   BpmnNode,
   Command,
   EdgeGeometry,
+  EventDefinitionRefKind,
   LifecycleConfig,
   NodeTypeDefinition,
   Point,
@@ -372,9 +373,9 @@ export interface ResolvedEventDefinition extends EventDefinitionCatalogEntry {
  */
 export interface EventDefinitionResolver {
   /** Entries offered in the picker's "Da Biblioteca" section, per kind. */
-  list(kind: 'message' | 'signal' | 'error'): EventDefinitionCatalogEntry[];
+  list(kind: EventDefinitionRefKind): EventDefinitionCatalogEntry[];
   /** Resolve a pinned `nome@semver` ref; undefined → SIG_REF_MISSING. */
-  resolve(ref: string, kind: 'message' | 'signal' | 'error'): ResolvedEventDefinition | undefined;
+  resolve(ref: string, kind: EventDefinitionRefKind): ResolvedEventDefinition | undefined;
 }
 
 /**

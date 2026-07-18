@@ -3668,7 +3668,7 @@ Entries offered in the picker's "Da Biblioteca" section, per kind.
 
 ###### kind
 
-`"error"` \| `"message"` \| `"signal"`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"`
 
 ###### Returns
 
@@ -3690,7 +3690,7 @@ Resolve a pinned `nome@semver` ref; undefined → SIG_REF_MISSING.
 
 ###### kind
 
-`"error"` \| `"message"` \| `"signal"`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"`
 
 ###### Returns
 
@@ -8632,7 +8632,7 @@ Resolution state of a binding: vigente / candidata (warning) / não resolvida (e
 
 ##### kind
 
-`"error"` \| `"message"` \| `"signal"`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"`
 
 #### Returns
 
@@ -8679,7 +8679,7 @@ point the node's `eventDefinitionRef` at it and pin the binding.
 
 ##### kind
 
-`"error"` \| `"message"` \| `"signal"`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"`
 
 ##### binding
 
@@ -8728,7 +8728,7 @@ bypassed here and only here.
 
 ##### kind
 
-`"error"` \| `"message"` \| `"signal"`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"`
 
 ##### description
 
@@ -12081,7 +12081,7 @@ function EmptyState(): Element | null;
 ### eventKindOf()
 
 ```ts
-function eventKindOf(node): "error" | "message" | "signal" | null;
+function eventKindOf(node): "error" | "message" | "signal" | "escalation" | null;
 ```
 
 #### Parameters
@@ -12092,7 +12092,7 @@ function eventKindOf(node): "error" | "message" | "signal" | null;
 
 #### Returns
 
-`"error"` \| `"message"` \| `"signal"` \| `null`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"` \| `null`
 
 ***
 
