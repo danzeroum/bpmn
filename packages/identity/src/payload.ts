@@ -1,5 +1,5 @@
 import { canonicalJsonExact } from '@buildtovalue/core';
-import type { CanonicalApprovalPayload } from './types.js';
+import type { CanonicalApprovalPayload, CanonicalChangeRequestPayload } from './types.js';
 
 /**
  * Build the canonical payload an approval signature covers (Handoff 8 §3). The
@@ -14,6 +14,23 @@ export function buildApprovalPayload(input: CanonicalApprovalPayload): Canonical
     ledgerHead: input.ledgerHead,
     decision: input.decision,
     role: input.role,
+  };
+}
+
+/**
+ * Build the canonical payload a request-changes signature covers (Handoff 15
+ * §2e — same discipline as {@link buildApprovalPayload}): the approval fields
+ * plus versionRef + attached open threadRefs + the mandatory justification.
+ * `threadRefs` is sorted so the bytes never depend on collection order.
+ */
+export function buildChangeRequestPayload(
+  input: CanonicalChangeRequestPayload,
+): CanonicalChangeRequestPayload {
+  return {
+    ...buildApprovalPayload(input),
+    versionRef: input.versionRef,
+    threadRefs: [...input.threadRefs].sort(),
+    justification: input.justification,
   };
 }
 

@@ -8,6 +8,8 @@ import * as api from '../src/index.js';
  */
 const EXPECTED_EXPORTS = [
   'buildApprovalPayload',
+  // Handoff 15 §2e — canonical payload of the signed request-changes act.
+  'buildChangeRequestPayload',
   'deriveAnchorState',
   'encodePayload',
   'evaluateRoleRequirement',

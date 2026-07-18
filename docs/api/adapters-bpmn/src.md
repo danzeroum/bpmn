@@ -858,6 +858,40 @@ versionRef: string;
 
 ***
 
+### SignedChangeRequestRef
+
+The signed-request fields the ledger persists — structural mirror of
+identity's `SignedApproval` (no nominal dependency, same discipline as
+`ReviewThreadRef`).
+
+#### Properties
+
+##### payload
+
+```ts
+payload: Record<string, unknown>;
+```
+
+##### signature
+
+```ts
+signature: string;
+```
+
+##### signer
+
+```ts
+signer: Record<string, unknown>;
+```
+
+##### signedAt
+
+```ts
+signedAt: string;
+```
+
+***
+
 ### RoteiroRecord
 
 A recorded simulation session offered to the Biblioteca as a versioned
@@ -1172,6 +1206,16 @@ const REVIEW_THREAD_DISMISSED_TYPE: "REVIEW_THREAD_DISMISSED" = 'REVIEW_THREAD_D
 ```
 
 A justified dismissal (gate release WITHOUT resolving) on the chain.
+
+***
+
+### REVIEW\_CHANGES\_REQUESTED\_TYPE
+
+```ts
+const REVIEW_CHANGES_REQUESTED_TYPE: "REVIEW_CHANGES_REQUESTED" = 'REVIEW_CHANGES_REQUESTED';
+```
+
+A signed request-changes act (§2e) on the chain.
 
 ***
 
@@ -1768,6 +1812,53 @@ the justification text travels in the entry.
 ##### justification
 
 `string`
+
+#### Returns
+
+`AuditEntryInput`
+
+***
+
+### reviewChangesRequestedEntry()
+
+```ts
+function reviewChangesRequestedEntry(input): AuditEntryInput;
+```
+
+Maps a request-changes decision (§2e: comentário obrigatório + threads
+abertas anexadas) to a ledger append input. `versionId` is the CANDIDATE
+version the request targets; the resulting `in-review` version chains to it
+via `parentVersionId`. When the act was signed, the full signed request
+(payload + Ed25519 signature + signer identity) joins the entry so any
+third party can verify it offline.
+
+#### Parameters
+
+##### input
+
+###### diagramId
+
+`string`
+
+###### versionId
+
+`string`
+
+###### actor
+
+`Pick`\<`UserContext`, `"id"` \| `"role"`\>
+
+###### justification
+
+`string`
+
+###### threadRefs
+
+readonly `string`[]
+
+###### signedRequest?
+
+[`SignedChangeRequestRef`](#signedchangerequestref)
 
 #### Returns
 

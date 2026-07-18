@@ -61,6 +61,71 @@ test('full review flow: open thread blocks, resolve releases, signed approval la
   );
 });
 
+test('V-6 full cycle: pedir mudanças assinado → ⟲ na Biblioteca → re-submeter → resolver → aprovar assinado → cadeia íntegra', async ({
+  page,
+}) => {
+  await page.goto('/?studio=1&sign=1&threads=1#/revisao');
+
+  // Aprovar bloqueado pela thread aberta (V-5 gate).
+  const approve = page.getByRole('button', { name: '🔏 Assinar aprovação com minha chave' });
+  await expect(approve).toBeDisabled();
+
+  // Pedir mudanças ASSINADO: comentário obrigatório + thread anexada.
+  await page.getByTestId('review-request-changes').click();
+  const form = page.getByTestId('review-request-form');
+  await expect(form).toContainText('1 thread aberta anexada ao pedido');
+  const confirm = page.getByTestId('review-request-confirm');
+  await expect(confirm).toContainText('Assinar pedido de mudanças');
+  await form.locator('textarea').fill('curta');
+  await expect(confirm).toBeDisabled();
+  await form.locator('textarea').fill('Cubram o passo manual durante a transição da automação.');
+  await confirm.click();
+  await expect(page.getByText('Pedido de mudanças registrado no ledger')).toBeVisible();
+  await expect(page.locator('.bpmnr-signature-badge[data-verification="valid"]')).toContainText(
+    'ASSINADA · VERIFICADA',
+  );
+  // Evento N-3 emitido via ponte do host.
+  await expect(page.getByTestId('last-action')).toContainText('review.changes.requested');
+
+  // Galeria da Biblioteca mostra o selo ⟲ (decisão 2 da V-0).
+  await page.getByRole('button', { name: 'Biblioteca' }).click();
+  await expect(page.getByText('⟲ EM REVISÃO').first()).toBeVisible();
+
+  // Designer re-submete (demo): in-review → candidate pela state machine.
+  await page.getByTestId('demo-resubmit').click();
+  await page.getByRole('button', { name: 'Revisão', exact: true }).click();
+
+  // Diff da re-submissão: v-pedido → v-nova, nunca a base original.
+  await expect(page.getByTestId('review-diff-kicker')).toContainText(
+    'DIFF DA RE-SUBMISSÃO VS V2.0.0 (PEDIDO DE MUDANÇAS)',
+  );
+  const split = page.getByTestId('review-split-canvas');
+  await expect(split).toBeVisible();
+  // A thread da rodada anterior segue visível e ABERTA — ainda bloqueia.
+  await expect(page.getByTestId('review-gate-banner')).toContainText('1 thread aberta');
+  await expect(approve).toBeDisabled();
+
+  // Resolver a thread pela superfície de review ("ver no canvas" navega até ela).
+  await page.getByTestId('review-gate-goto').click();
+  const thread = page.getByTestId('review-thread');
+  await thread.locator('[data-review-resolve]').click();
+  await expect(thread.getByTestId('review-resolved')).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  // Gate libera → aprovar ASSINADO.
+  await expect(page.getByTestId('review-gate-banner')).toHaveCount(0);
+  await approve.click();
+  await expect(page.getByText('Aprovação registrada no ledger')).toBeVisible();
+  await expect(page.locator('.bpmnr-signature-badge[data-verification="valid"]')).toContainText(
+    'ASSINADA · VERIFICADA',
+  );
+
+  // verifyLedger íntegro de ponta a ponta: 4 do mundo + pedido + aprovação.
+  await page.getByRole('button', { name: 'Auditoria' }).click();
+  await page.getByRole('button', { name: 'Verificar cadeia' }).click();
+  await expect(page.getByText('Cadeia íntegra (6/6)', { exact: true })).toBeVisible();
+});
+
 test('threads tab mirrors the V-3 list; dismissal demands a justification', async ({ page }) => {
   await page.goto('/?studio=1&threads=1#/revisao');
   const split = page.getByTestId('review-split-canvas');

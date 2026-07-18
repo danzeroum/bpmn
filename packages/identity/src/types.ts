@@ -49,6 +49,23 @@ export interface CanonicalApprovalPayload {
   role: string;
 }
 
+/**
+ * What a request-changes signature covers (Handoff 15 §2e) — the approval
+ * payload plus the request specifics: the exact version entity the request
+ * targets, the open threads attached as context and the mandatory reviewer
+ * comment. A superset of {@link CanonicalApprovalPayload}, so the existing
+ * `signApproval`/`verifySignature` flow signs and verifies it unchanged
+ * (`canonicalJsonExact` serializes every field deterministically).
+ */
+export interface CanonicalChangeRequestPayload extends CanonicalApprovalPayload {
+  /** Version entity id the request targets (`version.id`, not the semver). */
+  versionRef: string;
+  /** Ids of the open threads attached to the request (sorted, deterministic). */
+  threadRefs: string[];
+  /** The mandatory reviewer comment the signature binds. */
+  justification: string;
+}
+
 /** A signed approval: the covered payload plus the detached Ed25519 signature. */
 export interface SignedApproval {
   payload: CanonicalApprovalPayload;

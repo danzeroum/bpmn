@@ -22,6 +22,14 @@ describe('StatusBadge — standalone seal mode', () => {
     expect(badge).toHaveTextContent('v2.1.0');
   });
 
+  it('renders the EM REVISÃO ⟲ seal (Handoff 15 §2e — gold, glyph in the label)', () => {
+    render(<StatusBadge seal={{ status: 'in-review', semanticVersion: '2.0.0' }} />, { wrapper });
+    const badge = screen.getByRole('status');
+    expect(badge).toHaveAttribute('data-status', 'in-review');
+    expect(badge).toHaveTextContent('⟲ EM REVISÃO');
+    expect(badge).toHaveTextContent('v2.0.0');
+  });
+
   it('uses the host-provided meta line verbatim', () => {
     render(
       <StatusBadge seal={{ status: 'active', semanticVersion: '1.0.0', meta: 'vigente desde 02/03/2026' }} />,

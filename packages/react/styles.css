@@ -253,6 +253,7 @@
 
 .bpmnr-breadcrumb-seal[data-status='test'] { background: var(--bpmnr-status-test, #e3ecf7); color: var(--bpmnr-status-test-fg, #33567e); }
 .bpmnr-breadcrumb-seal[data-status='candidate'] { background: var(--bpmnr-status-candidate, #f6edd4); color: var(--bpmnr-status-candidate-fg, #7a611e); }
+.bpmnr-breadcrumb-seal[data-status='in-review'] { background: var(--bpmnr-status-in-review, #f6edd4); color: var(--bpmnr-status-in-review-fg, #7a611e); }
 .bpmnr-breadcrumb-seal[data-status='active'] { background: var(--bpmnr-status-active, #dff0e6); color: var(--bpmnr-status-active-fg, #1a6a54); }
 .bpmnr-breadcrumb-seal[data-status='deprecated'] { background: var(--bpmnr-status-deprecated, #f7e6e0); color: var(--bpmnr-status-deprecated-fg, #b3372f); }
 .bpmnr-breadcrumb-seal[data-status='retired'] { background: var(--bpmnr-status-retired, #efece6); color: var(--bpmnr-status-retired-fg, #6f675a); }
@@ -1137,6 +1138,16 @@
 .bpmnr-status-badge[data-status='candidate'] .bpmnr-status-pill {
   background: var(--bpmnr-status-candidate, #f6edd4);
   color: var(--bpmnr-status-candidate-fg, #7a611e);
+}
+
+/* Handoff 15 §2e — EM REVISÃO ⟲: gold seal (candidate family, own tokens). */
+.bpmnr-status-badge[data-status='in-review'] {
+  border-color: var(--bpmnr-status-in-review-border, #d9b64a);
+  background: var(--bpmnr-status-in-review-bg, #fdfaf1);
+}
+.bpmnr-status-badge[data-status='in-review'] .bpmnr-status-pill {
+  background: var(--bpmnr-status-in-review, #f6edd4);
+  color: var(--bpmnr-status-in-review-fg, #7a611e);
 }
 
 .bpmnr-status-badge[data-status='active'] {

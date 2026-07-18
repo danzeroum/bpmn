@@ -3995,10 +3995,20 @@ type NodeCategory =
 ### VersionStatus
 
 ```ts
-type VersionStatus = "draft" | "test" | "candidate" | "active" | "deprecated" | "retired";
+type VersionStatus = 
+  | "draft"
+  | "test"
+  | "candidate"
+  | "in-review"
+  | "active"
+  | "deprecated"
+  | "retired";
 ```
 
-Lifecycle status of a diagram version.
+Lifecycle status of a diagram version. `in-review` (Handoff 15 §2e) is the
+EM REVISÃO ⟲ parking state of the request-changes cycle: a candidate whose
+approver formally asked for changes; the only way out is re-submission
+(back to `candidate`).
 
 ***
 

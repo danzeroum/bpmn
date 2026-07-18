@@ -18,7 +18,10 @@ import { canonicalJson, sha256Hex } from '../persistence/hash.js';
 export const DEFAULT_TRANSITIONS: Record<VersionStatus, VersionStatus[]> = {
   draft: ['test'],
   test: ['candidate', 'draft'],
-  candidate: ['active', 'test'],
+  candidate: ['active', 'test', 'in-review'],
+  // Handoff 15 §2e — EM REVISÃO ⟲: entered ONLY by request-changes
+  // (candidate → in-review) and left ONLY by re-submission (→ candidate).
+  'in-review': ['candidate'],
   active: ['deprecated'],
   deprecated: ['retired'],
   retired: [],

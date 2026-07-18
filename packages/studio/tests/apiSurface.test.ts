@@ -22,6 +22,8 @@ const EXPECTED_EXPORTS = [
   'filterEntries',
   'pendingPromotions',
   'rejectPromotion',
+  // Handoff 15 §2e — pedir mudanças: the Studio's default soft path.
+  'requestChanges',
   'runReviewChecks',
   // Handoff 9 §8.2 — selo de autoria de IA nas entradas do Explorer.
   'aiAuthorOf',

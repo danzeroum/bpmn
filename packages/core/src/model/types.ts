@@ -9,11 +9,17 @@
  *   closed (`removedInVersion`) and optionally superseded (`supersedesEdgeId`).
  */
 
-/** Lifecycle status of a diagram version. */
+/**
+ * Lifecycle status of a diagram version. `in-review` (Handoff 15 §2e) is the
+ * EM REVISÃO ⟲ parking state of the request-changes cycle: a candidate whose
+ * approver formally asked for changes; the only way out is re-submission
+ * (back to `candidate`).
+ */
 export type VersionStatus =
   | 'draft'
   | 'test'
   | 'candidate'
+  | 'in-review'
   | 'active'
   | 'deprecated'
   | 'retired';

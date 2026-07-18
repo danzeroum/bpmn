@@ -1,10 +1,11 @@
 import { AdapterError } from './errors.js';
-import type { BpmnDiagram } from '@buildtovalue/core';
+import type { BpmnDiagram, VersionStatus } from '@buildtovalue/core';
 import type {
   ArtifactAction,
   ArtifactAdapter,
   ArtifactDetail,
   ArtifactSummary,
+  LifecycleStatus,
   ThumbnailSpec,
   VersionEntry,
 } from '@buildtovalue/library';
@@ -93,11 +94,22 @@ export function relevantEntry(
   return { entry: artifact.entries[artifact.entries.length - 1] };
 }
 
+/**
+ * VersionStatus → the library's fixed six-state LifecycleStatus (V-0
+ * decision 2, documented loss): `in-review` (§2e) maps to `candidate` — for
+ * the Biblioteca it is still an unapproved candidate; the request-changes
+ * nuance survives as the ⟲ seal in `meta` (see `toSummary`), never as a new
+ * library state.
+ */
+export function toLifecycleStatus(status: VersionStatus): LifecycleStatus {
+  return status === 'in-review' ? 'candidate' : status;
+}
+
 function versionTimeline(artifact: LogicalArtifact): VersionEntry[] {
   return artifact.entries
     .map((entry) => ({
       version: entry.version.semanticVersion,
-      status: entry.version.status,
+      status: toLifecycleStatus(entry.version.status),
       timestamp: entry.version.createdAt,
       note: entry.version.changeSummary,
     }))
@@ -150,13 +162,17 @@ export function createRegistryAdapter(options: RegistryAdapterOptions): Registry
     const snapshot = entry.snapshot;
     const runs = boundRuns?.(artifact.id);
     const nodes = Object.values(snapshot.nodes).filter((n) => !n.removedInVersion).length;
+    const inReview = entry.version.status === 'in-review';
+    const baseMeta = snapshot.description || `${nodes} nós`;
     const summary: ArtifactSummary = {
       ref: { adapterId: id, artifactId: artifact.id },
       name: snapshot.name,
       typeLabel,
       version: entry.version.semanticVersion,
-      status: publication?.status ?? entry.version.status,
-      meta: snapshot.description || `${nodes} nós`,
+      status: toLifecycleStatus(publication?.status ?? entry.version.status),
+      // §2e gallery seal: the request-changes state survives the documented
+      // status loss as the ⟲ marker in the meta line (V-0 decision 2).
+      meta: inReview ? `⟲ EM REVISÃO · ${baseMeta}` : baseMeta,
       thumbnail: thumbnail(snapshot),
       updatedAt: entry.version.createdAt,
     };

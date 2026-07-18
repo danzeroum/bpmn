@@ -379,6 +379,36 @@ Notifies the host so it persists the approval / reacts to the rejection.
 
 `void`
 
+##### onReviewEvent?
+
+```ts
+optional onReviewEvent?: (name, payload) => void;
+```
+
+N-3 bridge (Handoff 15 §2e): the Studio has no editor plugin bus, so the
+host receives the catalog event here and re-emits it on its own bus. The
+payload type IS the catalog's (`EditorEventPayloads`) — no drift.
+
+###### Parameters
+
+###### name
+
+`"review.changes.requested"`
+
+###### payload
+
+###### versionId
+
+`string`
+
+###### threadRefs
+
+`string`[]
+
+###### Returns
+
+`void`
+
 ##### onOpenInDesigner?
 
 ```ts
@@ -678,7 +708,7 @@ approval is recorded unsigned (legacy), exactly as before.
 ##### kind
 
 ```ts
-kind: "approved" | "rejected";
+kind: "approved" | "rejected" | "changes-requested";
 ```
 
 ##### diagram
@@ -687,7 +717,9 @@ kind: "approved" | "rejected";
 diagram: BpmnDiagram;
 ```
 
-The diagram carrying the new ApprovalRecord (approve only).
+approve → the diagram carrying the new ApprovalRecord;
+changes-requested → the NEW `in-review` version the state machine minted
+(chained to the candidate via `parentVersionId`); reject → unchanged.
 
 ##### ledgerEntry
 
@@ -724,6 +756,60 @@ actor: UserContext;
 ```ts
 reason: string;
 ```
+
+***
+
+### RequestChangesInput
+
+#### Properties
+
+##### engine
+
+```ts
+engine: LifecycleEngine;
+```
+
+##### ledger
+
+```ts
+ledger: AuditLedger;
+```
+
+##### diagram
+
+```ts
+diagram: BpmnDiagram;
+```
+
+##### actor
+
+```ts
+actor: UserContext;
+```
+
+##### justification
+
+```ts
+justification: string;
+```
+
+Mandatory reviewer comment (min 10 chars — same floor as rejection).
+
+##### threadRefs?
+
+```ts
+optional threadRefs?: readonly string[];
+```
+
+Ids of the OPEN threads attached as context (may be empty — §2e régua 6).
+
+##### signedRequest?
+
+```ts
+optional signedRequest?: SignedChangeRequestRef;
+```
+
+The signed request (Handoff 8 I-2 discipline); absent → legacy unsigned.
 
 ***
 
@@ -1070,6 +1156,33 @@ approve stays in the engine — `approve` throws on double-approval.
 ##### input
 
 [`ApprovePromotionInput`](#approvepromotioninput)
+
+#### Returns
+
+`Promise`\<[`DecisionResult`](#decisionresult)\>
+
+***
+
+### requestChanges()
+
+```ts
+function requestChanges(input): Promise<DecisionResult>;
+```
+
+"Pedir mudanças" (Handoff 15 §2e) — the Studio's DEFAULT soft path (V-0
+decision 3; `rejectPromotion` remains the documented HARD reject). The
+transition candidate → `in-review` runs through the core state machine
+(cerca §1.4 — the UI never sets status directly), then the act becomes its
+own `REVIEW_CHANGES_REQUESTED` ledger entry carrying the justification,
+the attached open threads and (when signed) the verifiable signature.
+Threads are CONTEXT, not a prerequisite: the request works without a
+ReviewStore (§1.5).
+
+#### Parameters
+
+##### input
+
+[`RequestChangesInput`](#requestchangesinput)
 
 #### Returns
 
