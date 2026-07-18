@@ -12135,6 +12135,74 @@ meta line derived from the version record and the lifecycle engine —
 
 ***
 
+### isTimerEvent()
+
+```ts
+function isTimerEvent(node): boolean;
+```
+
+True for event nodes whose kind is `timer` — the section's gate.
+
+#### Parameters
+
+##### node
+
+`BpmnNode`
+
+#### Returns
+
+`boolean`
+
+***
+
+### formatTimerPreview()
+
+```ts
+function formatTimerPreview(parsed, t): string;
+```
+
+The human preview of a VALID parse result (exported for tests).
+
+#### Parameters
+
+##### parsed
+
+`TimerParseResult`
+
+##### t
+
+[`TFunction`](#tfunction)
+
+#### Returns
+
+`string`
+
+***
+
+### TimerSection()
+
+```ts
+function TimerSection(__namedParameters): Element;
+```
+
+#### Parameters
+
+##### \_\_namedParameters
+
+###### node
+
+`BpmnNode`
+
+###### readOnly
+
+`boolean`
+
+#### Returns
+
+`Element`
+
+***
+
 ### Toolbar()
 
 ```ts

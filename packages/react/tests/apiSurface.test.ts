@@ -77,6 +77,10 @@ const EXPECTED_EXPORTS = [
   'eventExecutionModeOf',
   'payloadMappingsOf',
   'prunePayloadMappings',
+  // Handoff 16 E-5 (§3d) — timer editor with human preview.
+  'TimerSection',
+  'isTimerEvent',
+  'formatTimerPreview',
   'EditorConfigProvider',
   'EndEventShape',
   'ComplexGatewayShape',

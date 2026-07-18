@@ -4372,6 +4372,57 @@
   border-color: #44403a;
 }
 
+/* --- Timer editor (Handoff 16 E-5, §3d). --- */
+.bpmnr-timer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--bpmnr-border, #d8d2c6);
+}
+.bpmnr-timer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--bpmnr-text-muted, #6f675a);
+}
+.bpmnr-timer-field select,
+.bpmnr-timer-field input {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 8px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--bpmnr-text, #262220);
+}
+.bpmnr-timer-field input {
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+}
+.bpmnr-timer-preview {
+  margin: 0;
+  font-size: 12px;
+  color: var(--bpmnr-text, #262220);
+}
+.bpmnr-timer-invalid {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--bpmnr-warning-fg, #8a6d1a);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-bpmnr-theme]) .bpmnr-timer-field select,
+  :root:not([data-bpmnr-theme]) .bpmnr-timer-field input {
+    color: #e8e3da;
+    border-color: #44403a;
+  }
+}
+[data-bpmnr-theme='dark'] .bpmnr-timer-field select,
+[data-bpmnr-theme='dark'] .bpmnr-timer-field input {
+  color: #e8e3da;
+  border-color: #44403a;
+}
+
 /* --- Event I/O on the Execução tab (Handoff 16 E-4, §3c). --- */
 .bpmnr-eventio-payload {
   display: flex;

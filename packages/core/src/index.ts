@@ -1,6 +1,8 @@
 // Model
 export * from './model/types.js';
 export * from './model/eventDefinitions.js';
+// ISO 8601 timer expressions (Handoff 16 E-5, §3d) — headless parser.
+export * from './model/iso8601.js';
 export * from './model/flow.js';
 export * from './model/errors.js';
 export * from './model/registry.js';

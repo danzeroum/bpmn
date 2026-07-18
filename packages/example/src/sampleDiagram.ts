@@ -748,6 +748,39 @@ export function buildEventIoDiagram(): BpmnDiagram {
 }
 
 /**
+ * `?timer=1` — Handoff 16 E-5 (§3d): a timer catch with a MALFORMED duration
+ * (`P1H` — hours require the T designator) and a message catch with no named
+ * definition, so the lint dock lists TIMER_MALFORMED (no mechanical fix) and
+ * EVT_REF_MISSING (kind-aware quick-fix) out of the box.
+ */
+export function buildTimerDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-timer', name: 'Timers', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 60, 150),
+    t1: make('intermediateCatchEvent', 't1', 'Aguardar prazo', 220, 150, {
+      eventDefinition: 'timer',
+      timer: { kind: 'duration', expression: 'P1H' },
+    }),
+    m1: make('intermediateCatchEvent', 'm1', 'Aguardar aviso', 400, 150, {
+      eventDefinition: 'message',
+    }),
+    end: make('endEvent', 'end', 'Fim', 580, 150),
+  };
+  const mkEdge = (id: string, sourceId: string, targetId: string) =>
+    createEdge({ id, sourceId, targetId, versionId: v });
+  diagram.edges = {
+    f1: mkEdge('f1', 'start', 't1'),
+    f2: mkEdge('f2', 't1', 'm1'),
+    f3: mkEdge('f3', 'm1', 'end'),
+  };
+  return diagram;
+}
+
+/**
  * `?events=1` — Handoff 16 E-2 (§3a): two loose message catch events with NO
  * named definition yet, for the full e2e flow — create via «+», reference in
  * both, rename (cascade), see the usage list, hit the deletion veto, unlink

@@ -175,6 +175,18 @@ vendor namespace for what the spec already names:
 - **Deletion.** `removeEventDefinitionCommand` is vetoed by the default rules while any
   active event references the definition; the veto reason lists every usage (label + id).
 
+## Canonical timer (`properties.timer`)
+
+A timer event stores its expression as `properties.timer = { kind: 'date' | 'duration' |
+'cycle', expression }` (Handoff 16 §3d). On TIMER events it exports as the standard OMG
+child — `<bpmn:timeDate>`, `<bpmn:timeDuration>` or `<bpmn:timeCycle>` (text content) inside
+the `timerEventDefinition` — and is reserved from the property soup exactly when emitted;
+on any OTHER node the property stays an ordinary `bpmnr:property` and never produces an
+orphan OMG child. Round-trip is byte-stable; the absent field keeps prior exports
+byte-identical. Expressions are validated by the headless ISO 8601 parser
+(`parseTimerExpression` — `P1M` is one MONTH, `PT1M` is one MINUTE); a present-but-invalid
+expression surfaces as the `TIMER_MALFORMED` lint error, never a silent normalization.
+
 ## Governed event-definition bindings (`properties.eventDefinitionBinding`)
 
 An event can reference a definition governed by the host's Biblioteca (Handoff 16 §3b)

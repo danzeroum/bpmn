@@ -40,6 +40,9 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:error (root)` | ✅ supported | analytic | `definitions.errors[]` | Named definition with errorCode; referenced via errorRef. |
 | `bpmn:messageEventDefinition` | ✅ supported | analytic | `eventDefinition: 'message'` |  |
 | `bpmn:timerEventDefinition` | ✅ supported | analytic | `eventDefinition: 'timer'` |  |
+| `bpmn:timeDate` | ✅ supported | analytic | `properties.timer` | Canonical { kind: 'date', expression } — validated by the headless ISO 8601 parser (TIMER_MALFORMED). |
+| `bpmn:timeDuration` | ✅ supported | analytic | `properties.timer` | Canonical { kind: 'duration', expression } (PnYnMnDTnHnMnS). |
+| `bpmn:timeCycle` | ✅ supported | analytic | `properties.timer` | Canonical { kind: 'cycle', expression } (Rn/…). |
 | `bpmn:errorEventDefinition` | ✅ supported | analytic | `eventDefinition: 'error'` |  |
 | `bpmn:signalEventDefinition` | ✅ supported | analytic | `eventDefinition: 'signal'` |  |
 | `bpmn:escalationEventDefinition` | ✅ supported | analytic | `eventDefinition: 'escalation'` |  |
@@ -99,6 +102,9 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:error (root)` | ✅ supported | modela (declarado) | — |
 | `bpmn:messageEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:timerEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:timeDate` | ✅ supported | modela (declarado) | — |
+| `bpmn:timeDuration` | ✅ supported | modela (declarado) | — |
+| `bpmn:timeCycle` | ✅ supported | modela (declarado) | — |
 | `bpmn:errorEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:signalEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:escalationEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
