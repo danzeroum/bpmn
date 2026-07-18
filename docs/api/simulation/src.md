@@ -226,11 +226,32 @@ The first branch decision the engine is blocked on, if any.
 get boundaryOptions(): BoundaryOption[];
 ```
 
-Boundary events that can be fired right now (a token rests on their host).
+Boundary events that can be fired right now (a token rests on their
+host). E-6 (§3e): ERROR boundaries leave this manual list — the user
+throws the ERROR ([errorThrowOptions](#errorthrowoptions) + [throwError](#throwerror)) and the
+engine resolves the boundary by matching. `fireBoundary` itself still
+accepts them (old scenarios replay unchanged).
 
 ###### Returns
 
 [`BoundaryOption`](#boundaryoption)[]
+
+##### errorThrowOptions
+
+###### Get Signature
+
+```ts
+get errorThrowOptions(): ErrorThrowOption[];
+```
+
+"Throw error" cards (E-6): one per host with a resting token and ≥1 error
+boundary. The options are the DISTINCT named definitions its boundaries
+match on, plus the UNCATALOGUED error (`errorRef: undefined`, reforço 10)
+— the UI path that exercises the declared catch-all.
+
+###### Returns
+
+[`ErrorThrowOption`](#errorthrowoption)[]
 
 ##### canAdvance
 
@@ -331,6 +352,74 @@ Fire a boundary event on the host a token currently rests on.
 ###### Parameters
 
 ###### boundaryId
+
+`string`
+
+###### Returns
+
+[`StepResult`](#stepresult)
+
+##### throwError()
+
+```ts
+throwError(host, errorRef?): StepResult;
+```
+
+Throw an error on a host: the USER picks the error (a named definition id
+or the uncatalogued `undefined`), the ENGINE resolves the destination by
+MATCHING — a specific `errorRef` match beats the declared catch-all
+(documented precedence: specific + catch-all present is NOT ambiguity);
+genuinely ambiguous or uncaught throws are DECLARED stops naming node,
+reason and candidates ([BlockedDecision](#blockeddecision)) — never a guess (§5).
+
+###### Parameters
+
+###### host
+
+`string`
+
+###### errorRef?
+
+`string`
+
+###### Returns
+
+[`StepResult`](#stepresult)
+
+##### throwSignal()
+
+```ts
+throwSignal(ref): StepResult;
+```
+
+Broadcast a signal by named definition: EVERY waiting catch that matches
+advances — deterministic, no ambiguity possible. Zero recipients is a
+DECLARED no-op in the trail, never a guessed route.
+
+###### Parameters
+
+###### ref
+
+`string`
+
+###### Returns
+
+[`StepResult`](#stepresult)
+
+##### throwMessage()
+
+```ts
+throwMessage(ref): StepResult;
+```
+
+Deliver a message by named definition: a SINGLE destination. More than
+one waiting candidate means runtime correlation — not simulable, so the
+stop is DECLARED naming the candidates (see limitations.md); zero is a
+declared no-op.
+
+###### Parameters
+
+###### ref
 
 `string`
 
@@ -781,6 +870,31 @@ optional interrupting?: boolean;
 
 Interrupting boundary (cancels the host) vs non-interrupting (spawns).
 
+##### eventKind?
+
+```ts
+optional eventKind?: string;
+```
+
+Event kind (`properties.eventDefinition`) — E-6 matching input.
+
+##### eventRef?
+
+```ts
+optional eventRef?: string;
+```
+
+Named-definition reference (`properties.eventDefinitionRef`) — the
+matching KEY (3a ids; E-3 `gov-*` mirrors match identically).
+
+##### eventRefLabel?
+
+```ts
+optional eventRefLabel?: string;
+```
+
+Resolved definition name for UI labels (falls back to the ref).
+
 ##### isStart
 
 ```ts
@@ -888,6 +1002,72 @@ interrupting: boolean;
 
 ```ts
 label: string;
+```
+
+##### eventKind?
+
+```ts
+optional eventKind?: string;
+```
+
+Event kind of the boundary (`timer`, `message`, `error`…), when any.
+
+##### eventRef?
+
+```ts
+optional eventRef?: string;
+```
+
+Named-definition reference the boundary matches on (E-6).
+
+##### catchAll?
+
+```ts
+optional catchAll?: boolean;
+```
+
+Error boundary WITHOUT errorRef — the DECLARED catch-all (E-6).
+
+***
+
+### ErrorThrowOption
+
+"Throw error" choices for one host with a resting token (E-6, §3e): the
+user picks the ERROR (by named definition), the ENGINE resolves the
+boundary by matching — the inverse of the manual boundary card. The
+`errorRef: undefined` entry is the UNCATALOGUED error (reforço 10), the UI
+path that exercises the catch-all.
+
+#### Properties
+
+##### host
+
+```ts
+host: string;
+```
+
+##### hostLabel
+
+```ts
+hostLabel: string;
+```
+
+##### options
+
+```ts
+options: object[];
+```
+
+###### errorRef?
+
+```ts
+optional errorRef?: string;
+```
+
+###### label?
+
+```ts
+optional label?: string;
 ```
 
 ***
@@ -1086,6 +1266,7 @@ Monotonic step index within the session.
 
 ```ts
 type: 
+  | "event"
   | "decision"
   | "end"
   | "move"
@@ -1216,6 +1397,14 @@ pendingChoice: PendingChoice | null;
 boundaryOptions: BoundaryOption[];
 ```
 
+##### errorThrowOptions
+
+```ts
+errorThrowOptions: ErrorThrowOption[];
+```
+
+"Throw error" cards per host with a resting token (E-6, §3e).
+
 ##### pendingDecisionInput
 
 ```ts
@@ -1294,6 +1483,19 @@ type Decision =
   kind: "decision";
   node: string;
   context: Record<string, number | string | boolean>;
+}
+  | {
+  kind: "error";
+  host: string;
+  errorRef?: string;
+}
+  | {
+  kind: "signal";
+  ref: string;
+}
+  | {
+  kind: "message";
+  ref: string;
 };
 ```
 

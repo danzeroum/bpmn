@@ -74,6 +74,33 @@ Documented deliberately so expectations are managed — none of these fail silen
   duplicated because `simulation` depends only on `core`, and pinned identical by
   `packages/simulation/tests/soundnessAgreement.test.ts`).
 
+### Event matching (Handoff 16 E-6, §3e)
+
+What the simulator **decides** — same S-FEEL discipline: exact where possible, a DECLARED stop
+everywhere else, never a guessed route:
+
+- **Error throws** (`throwError`): a specific `errorRef` match fires ONLY the boundary whose ref
+  resolves the thrown definition; a boundary WITHOUT `errorRef` is the **declared catch-all** and
+  the trail names it. Precedence is documented: **specific beats catch-all** (both present is NOT
+  ambiguity). Two eligible specifics — or two catch-alls with no specific — are a
+  `BlockedDecision` naming node, reason and candidates.
+- **Signals** (`throwSignal`): broadcast — every WAITING matching catch advances (deterministic).
+- **Messages** (`throwMessage`): single destination — **more than one waiting candidate is a
+  `BlockedDecision`**: runtime message correlation (correlation keys) is host/engine semantics the
+  simulator does not model.
+
+What it deliberately does **NOT** decide:
+
+- **Runtime message correlation** — correlation keys, instance targeting. One waiting candidate
+  delivers; more is a declared stop; zero is a declared no-op in the trail.
+- **Error propagation to a parent scope** — an uncaught error is a declared stop, not an escalation
+  up the containment chain (sub-process descent is not modelled, above).
+- **Escalation and compensation events** — the compensation/choreography pendency
+  ([`pendencias.md`](../pendencias.md)); they carry no matching semantics here.
+- **Event sub-process containers** — the error-start approximation is containment in a
+  `subProcess` (same predicate as the editor's Execução matrix); a real event sub-process
+  container is its own pendency.
+
 ## Replay / conformance (`@buildtovalue/replay`, Handoff 7B)
 - **Token-replay fitness only, never alignments (cerca §0.2).** Conformance means: a transition in
   the log with no corresponding edge in the model is a deviation; `fitness = fit moves / total

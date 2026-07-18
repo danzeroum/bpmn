@@ -4607,6 +4607,34 @@ onFireBoundary: (boundaryId) => void;
 
 `void`
 
+##### errorThrowOptions?
+
+```ts
+optional errorThrowOptions?: ErrorThrowOption[];
+```
+
+"Throw error" cards (E-6 §3e) — user picks the ERROR, engine matches.
+
+##### onThrowError?
+
+```ts
+optional onThrowError?: (host, errorRef?) => void;
+```
+
+###### Parameters
+
+###### host
+
+`string`
+
+###### errorRef?
+
+`string`
+
+###### Returns
+
+`void`
+
 ##### stepMode
 
 ```ts

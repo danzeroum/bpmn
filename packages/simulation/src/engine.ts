@@ -7,8 +7,10 @@ import type {
   BoundaryOption,
   Decision,
   DecisionEvaluator,
+  ErrorThrowOption,
   PendingChoice,
   PendingDecisionInput,
+  SimNode,
   SimulationOptions,
   SimulationState,
   Token,
@@ -108,6 +110,7 @@ export class SimulationEngine {
       deadlocked: this.deadlocked,
       pendingChoice: this.pendingChoice,
       boundaryOptions: this.boundaryOptions,
+      errorThrowOptions: this.errorThrowOptions,
       pendingDecisionInput: this.pendingDecisionInput,
       blockedDecision: this.blocked ? { ...this.blocked } : null,
     };
@@ -147,22 +150,59 @@ export class SimulationEngine {
     };
   }
 
-  /** Boundary events that can be fired right now (a token rests on their host). */
+  /**
+   * Boundary events that can be fired right now (a token rests on their
+   * host). E-6 (§3e): ERROR boundaries leave this manual list — the user
+   * throws the ERROR ({@link errorThrowOptions} + {@link throwError}) and the
+   * engine resolves the boundary by matching. `fireBoundary` itself still
+   * accepts them (old scenarios replay unchanged).
+   */
   get boundaryOptions(): BoundaryOption[] {
     const options: BoundaryOption[] = [];
     const hosts = new Set(this.tokens.map((t) => t.nodeId));
     for (const host of hosts) {
       for (const boundary of this.graph.boundariesByHost.get(host) ?? []) {
         const node = this.graph.nodes.get(boundary)!;
+        if (node.eventKind === 'error') continue;
         options.push({
           host,
           boundary,
           interrupting: node.interrupting !== false,
           label: node.label || boundary,
+          ...(node.eventKind !== undefined ? { eventKind: node.eventKind } : {}),
+          ...(node.eventRef !== undefined ? { eventRef: node.eventRef } : {}),
         });
       }
     }
     return options;
+  }
+
+  /**
+   * "Throw error" cards (E-6): one per host with a resting token and ≥1 error
+   * boundary. The options are the DISTINCT named definitions its boundaries
+   * match on, plus the UNCATALOGUED error (`errorRef: undefined`, reforço 10)
+   * — the UI path that exercises the declared catch-all.
+   */
+  get errorThrowOptions(): ErrorThrowOption[] {
+    const cards: ErrorThrowOption[] = [];
+    const hosts = new Set(this.tokens.map((t) => t.nodeId));
+    for (const host of hosts) {
+      const errors = (this.graph.boundariesByHost.get(host) ?? [])
+        .map((id) => this.graph.nodes.get(id)!)
+        .filter((node) => node.eventKind === 'error');
+      if (errors.length === 0) continue;
+      const hostNode = this.graph.nodes.get(host)!;
+      const seen = new Set<string>();
+      const options: ErrorThrowOption['options'] = [];
+      for (const boundary of errors) {
+        if (boundary.eventRef === undefined || seen.has(boundary.eventRef)) continue;
+        seen.add(boundary.eventRef);
+        options.push({ errorRef: boundary.eventRef, label: boundary.eventRefLabel });
+      }
+      options.push({}); // the uncatalogued error — label is the UI's
+      cards.push({ host, hostLabel: hostNode.label || host, options });
+    }
+    return cards;
   }
 
   /** A token exists that can be advanced without a decision. */
@@ -226,6 +266,9 @@ export class SimulationEngine {
   choose(decision: Decision): StepResult {
     if (decision.kind === 'boundary') return this.fireBoundary(decision.boundary);
     if (decision.kind === 'decision') return this.decideDecision(decision);
+    if (decision.kind === 'error') return this.throwError(decision.host, decision.errorRef);
+    if (decision.kind === 'signal') return this.throwSignal(decision.ref);
+    if (decision.kind === 'message') return this.throwMessage(decision.ref);
     const token = this.tokens.find((t) => t.nodeId === decision.gateway);
     if (!token) throw new SimulationError(`No token at gateway ${decision.gateway}`);
     const node = this.graph.nodes.get(token.nodeId)!;
@@ -256,23 +299,172 @@ export class SimulationEngine {
     const token = this.tokens.find((t) => t.nodeId === host);
     if (!token) throw new SimulationError(`No token on host ${host} to interrupt`);
     const start = this.trail.length;
-    if (node.interrupting !== false) {
-      // Interrupting: the host token is cancelled and re-emerges at the boundary.
-      this.removeToken(token.id);
-      this.placeToken(boundaryId);
-      this.record('boundary', `Interrupting boundary "${node.label}" fired`, {
-        nodeId: boundaryId,
-      });
-    } else {
-      // Non-interrupting: the host keeps its token; a second one spawns.
-      this.placeToken(boundaryId);
-      this.record('boundary', `Non-interrupting boundary "${node.label}" fired`, {
-        nodeId: boundaryId,
-      });
-    }
+    this.applyBoundary(node, token);
     this.decisions.push({ kind: 'boundary', host, boundary: boundaryId });
     this.settleOrJoins();
     return { moved: true, transitions: this.trail.slice(start) };
+  }
+
+  /** Cancel-or-spawn semantics of one boundary firing (shared with E-6). */
+  private applyBoundary(node: SimNode, token: Token): void {
+    if (node.interrupting !== false) {
+      // Interrupting: the host token is cancelled and re-emerges at the boundary.
+      this.removeToken(token.id);
+      this.placeToken(node.id);
+      this.record('boundary', `Interrupting boundary "${node.label}" fired`, {
+        nodeId: node.id,
+      });
+    } else {
+      // Non-interrupting: the host keeps its token; a second one spawns.
+      this.placeToken(node.id);
+      this.record('boundary', `Non-interrupting boundary "${node.label}" fired`, {
+        nodeId: node.id,
+      });
+    }
+  }
+
+  // ------------------------------------------------- thrown events (E-6, §3e)
+
+  /**
+   * Throw an error on a host: the USER picks the error (a named definition id
+   * or the uncatalogued `undefined`), the ENGINE resolves the destination by
+   * MATCHING — a specific `errorRef` match beats the declared catch-all
+   * (documented precedence: specific + catch-all present is NOT ambiguity);
+   * genuinely ambiguous or uncaught throws are DECLARED stops naming node,
+   * reason and candidates ({@link BlockedDecision}) — never a guess (§5).
+   */
+  throwError(host: string, errorRef?: string): StepResult {
+    const token = this.tokens.find((t) => t.nodeId === host);
+    if (!token) throw new SimulationError(`No token on host ${host} to throw an error on`);
+    const hostNode = this.graph.nodes.get(host)!;
+    const boundaries = (this.graph.boundariesByHost.get(host) ?? [])
+      .map((id) => this.graph.nodes.get(id)!)
+      .filter((node) => node.eventKind === 'error');
+    const start = this.trail.length;
+    const thrown = errorRef !== undefined ? `error "${errorRef}"` : 'uncatalogued error';
+    const exact = errorRef !== undefined ? boundaries.filter((b) => b.eventRef === errorRef) : [];
+    const catchAll = boundaries.filter((b) => b.eventRef === undefined);
+    const eligible = exact.length > 0 ? exact : catchAll;
+    if (eligible.length === 1) {
+      const target = eligible[0];
+      const via =
+        exact.length > 0
+          ? `errorRef match "${errorRef}"`
+          : 'the DECLARED catch-all (no errorRef)';
+      this.record(
+        'event',
+        `Thrown ${thrown} on "${hostNode.label || host}": caught by boundary "${target.label || target.id}" via ${via}`,
+        { nodeId: target.id },
+      );
+      this.applyBoundary(target, token);
+    } else if (eligible.length === 0) {
+      // Uncaught: propagation to a parent scope is not simulated (limitations).
+      this.blocked = {
+        nodeId: host,
+        cell: errorRef ?? '(uncatalogued)',
+        reason: `thrown ${thrown} is caught by NO boundary on "${hostNode.label || host}" — parent-scope propagation is not simulated`,
+      };
+      this.record(
+        'decision-blocked',
+        `Thrown ${thrown} on "${hostNode.label || host}" not caught: no eligible boundary — declared stop`,
+        { nodeId: host },
+      );
+    } else {
+      // Honest ambiguity: two specifics for the same ref, or two catch-alls.
+      const candidates = eligible.map((b) => `${b.id} ("${b.label || b.id}")`).join(', ');
+      this.blocked = {
+        nodeId: host,
+        cell: errorRef ?? '(uncatalogued)',
+        reason: `ambiguous catch for ${thrown}: candidates ${candidates} — refine the errorRefs`,
+      };
+      this.record(
+        'decision-blocked',
+        `Thrown ${thrown} on "${hostNode.label || host}" is AMBIGUOUS: candidates ${candidates} — declared stop`,
+        { nodeId: host },
+      );
+    }
+    this.decisions.push({ kind: 'error', host, ...(errorRef !== undefined ? { errorRef } : {}) });
+    this.settleOrJoins();
+    return { moved: true, transitions: this.trail.slice(start) };
+  }
+
+  /** Catch nodes of `kind` holding a resting token whose ref matches. */
+  private waitingCatches(kind: 'signal' | 'message', ref: string): Token[] {
+    return this.tokens.filter((token) => {
+      const node = this.graph.nodes.get(token.nodeId);
+      return (
+        node !== undefined &&
+        node.type === 'intermediateCatchEvent' &&
+        node.eventKind === kind &&
+        node.eventRef === ref
+      );
+    });
+  }
+
+  /**
+   * Broadcast a signal by named definition: EVERY waiting catch that matches
+   * advances — deterministic, no ambiguity possible. Zero recipients is a
+   * DECLARED no-op in the trail, never a guessed route.
+   */
+  throwSignal(ref: string): StepResult {
+    const start = this.trail.length;
+    const waiting = this.waitingCatches('signal', ref);
+    this.record(
+      'event',
+      waiting.length === 0
+        ? `Signal "${ref}" thrown: no waiting catch — declared no-op`
+        : `Signal "${ref}" thrown: broadcast to ${waiting.length} waiting catch(es)`,
+      {},
+    );
+    for (const token of waiting) {
+      const node = this.graph.nodes.get(token.nodeId)!;
+      this.emit(token, node.outgoing, node.outgoing.length > 1 ? 'split' : 'move');
+    }
+    this.decisions.push({ kind: 'signal', ref });
+    this.settleOrJoins();
+    return { moved: waiting.length > 0, transitions: this.trail.slice(start) };
+  }
+
+  /**
+   * Deliver a message by named definition: a SINGLE destination. More than
+   * one waiting candidate means runtime correlation — not simulable, so the
+   * stop is DECLARED naming the candidates (see limitations.md); zero is a
+   * declared no-op.
+   */
+  throwMessage(ref: string): StepResult {
+    const start = this.trail.length;
+    const waiting = this.waitingCatches('message', ref);
+    if (waiting.length === 1) {
+      const node = this.graph.nodes.get(waiting[0].nodeId)!;
+      this.record(
+        'event',
+        `Message "${ref}" delivered to its single waiting catch "${node.label || node.id}"`,
+        { nodeId: node.id },
+      );
+      this.emit(waiting[0], node.outgoing, node.outgoing.length > 1 ? 'split' : 'move');
+    } else if (waiting.length === 0) {
+      this.record('event', `Message "${ref}" thrown: no waiting catch — declared no-op`, {});
+    } else {
+      const candidates = waiting
+        .map((t) => {
+          const node = this.graph.nodes.get(t.nodeId)!;
+          return `${node.id} ("${node.label || node.id}")`;
+        })
+        .join(', ');
+      this.blocked = {
+        nodeId: waiting[0].nodeId,
+        cell: ref,
+        reason: `message "${ref}" has ${waiting.length} waiting recipients (${candidates}) — runtime correlation is not simulable`,
+      };
+      this.record(
+        'decision-blocked',
+        `Message "${ref}" has ${waiting.length} waiting recipients (${candidates}) — declared stop (runtime correlation is not simulable)`,
+        { nodeId: waiting[0].nodeId },
+      );
+    }
+    this.decisions.push({ kind: 'message', ref });
+    this.settleOrJoins();
+    return { moved: waiting.length === 1, transitions: this.trail.slice(start) };
   }
 
   /**
@@ -384,6 +576,21 @@ export class SimulationEngine {
         queue.shift();
         continue;
       }
+      // E-6: a thrown error re-resolves through the SAME matching, as soon as
+      // its host holds a token (the boundary heuristic).
+      if (next && next.kind === 'error' && engine.tokens.some((t) => t.nodeId === next.host)) {
+        engine.throwError(next.host, next.errorRef);
+        queue.shift();
+        if (engine.blocked) break; // declared stop — the scenario ends here
+        continue;
+      }
+      // E-6: signal/message throws re-resolve at their queue position.
+      if (next && (next.kind === 'signal' || next.kind === 'message')) {
+        engine.choose(next);
+        queue.shift();
+        if (engine.blocked) break; // declared stop — the scenario ends here
+        continue;
+      }
       if (engine.canAdvance) {
         engine.advance();
         continue;
@@ -397,7 +604,15 @@ export class SimulationEngine {
   }
 
   private static matchesChoice(decision: Decision, choice: PendingChoice): boolean {
-    if (decision.kind === 'boundary' || decision.kind === 'decision') return false;
+    if (
+      decision.kind === 'boundary' ||
+      decision.kind === 'decision' ||
+      decision.kind === 'error' ||
+      decision.kind === 'signal' ||
+      decision.kind === 'message'
+    ) {
+      return false;
+    }
     if (decision.kind === 'inclusive') {
       return choice.kind === 'inclusive' && decision.gateway === choice.nodeId;
     }

@@ -25,6 +25,16 @@ function canonicalDecision(decision: Decision): Record<string, unknown> {
       return { kind: 'inclusive', gateway: decision.gateway, edges: [...decision.edges].sort() };
     case 'boundary':
       return { kind: 'boundary', host: decision.host, boundary: decision.boundary };
+    // E-6 (§3e): thrown events — same stable shapes, replayed by matching.
+    case 'error':
+      return {
+        kind: 'error',
+        host: decision.host,
+        ...(decision.errorRef !== undefined ? { errorRef: decision.errorRef } : {}),
+      };
+    case 'signal':
+    case 'message':
+      return { kind: decision.kind, ref: decision.ref };
     case 'decision':
       return {
         kind: 'decision',
