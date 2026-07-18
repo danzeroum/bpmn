@@ -1,4 +1,4 @@
-import { nodeParentId, type BpmnDiagram, type BpmnNode } from '@buildtovalue/core';
+import { isEventSubprocess, nodeParentId, type BpmnDiagram, type BpmnNode } from '@buildtovalue/core';
 
 /**
  * Executable-event matrix (Handoff 16 E-4, §3c). Lives HERE — in react, not
@@ -9,10 +9,12 @@ import { nodeParentId, type BpmnDiagram, type BpmnNode } from '@buildtovalue/cor
  * - `'throw'` (payload mappings var→destino): `intermediateThrowEvent` and
  *   `endEvent` whose kind is message|signal.
  * - `'catch-error'` (capture variables errCode/errMsg): error `boundaryEvent`,
- *   and an error `startEvent` CONTAINED in a subProcess — the honest
- *   approximation of the event subprocess, which remains its own pendency
- *   (§3); a TOP-LEVEL error start is exactly what `EVT_ERROR_START_TOPLEVEL`
- *   (E-5) will flag, so it gets NO tab here.
+ *   and an error `startEvent` contained in an EVENT SUBPROCESS — tightened in
+ *   Handoff 17 ES-3 (§4c): the E-4 "any subProcess" approximation is dead;
+ *   the predicate is the core `isEventSubprocess` helper (ES-1 reforço 9 —
+ *   the SAME object the ES-4 lint consumes, agreement by construction). An
+ *   error start anywhere else is what `EVT_ERROR_START_TOPLEVEL` flags — no
+ *   tab here.
  * - Everything else → `null`: message/signal catches carry no I/O in this
  *   handoff (runtime correlation is host-owned, §3) and keep no tab.
  */
@@ -34,7 +36,7 @@ export function eventExecutionModeOf(
   if (node.type === 'startEvent') {
     const parentId = nodeParentId(node);
     const parent = parentId ? diagram.nodes[parentId] : undefined;
-    if (parent?.type === 'subProcess') return 'catch-error';
+    if (parent !== undefined && isEventSubprocess(parent)) return 'catch-error';
   }
   return null;
 }

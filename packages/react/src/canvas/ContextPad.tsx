@@ -1,4 +1,4 @@
-import { isContainerType, type Command } from '@buildtovalue/core';
+import { isContainerType, isEventSubprocess, type Command } from '@buildtovalue/core';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
@@ -92,23 +92,29 @@ export function ContextPad({ interactions }: { interactions: Interactions }) {
     }
   };
 
-  const entries: PadEntry[] = [
-    { id: 'task', label: t('contextPad.appendTask'), glyph: STROKE_GLYPHS.task, run: () => quickAdd('task') },
-    {
-      id: 'gateway',
-      label: t('contextPad.appendGateway'),
-      glyph: STROKE_GLYPHS.gateway,
-      run: () => quickAdd('exclusiveGateway'),
-    },
-    { id: 'end', label: t('contextPad.appendEnd'), glyph: STROKE_GLYPHS.end, run: () => quickAdd('endEvent') },
-    {
-      id: 'connect',
-      label: t('contextPad.connect'),
-      glyph: STROKE_GLYPHS.connect,
-      run: () => {},
-      onPointerDown: (event) => interactions.onPortPointerDown(event, node.id),
-    },
-  ];
+  // ES-3 (§4c): the event-subprocess SHELL takes no sequence flow — no
+  // appends, no connect on its pad; children keep the full pad (the veto is
+  // shell-only). Plugin items and ⋯ stay.
+  const shell = isEventSubprocess(node);
+  const entries: PadEntry[] = shell
+    ? []
+    : [
+        { id: 'task', label: t('contextPad.appendTask'), glyph: STROKE_GLYPHS.task, run: () => quickAdd('task') },
+        {
+          id: 'gateway',
+          label: t('contextPad.appendGateway'),
+          glyph: STROKE_GLYPHS.gateway,
+          run: () => quickAdd('exclusiveGateway'),
+        },
+        { id: 'end', label: t('contextPad.appendEnd'), glyph: STROKE_GLYPHS.end, run: () => quickAdd('endEvent') },
+        {
+          id: 'connect',
+          label: t('contextPad.connect'),
+          glyph: STROKE_GLYPHS.connect,
+          run: () => {},
+          onPointerDown: (event) => interactions.onPortPointerDown(event, node.id),
+        },
+      ];
 
   // 5th slot: first plugin-provided pad item (N-5-style contract, Handoff 14).
   const target: MenuTarget = {

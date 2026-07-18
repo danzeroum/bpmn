@@ -247,3 +247,10 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   rodar `pnpm --filter @buildtovalue/example dev` + `/?stress=350` numa máquina local com GPU para a
   verificação final; o gate de zoom desliga sombras (<50%) e chips (<60%) para proteger a taxa em
   diagramas densos.
+- **Fluxo cruzando fronteira de subProcess (Handoff 17 ES-3, reforço 7):** o editor permite
+  fluxo de sequência entre um FILHO de subProcess e um nó de fora — comportamento herdado do F7
+  e IDÊNTICO para subProcess comum e event subprocess (paridade testada em
+  `eventSubprocessInteractions.test.tsx`). A OMG não permite sequence flow cruzar a fronteira do
+  contêiner; a restrição futura deve cobrir OS DOIS tipos de contêiner de uma vez (nunca
+  divergência silenciosa entre eles) — provavelmente como regra de lint/validação, não veto de
+  gesto, para não travar autoria incremental.

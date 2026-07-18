@@ -116,6 +116,8 @@ export { EmptyState, buildGovernedExample } from './ui/EmptyState.js';
 export { EventDefinitionSection, eventKindOf } from './ui/EventDefinitionSection.js';
 // Handoff 16 E-5 (§3d) — timer editor with human preview.
 export { TimerSection, isTimerEvent, formatTimerPreview } from './ui/TimerSection.js';
+// Handoff 17 ES-3 (§4c) — event-subprocess start toggle.
+export { InterruptingToggle, isEventSubprocessStart } from './ui/InterruptingToggle.js';
 // Handoff 16 E-4 (§3c) — executable-event matrix + payload helpers.
 export {
   eventExecutionModeOf,

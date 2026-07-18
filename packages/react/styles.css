@@ -4423,6 +4423,32 @@
   border-color: #44403a;
 }
 
+/* --- Interrompe o escopo (Handoff 17 ES-3, §4c). --- */
+.bpmnr-interrupting {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--bpmnr-border, #d8d2c6);
+}
+.bpmnr-interrupting-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--bpmnr-text, #262220);
+}
+.bpmnr-interrupting-hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--bpmnr-text-muted, #6f675a);
+}
+@media (pointer: coarse) {
+  .bpmnr-interrupting-label {
+    min-height: 44px;
+  }
+}
+
 /* --- Event I/O on the Execução tab (Handoff 16 E-4, §3c). --- */
 .bpmnr-eventio-payload {
   display: flex;

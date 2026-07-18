@@ -70,7 +70,7 @@ interface PanSession {
  * context state.
  */
 export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
-  const { diagram, execute } = useDiagram();
+  const { diagram, execute, announceVeto } = useDiagram();
   const store = useCanvasStore();
   const config = useEditorConfig();
 
@@ -699,6 +699,9 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
             { sourceId, targetId: target.id },
             diagramRef.current,
           );
+          // ES-3 (§4c): a vetoed DROP is never silent — the rule's reason
+          // lights the 🔒 through the shared lastVeto lifecycle.
+          if (!verdict.allowed) announceVeto(verdict.reason ?? 'Not allowed');
           if (verdict.allowed) {
             // Connecting a data element (category 'data') to an activity — in
             // either direction — is a data association, not a sequence flow.
@@ -759,7 +762,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
         });
       }
     },
-    [config, execute, findNodeAt, store, world],
+    [announceVeto, config, execute, findNodeAt, store, world],
   );
 
   const cancelGestures = useCallback(() => {
