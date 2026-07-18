@@ -68,7 +68,7 @@ export const CONFORMANCE_MATRIX: ConformanceEntry[] = [
   { element: 'bpmn:conditionalEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'conditional'" },
   { element: 'bpmn:linkEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'link'" },
   { element: 'bpmn:terminateEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'terminate'" },
-  { element: 'eventSubProcess', status: 'unsupported', conformanceClass: 'extended', notes: 'Deliberately out of scope before v2.x.' },
+  { element: 'eventSubProcess', status: 'supported', conformanceClass: 'analytic', mappedTo: 'subProcess (triggeredByEvent)', notes: 'Delivered in Handoff 17 (ES-1..ES-5): subProcess with triggeredByEvent (F7 containment reused, isEventSubprocess helper); interrupting/non-interrupting typed starts round-trip byte-stable (isInterrupting); lint EVT_SUBPROC_START/EVT_SUBPROC_FLOW and honest simulation start precedence.' },
   // Flow objects — gateways
   { element: 'bpmn:exclusiveGateway', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'exclusiveGateway' },
   { element: 'bpmn:parallelGateway', status: 'supported', conformanceClass: 'descriptive', mappedTo: 'parallelGateway' },
