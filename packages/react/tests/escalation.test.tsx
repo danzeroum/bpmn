@@ -118,6 +118,26 @@ describe('autoridade — prop de nó + chip transiente assentado (reforço 8)', 
   });
 });
 
+describe('degradação sem agentflow (§5c)', () => {
+  it('agentTask renderiza sem plugin de agente — o shape é do react core', () => {
+    const diagram = createDiagram({ name: 'D', id: 'd' });
+    diagram.nodes = {
+      agent: createNode({
+        id: 'agent',
+        type: 'agentTask',
+        label: 'Analisar contrato',
+        x: 100,
+        y: 100,
+        properties: { agentWorkflowRef: 'analisar-contrato@1.0.0' },
+      }),
+    };
+    // Sem NENHUM plugin de agente injetado, o agentTask ainda desenha (🤖 + ref).
+    const { container } = render(<BpmnEditor diagram={diagram} messages={PT_BR} />);
+    expect(container.querySelector('[data-node-id="agent"]')).not.toBeNull();
+    expect(container.textContent).toContain('analisar-contrato@1.0.0');
+  });
+});
+
 describe('toggle interrupting no boundary (decisão 3)', () => {
   it('o toggle existente flipa o cancelActivity do boundary de escalação', () => {
     const { container } = render(<BpmnEditor diagram={escDiagram()} messages={PT_BR} />);
@@ -165,6 +185,19 @@ describe('item de paleta composto — attach OU veto declarado (reforço 7)', ()
     const result = buildEscalationBoundaryInsert(ctxAt(diagram, 500, 500));
     expect('veto' in result).toBe(true);
     if ('veto' in result) expect(result.veto).toBe('palette.veto.boundaryNeedsHost');
+  });
+
+  it('§5c reforço 1 — o boundary composto anexa a um agentTask (category activity)', () => {
+    const diagram = createDiagram({ name: 'B', id: 'b' });
+    diagram.nodes = {
+      agent: createNode({ id: 'agent', type: 'agentTask', label: 'Analisar', x: 200, y: 120 }),
+    };
+    const result = buildEscalationBoundaryInsert(ctxAt(diagram, 242, 132));
+    expect('command' in result).toBe(true);
+    if (!('command' in result)) return;
+    const after = result.command.execute(diagram);
+    expect(after.nodes[result.selectId].properties.attachedToRef).toBe('agent');
+    expect(after.nodes[result.selectId].properties.cancelActivity).toBe(false);
   });
 
   it('insertPaletteItem: veto → announceVeto no 🔒, nada executado (nunca no-op mudo)', () => {

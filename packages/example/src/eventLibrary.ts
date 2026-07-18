@@ -37,6 +37,14 @@ export const DEMO_EVENT_CATALOG: GovernedEventDefinitionRecord[] = [
     status: 'active',
     definition: { name: 'Pagamento recusado', errorCode: 'PAY-402' },
   },
+  {
+    // Handoff 18 §5c — governed escalation for the agent→human bridge demo.
+    kind: 'escalation',
+    name: 'esc-alcada',
+    semanticVersion: '1.2.0',
+    status: 'active',
+    definition: { name: 'Acima da alçada', escalationCode: 'OVER_BUDGET' },
+  },
 ];
 
 /**

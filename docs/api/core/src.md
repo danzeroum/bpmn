@@ -7275,8 +7275,8 @@ function eventDefinitionOf(node):
   | "error"
   | "message"
   | "signal"
-  | "link"
   | "escalation"
+  | "link"
   | "timer"
   | "conditional"
   | "terminate"
@@ -7296,8 +7296,8 @@ Returns the event-definition kind stored on a node, if it is a valid kind.
   \| `"error"`
   \| `"message"`
   \| `"signal"`
-  \| `"link"`
   \| `"escalation"`
+  \| `"link"`
   \| `"timer"`
   \| `"conditional"`
   \| `"terminate"`
