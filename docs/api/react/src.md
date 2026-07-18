@@ -2038,6 +2038,28 @@ lastVeto: string | null;
 
 Reason of the most recent vetoed command (cleared on next success).
 
+##### announceVeto
+
+```ts
+announceVeto: (reason) => void;
+```
+
+Declared GESTURE veto channel (Handoff 17 ES-3): surfaces a veto that
+happened OUTSIDE the command stack (a rejected connect drop, a Tab on the
+event-subprocess shell) on the SAME 🔒 surface as `lastVeto`, with the
+same lifecycle — replaced by the next veto, cleared by the next
+successful command. Never a silent gesture, never an unbounded channel.
+
+###### Parameters
+
+###### reason
+
+`string`
+
+###### Returns
+
+`void`
+
 ##### replaceDiagram
 
 ```ts
@@ -7380,10 +7402,12 @@ the property KEYS (`payloadKey`/`errorCodeVariableKey`/…).
 - `'throw'` (payload mappings var→destino): `intermediateThrowEvent` and
   `endEvent` whose kind is message|signal.
 - `'catch-error'` (capture variables errCode/errMsg): error `boundaryEvent`,
-  and an error `startEvent` CONTAINED in a subProcess — the honest
-  approximation of the event subprocess, which remains its own pendency
-  (§3); a TOP-LEVEL error start is exactly what `EVT_ERROR_START_TOPLEVEL`
-  (E-5) will flag, so it gets NO tab here.
+  and an error `startEvent` contained in an EVENT SUBPROCESS — tightened in
+  Handoff 17 ES-3 (§4c): the E-4 "any subProcess" approximation is dead;
+  the predicate is the core `isEventSubprocess` helper (ES-1 reforço 9 —
+  the SAME object the ES-4 lint consumes, agreement by construction). An
+  error start anywhere else is what `EVT_ERROR_START_TOPLEVEL` flags — no
+  tab here.
 - Everything else → `null`: message/signal catches carry no I/O in this
   handoff (runtime correlation is host-owned, §3) and keep no tab.
 
@@ -12075,6 +12099,59 @@ import for both (aceite 10.5.3).
 #### Returns
 
 `Element` \| `null`
+
+***
+
+### isEventSubprocessStart()
+
+```ts
+function isEventSubprocessStart(diagram, node): boolean;
+```
+
+"Interrompe o escopo" (Handoff 17 ES-3, §4c): ONLY on the start event of an
+event subprocess — both sides of the predicate come from the ES-1 core
+helpers (`startIsInterrupting` + `isEventSubprocess` on the parent), never
+a local reimplementation. The commit is one undoable `updateNodeCommand`;
+the OMG default (interrupting) is the ABSENT field — clean model, so
+toggling back removes the property entirely.
+
+#### Parameters
+
+##### diagram
+
+`BpmnDiagram`
+
+##### node
+
+`BpmnNode`
+
+#### Returns
+
+`boolean`
+
+***
+
+### InterruptingToggle()
+
+```ts
+function InterruptingToggle(__namedParameters): Element;
+```
+
+#### Parameters
+
+##### \_\_namedParameters
+
+###### node
+
+`BpmnNode`
+
+###### readOnly
+
+`boolean`
+
+#### Returns
+
+`Element`
 
 ***
 

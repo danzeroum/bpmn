@@ -54,6 +54,14 @@ export interface DiagramContextValue {
   canRedo: boolean;
   /** Reason of the most recent vetoed command (cleared on next success). */
   lastVeto: string | null;
+  /**
+   * Declared GESTURE veto channel (Handoff 17 ES-3): surfaces a veto that
+   * happened OUTSIDE the command stack (a rejected connect drop, a Tab on the
+   * event-subprocess shell) on the SAME 🔒 surface as `lastVeto`, with the
+   * same lifecycle — replaced by the next veto, cleared by the next
+   * successful command. Never a silent gesture, never an unbounded channel.
+   */
+  announceVeto: (reason: string) => void;
   /** Replaces the whole diagram (import) and clears history. */
   replaceDiagram: (diagram: BpmnDiagram) => void;
 }
@@ -160,6 +168,10 @@ export function DiagramProvider({
     [emitLoaded, stack],
   );
 
+  // ES-3: gesture vetoes share the lastVeto slot — replaced by the next veto,
+  // cleared by the next successful execute (same lifecycle, no extra memory).
+  const announceVeto = useCallback((reason: string) => setLastVeto(reason), []);
+
   const value = useMemo<DiagramContextValue>(
     () => ({
       diagram: current,
@@ -173,9 +185,10 @@ export function DiagramProvider({
       canUndo: stack.canUndo,
       canRedo: stack.canRedo,
       lastVeto,
+      announceVeto,
       replaceDiagram,
     }),
-    [current, stack, execute, lastVeto, replaceDiagram],
+    [current, stack, execute, lastVeto, announceVeto, replaceDiagram],
   );
 
   return <DiagramContext.Provider value={value}>{children}</DiagramContext.Provider>;

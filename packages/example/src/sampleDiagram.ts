@@ -729,7 +729,8 @@ export function buildEventIoDiagram(): BpmnDiagram {
     mc: make('intermediateCatchEvent', 'mc', 'Aguardar retorno', 560, 150, {
       eventDefinition: 'message',
     }),
-    sub: make('subProcess', 'sub', 'Tratamento', 180, 300, { isExpanded: true }),
+    // ES-3: contêiner REAL (triggeredByEvent) — a aproximação da E-4 morreu.
+    sub: make('subProcess', 'sub', 'Tratamento', 180, 300, { isExpanded: true, triggeredByEvent: true }),
     es1: make('startEvent', 'es1', 'Erro capturado', 200, 340, {
       eventDefinition: 'error',
       parentId: 'sub',

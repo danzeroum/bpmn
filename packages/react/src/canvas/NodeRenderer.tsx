@@ -2,6 +2,7 @@ import { memo } from 'react';
 import {
   childrenOf,
   getBoundingBox,
+  isEventSubprocess,
   isSubProcessExpanded,
   updateNodeCommand,
   type BpmnNode,
@@ -201,8 +202,13 @@ function NodeRendererInner({
         />
       )}
       {/* Ports live in the DOM whenever the node is editable; CSS fades them
-          in on hover/selection (craft pack A2 — no per-node hover state). */}
-      {editable && <ConnectionPorts node={rendered} interactions={interactions} />}
+          in on hover/selection (craft pack A2 — no per-node hover state).
+          ES-3 (§4c): the event-subprocess SHELL never offers ports — it fires
+          by its start event, never by sequence flow (the ES-1 rule vetoes any
+          gesture that still reaches it). */}
+      {editable && !isEventSubprocess(rendered) && (
+        <ConnectionPorts node={rendered} interactions={interactions} />
+      )}
       {editable && selected && (
         <ResizeHandles node={rendered} nodeId={node.id} interactions={interactions} />
       )}

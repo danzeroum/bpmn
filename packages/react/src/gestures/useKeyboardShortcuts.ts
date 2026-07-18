@@ -4,6 +4,7 @@ import {
   activeNodes,
   childrenOf,
   isContainerType,
+  isEventSubprocess,
   compositeCommand,
   getBoundingBox,
   moveNodeCommand,
@@ -94,7 +95,7 @@ function isEditingTarget(target: EventTarget | null): boolean {
  * holds pan.
  */
 export function useKeyboardShortcuts(interactions: Interactions): void {
-  const { diagram, execute, undo, redo } = useDiagram();
+  const { diagram, execute, undo, redo, announceVeto } = useDiagram();
   const store = useCanvasStore();
   const config = useEditorConfig();
 
@@ -270,6 +271,18 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
           state.selectedIds.length === 1 ? diagram.nodes[state.selectedIds[0]] : undefined;
         if (single && !single.removedInVersion && !isContainerType(single.type)) {
           event.preventDefault();
+          // ES-3 (§4c): Tab on the event-subprocess SHELL is a DECLARED veto,
+          // never a silent no-op — the reason comes from the SAME ES-1 rule
+          // (one message, one source); children keep normal chaining.
+          if (isEventSubprocess(single)) {
+            const verdict = config.ruleEngine.evaluate(
+              'edge.connect.pre',
+              { sourceId: single.id, targetId: '__quick-add__' },
+              diagram,
+            );
+            if (!verdict.allowed) announceVeto(verdict.reason ?? 'Not allowed');
+            return;
+          }
           const { command, nodeId } = buildQuickAddCommand(
             diagram,
             config.registry,
@@ -385,5 +398,5 @@ export function useKeyboardShortcuts(interactions: Interactions): void {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [config, diagram, execute, interactions, redo, store, undo]);
+  }, [announceVeto, config, diagram, execute, interactions, redo, store, undo]);
 }

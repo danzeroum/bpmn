@@ -36,6 +36,9 @@ export const eventDefs: { en: Messages; ptBR: Messages } = {
     'eventDefs.compose.bind': 'Bind governed event definition',
     'eventDefs.compose.unbind': 'Unbind governed event definition',
     'eventDefs.mirror.notice': 'Managed by the Library — edit by promoting a new version.',
+    'eventSubproc.interrupting.label': 'Interrupts the scope',
+    'eventSubproc.interrupting.on': 'Interrupting: firing cancels the host scope (solid circle).',
+    'eventSubproc.interrupting.off': 'Non-interrupting: the scope keeps running (dashed circle).',
   },
   ptBR: {
     'eventDefs.kicker.message': 'Evento — mensagem',
@@ -67,5 +70,8 @@ export const eventDefs: { en: Messages; ptBR: Messages } = {
     'eventDefs.compose.bind': 'Vincular definição governada de evento',
     'eventDefs.compose.unbind': 'Desvincular definição governada de evento',
     'eventDefs.mirror.notice': 'Gerenciada pela Biblioteca — edite promovendo nova versão.',
+    'eventSubproc.interrupting.label': 'Interrompe o escopo',
+    'eventSubproc.interrupting.on': 'Interruptivo: o disparo cancela o escopo hospedeiro (círculo sólido).',
+    'eventSubproc.interrupting.off': 'Não-interruptivo: o escopo segue rodando (círculo tracejado).',
   },
 };

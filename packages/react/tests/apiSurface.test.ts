@@ -81,6 +81,9 @@ const EXPECTED_EXPORTS = [
   'TimerSection',
   'isTimerEvent',
   'formatTimerPreview',
+  // Handoff 17 ES-3 (§4c) — event-subprocess start toggle.
+  'InterruptingToggle',
+  'isEventSubprocessStart',
   // Handoff 17 ES-2 (§4b) — palette insert factory + tolerant diagram hook.
   'buildEventSubprocessInsert',
   'insertPaletteItem',

@@ -51,7 +51,16 @@ function ioDiagram(): BpmnDiagram {
       y: 180,
       properties: { eventDefinition: 'error', attachedToRef: 'host' },
     }),
-    sub: createNode({ id: 'sub', type: 'subProcess', label: 'Tratamento', x: 200, y: 320 }),
+    // ES-3 (§4c): migrado para EVENT subprocess — o aperto da matriz exige
+    // triggeredByEvent no pai (decisão 2 da ES-0).
+    sub: createNode({
+      id: 'sub',
+      type: 'subProcess',
+      label: 'Tratamento',
+      x: 200,
+      y: 320,
+      properties: { triggeredByEvent: true },
+    }),
     es1: createNode({
       id: 'es1',
       type: 'startEvent',
@@ -59,6 +68,16 @@ function ioDiagram(): BpmnDiagram {
       x: 220,
       y: 360,
       properties: { eventDefinition: 'error', parentId: 'sub' },
+    }),
+    // O caso da E-4 (subProcess COMUM) vira o NEGATIVO do aperto.
+    plainSub: createNode({ id: 'plainSub', type: 'subProcess', label: 'Comum', x: 400, y: 320 }),
+    esPlain: createNode({
+      id: 'esPlain',
+      type: 'startEvent',
+      label: 'Erro em comum',
+      x: 420,
+      y: 360,
+      properties: { eventDefinition: 'error', parentId: 'plainSub' },
     }),
     mc: createNode({
       id: 'mc',
@@ -108,10 +127,13 @@ describe('event I/O on the Execução tab (E-4)', () => {
     expect(eventExecutionModeOf(diagram, diagram.nodes.b1)).toBe('catch-error');
     expect(eventExecutionModeOf(diagram, diagram.nodes.es1)).toBe('catch-error');
     // Negativos: catch de message (correlação é host-owned), error start
-    // TOP-LEVEL (alvo do EVT_ERROR_START_TOPLEVEL na E-5), atividade comum.
+    // TOP-LEVEL (alvo do EVT_ERROR_START_TOPLEVEL), atividade comum — e o
+    // APERTO da ES-3: start de erro em subProcess COMUM (a aproximação da
+    // E-4) agora é null.
     expect(eventExecutionModeOf(diagram, diagram.nodes.mc)).toBeNull();
     expect(eventExecutionModeOf(diagram, diagram.nodes.topErr)).toBeNull();
     expect(eventExecutionModeOf(diagram, diagram.nodes.host)).toBeNull();
+    expect(eventExecutionModeOf(diagram, diagram.nodes.esPlain)).toBeNull();
   });
 
   it('critério 1 — sem engine: zero tabs, aba geral inalterada; com engine: só a matriz ganha a aba', () => {

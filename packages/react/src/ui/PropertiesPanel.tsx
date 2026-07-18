@@ -13,6 +13,7 @@ import { useT } from '../i18n/I18nContext.js';
 import type { EngineBridge } from '../plugins/types.js';
 import { EventDefinitionSection, eventKindOf } from './EventDefinitionSection.js';
 import { isTimerEvent, TimerSection } from './TimerSection.js';
+import { InterruptingToggle, isEventSubprocessStart } from './InterruptingToggle.js';
 import {
   eventExecutionModeOf,
   payloadMappingsOf,
@@ -98,6 +99,11 @@ export function PropertiesPanel() {
           )}
           {/* Timer editor (Handoff 16 E-5, §3d) — timer events only. */}
           {node && isTimerEvent(node) && <TimerSection node={node} readOnly={readOnly} />}
+          {/* Interrompe o escopo (Handoff 17 ES-3, §4c) — event-subprocess
+              starts only (core helpers on both sides of the predicate). */}
+          {node && isEventSubprocessStart(diagram, node) && (
+            <InterruptingToggle node={node} readOnly={readOnly} />
+          )}
           {/* Plugin sections (Handoff 5, wireframe 2d) — e.g. DMN "Decisão". */}
           {node &&
             inspectorSections
