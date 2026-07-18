@@ -68,7 +68,7 @@ export function fuzzyScore(label: string, query: string): number | null {
 export function CommandPalette() {
   const store = useCanvasStore();
   const open = useCanvasState((s) => s.paletteOpen);
-  const { diagram, execute, undo, redo, canUndo, canRedo } = useDiagram();
+  const { diagram, execute, undo, redo, canUndo, canRedo, announceVeto } = useDiagram();
   const config = useEditorConfig();
   const t = useT();
   const [query, setQuery] = useState('');
@@ -116,8 +116,9 @@ export function CommandPalette() {
       redo,
       canUndo,
       canRedo,
+      announceVeto,
     });
-  }, [open, diagram, execute, store, config, t, undo, redo, canUndo, canRedo]);
+  }, [open, diagram, execute, store, config, t, undo, redo, canUndo, canRedo, announceVeto]);
 
   const filtered = useMemo(() => {
     return entries

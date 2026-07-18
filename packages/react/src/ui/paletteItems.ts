@@ -1,6 +1,6 @@
 import type { PaletteGroup, PaletteItem } from '../plugins/types.js';
 import { CORE_PALETTE_ICONS } from './paletteIcons.js';
-import { buildEventSubprocessInsert } from './paletteInsert.js';
+import { buildEscalationBoundaryInsert, buildEventSubprocessInsert } from './paletteInsert.js';
 
 /** Built-in palette sections: the standard set plus the F6 event sub-menu. */
 export const BUILT_IN_PALETTE_GROUPS: PaletteGroup[] = [
@@ -35,5 +35,9 @@ export const BUILT_IN_PALETTE: PaletteItem[] = [
   // Handoff 17 ES-2 (§4b): composite item — container + typed start + named
   // definition in ONE undo, lint-clean by construction (the 4d fix's FORM).
   { id: 'eventSubprocess', label: 'Event Subprocess', nodeType: 'subProcess', icon: CORE_PALETTE_ICONS.eventSubprocess, group: 'events', build: buildEventSubprocessInsert },
+  // Handoff 18 ES-2 mould (§5b, decisão 3): composite escalation boundary —
+  // boundary + local definition + ref, cancelActivity:false explicit; the drop
+  // must land on a host activity (reforço 7) or it declines with a veto.
+  { id: 'escalationBoundary', label: 'Escalation (boundary)', nodeType: 'boundaryEvent', icon: CORE_PALETTE_ICONS.escalationBoundary, group: 'events', build: buildEscalationBoundaryInsert },
   { id: 'eventBasedGateway', label: 'Event Gateway', nodeType: 'eventBasedGateway', icon: CORE_PALETTE_ICONS.eventBasedGateway, group: 'events' },
 ];

@@ -95,6 +95,16 @@ Its `eventDefinition` works exactly as for other events. In the editor a boundar
 rides along when its host is moved. Attaching by drag-and-drop onto an activity and
 sliding along the host border on resize are tracked in `pendencias.md`.
 
+**Escalation boundary — declared non-interrupting default (Handoff 18 §5b).** The
+dedicated palette item «Escalation (boundary)» is born with `cancelActivity="false"`
+explicit — the BuildToValue personality "ask for help without stopping the work"; the
+other boundary kinds stay interrupting, and the existing interrupting toggle flips it.
+The item is a composite (boundary + local escalation definition + `escalationRef`, one
+undo). A boundary needs a host: dropped onto an activity it attaches (deriving the
+side/t anchor); dropped on empty canvas it declines with a declared veto (🔒), never a
+silent orphan. Authority (`properties.escalationAuthority`, free text → `bpmnr:`) is
+optional; its canvas chip is transient (never exported).
+
 ```xml
 <bpmn:boundaryEvent id="Boundary_1" name="Timeout" attachedToRef="Task_1" cancelActivity="false">
   <bpmn:timerEventDefinition id="Boundary_1_def"/>

@@ -11,7 +11,7 @@ import type { PaletteGroup, PaletteItem } from '../plugins/types.js';
  * center of the current viewport (snapped to the grid) and selects it.
  */
 export function Palette() {
-  const { execute } = useDiagram();
+  const { execute, announceVeto } = useDiagram();
   const { diagram } = useDiagram();
   const store = useCanvasStore();
   const config = useEditorConfig();
@@ -23,7 +23,7 @@ export function Palette() {
   // with the ⌘K entry — `insertPaletteItem`. N-3: `element.added` is emitted
   // by the command channel, no direct emission here.
   const createAt = (item: PaletteItem) => {
-    insertPaletteItem(item, { diagram, registry: config.registry, store, t, execute });
+    insertPaletteItem(item, { diagram, registry: config.registry, store, t, execute, announceVeto });
   };
 
   // Items render under their group (groups keep registration order); items

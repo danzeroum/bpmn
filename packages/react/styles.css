@@ -4363,6 +4363,14 @@
 .bpmnr-event-binding[data-binding-state='missing'] text.bpmnr-event-binding-seal {
   fill: var(--bpmnr-status-deprecated-fg, #b3372f);
 }
+/* Escalation authority chip (Handoff 18 §5b): "↟ authority: …" — green, the
+   colour of governed accountability; glyph+text, never colour alone. Transient
+   (inside [data-event-bindings], excluded from SVG/PNG exports). */
+.bpmnr-event-authority text.bpmnr-event-authority-chip {
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  fill: var(--bpmnr-status-active-fg, #1a6a54);
+}
 @media (prefers-color-scheme: dark) {
   :root:not([data-bpmnr-theme]) .bpmnr-eventdefs-seal {
     border-color: #44403a;

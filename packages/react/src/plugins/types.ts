@@ -63,10 +63,18 @@ export interface PaletteItem {
    * present, inserting this item executes the returned command (usually a
    * `compositeCommand` — one undo) instead of a plain addNode, and selects
    * `selectId` afterwards. The palette click AND the ⌘K entry resolve through
-   * this ONE factory (`paletteInsertCommand`) — never two code paths.
+   * this ONE factory (`paletteInsertCommand`) — never two code paths. A build
+   * may DECLINE the insert (Handoff 18 §5b reforço 7: a boundary dropped away
+   * from a host) by returning `{ veto }` — the caller announces it on the 🔒
+   * channel instead of creating an orphan node.
    */
-  build?: (ctx: PaletteBuildContext) => { command: Command; selectId: string };
+  build?: (ctx: PaletteBuildContext) => PaletteInsertResult;
 }
+
+/** Result of a palette {@link PaletteItem.build}: a command to run, or a declared veto. */
+export type PaletteInsertResult =
+  | { command: Command; selectId: string }
+  | { veto: string };
 
 /**
  * Palette section header. Groups render in registration order (built-ins
@@ -361,7 +369,7 @@ export interface EventDefinitionCatalogEntry {
 
 /** A governed ref resolved to its definition payload. */
 export interface ResolvedEventDefinition extends EventDefinitionCatalogEntry {
-  definition: { name: string; errorCode?: string };
+  definition: { name: string; errorCode?: string; escalationCode?: string };
 }
 
 /**

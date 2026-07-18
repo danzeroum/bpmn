@@ -67,6 +67,7 @@ import {
   DEMO_DECISION_TABLE,
   buildErrorSimDiagram,
   buildEsubSimDiagram,
+  buildEscalationDiagram,
   buildEventDefsDiagram,
   buildEventIoDiagram,
   buildTimerDiagram,
@@ -362,6 +363,7 @@ export function App() {
     if (params.get('eventio')) return buildEventIoDiagram();
     if (params.get('timer')) return buildTimerDiagram();
     if (params.get('events')) return buildEventDefsDiagram(params.get('lib') !== null);
+    if (params.get('escalation')) return buildEscalationDiagram();
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
     if (params.get('hc')) return buildHealthcareDiagram();

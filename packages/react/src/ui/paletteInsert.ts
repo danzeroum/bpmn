@@ -1,16 +1,21 @@
 import {
+  addEventDefinitionCommand,
   addNodeCommand,
+  boundaryAnchorOf,
+  boundaryNodePosition,
   compositeCommand,
   createNode,
+  nextEventDefinitionId,
   type BpmnDiagram,
   type Command,
   type NodeTypeRegistry,
   type RuleVerdict,
 } from '@buildtovalue/core';
 import { typedMessageStartCommands } from '@buildtovalue/lint';
+import { findNodeAtPoint } from '../canvas/hitTest.js';
 import { SUBPROCESS_TITLE_HEIGHT } from '../shapes/shapes.js';
 import type { CanvasStore } from '../state/canvasStore.js';
-import type { PaletteBuildContext, PaletteItem } from '../plugins/types.js';
+import type { PaletteBuildContext, PaletteInsertResult, PaletteItem } from '../plugins/types.js';
 
 /** i18n-additive label: `palette.item.{id}` when the dictionary has it. */
 export function paletteItemLabel(
@@ -39,6 +44,8 @@ export function insertPaletteItem(
     store: CanvasStore;
     t: PaletteBuildContext['t'];
     execute: (command: Command) => RuleVerdict;
+    /** 🔒 channel — a build that declines (reforço 7) announces here, never a silent no-op. */
+    announceVeto: (reason: string) => void;
   },
 ): RuleVerdict {
   const { viewport, gridSize, snapEnabled } = deps.store.getState();
@@ -49,16 +56,24 @@ export function insertPaletteItem(
   const jitter = (Object.keys(deps.diagram.nodes).length % 5) * (gridSize || 20);
   const x = snap(cx - def.defaultSize.width / 2 + jitter, snapEnabled ? gridSize : 0);
   const y = snap(cy - def.defaultSize.height / 2 + jitter, snapEnabled ? gridSize : 0);
-  const { command, selectId } = paletteInsertCommand(item, {
+  const result = paletteInsertCommand(item, {
     diagram: deps.diagram,
     registry: deps.registry,
     x,
     y,
     t: deps.t,
   });
-  const verdict = deps.execute(command);
+  // Reforço 7: a declined insert (e.g. boundary with no host under the drop)
+  // lights the 🔒 with the declared reason — never an orphan, never a mute no-op.
+  if ('veto' in result) {
+    deps.announceVeto(result.veto);
+    return { allowed: false, reason: result.veto };
+  }
+  const verdict = deps.execute(result.command);
   if (verdict.allowed) {
-    deps.store.setState({ selectedIds: [selectId], lastCreatedNodeId: selectId });
+    deps.store.setState({ selectedIds: [result.selectId], lastCreatedNodeId: result.selectId });
+  } else if (verdict.reason) {
+    deps.announceVeto(verdict.reason);
   }
   return verdict;
 }
@@ -72,7 +87,7 @@ export function insertPaletteItem(
 export function paletteInsertCommand(
   item: PaletteItem,
   ctx: PaletteBuildContext,
-): { command: Command; selectId: string } {
+): PaletteInsertResult {
   if (item.build) return item.build(ctx);
   const node = createNode(
     {
@@ -122,5 +137,61 @@ export function buildEventSubprocessInsert(ctx: PaletteBuildContext): {
       ...commands,
     ]),
     selectId: sub.id,
+  };
+}
+
+/**
+ * «Escalation (boundary)» (Handoff 18 §5b, decisão 3): a composite born
+ * lint-clean — boundary + LOCAL escalation definition + ref in ONE undo,
+ * `cancelActivity:false` explicit (the declared non-interrupting personality).
+ * Reforço 7: a boundary needs a host — the drop must land on an activity
+ * (attaches via the N-1 side/t anchor); on empty canvas it DECLINES with a
+ * declared veto (announced on the 🔒), never an orphan boundary.
+ */
+export function buildEscalationBoundaryInsert(ctx: PaletteBuildContext): PaletteInsertResult {
+  const { diagram, registry, x, y, t } = ctx;
+  const size = registry.get('boundaryEvent').defaultSize;
+  const center = { x: x + size.width / 2, y: y + size.height / 2 };
+  const host = findNodeAtPoint(diagram, null, center);
+  if (!host || !registry.has(host.type) || registry.get(host.type).category !== 'activity') {
+    return { veto: t('palette.veto.boundaryNeedsHost') };
+  }
+  // Derive the N-1 anchor from the drop point, then snap the boundary onto the
+  // host border (side/t stored so a later export re-derives them identically).
+  const { side, t: anchorT } = boundaryAnchorOf(host, {
+    x,
+    y,
+    width: size.width,
+    height: size.height,
+    properties: {},
+  });
+  const pos = boundaryNodePosition(host, side, anchorT, size);
+  const escId = nextEventDefinitionId(diagram, 'escalation');
+  const boundary = createNode(
+    {
+      type: 'boundaryEvent',
+      x: pos.x,
+      y: pos.y,
+      properties: {
+        attachedToRef: host.id,
+        cancelActivity: false,
+        eventDefinition: 'escalation',
+        eventDefinitionRef: escId,
+        boundarySide: side,
+        boundaryT: anchorT,
+      },
+      versionId: diagram.version.id,
+    },
+    registry,
+  );
+  return {
+    command: compositeCommand(t('palette.compose.escalationBoundary'), [
+      addEventDefinitionCommand('escalation', {
+        id: escId,
+        name: t('eventDefs.defaultName.escalation'),
+      }),
+      addNodeCommand(boundary),
+    ]),
+    selectId: boundary.id,
   };
 }

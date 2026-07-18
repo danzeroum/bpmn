@@ -256,14 +256,27 @@ export function EventBindingOverlay() {
   const chips = Object.values(diagram.nodes).filter(
     (node) => !node.removedInVersion && typeof node.properties.eventDefinitionBinding === 'string',
   );
-  if (chips.length === 0) return null;
+  // Authority chip (Handoff 18 §5b): an escalation catch declaring
+  // `properties.escalationAuthority` (settled value — the diagram only updates
+  // on the inspector's blur-commit). Empty string = absent → no chip (never an
+  // empty chip). Transient: the value serializes as bpmnr:, the chip never does.
+  const authorityChips = Object.values(diagram.nodes).filter(
+    (node) =>
+      !node.removedInVersion &&
+      node.properties.eventDefinition === 'escalation' &&
+      typeof node.properties.escalationAuthority === 'string' &&
+      node.properties.escalationAuthority.trim() !== '',
+  );
+  if (chips.length === 0 && authorityChips.length === 0) return null;
   return (
     <g data-event-bindings>
       {chips.map((node) => {
         const binding = node.properties.eventDefinitionBinding as string;
         const kind = node.properties.eventDefinition;
         const refKind =
-          kind === 'message' || kind === 'signal' || kind === 'error' ? kind : null;
+          kind === 'message' || kind === 'signal' || kind === 'error' || kind === 'escalation'
+            ? kind
+            : null;
         let seal = `~ ${t('eventDefs.binding.unresolved')}`;
         let state = 'degraded';
         if (resolver && refKind) {
@@ -293,6 +306,25 @@ export function EventBindingOverlay() {
             </text>
             <text x={cx} y={top + 11} textAnchor="middle" className="bpmnr-event-binding-seal">
               {seal}
+            </text>
+          </g>
+        );
+      })}
+      {authorityChips.map((node) => {
+        const authority = (node.properties.escalationAuthority as string).trim();
+        const cx = node.x + node.width / 2;
+        // Sit below the governed seal when this node also shows a binding chip.
+        const hasBinding = typeof node.properties.eventDefinitionBinding === 'string';
+        const top = node.y + node.height + (hasBinding ? 34 : 12);
+        return (
+          <g
+            key={`auth-${node.id}`}
+            className="bpmnr-event-authority"
+            data-event-authority={node.id}
+          >
+            {/* i18n-exempt — the ↟ glyph; the text is the translation */}
+            <text x={cx} y={top} textAnchor="middle" className="bpmnr-event-authority-chip">
+              {`↟ ${t('eventDefs.authority.chip', { name: authority })}`}
             </text>
           </g>
         );

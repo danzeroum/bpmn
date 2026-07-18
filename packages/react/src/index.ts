@@ -71,6 +71,7 @@ export * from './plugins/types.js';
 export * from './ui/paletteItems.js';
 // Handoff 17 ES-2 (§4b) — the ONE palette insert factory (documented surface).
 export {
+  buildEscalationBoundaryInsert,
   buildEventSubprocessInsert,
   insertPaletteItem,
   paletteInsertCommand,
@@ -117,7 +118,11 @@ export { EventDefinitionSection, eventKindOf } from './ui/EventDefinitionSection
 // Handoff 16 E-5 (§3d) — timer editor with human preview.
 export { TimerSection, isTimerEvent, formatTimerPreview } from './ui/TimerSection.js';
 // Handoff 17 ES-3 (§4c) — event-subprocess start toggle.
-export { InterruptingToggle, isEventSubprocessStart } from './ui/InterruptingToggle.js';
+export {
+  hasInterruptingToggle,
+  InterruptingToggle,
+  isEventSubprocessStart,
+} from './ui/InterruptingToggle.js';
 // Handoff 16 E-4 (§3c) — executable-event matrix + payload helpers.
 export {
   eventExecutionModeOf,

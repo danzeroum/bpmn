@@ -70,20 +70,15 @@ export function buildBindCommand(
 ): Command {
   const mirrorId = mirrorIdOf(binding);
   const existing = findEventDefinition(diagram, kind, mirrorId);
+  const code =
+    resolved.definition.errorCode !== undefined
+      ? { errorCode: resolved.definition.errorCode }
+      : resolved.definition.escalationCode !== undefined
+        ? { escalationCode: resolved.definition.escalationCode }
+        : {};
   const upsert = existing
-    ? updateEventDefinitionCommand(kind, mirrorId, {
-        name: resolved.definition.name,
-        ...(resolved.definition.errorCode !== undefined
-          ? { errorCode: resolved.definition.errorCode }
-          : {}),
-      })
-    : addEventDefinitionCommand(kind, {
-        id: mirrorId,
-        name: resolved.definition.name,
-        ...(resolved.definition.errorCode !== undefined
-          ? { errorCode: resolved.definition.errorCode }
-          : {}),
-      });
+    ? updateEventDefinitionCommand(kind, mirrorId, { name: resolved.definition.name, ...code })
+    : addEventDefinitionCommand(kind, { id: mirrorId, name: resolved.definition.name, ...code });
   return compositeCommand(description, [
     upsert,
     updateNodeCommand(node.id, {
@@ -141,7 +136,11 @@ export function eventBindingRule(resolver: EventDefinitionResolver): ValidationR
       if (node.removedInVersion) continue;
       const binding = eventBindingOf(node);
       const kind = node.properties.eventDefinition;
-      if (!binding || (kind !== 'message' && kind !== 'signal' && kind !== 'error')) continue;
+      if (
+        !binding ||
+        (kind !== 'message' && kind !== 'signal' && kind !== 'error' && kind !== 'escalation')
+      )
+        continue;
       const { state } = bindingStateOf(resolver, binding, kind);
       if (state === 'missing') {
         issues.push({
