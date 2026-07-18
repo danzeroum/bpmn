@@ -6902,9 +6902,9 @@ given date (`resolveCallActivities`). Returns the called process id, if any.
 function eventDefinitionOf(node): 
   | "error"
   | "message"
+  | "signal"
   | "link"
   | "timer"
-  | "signal"
   | "escalation"
   | "conditional"
   | "terminate"
@@ -6923,9 +6923,9 @@ Returns the event-definition kind stored on a node, if it is a valid kind.
 
   \| `"error"`
   \| `"message"`
+  \| `"signal"`
   \| `"link"`
   \| `"timer"`
-  \| `"signal"`
   \| `"escalation"`
   \| `"conditional"`
   \| `"terminate"`

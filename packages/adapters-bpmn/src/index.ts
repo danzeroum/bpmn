@@ -26,6 +26,9 @@ export { createRecipeAdapter } from './recipeAdapter.js';
 export type { RecipeAdapter } from './recipeAdapter.js';
 export { activeCopilotPromptVersion, copilotPromptAdapter } from './copilotPromptAdapter.js';
 export { activeLintProfileVersion, lintProfileAdapter } from './lintProfileAdapter.js';
+export { eventDefinitionCatalogAdapter } from './eventDefinitionCatalogAdapter.js';
+export type { GovernedEventDefinitionRecord } from './eventDefinitionCatalogAdapter.js';
+export { eventBindingChangedEntry, EVENT_BINDING_CHANGED_TYPE } from './eventBindingLedger.js';
 export {
   reviewChangesRequestedEntry,
   reviewCommentEntry,

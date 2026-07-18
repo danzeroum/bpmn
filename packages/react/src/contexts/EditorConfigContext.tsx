@@ -15,6 +15,7 @@ import type {
   EdgeStyle,
   EditorEventHandler,
   EngineBridge,
+  EventDefinitionResolver,
   EditorEventName,
   EditorEventPayloads,
   InspectorSection,
@@ -55,6 +56,8 @@ export interface EditorConfig {
   autosave: boolean;
   /** Execution-engine bridge (Handoff 14 §1f); null → no "Execução" tab. */
   engine: EngineBridge | null;
+  /** Governed event-definition resolver (Handoff 16 §3b); null → declared degradation. */
+  eventDefinitionResolver: EventDefinitionResolver | null;
 }
 
 const EditorConfigContext = createContext<EditorConfig | null>(null);
@@ -87,6 +90,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
   let edgeRouter: EdgeRouterFn = cubicBezierConnection;
   let autosave = true;
   let engine: EngineBridge | null = null;
+  let eventDefinitionResolver: EventDefinitionResolver | null = null;
 
   // Family/domain color contract (Handoff 5 §10.3): one wheel step per
   // domain — a collision is a build warning; gold/green are reserved for
@@ -129,6 +133,9 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
     if (plugin.onEditorEvent) eventHandlers.push(plugin.onEditorEvent);
     if (plugin.autosave !== undefined) autosave = plugin.autosave;
     if (plugin.engine && engine === null) engine = plugin.engine; // first wins
+    if (plugin.eventDefinitionResolver && eventDefinitionResolver === null) {
+      eventDefinitionResolver = plugin.eventDefinitionResolver; // first wins
+    }
     if (plugin.lifecycleConfig) lifecycleEngine = new LifecycleEngine(plugin.lifecycleConfig);
     if (plugin.edgeRouter) {
       // Built-in name ('bezier'|'orthogonal'|'straight'|'astar') or a custom
@@ -170,6 +177,7 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
           },
     autosave,
     engine,
+    eventDefinitionResolver,
   };
 }
 

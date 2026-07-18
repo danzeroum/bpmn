@@ -317,6 +317,42 @@ export interface BpmnPlugin {
    * deployment stays HOST-owned and GATED — see {@link EngineBridge}.
    */
   engine?: EngineBridge;
+  /**
+   * Governed event-definition resolution (Handoff 16 §3b): registering one
+   * turns on the "Da Biblioteca" section of the event picker and the
+   * vigência chip/seal on the canvas. First plugin providing one wins. The
+   * editor NEVER consults a registry — resolution is host-owned; without a
+   * resolver the degradation is declared (binding renders as text + notice).
+   */
+  eventDefinitionResolver?: EventDefinitionResolver;
+}
+
+/** One catalog entry the picker's Biblioteca section lists. */
+export interface EventDefinitionCatalogEntry {
+  /** Artifact name — the `nome` half of `nome@semver`. */
+  name: string;
+  semanticVersion: string;
+  /** Lifecycle status of that version ('active' = VIGENTE seal). */
+  status: string;
+}
+
+/** A governed ref resolved to its definition payload. */
+export interface ResolvedEventDefinition extends EventDefinitionCatalogEntry {
+  definition: { name: string; errorCode?: string };
+}
+
+/**
+ * Host-injected resolver of governed event-definition refs (§3b — the
+ * resolveCallActivities/EngineBridge mold): SYNCHRONOUS, the host preloads.
+ * `ref` is the canonical `nome@semver` string. The BINDING PINS the exact
+ * version: a newer artifact version never moves an existing binding — only
+ * an explicit ref change does (audited by the host's ledger glue).
+ */
+export interface EventDefinitionResolver {
+  /** Entries offered in the picker's "Da Biblioteca" section, per kind. */
+  list(kind: 'message' | 'signal' | 'error'): EventDefinitionCatalogEntry[];
+  /** Resolve a pinned `nome@semver` ref; undefined → SIG_REF_MISSING. */
+  resolve(ref: string, kind: 'message' | 'signal' | 'error'): ResolvedEventDefinition | undefined;
 }
 
 /**

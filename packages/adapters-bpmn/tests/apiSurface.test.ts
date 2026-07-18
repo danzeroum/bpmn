@@ -54,6 +54,10 @@ const EXPECTED_EXPORTS = [
   'REVIEW_COMMENT_TYPE',
   'REVIEW_THREAD_DISMISSED_TYPE',
   'REVIEW_THREAD_RESOLVED_TYPE',
+  // Handoff 16 E-3 (§3b) — governed event-definition catalog + binding audit.
+  'eventDefinitionCatalogAdapter',
+  'eventBindingChangedEntry',
+  'EVENT_BINDING_CHANGED_TYPE',
 ].sort();
 
 describe('@buildtovalue/adapters-bpmn public API surface', () => {

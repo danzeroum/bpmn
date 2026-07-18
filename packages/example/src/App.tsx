@@ -12,6 +12,7 @@ import {
   astarConnection,
   CopilotPanel,
   BpmnEditor,
+  eventBindingRule,
   BpmnReplay,
   BpmnSimulator,
   EdgePedigreeStrip,
@@ -41,9 +42,11 @@ import { callActivityBindingRule, VersionRegistry } from '@buildtovalue/registry
 import { soundnessPromotionRule, soundnessRules } from '@buildtovalue/soundness';
 import {
   activeCopilotPromptVersion,
+  eventBindingChangedEntry,
   replayAnalysisEntry,
   simulationSessionEntry,
 } from '@buildtovalue/adapters-bpmn';
+import { demoEventResolver } from './eventLibrary.js';
 import type { AIProvider } from '@buildtovalue/copilot';
 import {
   buildClosedDiagram,
@@ -161,6 +164,52 @@ const menuPlugin: BpmnPlugin = {
 
 const PLUGINS = [domainExamplePlugin, dmnDemoPlugin, healthcarePlugin, observabilityPlugin, soundnessPlugin, bindingPlugin, menuPlugin];
 
+// Governed event definitions (`?events=1&lib=1`, Handoff 16 E-3): the demo
+// catalog's resolver injected as a plugin + eventBindingRule wired as
+// validation — the react editor never consults a registry. Binding changes
+// are audited through the EXISTING `command.executed` event (catalog N-3
+// stays at 16): the glue arms a diff the host runs in `onChange`, appending
+// EVENT_BINDING_CHANGED entries and marking the DOM for e2e observability.
+const eventLibraryLedger = new AuditLedger();
+// The stack notifies `onChange` BEFORE the `command.executed` event, so the
+// host stores the transition there and audits it here, once the event names
+// a governed compose (bind/unbind/re-bind).
+let lastTransition: { previous: BpmnDiagram; next: BpmnDiagram } | null = null;
+const eventLibraryPlugin: BpmnPlugin = {
+  id: 'demo/event-library',
+  eventDefinitionResolver: demoEventResolver,
+  validationRules: [eventBindingRule(demoEventResolver)],
+  onEditorEvent: (event) => {
+    if (event.type !== 'command.executed' || !lastTransition) return;
+    const description = (event.meta as { description?: string }).description ?? '';
+    if (description.includes('governada') || description.includes('governed')) {
+      auditBindingChanges(lastTransition.previous, lastTransition.next);
+    }
+  },
+};
+
+const auditBindingChanges = (previous: BpmnDiagram, next: BpmnDiagram) => {
+  for (const node of Object.values(next.nodes)) {
+    const from = previous.nodes[node.id]?.properties.eventDefinitionBinding as string | undefined;
+    const to = node.properties.eventDefinitionBinding as string | undefined;
+    if (from === to) continue;
+    void eventLibraryLedger.append(
+      eventBindingChangedEntry({
+        diagramId: next.id,
+        versionId: next.version.id,
+        nodeId: node.id,
+        actor: { id: 'demo' },
+        ...(from !== undefined ? { from } : {}),
+        ...(to !== undefined ? { to } : {}),
+      }),
+    );
+    document.body.dataset.eventBindingChanges = String(
+      Number(document.body.dataset.eventBindingChanges ?? '0') + 1,
+    );
+    document.body.dataset.lastEventBinding = `${node.id}:${from ?? ''}→${to ?? ''}`;
+  }
+};
+
 // Engine bridge demo (`?engine=candidate|active`, Handoff 14 §1f): turns on
 // the properties panel's "Execução" tab. The signature truth is host-owned —
 // here `?signed=1` plays the host ledger; deploy just marks the DOM so the
@@ -197,6 +246,7 @@ const astarSpyPlugin: BpmnPlugin = {
   },
 };
 const ASTAR_PLUGINS = [...PLUGINS, astarSpyPlugin];
+const EVENT_LIB_PLUGINS = [...PLUGINS, eventLibraryPlugin];
 
 /** In-memory ledger the `?simulate` demo registers sessions into (Handoff 7A-3). */
 const simulationDemoLedger = new AuditLedger();
@@ -304,7 +354,7 @@ export function App() {
     if (params.get('fanout')) return buildFanoutDiagram();
     if (params.get('deadlock')) return buildDeadlockDiagram();
     if (params.get('boundary')) return buildBoundaryDiagram();
-    if (params.get('events')) return buildEventDefsDiagram();
+    if (params.get('events')) return buildEventDefsDiagram(params.get('lib') !== null);
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
     if (params.get('hc')) return buildHealthcareDiagram();
@@ -341,6 +391,8 @@ export function App() {
   const simulateMode = params.get('simulate') !== null;
   // `?astar=1` swaps in the router-spy plugin over the A* routing demo.
   const astarMode = params.get('astar') !== null;
+  // `?events=1&lib=1` adds the governed event-definition library (E-3).
+  const eventsLibMode = params.get('events') !== null && params.get('lib') !== null;
   // `?replay=1` enters replay mode (Handoff 7B) over the same model + a synthetic log.
   const replayMode = params.get('replay') !== null;
   // `?sfeel=1` — S-FEEL decision demo (Handoff 9 SF-2); `&bad=1` uses a table
@@ -518,12 +570,15 @@ export function App() {
           plugins={
             astarMode
               ? ASTAR_PLUGINS
-              : params.get('engine')
-                ? [...PLUGINS, engineBridgePlugin]
-                : PLUGINS
+              : eventsLibMode
+                ? EVENT_LIB_PLUGINS
+                : params.get('engine')
+                  ? [...PLUGINS, engineBridgePlugin]
+                  : PLUGINS
           }
           messages={messages}
           onChange={(next) => {
+            if (eventsLibMode) lastTransition = { previous: latestRef.current, next };
             latestRef.current = next;
           }}
         >

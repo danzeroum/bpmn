@@ -710,7 +710,7 @@ export function buildBoundaryDiagram(): BpmnDiagram {
  * both, rename (cascade), see the usage list, hit the deletion veto, unlink
  * and finally delete.
  */
-export function buildEventDefsDiagram(): BpmnDiagram {
+export function buildEventDefsDiagram(withLibrary = false): BpmnDiagram {
   const registry = createDefaultRegistry();
   const diagram = createDiagram({ id: 'demo-events', name: 'Definições de evento', createdBy: 'demo' });
   const v = diagram.version.id;
@@ -729,5 +729,21 @@ export function buildEventDefsDiagram(): BpmnDiagram {
     f2: mkEdge('f2', 'm1', 'm2'),
     f3: mkEdge('f3', 'm2', 'end'),
   };
+  // `&lib=1` (E-3): m3 arrives PRE-BOUND to a ref the demo catalog does not
+  // know — Validate must surface SIG_REF_MISSING and the chip shows ✕. The
+  // gov-* mirror keeps the OMG export valid even for the broken binding.
+  if (withLibrary) {
+    diagram.nodes.m3 = make('intermediateCatchEvent', 'm3', 'Aguardar legado', 400, 280, {
+      eventDefinition: 'message',
+      eventDefinitionRef: 'gov-legado.cancelado',
+      eventDefinitionBinding: 'legado.cancelado@0.9.0',
+    });
+    diagram.edges.f4 = mkEdge('f4', 'm1', 'm3');
+    diagram.definitions = {
+      messages: [{ id: 'gov-legado.cancelado', name: 'Legado cancelado' }],
+      signals: [],
+      errors: [],
+    };
+  }
   return diagram;
 }

@@ -175,6 +175,34 @@ vendor namespace for what the spec already names:
 - **Deletion.** `removeEventDefinitionCommand` is vetoed by the default rules while any
   active event references the definition; the veto reason lists every usage (label + id).
 
+## Governed event-definition bindings (`properties.eventDefinitionBinding`)
+
+An event can reference a definition governed by the host's Biblioteca (Handoff 16 §3b)
+instead of a purely local one:
+
+- **Model.** The binding is a `nome@semver` string in `properties.eventDefinitionBinding`,
+  which serializes like every other custom property — as a `bpmnr:property` inside the
+  node's `extensionElements`, **never** a vendor attribute such as `camunda:modelRefCode`.
+  Round-trip is byte-stable by construction (no converter change was needed).
+- **Local mirror.** Binding upserts a local definition with the reserved id `gov-{nome}`
+  carrying the resolved payload (`name`, `errorCode`). The mirror keeps the OMG export
+  valid — `messageRef`/`signalRef`/`errorRef` still points at a real root element — so any
+  standard engine consumes the file with zero knowledge of the binding. Mirror ids are
+  reserved: `gov-*` definitions are managed by the Biblioteca and are **read-only** in the
+  editor (rename/`errorCode` blocked — editing happens by promoting a new artifact version).
+- **Pin semantics.** The binding points at a FIXED `nome@semver`. Promoting a NEW version
+  of the artifact never moves the mirror or the binding — only an explicit change of
+  reference does, and that change is an auditable act (ledger entry
+  `EVENT_BINDING_CHANGED` with `from`/`to`). Resolution state is reported, not enforced:
+  a binding to a non-vigente version validates as WARNING `SIG_REF_STALE`; an
+  unresolvable one as ERROR `SIG_REF_MISSING`.
+- **Resolution.** The editor never consults a registry: the host injects a synchronous
+  `EventDefinitionResolver` via plugin. Without one, the binding degrades DECLAREDLY —
+  shown as text with a "resolution not configured" notice, never silently dropped.
+- **Usage counting.** The mirror is an ordinary definition: while the bound event
+  references it, the deletion veto counts that usage — governança by construction, no
+  special case. Unbinding garbage-collects the mirror when its last usage goes away.
+
 ## Foreign extension passthrough (`zeebe:*`, `camunda:*`, …)
 
 Extension content from OTHER namespaces is preserved through the round-trip instead of being
