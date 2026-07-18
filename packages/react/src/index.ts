@@ -101,6 +101,12 @@ export * from './workers/executor.js';
 export * from './workers/jobs.js';
 
 export { SearchPanel } from './ui/SearchPanel.js';
+export { CommandPalette, paletteEntries, fuzzyScore } from './ui/CommandPalette.js';
+export { Cheatsheet } from './ui/Cheatsheet.js';
+export { EmptyState, buildGovernedExample } from './ui/EmptyState.js';
+export * from './commands/menuRegistry.js';
+export * from './commands/globalCommands.js';
+export { KEYBOARD_SHORTCUT_CATALOG, type ShortcutCatalogEntry } from './gestures/useKeyboardShortcuts.js';
 export { LintPanel } from './ui/LintPanel.js';
 export type { LintPanelProps } from './ui/LintPanel.js';
 export { LayoutProposalCard } from './ui/LayoutProposalCard.js';

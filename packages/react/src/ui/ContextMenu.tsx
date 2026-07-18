@@ -1,48 +1,23 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  compositeCommand,
-  descendantIdsOf,
-  getAnchorPoint,
-  isContainerType,
-  nodeParentId,
-  rectCenter,
-  subProcessContainerAt,
-  removeEdgeCommand,
-  removeNodeCommand,
-  updateEdgeCommand,
-  updateNodeCommand,
-  type BpmnDiagram,
-  type BpmnEdge,
-  type Point,
-} from '@buildtovalue/core';
 import { useCanvasStore, useCanvasState } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { useDismissal } from '../gestures/useDismissal.js';
-import {
-  buildAlignCommand,
-  buildDistributeCommand,
-} from '../canvas/arrange.js';
-import {
-  buildPasteCommand,
-  collectClipboardPayload,
-  hasClipboardContent,
-  readClipboardPayload,
-  writeClipboardPayload,
-} from '../gestures/clipboard.js';
 import { useT } from '../i18n/I18nContext.js';
 import {
-  backToAutoPatch,
-  computeRoutedWaypoints,
-  isManualEdge,
-  type RouteMode,
-} from '../canvas/routeEdge.js';
-import type { ContextMenuItem, MenuTarget } from '../plugins/types.js';
+  builtinMenuItems,
+  pluginMenuItems,
+  type RegisteredMenuItem,
+} from '../commands/menuRegistry.js';
+import type { MenuTarget } from '../plugins/types.js';
 
 /**
  * Pluggable context menu (Handoff 11 N-5, protótipo aba 2): conditional
  * built-ins per target kind + one section per plugin (kicker = plugin id)
- * through the `contextMenuItems` contract. Rules:
+ * through the `contextMenuItems` contract. Since Handoff 15 §2f the items
+ * come from the extracted command registry (`commands/menuRegistry.ts`,
+ * equivalence-tested) — the SAME source the Ctrl/Cmd+K palette and the "?"
+ * cheatsheet consume. Rules:
  *
  * - Actions dispatch COMMANDS — the menu never mutates diagram state
  *   directly (plugin `run` receives only `execute`).
@@ -52,13 +27,6 @@ import type { ContextMenuItem, MenuTarget } from '../plugins/types.js';
  * - Positioning flips at the container borders; touch hit-targets are ≥44px
  *   (pointer: coarse media query in styles.css).
  */
-interface RenderedItem {
-  id: string;
-  label: string;
-  section?: string;
-  run: () => void;
-}
-
 const MENU_WIDTH = 240;
 const ITEM_HEIGHT = 34;
 
@@ -76,7 +44,7 @@ export function ContextMenu() {
   // Esc pops the menu FIRST — it registers on open, i.e. on top of the stack.
   useDismissal('context-menu', menu !== null, close);
 
-  const items = useMemo<RenderedItem[]>(() => {
+  const items = useMemo<RegisteredMenuItem[]>(() => {
     if (!menu) return [];
     const target: MenuTarget = {
       kind: menu.kind,
@@ -85,198 +53,8 @@ export function ContextMenu() {
       diagram,
       selectedIds: store.getState().selectedIds,
     };
-    const rendered: RenderedItem[] = [];
-
-    // Conditional BUILT-INS (edge complete; node minimal — pendencias §13).
-    if (menu.kind === 'edge' && menu.targetId) {
-      const edge = diagram.edges[menu.targetId];
-      if (edge) {
-        if (isManualEdge(edge)) {
-          rendered.push({
-            id: 'edge.back-to-auto',
-            label: t('contextMenu.backToAuto'),
-            run: () =>
-              void execute(updateEdgeCommand(edge.id, backToAutoPatch(diagram, edge, config.edgeRouter))),
-          });
-        }
-        rendered.push({
-          id: 'edge.add-waypoint',
-          label: t('contextMenu.addWaypoint'),
-          run: () => {
-            const route =
-              edge.waypoints ??
-              computeRoutedWaypoints(diagram, edge, config.edgeRouter)?.waypoints ??
-              straightRoute(diagram, edge);
-            if (!route || route.length < 2) return;
-            const index = nearestSegmentIndex(route, menu.world);
-            const waypoints = [...route.slice(0, index + 1), menu.world, ...route.slice(index + 1)];
-            void execute(
-              updateEdgeCommand(edge.id, {
-                waypoints,
-                properties: { routeMode: 'manual' satisfies RouteMode, routeFallback: undefined },
-              }),
-            );
-          },
-        });
-        rendered.push({
-          id: 'edge.edit-label',
-          label: t('contextMenu.editLabel'),
-          run: () => store.setState({ editingEdgeId: edge.id }),
-        });
-      }
-    }
-    if (menu.kind === 'node' && menu.targetId && diagram.nodes[menu.targetId]) {
-      const node = diagram.nodes[menu.targetId];
-      rendered.push({
-        id: 'node.edit-label',
-        label: t('contextMenu.editLabel'),
-        run: () => store.setState({ editingNodeId: menu.targetId!, selectedIds: [menu.targetId!] }),
-      });
-      // F7 reparent — the keyboard/touch path for drag reparent-on-drop (a drag
-      // is not accessible). Swimlane containers and boundary events (which follow
-      // their host, not a parentId) never reparent this way.
-      if (!isContainerType(node.type) && node.type !== 'boundaryEvent') {
-        const currentParent = nodeParentId(node);
-        // Exclude self + subtree so a container never adopts itself; the deepest
-        // expanded sub-process the node's center sits in is the move target.
-        const exclude = new Set<string>([node.id, ...descendantIdsOf(diagram, node.id)]);
-        const container = subProcessContainerAt(diagram, rectCenter(node), exclude);
-        if (container && container.id !== currentParent) {
-          rendered.push({
-            id: 'node.move-into-subprocess',
-            label: t('contextMenu.moveIntoSubprocess', { name: container.label }),
-            run: () =>
-              void execute(updateNodeCommand(node.id, { properties: { parentId: container.id } })),
-          });
-        }
-        if (currentParent) {
-          rendered.push({
-            id: 'node.remove-from-subprocess',
-            label: t('contextMenu.removeFromSubprocess'),
-            run: () =>
-              void execute(updateNodeCommand(node.id, { properties: { parentId: undefined } })),
-          });
-        }
-      }
-      const clipboardSelection = target.selectedIds.includes(node.id)
-        ? target.selectedIds
-        : [node.id];
-      rendered.push({
-        id: 'node.copy',
-        label: t('contextMenu.copy'),
-        run: () => {
-          const payload = collectClipboardPayload(diagram, clipboardSelection);
-          if (payload) void writeClipboardPayload(payload);
-        },
-      });
-      rendered.push({
-        id: 'node.duplicate',
-        label: t('contextMenu.duplicate'),
-        run: () => {
-          const payload = collectClipboardPayload(diagram, clipboardSelection);
-          const paste = payload
-            ? buildPasteCommand(diagram, payload, { description: 'Duplicate selection' })
-            : null;
-          if (paste) {
-            void execute(paste.command);
-            store.setState({ selectedIds: paste.newIds });
-          }
-        },
-      });
-      rendered.push({
-        id: 'node.delete',
-        label: t('contextMenu.delete'),
-        run: () => {
-          const ids = clipboardSelection;
-          const commands = ids.map((id) =>
-            diagram.nodes[id] ? removeNodeCommand(id) : removeEdgeCommand(id),
-          );
-          void execute(
-            commands.length === 1 ? commands[0] : compositeCommand('Delete selection', commands),
-          );
-          store.setState({ selectedIds: [] });
-        },
-      });
-      // Align/distribute (referência item 2): appear for multi-node selections.
-      const selectedNodes = target.selectedIds
-        .map((id) => diagram.nodes[id])
-        .filter((n): n is NonNullable<typeof n> => Boolean(n && !n.removedInVersion));
-      if (selectedNodes.length >= 2) {
-        const aligners = [
-          ['align-left', 'left', 'contextMenu.alignLeft'],
-          ['align-center-x', 'centerX', 'contextMenu.alignCenterX'],
-          ['align-top', 'top', 'contextMenu.alignTop'],
-          ['align-center-y', 'centerY', 'contextMenu.alignCenterY'],
-        ] as const;
-        for (const [id, mode, key] of aligners) {
-          rendered.push({
-            id: `selection.${id}`,
-            label: t(key),
-            run: () => {
-              const command = buildAlignCommand(diagram, selectedNodes, mode);
-              if (command) void execute(command);
-            },
-          });
-        }
-      }
-      if (selectedNodes.length >= 3) {
-        for (const axis of ['horizontal', 'vertical'] as const) {
-          rendered.push({
-            id: `selection.distribute-${axis}`,
-            label: t(
-              axis === 'horizontal'
-                ? 'contextMenu.distributeHorizontal'
-                : 'contextMenu.distributeVertical',
-            ),
-            run: () => {
-              const command = buildDistributeCommand(diagram, selectedNodes, axis);
-              if (command) void execute(command);
-            },
-          });
-        }
-      }
-    }
-
-    if (menu.kind === 'canvas' && hasClipboardContent()) {
-      rendered.push({
-        id: 'canvas.paste',
-        label: t('contextMenu.paste'),
-        run: () => {
-          void readClipboardPayload().then((payload) => {
-            // Paste anchored at the click point: shift the payload so its
-            // top-left corner lands on the menu's world position.
-            const minX = payload ? Math.min(...payload.nodes.map((n) => n.x)) : 0;
-            const minY = payload ? Math.min(...payload.nodes.map((n) => n.y)) : 0;
-            const paste = payload
-              ? buildPasteCommand(diagram, payload, {
-                  offsetX: menu.world.x - minX,
-                  offsetY: menu.world.y - minY,
-                })
-              : null;
-            if (paste) {
-              void execute(paste.command);
-              store.setState({ selectedIds: paste.newIds });
-            }
-          });
-        },
-      });
-    }
-
-    // PLUGIN sections (contract §N-5): when() decides presence; run() only
-    // receives the command dispatcher.
-    for (const plugin of config.plugins) {
-      const pluginItems: ContextMenuItem[] = plugin.contextMenuItems?.(target) ?? [];
-      for (const item of pluginItems) {
-        if (item.when && !item.when(target)) continue;
-        rendered.push({
-          id: `${plugin.id}/${item.id}`,
-          label: item.label,
-          section: plugin.id,
-          run: () => item.run(target, { execute }),
-        });
-      }
-    }
-    return rendered;
+    const ctx = { execute, store, config, t };
+    return [...builtinMenuItems(target, ctx), ...pluginMenuItems(target, ctx)];
   }, [menu, diagram, config, execute, store, t]);
 
   useEffect(() => {
@@ -296,7 +74,7 @@ export function ContextMenu() {
   if (bounds && left + MENU_WIDTH > bounds.width) left = Math.max(0, left - MENU_WIDTH);
   if (bounds && top + estimatedHeight > bounds.height) top = Math.max(0, top - estimatedHeight);
 
-  const runItem = (item: RenderedItem) => {
+  const runItem = (item: RegisteredMenuItem) => {
     close();
     item.run();
   };
@@ -352,34 +130,4 @@ export function ContextMenu() {
       })}
     </div>
   );
-}
-
-/** Endpoint-anchored straight route for edges without a waypoint model. */
-function straightRoute(diagram: BpmnDiagram, edge: BpmnEdge): Point[] | undefined {
-  const source = diagram.nodes[edge.sourceId];
-  const target = diagram.nodes[edge.targetId];
-  if (!source || !target) return undefined;
-  return [getAnchorPoint(source, rectCenter(target)).point, getAnchorPoint(target, rectCenter(source)).point];
-}
-
-/** Index of the route segment closest to `point` (segments = i → i+1). */
-function nearestSegmentIndex(route: Point[], point: Point): number {
-  let best = 0;
-  let bestDistance = Number.POSITIVE_INFINITY;
-  for (let i = 0; i + 1 < route.length; i++) {
-    const distance = pointToSegment(point, route[i], route[i + 1]);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      best = i;
-    }
-  }
-  return best;
-}
-
-function pointToSegment(p: Point, a: Point, b: Point): number {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const lengthSq = dx * dx + dy * dy;
-  const t = lengthSq === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / lengthSq));
-  return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
 }

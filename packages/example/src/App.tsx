@@ -306,6 +306,9 @@ export function App() {
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
     if (params.get('hc')) return buildHealthcareDiagram();
+    // `?empty=1` (Handoff 15 §2f): a truly empty canvas — the teaching empty
+    // state with the one-click governed example (reviewFlow/palette e2e).
+    if (params.get('empty')) return createDiagram({ id: 'demo-vazio', name: 'Canvas vazio' });
     const base = buildSampleDiagram();
     // `?engine=candidate|active` (Handoff 14 §1f): the deploy gate depends on
     // the version status — the e2e drives both sides of it.
