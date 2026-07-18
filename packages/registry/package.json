@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/registry",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Headless version governance for bpmn-react: a queryable registry of diagram versions with temporal validity, publication channels/environments, dual changelog and execution pinning (run-binding). Zero runtime dependencies.",
   "license": "Apache-2.0",
   "type": "module",

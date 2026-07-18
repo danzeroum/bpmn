@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/library-react",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "React UI for the generic BuildToValue library (Handoff 6 S-3): gallery with status/type filter chips, search, artifact cards and the detail drawer — all generic, driven exclusively by the ArtifactAdapter contract. Zero runtime dependencies beyond @buildtovalue/*.",
   "license": "Apache-2.0",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/identity",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Headless identity, signature and RBAC-verification layer (Handoff 8): Ed25519 approval signatures over the canonical payload (WebCrypto, offline verification), and role-requirement evaluation. NEVER generates, stores or manages keys — the Signer is always injected by the host (SSO/YubiKey/git key). Consumes only @buildtovalue/core (canonicalJson + types). Zero runtime dependencies.",
   "license": "Apache-2.0",
   "type": "module",

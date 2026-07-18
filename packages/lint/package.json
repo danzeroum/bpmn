@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/lint",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "bpmnlint-style extensible modelling lint for bpmn-react: an etiquette profile (naming, superfluous gateways, implicit splits/joins, duplicate flows) and an executability profile (engine-readiness checks), delivered as plugin-compatible validation rules. Zero runtime dependencies.",
   "license": "Apache-2.0",
   "type": "module",

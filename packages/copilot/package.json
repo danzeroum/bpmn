@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/copilot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Headless governed-AI copilot layer (Handoff 9 CP-1): the HOST-injected AIProvider contract, proposal parsing/validation into whitelisted ProposedCommand[] (unknown command → INTEGRAL rejection, never partial application), one undoable composite plan, and a locally computed soundness preview BEFORE presenting. The AI never promotes, approves or signs — this package has no import path to identity or promotion rules (CI-enforced). Zero network, zero LLM SDK; consumes only @buildtovalue/core and @buildtovalue/soundness.",
   "license": "Apache-2.0",
   "type": "module",

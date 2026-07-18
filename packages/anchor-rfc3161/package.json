@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/anchor-rfc3161",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "RFC 3161 timestamp anchor adapter (Handoff 8): anchors the ledger chain head to a TSA timestamp token via a HOST-injected transport (the library never does network). Implements the AnchorAdapter contract from @buildtovalue/identity. Zero runtime dependencies.",
   "license": "Apache-2.0",
   "type": "module",

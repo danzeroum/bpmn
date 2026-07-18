@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/react",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "React layer for bpmn-react: native SVG canvas, shapes, gestures, palette, inspector, minimap and diff view. Zero runtime dependencies (react/react-dom as peers).",
   "license": "Apache-2.0",
   "type": "module",
