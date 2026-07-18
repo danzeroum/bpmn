@@ -1,14 +1,13 @@
 import {
-  addEventDefinitionCommand,
   addNodeCommand,
   compositeCommand,
   createNode,
-  nextEventDefinitionId,
   type BpmnDiagram,
   type Command,
   type NodeTypeRegistry,
   type RuleVerdict,
 } from '@buildtovalue/core';
+import { typedMessageStartCommands } from '@buildtovalue/lint';
 import { SUBPROCESS_TITLE_HEIGHT } from '../shapes/shapes.js';
 import type { CanvasStore } from '../state/canvasStore.js';
 import type { PaletteBuildContext, PaletteItem } from '../plugins/types.js';
@@ -90,9 +89,11 @@ export function paletteInsertCommand(
 
 /**
  * «Subprocesso de evento» (§4b): container + typed message start + NAMED
- * definition referenced — ONE composite (1 undo), the SAME FORM as the 4d
- * quick-fix contract (ES-0 decision 4), so every fresh drop is LINT-CLEAN by
- * construction (no EVT_REF_MISSING on a brand-new container).
+ * definition referenced — ONE composite (1 undo). The start+definition half
+ * comes from the SHARED `typedMessageStartCommands` builder in the lint
+ * package (Handoff 17 ES-4 anti-drift): the EVT_SUBPROC_START 0-starts
+ * quick-fix composes the SAME builder — one FORM, one source (ES-0 decision
+ * 4), so every fresh drop is lint-clean by construction.
  */
 export function buildEventSubprocessInsert(ctx: PaletteBuildContext): {
   command: Command;
@@ -109,29 +110,16 @@ export function buildEventSubprocessInsert(ctx: PaletteBuildContext): {
     },
     registry,
   );
-  const definitionId = nextEventDefinitionId(diagram, 'message');
-  const start = createNode(
-    {
-      type: 'startEvent',
-      x: x + 24,
-      y: y + SUBPROCESS_TITLE_HEIGHT + 18,
-      properties: {
-        parentId: sub.id,
-        eventDefinition: 'message',
-        eventDefinitionRef: definitionId,
-      },
-      versionId: diagram.version.id,
-    },
-    registry,
-  );
+  const { commands } = typedMessageStartCommands(diagram, {
+    parentId: sub.id,
+    x: x + 24,
+    y: y + SUBPROCESS_TITLE_HEIGHT + 18,
+    definitionName: t('eventDefs.defaultName.message'),
+  });
   return {
     command: compositeCommand(t('palette.compose.eventSubprocess'), [
       addNodeCommand(sub),
-      addEventDefinitionCommand('message', {
-        id: definitionId,
-        name: t('eventDefs.defaultName.message'),
-      }),
-      addNodeCommand(start),
+      ...commands,
     ]),
     selectId: sub.id,
   };

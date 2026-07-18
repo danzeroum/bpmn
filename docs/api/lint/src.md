@@ -263,6 +263,36 @@ Start events don't take incoming sequence flow; end events don't emit.
 
 ***
 
+### evtSubprocFlowRule
+
+```ts
+const evtSubprocFlowRule: ValidationRule;
+```
+
+EVT_SUBPROC_FLOW (Handoff 17 §4d): sequence flow never touches the SHELL of
+an event subprocess — this catches the IMPORT path the editor's gesture
+veto cannot. ONE finding per edge, naming both endpoints (a shell↔shell
+edge never yields two findings — ES-4 reforço 7); common sub-processes and
+children connecting among themselves never trigger it.
+
+***
+
+### evtSubprocStartRule
+
+```ts
+const evtSubprocStartRule: ValidationRule;
+```
+
+EVT_SUBPROC_START (Handoff 17 §4d): an event subprocess needs EXACTLY ONE
+typed start among its DIRECT children (`childrenOf` — a start inside a
+nested sub-process never counts, ES-4 reforço 7). Three distinct failures,
+each naming the container: zero starts (mechanical fix — the shared
+builder), more than one, or a start whose kind is missing/unsupported
+(escalation/compensation stay declared-out, naming the accepted kinds —
+reforço 8).
+
+***
+
 ### evtStartThrowRule
 
 ```ts
@@ -289,9 +319,11 @@ End events only THROW: a catch-only or intermediate-only kind is an error.
 const evtErrorStartToplevelRule: ValidationRule;
 ```
 
-An error START event only exists inside an event sub-process — the SAME
-containment predicate (`nodeParentId` → subProcess) the editor's Execução
-matrix uses, so lint and tab agree by construction.
+An error START event only exists inside an EVENT subprocess — TIGHTENED in
+Handoff 17 ES-4: the predicate is the core `isEventSubprocess` helper, the
+SAME object the editor's Execução matrix consumes (ES-1 reforço 9) — lint
+and tab agree by construction, both sides tested. A COMMON subProcess now
+flags too.
 
 ***
 
@@ -394,6 +426,65 @@ const LINT_PROFILES: LintProfile[];
 The shipped profiles — both run on the SAME panel surface (§1d).
 
 ## Functions
+
+### typedMessageStartCommands()
+
+```ts
+function typedMessageStartCommands(diagram, options): object;
+```
+
+"Typed message start + referenced named definition" — THE shared builder
+(Handoff 17 ES-4, anti-drift): the palette's «Subprocesso de evento»
+composite (react, ES-2) and the EVT_SUBPROC_START 0-starts quick-fix both
+compose THIS — one FORM, one source (the 4d fix contract / ES-0 decision 4).
+
+#### Parameters
+
+##### diagram
+
+`BpmnDiagram`
+
+##### options
+
+###### parentId?
+
+`string`
+
+###### x
+
+`number`
+
+###### y
+
+`number`
+
+###### definitionName?
+
+`string`
+
+#### Returns
+
+`object`
+
+##### commands
+
+```ts
+commands: Command[];
+```
+
+##### startId
+
+```ts
+startId: string;
+```
+
+##### definitionId
+
+```ts
+definitionId: string;
+```
+
+***
 
 ### lintDiagram()
 

@@ -62,8 +62,8 @@ describe('lint panel (spec 1d)', () => {
     expect(panel.querySelector('[data-lint-count="warnings"]')!.textContent).toContain('4');
     expect(panel.querySelector('[data-lint-count="errors"]')!.textContent).toContain('0');
     const policy = screen.getByTestId('lint-policy');
-    expect(policy.textContent).toContain('lint-etiquette@1.1.0');
-    expect(policy.textContent).toContain('lint-engine@1.1.0');
+    expect(policy.textContent).toContain('lint-etiquette@1.2.0');
+    expect(policy.textContent).toContain('lint-engine@1.2.0');
     expect(policy.textContent).toContain('VIGENTE');
   });
 
