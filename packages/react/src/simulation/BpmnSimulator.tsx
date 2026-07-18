@@ -146,6 +146,8 @@ export function BpmnSimulator({
           onThrowError={(host, errorRef) =>
             sim.choose({ kind: 'error', host, ...(errorRef !== undefined ? { errorRef } : {}) })
           }
+          eventSubprocessOptions={state.eventSubprocessOptions}
+          onFireEventSubprocess={sim.fireEventSubprocess}
           stepMode={sim.stepMode}
           onToggleStepMode={sim.setStepMode}
           coverage={sim.coverage}

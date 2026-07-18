@@ -35,6 +35,10 @@ function canonicalDecision(decision: Decision): Record<string, unknown> {
     case 'signal':
     case 'message':
       return { kind: decision.kind, ref: decision.ref };
+    // ES-5 (§4e): manual timer/conditional event-subprocess fire — `atStep`
+    // anchors WHEN it fired (part of the scenario: interruption depends on it).
+    case 'eventSubprocess':
+      return { kind: 'eventSubprocess', sub: decision.sub, atStep: decision.atStep };
     case 'decision':
       return {
         kind: 'decision',

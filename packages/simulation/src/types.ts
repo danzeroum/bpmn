@@ -48,8 +48,34 @@ export interface SimNode {
   eventRef?: string;
   /** Resolved definition name for UI labels (falls back to the ref). */
   eventRefLabel?: string;
+  /** True when this node is an event-subprocess SHELL (ES-5): it never seeds
+   * an implicit start token — it only fires by its start event. */
+  eventSubprocess?: boolean;
+  /** The shell's single typed start (ES-5) — present ONLY when the container
+   * is eligible: exactly one typed start among its DIRECT children. A
+   * degenerate container (0, >1 or untyped starts) is never a candidate —
+   * correcting it is the lint's job (4d), not the simulator's. */
+  esubStart?: EsubStartInfo;
   isStart: boolean;
   isEnd: boolean;
+}
+
+/**
+ * The typed start of an eligible event-subprocess shell (ES-5). Derived with
+ * the core single-source helpers (`isEventSubprocess`/`startIsInterrupting`,
+ * reforço 9 da ES-1) — never a local predicate.
+ */
+export interface EsubStartInfo {
+  startId: string;
+  /** Event kind of the start (`message`, `signal`, `error`, `timer`, …). */
+  kind: string;
+  /** Named-definition ref the start matches on; absent on an ERROR start =
+   * the DECLARED catch-all (same tiering as E-6 boundaries). */
+  ref?: string;
+  /** Resolved definition name for UI labels (falls back to the ref). */
+  refLabel?: string;
+  /** From `startIsInterrupting` (OMG default true). */
+  interrupting: boolean;
 }
 
 /**
@@ -95,6 +121,21 @@ export interface ErrorThrowOption {
   options: Array<{ errorRef?: string; label?: string }>;
 }
 
+/**
+ * A timer/conditional event subprocess the user may fire MANUALLY (ES-5, §4e):
+ * those kinds NEVER auto-fire in simulation — the card is the declared manual
+ * decision (molde {@link BoundaryOption}). The mode is shown so the user
+ * decides informed (reforço 10): interrupting cancels the scope's tokens.
+ */
+export interface EventSubprocessOption {
+  sub: string;
+  subLabel: string;
+  startId: string;
+  /** `timer` or `conditional` — the kinds without a throw counterpart. */
+  kind: string;
+  interrupting: boolean;
+}
+
 /** A decision applied to the engine; the ordered list of these IS a scenario. */
 export type Decision =
   | { kind: 'exclusive' | 'eventBased'; gateway: string; edge: string }
@@ -105,7 +146,12 @@ export type Decision =
   // matching; serialized in scenarios and replayed through the SAME matching.
   | { kind: 'error'; host: string; errorRef?: string }
   | { kind: 'signal'; ref: string }
-  | { kind: 'message'; ref: string };
+  | { kind: 'message'; ref: string }
+  // ES-5 (§4e): manual firing of a timer/conditional event subprocess. WHEN
+  // the user fired is part of the scenario (an interrupting fire cancels
+  // whatever is live at that moment), so the decision is anchored to the
+  // trail position — replay advances up to `atStep` before applying it.
+  | { kind: 'eventSubprocess'; sub: string; atStep: number };
 
 /**
  * Outcome of evaluating a node's decision table (Handoff 9 SF-2). Produced by
@@ -204,6 +250,8 @@ export interface SimulationState {
   boundaryOptions: BoundaryOption[];
   /** "Throw error" cards per host with a resting token (E-6, §3e). */
   errorThrowOptions: ErrorThrowOption[];
+  /** Manual timer/conditional event-subprocess cards (ES-5, §4e). */
+  eventSubprocessOptions: EventSubprocessOption[];
   /** A businessRuleTask waiting for decision inputs (SF-2), if any. */
   pendingDecisionInput: PendingDecisionInput | null;
   /** Token stopped on a declared non-simulable decision (§5), if any. */

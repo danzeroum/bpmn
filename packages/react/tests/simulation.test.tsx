@@ -140,6 +140,83 @@ describe('BpmnSimulator', () => {
   });
 });
 
+/** threePaths + um event subprocess elegível com start `kind` (ES-5 §4e). */
+function withEsub(
+  kind: string,
+  opts: { ref?: string; interrupting?: boolean } = {},
+): BpmnDiagram {
+  const diagram = threePaths();
+  diagram.nodes.esub = createNode({
+    id: 'esub',
+    type: 'subProcess',
+    label: 'Plantão',
+    x: 100,
+    y: 300,
+    properties: { triggeredByEvent: true },
+  });
+  diagram.nodes.est = createNode({
+    id: 'est',
+    type: 'startEvent',
+    label: 'est',
+    x: 120,
+    y: 340,
+    properties: {
+      parentId: 'esub',
+      eventDefinition: kind,
+      ...(opts.ref ? { eventDefinitionRef: opts.ref } : {}),
+      ...(opts.interrupting === false ? { isInterrupting: false } : {}),
+    },
+  });
+  if (opts.ref) {
+    diagram.definitions = { messages: [], signals: [], errors: [{ id: opts.ref, name: 'Falha X' }] };
+  }
+  return diagram;
+}
+
+describe('event subprocess na simulação (ES-5 §4e)', () => {
+  it('card manual do timer mostra o MODO (glifo+texto) e o fire nomeia a interrupção na trilha', () => {
+    const { container } = render(<BpmnSimulator diagram={withEsub('timer')} />);
+    const card = container.querySelector('[data-sim-esub-card="esub"]')!;
+    expect(card).toBeTruthy();
+    expect(card.textContent).toContain('Event subprocess “Plantão”');
+    // Reforço 10: modo declarado ANTES do disparo — glifo + texto.
+    const mode = card.querySelector('[data-sim-esub-mode="interrupting"]')!;
+    expect(mode.textContent).toContain('⛔');
+    expect(mode.textContent).toContain('interrupting — cancels the tokens of this scope');
+    fireEvent.click(container.querySelector('[data-sim-esub-fire="esub"]')!);
+    const trail = container.querySelector('[data-sim-trail]')!.textContent!;
+    expect(trail).toContain('manually fired (start est, timer never auto-fires in simulation, interrupting)');
+    expect(trail).toContain('token(s) cancelled in scope');
+    cleanup();
+  });
+
+  it('variante não-interrupting declara o modo paralelo no card', () => {
+    const { container } = render(
+      <BpmnSimulator diagram={withEsub('conditional', { interrupting: false })} />,
+    );
+    const mode = container.querySelector('[data-sim-esub-mode="non-interrupting"]')!;
+    expect(mode.textContent).toContain('⇉');
+    expect(mode.textContent).toContain('non-interrupting — the scope continues in parallel');
+    cleanup();
+  });
+
+  it('card de lançar erro existe SEM boundary (esub de erro no escopo) e o throw nomeia a captura', () => {
+    const { container } = render(<BpmnSimulator diagram={withEsub('error', { ref: 'err-x' })} />);
+    fireEvent.click(container.querySelector('[data-sim-advance]')!); // s → prod
+    const card = container.querySelector('[data-sim-throw-card="prod"]')!;
+    expect(card).toBeTruthy();
+    fireEvent.click(card.querySelector('[data-sim-throw-error="err-x"]')!);
+    const trail = container.querySelector('[data-sim-trail]')!.textContent!;
+    expect(trail).toContain(
+      'caught by event subprocess "Plantão" (start est, errorRef "err-x", interrupting)',
+    );
+    expect(trail).toContain('token(s) cancelled in scope');
+    // Token no CONTÊINER (decisão 1): o overlay destaca a casca.
+    expect(container.querySelector('[data-sim-active-node="esub"]')).toBeTruthy();
+    cleanup();
+  });
+});
+
 describe('edgeGeometryFor', () => {
   it('rounds explicit waypoints and computes a node center', () => {
     const diagram = threePaths();

@@ -36,6 +36,8 @@ export interface UseSimulationResult {
   advance: () => void;
   choose: (decision: Decision) => void;
   fireBoundary: (boundaryId: string) => void;
+  /** Manually fire a timer/conditional event subprocess (ES-5 §4e). */
+  fireEventSubprocess: (subId: string) => void;
   reset: () => void;
   /** Access the live engine (for scenario capture / ledger — Handoff 7A-3). */
   engine: SimulationEngine;
@@ -126,6 +128,16 @@ export function useSimulation(
     [engine, tracker, emitTravels, rerender],
   );
 
+  const fireEventSubprocess = useCallback(
+    (subId: string) => {
+      const result = engine.fireEventSubprocess(subId);
+      emitTravels(result.transitions);
+      if (engine.complete) tracker.record(engine.state.traversedEdges);
+      rerender();
+    },
+    [engine, tracker, emitTravels, rerender],
+  );
+
   const reset = useCallback(() => {
     // Fold the finished session's coverage before wiping the run (§3.1).
     tracker.record(engine.state.traversedEdges);
@@ -163,6 +175,7 @@ export function useSimulation(
     advance,
     choose,
     fireBoundary,
+    fireEventSubprocess,
     reset,
     engine,
   };
