@@ -136,6 +136,24 @@ export class BpmnXmlConverter {
       exporterVersion: '1.0.0',
     });
 
+    // Named event definitions (Handoff 16 §3a): OMG root elements, emitted
+    // before collaboration/process in stored array order.
+    if (diagram.definitions) {
+      for (const message of diagram.definitions.messages) {
+        xml.element('bpmn:message', { id: message.id, name: message.name || undefined });
+      }
+      for (const signal of diagram.definitions.signals) {
+        xml.element('bpmn:signal', { id: signal.id, name: signal.name || undefined });
+      }
+      for (const error of diagram.definitions.errors) {
+        xml.element('bpmn:error', {
+          id: error.id,
+          name: error.name || undefined,
+          errorCode: error.errorCode,
+        });
+      }
+    }
+
     // Pools become participants inside a collaboration referencing the process.
     if (pools.length > 0) {
       xml.open('bpmn:collaboration', { id: collaborationId });
@@ -232,6 +250,20 @@ export class BpmnXmlConverter {
       ...(Object.keys(foreignNamespaces).length > 0 ? { foreignNamespaces } : {}),
     };
 
+    // Named event definitions (§3a): OMG root elements → diagram.definitions.
+    const readDefinitions = (tag: string, withCode: boolean) =>
+      childrenByLocalName(root, tag).map((el) => ({
+        id: el.attributes.id ?? generateId(),
+        name: el.attributes.name ?? el.attributes.id ?? '',
+        ...(withCode && el.attributes.errorCode ? { errorCode: el.attributes.errorCode } : {}),
+      }));
+    const messages = readDefinitions('message', false);
+    const signals = readDefinitions('signal', false);
+    const errors = readDefinitions('error', true);
+    if (messages.length > 0 || signals.length > 0 || errors.length > 0) {
+      diagram.definitions = { messages, signals, errors };
+    }
+
     // Pools and message flows live in a <collaboration> at the root.
     const collaboration = firstChildByLocalName(root, 'collaboration');
     if (collaboration) {
@@ -265,6 +297,25 @@ export class BpmnXmlConverter {
       if (!host) continue;
       const { side, t } = boundaryAnchorOf(host, node);
       node.properties = { ...node.properties, boundarySide: side, boundaryT: t };
+    }
+
+    // Orphan refs (§3a, E-0 decisão 2): a *Ref pointing at no root element is
+    // SYNTHESIZED as a definition (id = name = ref) WITH an informative
+    // warning naming the event — never silence, never data loss.
+    for (const node of Object.values(diagram.nodes)) {
+      const kind = node.properties.eventDefinition;
+      const ref = node.properties.eventDefinitionRef;
+      if (typeof ref !== 'string' || ref === '') continue;
+      if (kind !== 'message' && kind !== 'signal' && kind !== 'error') continue;
+      const bucketKey = kind === 'message' ? 'messages' : kind === 'signal' ? 'signals' : 'errors';
+      diagram.definitions ??= { messages: [], signals: [], errors: [] };
+      const bucket = diagram.definitions[bucketKey];
+      if (bucket.some((definition) => definition.id === ref)) continue;
+      bucket.push({ id: ref, name: ref });
+      warnings.push(
+        `Referenced ${kind} "${ref}" has no <bpmn:${kind}> root element — a definition was ` +
+          `synthesized (event "${node.label || node.id}")`,
+      );
     }
     return { diagram, warnings };
   }

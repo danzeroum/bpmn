@@ -98,6 +98,9 @@ export async function computeDiagramHash(diagram: BpmnDiagram): Promise<string> 
       // pre-passthrough hash is byte-for-byte unchanged.
       processForeignExtensions: diagram.processForeignExtensions,
       foreignNamespaces: diagram.foreignNamespaces,
+      // Named event definitions (Handoff 16 §3a) are content too; absent ⇒
+      // pre-E-1 hashes unchanged (eventDefsFrozen fixture).
+      definitions: diagram.definitions,
     }),
   );
 }

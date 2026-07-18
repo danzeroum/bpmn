@@ -25,6 +25,8 @@ describe('conformance matrix', () => {
         row.mappedTo !== undefined &&
         !row.mappedTo.includes(' ') &&
         !row.mappedTo.includes(':') &&
+        // Model-path mappings (e.g. `definitions.messages[]`, §3a) are not node types.
+        !row.mappedTo.includes('.') &&
         !['sequenceFlow', 'messageFlow', 'association', 'dataAssociation'].includes(row.mappedTo),
     );
     expect(nodeRows.length).toBeGreaterThan(15);

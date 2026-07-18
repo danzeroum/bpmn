@@ -35,6 +35,9 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:intermediateCatchEvent` | ✅ supported | analytic | `intermediateCatchEvent` |  |
 | `bpmn:intermediateThrowEvent` | ✅ supported | analytic | `intermediateThrowEvent` |  |
 | `bpmn:boundaryEvent` | ✅ supported | analytic | `boundaryEvent` | Interrupting and non-interrupting (cancelActivity). |
+| `bpmn:message (root)` | ✅ supported | analytic | `definitions.messages[]` | Named definition; events reference via messageRef (properties.eventDefinitionRef). Orphan refs are synthesized with an informative warning. |
+| `bpmn:signal (root)` | ✅ supported | analytic | `definitions.signals[]` | Named definition; referenced via signalRef. |
+| `bpmn:error (root)` | ✅ supported | analytic | `definitions.errors[]` | Named definition with errorCode; referenced via errorRef. |
 | `bpmn:messageEventDefinition` | ✅ supported | analytic | `eventDefinition: 'message'` |  |
 | `bpmn:timerEventDefinition` | ✅ supported | analytic | `eventDefinition: 'timer'` |  |
 | `bpmn:errorEventDefinition` | ✅ supported | analytic | `eventDefinition: 'error'` |  |
@@ -91,6 +94,9 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:intermediateCatchEvent` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:intermediateThrowEvent` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:boundaryEvent` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:message (root)` | ✅ supported | modela (declarado) | — |
+| `bpmn:signal (root)` | ✅ supported | modela (declarado) | — |
+| `bpmn:error (root)` | ✅ supported | modela (declarado) | — |
 | `bpmn:messageEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:timerEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:errorEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |

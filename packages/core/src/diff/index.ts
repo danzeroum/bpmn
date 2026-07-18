@@ -203,6 +203,8 @@ export function edgeVersionDiff(before: BpmnEdge, after: BpmnEdge): BpmnDiff {
 export interface NormalizedDiagramContent {
   nodes: unknown[];
   edges: unknown[];
+  /** Named event definitions (§3a) — present only when the diagram has them. */
+  definitions?: unknown;
 }
 
 /**
@@ -246,5 +248,9 @@ export function normalizeForDiff(diagram: BpmnDiagram): NormalizedDiagramContent
       ...(e.supersedesEdgeId ? { supersedesEdgeId: e.supersedesEdgeId } : {}),
     }))
     .sort((a, b) => (a.id < b.id ? -1 : 1));
-  return { nodes, edges };
+  return {
+    nodes,
+    edges,
+    ...(diagram.definitions ? { definitions: JSON.parse(canonicalJson(diagram.definitions)) } : {}),
+  };
 }

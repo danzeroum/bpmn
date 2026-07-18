@@ -1,5 +1,6 @@
 // Model
 export * from './model/types.js';
+export * from './model/eventDefinitions.js';
 export * from './model/flow.js';
 export * from './model/errors.js';
 export * from './model/registry.js';

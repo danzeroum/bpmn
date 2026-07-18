@@ -87,4 +87,32 @@ describe.skipIf(files.length === 0)('external interoperability corpus (real file
     }
     expect(exercised).toBeGreaterThanOrEqual(1);
   });
+
+  // Handoff 16 E-1 (§3a): arquivos REAIS com messageRef importam com as
+  // definições nomeadas capturadas (roots OMG → diagram.definitions, ref no
+  // nó) e SEM warning de descarte — a preservação real da decisão 1 da E-0.
+  it('preserva definições nomeadas (messageRef) dos arquivos reais', () => {
+    let exercised = 0;
+    for (const name of files) {
+      const xml = readFileSync(join(CORPUS_DIR, name), 'utf8');
+      if (!xml.includes('messageRef')) continue;
+      exercised++;
+      const { diagram, warnings } = converter().fromXml(xml);
+      expect(
+        (diagram.definitions?.messages.length ?? 0),
+        `${name}: roots de message capturados`,
+      ).toBeGreaterThan(0);
+      const referencing = Object.values(diagram.nodes).filter(
+        (node) => typeof node.properties.eventDefinitionRef === 'string',
+      );
+      expect(referencing.length, `${name}: refs ligadas aos nós`).toBeGreaterThan(0);
+      // Nada de warning de síntese quando os roots existem no arquivo.
+      expect(warnings.filter((w) => w.includes('synthesized'))).toEqual([]);
+      // Re-export declara os roots e as refs.
+      const reExport = converter().toXml(diagram);
+      expect(reExport).toContain('<bpmn:message');
+      expect(reExport).toContain('messageRef="');
+    }
+    expect(exercised).toBeGreaterThanOrEqual(1);
+  });
 });
