@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,500;9..144,600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #2b2824; }
+  a { color: #33567e; } a:hover { color: #24405f; }
+  ::selection { background: #e3ecf7; }
+</style>
+</helmet>
+<section style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; padding: 34px 30px 70px;">
+  <div style="max-width: 1560px; margin: 0 auto;">
+    <div style="color: #efece6; margin-bottom: 24px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 3px; color: #c9a94e;">SPEC DE REFERÊNCIA · HANDOFF 18 · ESCALATION GOVERNADA</div>
+      <h1 style="font-family: 'Fraunces', serif; font-weight: 600; font-size: 34px; margin: 8px 0 6px;">Escalação — "subir para quem tem autoridade" como cidadã de primeira classe</h1>
+      <div style="font-size: 13px; color: #a49c8f; max-width: 100ch;">Erro interrompe ("deu ruim, pare"); escalação normalmente NÃO interrompe ("continue, mas avise quem decide"). Hoje o kind existe mas é mudo: sem definição nomeada, sem ref governada, sem matching, e o event subprocess o REJEITA como gatilho. Este handoff completa a família pelo caminho já pavimentado (E-1..E-6 + ES-1..ES-5, mesmas fontes únicas, zero fork) e adiciona a personalidade BTV: caminhos de escalação versionados na Biblioteca, autoridade declarada, trilha no ledger e a ponte formal agente→humano. <strong style="color: #c9a94e;">Pré-requisito: Handoffs 16 e 17 completos na main (estão).</strong></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(560px, 1fr)); gap: 20px; align-items: start;">
+
+      <!-- 5a MODELO -->
+      <div id="5a" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">5a</span>
+          <span style="font-size: 14px; font-weight: 600;">Modelo + XML OMG — o 4º bucket nomeado</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">entra nas fontes únicas da E-1/E-3</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #262220; overflow: hidden;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #a49c8f; padding: 9px 12px; border-bottom: 1px solid #3a352f;">XML — ROOT OMG + REF (MOLDE bpmn:error)</div>
+              <pre style="margin: 0; padding: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; line-height: 1.65; color: #d8d2c6; white-space: pre-wrap;">&lt;bpmn:definitions …&gt;
+  <span style="color: #7fb59a;">&lt;bpmn:escalation id="esc-alcada"
+      name="Acima da alçada"
+      escalationCode&#61;"OVER_BUDGET"/&gt;</span>
+  &lt;bpmn:process&gt;
+    &lt;bpmn:boundaryEvent attachedToRef&#61;"t1"
+        <span style="color: #c9a94e;">cancelActivity="false"</span>&gt;
+      &lt;bpmn:escalationEventDefinition
+        <span style="color: #c9a94e;">escalationRef="esc-alcada"</span>/&gt;
+    …
+    &lt;bpmn:endEvent id="fim-escala"&gt;
+      &lt;bpmn:escalationEventDefinition
+        escalationRef&#61;"esc-alcada"/&gt;  <span style="color: #7fb59a;">← throw</span></pre>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 12px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; margin-bottom: 7px;">REUSO POR CONSTRUÇÃO — ZERO FORK</div>
+              <div style="font-size: 10.5px; line-height: 1.7; color: #3a352f;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #9a7b1e;">diagram.definitions.escalations[]</span> — 4º bucket ao lado de messages/signals/errors (E-1)<br>Comandos undoáveis, id auto, rename cascata, veto listando usos — os MESMOS comandos E-1 parametrizados<br>Picker/«+» da E-2 e refs governadas <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">esc-nome@semver</span> + espelho gov-* da E-3 — o kind entra nas MESMAS superfícies<br>Throw: intermediate + end · Catch: boundary + start de event subprocess (ES-1..ES-5)</div>
+              <div style="border-top: 1px dashed #e2ddd3; margin-top: 8px; padding-top: 8px; font-size: 10px; color: #6b6357; line-height: 1.6;"><strong style="color: #3a352f;">escalationCode</strong> segue o molde do errorCode (campo na seção E-2, assimetria por tipo).</div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Root OMG <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">bpmn:escalation</span> com escalationCode — nunca namespace próprio<br>Ordem dos roots segue o XSD (junto de message/signal/error, antes do process)<br>Import externo com escalationRef resolve para o modelo; órfã sintetiza COM warning (1× por definição — errata E-1)<br>Neutralidade: fixture congelada nova; as 3 anteriores intactas</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ 4º bucket + comandos E-1 parametrizados (rename cascata 1 undo, veto com lista)<br>□ round-trip byte-estável do root + escalationRef nos 4 hosts (throw ×2, catch ×2)<br>□ fixture escalationFrozen do build pré-PR; corpus ≥1 arquivo real com escalação<br>□ CONFORMANCE promove bpmn:escalation via gerador; apiSurface core<br>□ picker E-2 lista o bucket novo; espelho gov-* read-only idêntico (E-3)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5b VISUAL + AUTORIDADE -->
+      <div id="5b" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">5b</span>
+          <span style="font-size: 14px; font-weight: 600;">Visual + autoridade declarada — a família dourada</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">não-interrupting é o DEFAULT da paleta</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 14px;">
+            <svg width="100%" viewBox="0 0 520 170" style="display: block;">
+              <rect x="14" y="22" width="150" height="62" rx="8" fill="#fff" stroke="#44403a" stroke-width="1.3"></rect>
+              <text x="89" y="50" text-anchor="middle" font-size="10.5" fill="#262220" font-family="Space Grotesk, sans-serif">Aprovar despesa</text>
+              <text x="89" y="64" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#a49c8f">alçada: analista</text>
+              <!-- non-interrupting escalation boundary -->
+              <circle cx="164" cy="84" r="14" fill="#fdfcfa" stroke="#9a7b1e" stroke-width="1.4" stroke-dasharray="3 2.5"></circle>
+              <circle cx="164" cy="84" r="10.5" fill="none" stroke="#9a7b1e" stroke-width="1.1" stroke-dasharray="3 2.5"></circle>
+              <path d="M 164 90 L 159 84 L 164 78 M 164 90 L 169 84 L 164 78" fill="none" stroke="#9a7b1e" stroke-width="1.4" transform="rotate(180 164 84)"></path>
+              <!-- chips -->
+              <rect x="186" y="62" width="132" height="18" rx="9" fill="#fdfaf1" stroke="#9a7b1e"></rect>
+              <text x="252" y="74" text-anchor="middle" font-size="7.8" font-family="IBM Plex Mono, monospace" fill="#9a7b1e">esc-alcada@1.2.0 ● VIGENTE</text>
+              <rect x="186" y="84" width="110" height="18" rx="9" fill="#eef6f0" stroke="#1a6a54"></rect>
+              <text x="241" y="96" text-anchor="middle" font-size="7.8" font-family="IBM Plex Mono, monospace" fill="#1a6a54">↟ autoridade: Gate G2</text>
+              <!-- esub with escalation start -->
+              <rect x="348" y="18" width="158" height="120" rx="12" fill="#fdfcfa" stroke="#44403a" stroke-width="1.2" stroke-dasharray="2.5 3"></rect>
+              <line x1="348" y1="46" x2="506" y2="46" stroke="#e2ddd3" stroke-width="1"></line>
+              <text x="358" y="36" font-size="10" font-weight="600" fill="#262220" font-family="Space Grotesk, sans-serif">Tratar alçada</text>
+              <text x="500" y="35" text-anchor="end" font-size="7" font-family="IBM Plex Mono, monospace" fill="#a49c8f">event subProcess</text>
+              <circle cx="380" cy="92" r="13" fill="#fdfcfa" stroke="#9a7b1e" stroke-width="1.4" stroke-dasharray="3 2.5"></circle>
+              <path d="M 380 98 L 375 92 L 380 86 M 380 98 L 385 92 L 380 86" fill="none" stroke="#9a7b1e" stroke-width="1.3" transform="rotate(180 380 92)"></path>
+              <path d="M 396 92 L 424 92 l -5 -3 v 6 z" fill="#44403a" stroke="#44403a" stroke-width="1"></path>
+              <rect x="428" y="72" width="66" height="40" rx="7" fill="#fff" stroke="#44403a" stroke-width="1.2"></rect>
+              <text x="461" y="95" text-anchor="middle" font-size="8.5" fill="#262220" font-family="Space Grotesk, sans-serif">Rever</text>
+              <text x="164" y="122" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#a49c8f">catch não-interrupting (default)</text>
+              <text x="164" y="133" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#a49c8f">tracejado + chevron ↟ dourado</text>
+            </svg>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Glifo: chevron duplo ↟ da fonte única eventGlyph; família <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">--btv-gold</span> (a cor de "atenção governada")<br>Paleta cria boundary de escalação NÃO-interrupting por default (cancelActivity false explícito) — decisão de personalidade DECLARADA; os demais kinds seguem interrupting<br>Chip <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">esc-nome@semver</span> + selo (molde E-3 idêntico)<br>Autoridade: <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">properties.escalationAuthority</span> (texto livre) → chip ↟ verde no catch; serializa como bpmnr: comum; SEM autoridade = sem chip (degradação)<br>Event subprocess aceita start de escalação — a lista de kinds do ES-4 (reforço 8) GANHA escalation</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ glifo na fonte única; tracejado SÓ não-interrupting (helper H6/ES-1, nunca local)<br>□ default da paleta declarado + documentado; toggle existente muda para interrupting<br>□ chips TRANSIENT no export; glifo+texto nunca só cor; touch ≥44px<br>□ start de escalação em esub: shape ES-2 mostra o glifo colapsado; matriz/lint aceitam<br>□ dark theme; snapshot do boundary comum intacto (fixture visual)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5c PONTE AGENTE-HUMANO -->
+      <div id="5c" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">5c</span>
+          <span style="font-size: 14px; font-weight: 600;">Ponte agente→humano + ledger — a jogada BTV</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">autonomia→gate vira evento OMG</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 14px;">
+            <svg width="100%" viewBox="0 0 520 150" style="display: block;">
+              <rect x="10" y="10" width="500" height="60" rx="6" fill="#f4f0fa" stroke="#e2ddd3"></rect>
+              <text x="22" y="44" font-size="8" font-family="IBM Plex Mono, monospace" fill="#6b4fa0" transform="rotate(-90 22 44)" text-anchor="middle">AGENTE</text>
+              <rect x="40" y="20" width="150" height="40" rx="8" fill="#fff" stroke="#6b4fa0" stroke-width="1.3"></rect>
+              <text x="115" y="38" text-anchor="middle" font-size="9.5" fill="#262220" font-family="Space Grotesk, sans-serif">🤖 Analisar contrato</text>
+              <text x="115" y="51" text-anchor="middle" font-size="7.2" font-family="IBM Plex Mono, monospace" fill="#6b4fa0">autonomia: propõe · budget 2h</text>
+              <circle cx="190" cy="60" r="12" fill="#fdfcfa" stroke="#9a7b1e" stroke-width="1.3" stroke-dasharray="3 2.5"></circle>
+              <path d="M 190 65 L 186 60 L 190 55 M 190 65 L 194 60 L 190 55" fill="none" stroke="#9a7b1e" stroke-width="1.2" transform="rotate(180 190 60)"></path>
+              <rect x="10" y="80" width="500" height="60" rx="6" fill="#fdfcfa" stroke="#e2ddd3"></rect>
+              <text x="22" y="112" font-size="8" font-family="IBM Plex Mono, monospace" fill="#6b6357" transform="rotate(-90 22 112)" text-anchor="middle">HUMANO</text>
+              <path d="M 190 72 L 190 96 l -3 -5 h 6 z" fill="#9a7b1e" stroke="#9a7b1e" stroke-width="1"></path>
+              <rect x="130" y="94" width="170" height="38" rx="8" fill="#fff" stroke="#44403a" stroke-width="1.3"></rect>
+              <text x="215" y="110" text-anchor="middle" font-size="9.5" fill="#262220" font-family="Space Grotesk, sans-serif">Revisar e assinar</text>
+              <text x="215" y="123" text-anchor="middle" font-size="7.2" font-family="IBM Plex Mono, monospace" fill="#1a6a54">↟ autoridade: ana.ruiz (Gate G2)</text>
+              <rect x="330" y="88" width="176" height="48" rx="8" fill="#262220"></rect>
+              <text x="340" y="103" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#c9a94e">LEDGER · ESCALATION_RAISED</text>
+              <text x="340" y="115" font-size="7.2" font-family="IBM Plex Mono, monospace" fill="#d8d2c6">actor: ia.copilot@claude-4</text>
+              <text x="340" y="126" font-size="7.2" font-family="IBM Plex Mono, monospace" fill="#d8d2c6">code: OVER_BUDGET → Gate G2 #a3f1…</text>
+            </svg>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">agentTask ganha boundary de escalação como o mecanismo FORMAL do autonomia→gate (A-3): budget/confiança estourou → throw; humano captura<br>Template novo no AgentStudio demonstrando o padrão (agente → escalação → revisão assinada)<br>Builder <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">escalationRaisedEntry({actor, code, target})</span> no adapters-bpmn (molde reviewCommentEntry — o HOST appenda; motor intacto; catálogo N-3 fica em 16)<br>Autoria de IA no ledger com o selo ✦ existente — escalação de agente é auditável e assinável</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ boundary de escalação anexável a agentTask (drag-to-attach N-1 herdado — teste)<br>□ template do AgentStudio com o padrão completo; degradação sem agentflow intacta<br>□ builder + tipo no adapters; cadeia verifica; teste do host appendando via command.executed<br>□ ✦ do Explorer marca escalação de IA (aiAuthorOf existente — teste)<br>□ zero dependência nova entre pacotes (agentflow segue independente — guard de deps)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5d LINT -->
+      <div id="5d" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">5d</span>
+          <span style="font-size: 14px; font-weight: 600;">Lint — escalação entra nas regras vivas (perfis → 1.3.0)</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">zero UI nova — dock da U-5</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; overflow: hidden;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; padding: 9px 12px; border-bottom: 1px solid #eee9df; background: #faf9f6;">DOCK — política: lint-etiquette@1.3.0 ● VIGENTE</div>
+            <div style="font-size: 10.5px; line-height: 1.5;">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-bottom: 1px solid #f2eee6;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #9a7b1e;"></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #9a7b1e;">ESC_NO_CATCH</span><span>throw de «Acima da alçada» sem catch elegível no diagrama — escalação sem destino</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #a49c8f; margin-left: auto;">warning</span></div>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-bottom: 1px solid #f2eee6;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #b3372f;"></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #b3372f;">EVT_ESCALATION_START_TOPLEVEL</span><span>start de escalação fora de event subprocess (molde do de erro)</span><span style="border: 1px solid #6b6357; color: #6b6357; border-radius: 6px; padding: 1px 7px; font-size: 9px; margin-left: auto;">✦ sugerir</span></div>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #9a7b1e;"></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #9a7b1e;">EVT_REF_MISSING</span><span>evento de escalação sem definição referenciada</span><span style="border: 1px solid #1a6a54; color: #1a6a54; border-radius: 6px; padding: 1px 7px; font-size: 9px; margin-left: auto;">corrigir</span></div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">EVT_REF_MISSING</span> GANHA o kind (quick-fix cria bpmn:escalation — reforço 9 da E-5 estendido)<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">EVT_ESCALATION_START_TOPLEVEL</span> (erro): molde exato do de erro, consumindo isEventSubprocess<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">ESC_NO_CATCH</span> (warning): throw sem catch elegível — "sem destino" é AVISO, não erro (escalação não capturada é legal na OMG, diferente de erro)<br>Lista de kinds do EVT_SUBPROC_START (ES-4) ganha escalation; EVT_START_THROW/EVT_END_CATCH revisadas (escalação é legal em end-throw e esub-start)<br>Perfis 1.2.0 → 1.3.0 pela MESMA fonte</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ positivos E negativos por regra; concordância lint⇄matriz E-4 cobre o kind novo<br>□ quick-fix por kind estendido (escalation → bucket escalations) — teste<br>□ ESC_NO_CATCH considera boundaries E esub-starts como destino (mesmo predicado da ES-5)<br>□ migração dos testes ES-4 que rejeitavam escalation (viram positivos)<br>□ política 1.3.0 na MESMA fonte (dock + adapter + teste dedicado)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5e SIMULACAO -->
+      <div id="5e" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35); grid-column: 1 / -1;">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">5e</span>
+          <span style="font-size: 14px; font-weight: 600;">Simulação honesta — o throw que NÃO para o trabalho</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">ordem total da ES-5 reusada · sem destino = no-op DECLARADO</span>
+        </div>
+        <div style="padding: 18px; display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 12px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 12px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; margin-bottom: 8px;">CARD «ESCALAR» — MOLDE DO LANÇAR ERRO</div>
+            <div style="font-size: 10.5px; line-height: 1.6; color: #3a352f;">
+              <div style="padding: 6px 8px; background: #fdfaf1; border-radius: 6px; border: 1px solid #9a7b1e;">esc-alcada → <strong>boundary em «Aprovar despesa»</strong> <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #9a7b1e;">↟ não-interrupting</span></div>
+              <div style="padding: 6px 8px; color: #6b6357;">esc-alcada → event subprocess «Tratar alçada» <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #a49c8f;">tier de escopo (ES-5)</span></div>
+              <div style="padding: 6px 8px; color: #6b6357;">Escalação não catalogada → catch-all <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #a49c8f;">(reforço 10 mantido)</span></div>
+            </div>
+            <div style="border-top: 1px dashed #e2ddd3; margin-top: 9px; padding-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; line-height: 1.8; color: #6b6357;">TRILHA:<br><span style="color: #9a7b1e;">↟ escalated via "esc-alcada" → caught by boundary b1 (non-interrupting)</span><br><span style="color: #1a6a54;">→ token em «Aprovar despesa» SEGUE + token paralelo no catch</span><br><span>· throw sem catch elegível → declared: "no eligible catch — escalation dissolves (OMG)"; token segue</span></div>
+          </div>
+          <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+            <div style="font-size: 11px; line-height: 1.7; color: #3a352f;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">throwEscalation(host, ref?)</span> — MESMA ordem total da ES-5 (especificidade &gt; escopo &gt; catch-all, 4 tiers); duplicata no tier = BlockedDecision<br><strong>A diferença semântica central (teste vinculante):</strong> catch não-interrupting → o token do host SEGUE + token paralelo no destino; interrupting (toggle/cancelActivity) → cancela nomeando contagem+escopo (ES-5)<br>Sem destino elegível: no-op DECLARADO na trilha ("escalation dissolves") — legal na OMG, DIFERENTE de erro (que é parada declarada); a diferença documentada no limitations<br>Espelho gov-* idêntico; decisions serializáveis; replay bit a bit; compat E-6/ES-5 obrigatória</div>
+          </div>
+          <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+            <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ não-interrupting: host segue + paralelo no catch (o teste que separa escalação de erro)<br>□ interrupting: cancela nomeando contagem+escopo (caminho ES-5 reusado, nunca duplicado)<br>□ sem destino = trilha declara e token segue; erro continua parada declarada (contraste testado)<br>□ 4 tiers + duplicata = BlockedDecision nomeando candidatos; gov-* idêntico<br>□ replay bit a bit + compat (cenários E-6/ES-5 replayam idênticos)<br>□ e2e: escalar → catch não-int. → os DOIS tokens visíveis → trilha nomeia → variante sem destino</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top: 26px; color: #a49c8f; font-size: 11.5px; display: flex; gap: 26px; flex-wrap: wrap;">
+      <span><strong style="color: #c9a94e;">Ordem vinculante:</strong> EC-0 reconciliação → EC-1 core (bucket+refs) → EC-2 react (visual+autoridade+paleta) → EC-3 agentflow/ledger → EC-4 lint 1.3.0 → EC-5 simulação</span>
+      <span><strong style="color: #c9a94e;">Cercas:</strong> OMG puro · reuso das fontes únicas E-1..ES-5 (zero fork) · não-interrupting default DECLARADO · fixtures congeladas intactas · dissolve ≠ parada (contraste com erro testado) · transversais completos</span>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>
