@@ -703,3 +703,31 @@ export function buildBoundaryDiagram(): BpmnDiagram {
   };
   return diagram;
 }
+
+/**
+ * `?events=1` — Handoff 16 E-2 (§3a): two loose message catch events with NO
+ * named definition yet, for the full e2e flow — create via «+», reference in
+ * both, rename (cascade), see the usage list, hit the deletion veto, unlink
+ * and finally delete.
+ */
+export function buildEventDefsDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-events', name: 'Definições de evento', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 60, 150),
+    m1: make('intermediateCatchEvent', 'm1', 'Aguardar aprovação', 220, 150, { eventDefinition: 'message' }),
+    m2: make('intermediateCatchEvent', 'm2', 'Aguardar confirmação', 400, 150, { eventDefinition: 'message' }),
+    end: make('endEvent', 'end', 'Fim', 580, 150),
+  };
+  const mkEdge = (id: string, sourceId: string, targetId: string) =>
+    createEdge({ id, sourceId, targetId, versionId: v });
+  diagram.edges = {
+    f1: mkEdge('f1', 'start', 'm1'),
+    f2: mkEdge('f2', 'm1', 'm2'),
+    f3: mkEdge('f3', 'm2', 'end'),
+  };
+  return diagram;
+}

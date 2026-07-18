@@ -59,6 +59,9 @@ const EXPECTED_EXPORTS = [
   'EDGE_MARKER_OPEN_ID',
   'EdgeRenderer',
   'EmptyState',
+  // Handoff 16 E-2 (§3a) — named-definition section of the properties panel.
+  'EventDefinitionSection',
+  'eventKindOf',
   'EditorConfigProvider',
   'EndEventShape',
   'ComplexGatewayShape',

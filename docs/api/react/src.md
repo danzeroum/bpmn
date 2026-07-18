@@ -11369,6 +11369,48 @@ function EmptyState(): Element | null;
 
 ***
 
+### eventKindOf()
+
+```ts
+function eventKindOf(node): "error" | "message" | "signal" | null;
+```
+
+#### Parameters
+
+##### node
+
+`BpmnNode`
+
+#### Returns
+
+`"error"` \| `"message"` \| `"signal"` \| `null`
+
+***
+
+### EventDefinitionSection()
+
+```ts
+function EventDefinitionSection(__namedParameters): Element | null;
+```
+
+#### Parameters
+
+##### \_\_namedParameters
+
+###### node
+
+`BpmnNode`
+
+###### readOnly
+
+`boolean`
+
+#### Returns
+
+`Element` \| `null`
+
+***
+
 ### GovernanceBreadcrumb()
 
 ```ts

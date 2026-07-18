@@ -55,6 +55,7 @@ const MIGRATED = [
   'packages/react/src/ui/CommandPalette.tsx',
   'packages/react/src/ui/Cheatsheet.tsx',
   'packages/react/src/ui/EmptyState.tsx',
+  'packages/react/src/ui/EventDefinitionSection.tsx',
   'packages/react/src/ui/LintPanel.tsx',
   'packages/react/src/ui/LayoutProposalCard.tsx',
   'packages/react/src/viewer/BpmnDiffViewer.tsx',
