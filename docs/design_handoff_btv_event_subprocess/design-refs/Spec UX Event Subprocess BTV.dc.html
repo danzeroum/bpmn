@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,500;9..144,600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #2b2824; }
+  a { color: #33567e; } a:hover { color: #24405f; }
+  ::selection { background: #e3ecf7; }
+</style>
+</helmet>
+<section style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; padding: 34px 30px 70px;">
+  <div style="max-width: 1560px; margin: 0 auto;">
+    <div style="color: #efece6; margin-bottom: 24px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 3px; color: #c9a94e;">SPEC DE REFERÊNCIA · HANDOFF 17 · EVENT SUBPROCESS COMO CONTÊINER</div>
+      <h1 style="font-family: 'Fraunces', serif; font-weight: 600; font-size: 34px; margin: 8px 0 6px;">Event Subprocess — o contêiner que fecha a aproximação honesta da E-4/E-5</h1>
+      <div style="font-size: 13px; color: #a49c8f; max-width: 100ch;">Hoje o start de erro "dentro de subProcess" é uma aproximação declarada — o contêiner real da OMG (<span style="font-family: 'IBM Plex Mono', monospace;">subProcess triggeredByEvent&#61;"true"</span>, borda pontilhada, start tipado único, interrupting/não-interrupting) não existe. Este handoff o traz por inteiro: modelo OMG puro, visual normativo, veto de fluxo de sequência declarado, lint <span style="font-family: 'IBM Plex Mono', monospace;">EVT_SUBPROC_*</span>, e o disparo honesto no simulador estendendo o matching da E-6. <strong style="color: #c9a94e;">Pré-requisito: Handoff 16 completo na main (está).</strong></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(560px, 1fr)); gap: 20px; align-items: start;">
+
+      <!-- 4a MODELO + XML -->
+      <div id="4a" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">4a</span>
+          <span style="font-size: 14px; font-weight: 600;">Modelo + XML OMG (core headless)</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">dois atributos OMG, zero namespace novo</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #262220; overflow: hidden;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #a49c8f; padding: 9px 12px; border-bottom: 1px solid #3a352f;">XML — ATRIBUTOS PADRÃO OMG</div>
+              <pre style="margin: 0; padding: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; line-height: 1.65; color: #d8d2c6; white-space: pre-wrap;">&lt;bpmn:subProcess id="esub-1"
+    name="Tratar exceções"
+    <span style="color: #c9a94e;">triggeredByEvent="true"</span>&gt;
+  &lt;bpmn:startEvent id="st-1"
+      <span style="color: #c9a94e;">isInterrupting="false"</span>&gt;
+    &lt;bpmn:errorEventDefinition
+      <span style="color: #7fb59a;">errorRef="err-limite"</span>/&gt;
+  &lt;/bpmn:startEvent&gt;
+  …filhos normais (contenção F7)…
+&lt;/bpmn:subProcess&gt;</pre>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 12px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; margin-bottom: 7px;">MODELO — SÓ PROPERTIES COMUNS</div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; line-height: 1.8; color: #3a352f;">subProcess.properties.<span style="color: #9a7b1e;">triggeredByEvent</span> = true<br>startEvent.properties.<span style="color: #9a7b1e;">isInterrupting</span> = false</div>
+              <div style="font-size: 10.5px; line-height: 1.6; color: #6b6357; margin-top: 8px;">Ambos atributos que a OMG nomeia → serializam como <strong>atributo XML padrão</strong> no elemento (props reservadas do soup quando emitidas, molde <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">eventDefinitionRef</span>). Default OMG omitido: <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">isInterrupting="true"</span> não é escrito.</div>
+              <div style="border-top: 1px dashed #e2ddd3; margin-top: 9px; padding-top: 9px; font-size: 10.5px; line-height: 1.6; color: #3a352f;"><strong>Regra estrutural no core:</strong> fluxo de sequência de/para o contêiner é <strong>vetado pela regra padrão</strong> (canal do veto, mensagem nomeando a regra OMG) — e o contêiner é <strong>isento</strong> do unreachable (molde boundary).</div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Contêiner = subProcess comum + <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">triggeredByEvent</span> — contenção F7 reusada por inteiro (parentId, childrenOf, DI absoluto), ZERO modelo novo<br>Start único e TIPADO (message/signal/error/timer/conditional) — definições nomeadas da E-1/E-3 por construção<br>Sem fluxo de sequência entrando ou saindo — veto no editor, lint no import<br>Import externo com triggeredByEvent vira contêiner de primeira classe (hoje: subProcess comum silencioso)</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ round-trip byte-estável dos DOIS atributos; default true de isInterrupting omitido<br>□ neutralidade: fixture congelada — sem triggeredByEvent, toXml e hash byte-idênticos aos de antes<br>□ veto de conexão com mensagem nomeando a regra; isenção do unreachable testada<br>□ corpus: ≥1 arquivo real com triggeredByEvent importa como contêiner (sem warning)<br>□ CONFORMANCE promove event subprocess via gerador; apiSurface core</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4b VISUAL -->
+      <div id="4b" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">4b</span>
+          <span style="font-size: 14px; font-weight: 600;">Visual normativo (shapes react)</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">pontilhado = OMG, não estilo</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 14px;">
+            <svg width="100%" viewBox="0 0 520 190" style="display: block;">
+              <!-- expanded event subprocess -->
+              <rect x="8" y="8" width="300" height="150" rx="12" fill="#fdfcfa" stroke="#44403a" stroke-width="1.2" stroke-dasharray="2.5 3"></rect>
+              <line x1="8" y1="38" x2="308" y2="38" stroke="#e2ddd3" stroke-width="1"></line>
+              <text x="20" y="27" font-size="11" font-weight="600" fill="#262220" font-family="Space Grotesk, sans-serif">Tratar exceções</text>
+              <text x="296" y="26" text-anchor="end" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#a49c8f">event subProcess</text>
+              <!-- non-interrupting error start (dashed) -->
+              <circle cx="48" cy="98" r="15" fill="#fdfcfa" stroke="#44403a" stroke-width="1.4" stroke-dasharray="3 2.5"></circle>
+              <path d="M 42 104 L 48 91 L 50 99 L 55 92" fill="none" stroke="#44403a" stroke-width="1.3"></path>
+              <text x="48" y="126" text-anchor="middle" font-size="8" font-family="IBM Plex Mono, monospace" fill="#6b6357">err-limite (não-int.)</text>
+              <path d="M 63 98 L 96 98" stroke="#44403a" stroke-width="1.3" marker-end="none"></path>
+              <path d="M 96 98 l -5 -3 v 6 z" fill="#44403a"></path>
+              <rect x="100" y="76" width="120" height="44" rx="8" fill="#fff" stroke="#44403a" stroke-width="1.3"></rect>
+              <text x="160" y="101" text-anchor="middle" font-size="10" fill="#262220" font-family="Space Grotesk, sans-serif">Notificar gestor</text>
+              <!-- collapsed variant -->
+              <rect x="344" y="34" width="150" height="70" rx="12" fill="#fdfcfa" stroke="#44403a" stroke-width="1.2" stroke-dasharray="2.5 3"></rect>
+              <circle cx="362" cy="52" r="9" fill="none" stroke="#44403a" stroke-width="1" stroke-dasharray="2.5 2"></circle>
+              <text x="362" y="56" text-anchor="middle" font-size="8">⚡</text>
+              <text x="419" y="73" text-anchor="middle" font-size="10" font-weight="600" fill="#262220" font-family="Space Grotesk, sans-serif">Escalar fraude</text>
+              <rect x="411" y="86" width="16" height="12" rx="2" fill="none" stroke="#44403a" stroke-width="1.2"></rect>
+              <line x1="419" y1="88.5" x2="419" y2="95.5" stroke="#44403a" stroke-width="1.2"></line>
+              <line x1="415.5" y1="92" x2="422.5" y2="92" stroke="#44403a" stroke-width="1.2"></line>
+              <text x="419" y="120" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#a49c8f">colapsado: glifo do gatilho</text>
+              <text x="419" y="131" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#a49c8f">no canto sup. esq.</text>
+            </svg>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Contêiner: borda fina <strong>pontilhada</strong> (a OMG manda; sólida = subProcess comum), rx 12, faixa de título 30px com tag mono <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">event subProcess</span> — molde F7<br>Start interrupting = círculo sólido · não-interrupting = círculo <strong>tracejado</strong> (molde do boundary não-interrupting do H6)<br>Colapsado: glifo do gatilho tipado no canto sup. esq. + marcador de expandir (OMG)<br>Paleta: «Subprocesso de evento» cria contêiner + start de message default em UM composto (1 undo)</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ pontilhado SÓ com triggeredByEvent; subProcess comum intacto (fixture visual)<br>□ start tracejado SÓ com isInterrupting&#61;false; glifo por kind reusado dos shapes H6<br>□ colapsado mostra o glifo do gatilho; expand/collapse/drill herdados sem mudança<br>□ item de paleta = 1 composto; e2e criar → aparece contêiner com start dentro<br>□ dark theme + export SVG/PNG fiel (pontilhado é geometria, não CSS transiente)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4c INTERACOES -->
+      <div id="4c" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">4c</span>
+          <span style="font-size: 14px; font-weight: 600;">Interações — veto declarado + aperto da E-4</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">nunca rejeição silenciosa</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 12px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; margin-bottom: 8px;">GESTO DE CONEXÃO NO CONTÊINER</div>
+              <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #b3372f; background: #fdf3f1; border-radius: 8px; padding: 8px 10px;">
+                <span style="font-size: 12px;">🔒</span>
+                <span style="font-size: 10.5px; color: #b3372f; line-height: 1.5;">Event subprocess não recebe fluxo de sequência — ele dispara pelo evento do start (OMG). Conecte ao conteúdo, não ao contêiner.</span>
+              </div>
+              <div style="font-size: 10px; color: #6b6357; margin-top: 8px; line-height: 1.6;">Portas do contêiner suprimidas; gesto que chega nele → veto pelo canal <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">lastVeto</span> (🔒 da toolbar) com a mensagem acima. Context pad no contêiner: sem botão de conectar; Tab dentro dele encadeia filhos normalmente.</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 12px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; margin-bottom: 8px;">PROPERTIES · START DO CONTÊINER</div>
+              <div style="font-size: 10.5px; line-height: 1.9; color: #3a352f;">
+                <div>Gatilho: <span style="border: 1px solid #e2ddd3; border-radius: 6px; padding: 2px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 9px;">error ▾</span> <span style="color: #a49c8f; font-family: 'IBM Plex Mono', monospace; font-size: 8.5px;">(picker E-2/E-3 por construção)</span></div>
+                <div style="display: flex; align-items: center; gap: 8px;">Interrompe o escopo: <span style="width: 30px; height: 16px; border-radius: 999px; background: #e2ddd3; position: relative; display: inline-block;"><span style="position: absolute; left: 2px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: 1px solid #a49c8f;"></span></span> <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #9a7b1e;">não-interrupting → círculo tracejado</span></div>
+              </div>
+              <div style="border-top: 1px dashed #e2ddd3; margin-top: 8px; padding-top: 8px; font-size: 10px; line-height: 1.6; color: #6b6357;"><strong style="color: #3a352f;">Aperto da E-4:</strong> <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">eventExecutionModeOf</span> catch-error passa a exigir <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">triggeredByEvent</span> no pai — a aproximação "qualquer subProcess" morre; teste de concordância lint⇄matriz obrigatório.</div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Veto de conexão SEMPRE declarado (mensagem + 🔒), nunca gesto que simplesmente não responde<br>Toggle isInterrupting &#61; updateNodeCommand undoável; só existe em start de event subprocess<br>Reparent-on-drop PARA DENTRO do contêiner herdado sem mudança (#99–#101)<br>Filhos conectam entre si normalmente — o veto é só na casca</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ gesto porta→contêiner e contêiner→nó vetados com a mensagem; filhos intactos (teste dos dois lados)<br>□ toggle só em start de contêiner (nunca em start comum) — RTL dos dois negativos<br>□ matriz E-4 apertada + teste de concordância com o lint 4d<br>□ e2e: drop da paleta → reparent de task pra dentro → conectar filhos → tentar conectar a casca (veto visível)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4d LINT -->
+      <div id="4d" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">4d</span>
+          <span style="font-size: 14px; font-weight: 600;">Lint EVT_SUBPROC_* (perfis → 1.2.0)</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">zero UI nova — dock da U-5</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; overflow: hidden;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; padding: 9px 12px; border-bottom: 1px solid #eee9df; background: #faf9f6;">DOCK DE PROBLEMAS — política: lint-etiquette@1.2.0 ● VIGENTE</div>
+            <div style="font-size: 10.5px; line-height: 1.5;">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-bottom: 1px solid #f2eee6;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #b3372f;"></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #b3372f;">EVT_SUBPROC_FLOW</span><span>fluxo de sequência entra no event subprocess «Tratar exceções»</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #a49c8f; margin-left: auto;">import externo</span></div>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-bottom: 1px solid #f2eee6;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #b3372f;"></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #b3372f;">EVT_SUBPROC_START</span><span>precisa de exatamente 1 start TIPADO — encontrado: 0</span><span style="border: 1px solid #1a6a54; color: #1a6a54; border-radius: 6px; padding: 1px 7px; font-size: 9px; margin-left: auto;">corrigir</span></div>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #b3372f;"></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; color: #b3372f;">EVT_ERROR_START_TOPLEVEL</span><span>start de erro fora de event subprocess (apertado: subProcess comum também acusa)</span><span style="border: 1px solid #6b6357; color: #6b6357; border-radius: 6px; padding: 1px 7px; font-size: 9px; margin-left: auto;">✦ sugerir</span></div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">EVT_SUBPROC_FLOW</span> (erro): fluxo de/para o contêiner — pega o caminho de IMPORT que o veto do editor não cobre<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">EVT_SUBPROC_START</span> (erro): exatamente 1 start e tipado (0, &gt;1 ou sem gatilho acusam)<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">EVT_ERROR_START_TOPLEVEL</span> APERTADO: só event subprocess legitima start de erro<br>Quick-fix só onde mecânico: 0 starts → cria start de message default (mesmo default da paleta, documentado); sem gatilho/duplicado → ✦ C5<br>Perfis 1.2.0 — header do dock + adapter da Biblioteca refletem pela MESMA fonte</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ 3 regras com positivos E negativos nomeados (subProcess comum nunca acusa FLOW/START)<br>□ aperto do TOPLEVEL: dentro de subProcess comum AGORA acusa; dentro de event subprocess passa — concordância com a matriz E-4 (mesmo predicado, teste dos dois lados)<br>□ quick-fix de 0 starts = 1 composto (start + definição via molde E-2/reforço 9), 1 undo<br>□ política 1.2.0 na MESMA fonte (dock + adapter + teste dedicado)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4e SIMULACAO -->
+      <div id="4e" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35); grid-column: 1 / -1;">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">4e</span>
+          <span style="font-size: 14px; font-weight: 600;">Disparo honesto no simulador — estende o matching da E-6</span>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; color: #a49c8f; margin-left: auto;">precedência OMG documentada · interrupção nomeada na trilha</span>
+        </div>
+        <div style="padding: 18px; display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 12px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 12px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; margin-bottom: 8px;">CARD «LANÇAR ERRO» — CANDIDATOS POR ESCOPO</div>
+            <div style="font-size: 10.5px; line-height: 1.6; color: #3a352f;">
+              <div style="padding: 6px 8px; background: #eef6f0; border-radius: 6px; border: 1px solid #1a6a54;">err-limite → <strong>event subprocess «Tratar exceções»</strong> <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #1a6a54;">MESMO ESCOPO — VENCE</span></div>
+              <div style="padding: 6px 8px; color: #6b6357;">err-limite → boundary em «Subprocesso S» <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #a49c8f;">escopo externo — preterido</span></div>
+              <div style="padding: 6px 8px; color: #6b6357;">Erro não catalogado → catch-all <span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #a49c8f;">(reforço 10 da E-6, mantido)</span></div>
+            </div>
+            <div style="border-top: 1px dashed #e2ddd3; margin-top: 9px; padding-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; line-height: 1.8; color: #6b6357;">TRILHA:<br><span style="color: #1a6a54;">✓ caught by event subprocess «Tratar exceções» (errorRef "err-limite")</span><br><span style="color: #b3372f;">⛔ interrupting: 2 tokens cancelados em «Subprocesso S»</span><br><span>→ token no start st-1 (não-interrupting: escopo segue)</span></div>
+          </div>
+          <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+            <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Candidatos de throwError/Signal/Message passam a incluir starts de event subprocess do ESCOPO do token<br><strong>Precedência OMG documentada:</strong> event subprocess do mesmo escopo VENCE boundary do escopo externo — não é ambiguidade (teste vinculante); empate no mesmo nível = BlockedDecision nomeando candidatos<br>Interrupting: cancela TODOS os tokens do escopo hospedeiro — trilha nomeia a contagem e o escopo · não-interrupting: token paralelo, escopo segue<br>Timer/conditional start: NUNCA auto-dispara — card de decisão manual (molde boundaryOptions), declarado<br>Propagação além do escopo direto segue NÃO simulada — limitations.md atualizado (remove "event subprocess", mantém propagação/escalation/compensação)</div>
+          </div>
+          <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+            <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ precedência: mesmo-escopo vence boundary externo (teste); duplicata no mesmo nível → BlockedDecision com candidatos<br>□ interrupting cancela e NOMEIA (contagem + escopo na trilha); não-interrupting mantém os tokens do escopo (teste dos dois)<br>□ espelho gov-* no start faz matching idêntico (molde reforço 9 da E-6)<br>□ decisions serializáveis + replay bit a bit, inclusive do estado bloqueado<br>□ compat: cenários E-6 existentes replayam idênticos (teste obrigatório)<br>□ e2e: lançar erro → event subprocess vence → trilha nomeia interrupção → variante não-interrupting</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top: 26px; color: #a49c8f; font-size: 11.5px; display: flex; gap: 26px; flex-wrap: wrap;">
+      <span><strong style="color: #c9a94e;">Ordem vinculante:</strong> ES-0 reconciliação → ES-1 core → ES-2 shapes → ES-3 interações → ES-4 lint → ES-5 simulação</span>
+      <span><strong style="color: #c9a94e;">Cercas:</strong> OMG puro (2 atributos, zero namespace novo) · contenção F7 reusada · veto declarado · fixture congelada · precedência documentada · transversais completos</span>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>
