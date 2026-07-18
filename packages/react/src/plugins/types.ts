@@ -373,6 +373,16 @@ export interface EngineBridge {
   /** Property key of the retries field. Default `<id>:retries`. */
   retriesKey?: string;
   /**
+   * Event I/O keys (Handoff 16 E-4, §3c) — the engine names WHERE the props
+   * live; WHICH events carry them is OMG semantics (`eventExecutionModeOf`).
+   * Payload mappings (throw events only). Default `<id>:payload`.
+   */
+  payloadKey?: string;
+  /** Error-code capture variable (error catches only). Default `<id>:errorCodeVariable`. */
+  errorCodeVariableKey?: string;
+  /** Error-message capture variable (error catches only). Default `<id>:errorMessageVariable`. */
+  errorMessageVariableKey?: string;
+  /**
    * Host-owned truth: is the CURRENT version's activation signed (identity
    * package / host ledger)? Gates deploy together with `status === 'active'`.
    * Absent → treated as NOT signed (deploy stays blocked).

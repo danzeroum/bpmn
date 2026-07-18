@@ -107,6 +107,14 @@ export { CommandPalette, paletteEntries, fuzzyScore } from './ui/CommandPalette.
 export { Cheatsheet } from './ui/Cheatsheet.js';
 export { EmptyState, buildGovernedExample } from './ui/EmptyState.js';
 export { EventDefinitionSection, eventKindOf } from './ui/EventDefinitionSection.js';
+// Handoff 16 E-4 (§3c) — executable-event matrix + payload helpers.
+export {
+  eventExecutionModeOf,
+  payloadMappingsOf,
+  prunePayloadMappings,
+  type EventExecutionMode,
+  type PayloadMapping,
+} from './ui/eventExecution.js';
 export * from './commands/menuRegistry.js';
 export * from './commands/globalCommands.js';
 export { KEYBOARD_SHORTCUT_CATALOG, type ShortcutCatalogEntry } from './gestures/useKeyboardShortcuts.js';

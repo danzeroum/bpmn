@@ -3630,6 +3630,32 @@ optional retriesKey?: string;
 
 Property key of the retries field. Default `<id>:retries`.
 
+##### payloadKey?
+
+```ts
+optional payloadKey?: string;
+```
+
+Event I/O keys (Handoff 16 E-4, §3c) — the engine names WHERE the props
+live; WHICH events carry them is OMG semantics (`eventExecutionModeOf`).
+Payload mappings (throw events only). Default `<id>:payload`.
+
+##### errorCodeVariableKey?
+
+```ts
+optional errorCodeVariableKey?: string;
+```
+
+Error-code capture variable (error catches only). Default `<id>:errorCodeVariable`.
+
+##### errorMessageVariableKey?
+
+```ts
+optional errorMessageVariableKey?: string;
+```
+
+Error-message capture variable (error catches only). Default `<id>:errorMessageVariable`.
+
 ##### isSigned?
 
 ```ts
@@ -6657,6 +6683,26 @@ Mandatory reviewer comment the signature binds.
 
 ***
 
+### PayloadMapping
+
+One var→destino row of a throw event's payload mapping.
+
+#### Properties
+
+##### source
+
+```ts
+source: string;
+```
+
+##### target
+
+```ts
+target: string;
+```
+
+***
+
 ### AnchorCycle
 
 #### Properties
@@ -7200,6 +7246,29 @@ type ResizeCorner = "nw" | "ne" | "sw" | "se";
 ```ts
 type CanvasStore = Store<CanvasState>;
 ```
+
+***
+
+### EventExecutionMode
+
+```ts
+type EventExecutionMode = "throw" | "catch-error";
+```
+
+Executable-event matrix (Handoff 16 E-4, §3c). Lives HERE — in react, not
+in the engine and not in a registry — because the throw/catch asymmetry is
+OMG semantics (cerca §1.4), not an engine opinion; the engine only names
+the property KEYS (`payloadKey`/`errorCodeVariableKey`/…).
+
+- `'throw'` (payload mappings var→destino): `intermediateThrowEvent` and
+  `endEvent` whose kind is message|signal.
+- `'catch-error'` (capture variables errCode/errMsg): error `boundaryEvent`,
+  and an error `startEvent` CONTAINED in a subProcess — the honest
+  approximation of the event subprocess, which remains its own pendency
+  (§3); a TOP-LEVEL error start is exactly what `EVT_ERROR_START_TOPLEVEL`
+  (E-5) will flag, so it gets NO tab here.
+- Everything else → `null`: message/signal catches carry no I/O in this
+  handoff (runtime correlation is host-owned, §3) and keep no tab.
 
 ***
 
@@ -12173,6 +12242,74 @@ the attached open threads and the mandatory comment. Decision is always
 #### Returns
 
 `Promise`\<`CanonicalChangeRequestPayload`\>
+
+***
+
+### eventExecutionModeOf()
+
+```ts
+function eventExecutionModeOf(diagram, node): EventExecutionMode | null;
+```
+
+#### Parameters
+
+##### diagram
+
+`BpmnDiagram`
+
+##### node
+
+`BpmnNode`
+
+#### Returns
+
+[`EventExecutionMode`](#eventexecutionmode) \| `null`
+
+***
+
+### payloadMappingsOf()
+
+```ts
+function payloadMappingsOf(node, key): PayloadMapping[];
+```
+
+The payload rows stored under the engine's payload key (absent → []).
+
+#### Parameters
+
+##### node
+
+`BpmnNode`
+
+##### key
+
+`string`
+
+#### Returns
+
+[`PayloadMapping`](#payloadmapping)[]
+
+***
+
+### prunePayloadMappings()
+
+```ts
+function prunePayloadMappings(rows): PayloadMapping[] | undefined;
+```
+
+Clean-model pruning (E-4 reforço 7): rows with BOTH sides blank never
+serialize, and an empty list removes the property entirely — the absent
+field keeps the pre-E-4 bytes.
+
+#### Parameters
+
+##### rows
+
+[`PayloadMapping`](#payloadmapping)[]
+
+#### Returns
+
+[`PayloadMapping`](#payloadmapping)[] \| `undefined`
 
 ***
 

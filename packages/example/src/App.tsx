@@ -65,6 +65,7 @@ import {
   buildStressDiagram,
   DEMO_DECISION_TABLE,
   buildEventDefsDiagram,
+  buildEventIoDiagram,
 } from './sampleDiagram.js';
 import { LifecyclePanel } from './LifecyclePanel.js';
 import { AuditPanel } from './AuditPanel.js';
@@ -354,6 +355,7 @@ export function App() {
     if (params.get('fanout')) return buildFanoutDiagram();
     if (params.get('deadlock')) return buildDeadlockDiagram();
     if (params.get('boundary')) return buildBoundaryDiagram();
+    if (params.get('eventio')) return buildEventIoDiagram();
     if (params.get('events')) return buildEventDefsDiagram(params.get('lib') !== null);
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
@@ -572,7 +574,7 @@ export function App() {
               ? ASTAR_PLUGINS
               : eventsLibMode
                 ? EVENT_LIB_PLUGINS
-                : params.get('engine')
+                : params.get('engine') || params.get('eventio')
                   ? [...PLUGINS, engineBridgePlugin]
                   : PLUGINS
           }

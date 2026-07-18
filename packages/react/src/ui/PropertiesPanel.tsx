@@ -12,6 +12,13 @@ import { backToAutoPatch, isManualEdge } from '../canvas/routeEdge.js';
 import { useT } from '../i18n/I18nContext.js';
 import type { EngineBridge } from '../plugins/types.js';
 import { EventDefinitionSection, eventKindOf } from './EventDefinitionSection.js';
+import {
+  eventExecutionModeOf,
+  payloadMappingsOf,
+  prunePayloadMappings,
+  type EventExecutionMode,
+  type PayloadMapping,
+} from './eventExecution.js';
 
 /**
  * Inspector for the selected element: label, purpose (edges) and free-form
@@ -49,7 +56,10 @@ export function PropertiesPanel() {
   const id = selectedIds[0];
   const node = diagram.nodes[id];
   const edge = diagram.edges[id];
-  const executable = node !== undefined && isExecutableActivity(node);
+  // E-4 (§3c): executable EVENTS from the matrix join activities behind the
+  // SAME gate — no engine plugin, no tabs, panel byte-identical to before.
+  const eventMode = node !== undefined ? eventExecutionModeOf(diagram, node) : null;
+  const executable = node !== undefined && (isExecutableActivity(node) || eventMode !== null);
   const showTabs = engine !== null && executable;
   const activeTab = showTabs ? tab : 'general';
   return (
@@ -77,7 +87,7 @@ export function PropertiesPanel() {
         </div>
       )}
       {activeTab === 'execution' && showTabs && engine && node ? (
-        <ExecutionInspector node={node} engine={engine} readOnly={readOnly} />
+        <ExecutionInspector node={node} engine={engine} readOnly={readOnly} eventMode={eventMode} />
       ) : (
         <>
           {node && <NodeInspector node={node} readOnly={readOnly} />}
@@ -119,19 +129,33 @@ function ExecutionInspector({
   node,
   engine,
   readOnly,
+  eventMode,
 }: {
   node: BpmnNode;
   engine: EngineBridge;
   readOnly: boolean;
+  eventMode: EventExecutionMode | null;
 }) {
   const { diagram, execute } = useDiagram();
   const t = useT();
   const jobTypeKey = engine.jobTypeKey ?? `${engine.id}:taskDefinitionType`;
   const retriesKey = engine.retriesKey ?? `${engine.id}:retries`;
+  const payloadKey = engine.payloadKey ?? `${engine.id}:payload`;
+  const errorCodeKey = engine.errorCodeVariableKey ?? `${engine.id}:errorCodeVariable`;
+  const errorMessageKey = engine.errorMessageVariableKey ?? `${engine.id}:errorMessageVariable`;
   const commitProperty = (key: string) => (value: string) =>
     execute(updateNodeCommand(node.id, { properties: { [key]: value } }));
+  // Reforço 6 — the ESSENTIAL keys (per mode) never re-render in the advanced
+  // fold: explicit exclusion list, the U-6 mold extended to event I/O.
+  const essentialKeys = new Set(
+    eventMode === 'throw'
+      ? [payloadKey]
+      : eventMode === 'catch-error'
+        ? [errorCodeKey, errorMessageKey]
+        : [jobTypeKey, retriesKey],
+  );
   const advanced = Object.entries(node.properties).filter(
-    ([key]) => key.startsWith(`${engine.id}:`) && key !== jobTypeKey && key !== retriesKey,
+    ([key]) => key.startsWith(`${engine.id}:`) && !essentialKeys.has(key),
   );
   const status = diagram.version.status;
   const signed = engine.isSigned?.(diagram) ?? false;
@@ -144,18 +168,44 @@ function ExecutionInspector({
         {engine.name ? <span className="bpmnr-inspector-engine"> · {engine.name}</span> : null}
       </h3>
       <p className="bpmnr-inspector-kicker">{t('execution.essential')}</p>
-      <Field
-        label={t('execution.jobType')}
-        value={stringProperty(node, jobTypeKey)}
-        readOnly={readOnly}
-        onCommit={commitProperty(jobTypeKey)}
-      />
-      <Field
-        label={t('execution.retries')}
-        value={stringProperty(node, retriesKey)}
-        readOnly={readOnly}
-        onCommit={commitProperty(retriesKey)}
-      />
+      {/* E-4 cerca §1.4 — the asymmetry is imposed by the UI: payload rows
+          render ONLY on throw events, capture variables ONLY on error
+          catches; activities keep the U-6 fields untouched. */}
+      {eventMode === 'throw' && (
+        <PayloadMappingEditor node={node} payloadKey={payloadKey} readOnly={readOnly} />
+      )}
+      {eventMode === 'catch-error' && (
+        <div data-testid="eventio-capture">
+          <Field
+            label={t('execution.errorCodeVariable')}
+            value={stringProperty(node, errorCodeKey)}
+            readOnly={readOnly}
+            onCommit={commitProperty(errorCodeKey)}
+          />
+          <Field
+            label={t('execution.errorMessageVariable')}
+            value={stringProperty(node, errorMessageKey)}
+            readOnly={readOnly}
+            onCommit={commitProperty(errorMessageKey)}
+          />
+        </div>
+      )}
+      {eventMode === null && (
+        <>
+          <Field
+            label={t('execution.jobType')}
+            value={stringProperty(node, jobTypeKey)}
+            readOnly={readOnly}
+            onCommit={commitProperty(jobTypeKey)}
+          />
+          <Field
+            label={t('execution.retries')}
+            value={stringProperty(node, retriesKey)}
+            readOnly={readOnly}
+            onCommit={commitProperty(retriesKey)}
+          />
+        </>
+      )}
       <details className="bpmnr-inspector-advanced" data-testid="execution-advanced">
         <summary>{t('execution.advanced')}</summary>
         {advanced.length === 0 && (
@@ -209,6 +259,92 @@ function ExecutionInspector({
 function stringProperty(node: BpmnNode, key: string): string {
   const value = node.properties[key];
   return typeof value === 'string' ? value : value === undefined ? '' : JSON.stringify(value);
+}
+
+/**
+ * Payload mapping rows (var → destino) of a THROW event — E-4. Commits on
+ * blur/remove via `updateNodeCommand` (each commit = 1 undo). Clean model
+ * (reforço 7): blank rows are pruned on commit and an empty list removes the
+ * property entirely, so the absent field keeps the pre-E-4 bytes.
+ */
+function PayloadMappingEditor({
+  node,
+  payloadKey,
+  readOnly,
+}: {
+  node: BpmnNode;
+  payloadKey: string;
+  readOnly: boolean;
+}) {
+  const { execute } = useDiagram();
+  const t = useT();
+  const stored = payloadMappingsOf(node, payloadKey);
+  const [rows, setRows] = useState<PayloadMapping[]>(stored);
+  // Outside changes (undo, another selection) re-sync the draft; local-only
+  // edits (an added blank row) don't touch `stored` and survive.
+  const storedJson = JSON.stringify(stored);
+  useEffect(() => {
+    setRows(JSON.parse(storedJson) as PayloadMapping[]);
+  }, [storedJson, node.id]);
+  const commit = (next: PayloadMapping[]) => {
+    setRows(next);
+    const pruned = prunePayloadMappings(next);
+    if (JSON.stringify(pruned) === JSON.stringify(prunePayloadMappings(stored))) return;
+    void execute(updateNodeCommand(node.id, { properties: { [payloadKey]: pruned } }));
+  };
+  const edit = (index: number, patch: Partial<PayloadMapping>) =>
+    setRows(rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+
+  return (
+    <div className="bpmnr-eventio-payload" data-testid="eventio-payload">
+      <span className="bpmnr-inspector-kicker">{t('execution.payload')}</span>
+      {rows.length === 0 && <p className="bpmnr-inspector-empty">{t('execution.payload.none')}</p>}
+      {rows.map((row, index) => (
+        <div className="bpmnr-eventio-row" key={index}>
+          <input
+            type="text"
+            value={row.source}
+            disabled={readOnly}
+            aria-label={t('execution.payload.source')}
+            data-testid={`eventio-source-${index}`}
+            onChange={(event) => edit(index, { source: event.target.value })}
+            onBlur={() => commit(rows)}
+          />
+          {/* i18n-exempt — mapping arrow glyph */}
+          <span aria-hidden="true">→</span>
+          <input
+            type="text"
+            value={row.target}
+            disabled={readOnly}
+            aria-label={t('execution.payload.target')}
+            data-testid={`eventio-target-${index}`}
+            onChange={(event) => edit(index, { target: event.target.value })}
+            onBlur={() => commit(rows)}
+          />
+          {!readOnly && (
+            <button
+              type="button"
+              aria-label={t('execution.payload.remove')}
+              data-testid={`eventio-remove-${index}`}
+              onClick={() => commit(rows.filter((_, i) => i !== index))}
+            >
+              {/* i18n-exempt — remove glyph */}✕
+            </button>
+          )}
+        </div>
+      ))}
+      {!readOnly && (
+        <button
+          type="button"
+          className="bpmnr-eventio-add"
+          data-testid="eventio-add"
+          onClick={() => setRows([...rows, { source: '', target: '' }])}
+        >
+          {/* i18n-exempt — plus glyph */}+ {t('execution.payload.add')}
+        </button>
+      )}
+    </div>
+  );
 }
 
 function NodeInspector({ node, readOnly }: { node: BpmnNode; readOnly: boolean }) {
