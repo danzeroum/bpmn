@@ -1,4 +1,5 @@
 import { AdapterError } from './errors.js';
+import type { EventDefinitionRefKind } from '@buildtovalue/core';
 import type {
   ArtifactAdapter,
   ArtifactDetail,
@@ -17,19 +18,21 @@ import type {
 
 /** One governed definition version as the host's catalog records it. */
 export interface GovernedEventDefinitionRecord {
-  kind: 'message' | 'signal' | 'error';
+  /** The referenceable kind — single source (`escalation` added in Handoff 18 §5c). */
+  kind: EventDefinitionRefKind;
   /** Artifact name — the `nome` half of the pinned `nome@semver` binding. */
   name: string;
   semanticVersion: string;
   status: LifecycleStatus;
-  /** The payload mirrored into diagrams on bind. */
-  definition: { name: string; errorCode?: string };
+  /** The payload mirrored into diagrams on bind (per-type code by kind). */
+  definition: { name: string; errorCode?: string; escalationCode?: string };
 }
 
 const KIND_LABELS: Record<GovernedEventDefinitionRecord['kind'], string> = {
   message: 'mensagem',
   signal: 'sinal',
   error: 'erro',
+  escalation: 'escalação',
 };
 
 const ENVELOPE_SVG =

@@ -254,3 +254,21 @@ antes de retomar a F7 (subProcess) em sessão dedicada.
   contêiner; a restrição futura deve cobrir OS DOIS tipos de contêiner de uma vez (nunca
   divergência silenciosa entre eles) — provavelmente como regra de lint/validação, não veto de
   gesto, para não travar autoria incremental.
+
+## 9. Handoff 18 (Escalation) — transitórios entre ECs (registrado, não bug)
+
+Itens deferidos DE PROPÓSITO na sequência EC-0..EC-5 do Handoff 18, cada um com dono na EC seguinte
+(sem quebra intermediária):
+
+- **Lista de kinds do lint `EVT_SUBPROC_START` (EC-2 → EC-4):** a react já ACEITA e renderiza um
+  start de escalação em event subprocess (glifo colapsado), mas o lint `EVT_SUBPROC_START` ainda
+  sinaliza escalation como kind não suportado até a **EC-4** adicionar `escalation` a
+  `SUBPROC_TRIGGER_KINDS`. Sem quebra — o dock é advisório.
+- **Cola runtime do `escalationRaisedEntry` no ledger (EC-3 → EC-5):** o builder
+  `escalationRaisedEntry({actor, code, target})` existe no `adapters-bpmn` e a cadeia verifica
+  (teste do builder + host-append com gatilho demonstrativo). Mas `ESCALATION_RAISED` significa
+  "a escalação ACONTECEU" — desenhar/anexar o boundary NÃO é escalar. Não há gatilho honesto até o
+  simulador ganhar `throwEscalation` na **EC-5**; só lá o host demo appenda a entrada de verdade
+  (via `command.executed`) e um e2e observa a trilha com o selo ✦. O demo `?agentbridge=1` mostra o
+  desenho da ponte (agentTask + boundary governado + autoridade + revisão humana), sem observar o
+  ledger ainda.

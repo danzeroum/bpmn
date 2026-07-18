@@ -58,6 +58,9 @@ const EXPECTED_EXPORTS = [
   'eventDefinitionCatalogAdapter',
   'eventBindingChangedEntry',
   'EVENT_BINDING_CHANGED_TYPE',
+  // Handoff 18 §5c — escalation raised → ledger glue (agent→human bridge).
+  'escalationRaisedEntry',
+  'ESCALATION_RAISED_TYPE',
 ].sort();
 
 describe('@buildtovalue/adapters-bpmn public API surface', () => {

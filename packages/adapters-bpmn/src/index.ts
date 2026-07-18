@@ -29,6 +29,7 @@ export { activeLintProfileVersion, lintProfileAdapter } from './lintProfileAdapt
 export { eventDefinitionCatalogAdapter } from './eventDefinitionCatalogAdapter.js';
 export type { GovernedEventDefinitionRecord } from './eventDefinitionCatalogAdapter.js';
 export { eventBindingChangedEntry, EVENT_BINDING_CHANGED_TYPE } from './eventBindingLedger.js';
+export { escalationRaisedEntry, ESCALATION_RAISED_TYPE } from './escalationLedger.js';
 export {
   reviewChangesRequestedEntry,
   reviewCommentEntry,

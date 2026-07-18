@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AuditLedger } from '@buildtovalue/core';
-import { categorizeEntry, describeEntry, filterEntries } from '../src/index.js';
+import { aiAuthorOf, categorizeEntry, describeEntry, filterEntries } from '../src/index.js';
 
 async function seeded(): Promise<AuditLedger> {
   const ledger = new AuditLedger();
@@ -26,6 +26,28 @@ describe('categorizeEntry — função pura de categorização (§6/§8)', () =>
     // undo/redo suffixes keep the base category; unknown falls to command
     expect(categorizeEntry({ type: 'VERSION_ACTIVATED_UNDONE' })).toBe('promotion');
     expect(categorizeEntry({ type: 'ALGO_EXOTICO' })).toBe('command');
+  });
+});
+
+describe('aiAuthorOf — selo ✦ para escalação de IA (Handoff 18 §5c)', () => {
+  it('✦ presente para escalação de IA, ausente para humana — na MESMA trilha', async () => {
+    const ledger = new AuditLedger();
+    // ESCALATION_RAISED com author ia.copilot@… → o selo ✦ pinta.
+    const ai = await ledger.append({
+      type: 'ESCALATION_RAISED',
+      userId: 'ia.copilot@claude-4',
+      versionId: 'v2',
+      details: { author: 'ia.copilot@claude-4', code: 'OVER_BUDGET', target: 'Gate G2', artifactId: 'bnd' },
+    });
+    // A MESMA trilha com uma escalação HUMANA → sem ✦.
+    const human = await ledger.append({
+      type: 'ESCALATION_RAISED',
+      userId: 'ana.ruiz',
+      versionId: 'v2',
+      details: { author: 'ana.ruiz', target: 'Gate G3', artifactId: 'bnd2' },
+    });
+    expect(aiAuthorOf(ai)).toBe('ia.copilot@claude-4');
+    expect(aiAuthorOf(human)).toBeUndefined();
   });
 });
 

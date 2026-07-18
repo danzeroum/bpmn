@@ -67,6 +67,7 @@ import {
   DEMO_DECISION_TABLE,
   buildErrorSimDiagram,
   buildEsubSimDiagram,
+  buildEscalationBridgeDiagram,
   buildEscalationDiagram,
   buildEventDefsDiagram,
   buildEventIoDiagram,
@@ -364,6 +365,7 @@ export function App() {
     if (params.get('timer')) return buildTimerDiagram();
     if (params.get('events')) return buildEventDefsDiagram(params.get('lib') !== null);
     if (params.get('escalation')) return buildEscalationDiagram();
+    if (params.get('agentbridge')) return buildEscalationBridgeDiagram();
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
     if (params.get('hc')) return buildHealthcareDiagram();
@@ -402,6 +404,9 @@ export function App() {
   const astarMode = params.get('astar') !== null;
   // `?events=1&lib=1` adds the governed event-definition library (E-3).
   const eventsLibMode = params.get('events') !== null && params.get('lib') !== null;
+  // `?agentbridge=1` (Handoff 18 §5c): the agent→human bridge needs the same
+  // event-library resolver so the boundary's governed esc@ chip resolves.
+  const agentBridgeMode = params.get('agentbridge') !== null;
   // `?replay=1` enters replay mode (Handoff 7B) over the same model + a synthetic log.
   const replayMode = params.get('replay') !== null;
   // `?sfeel=1` — S-FEEL decision demo (Handoff 9 SF-2); `&bad=1` uses a table
@@ -585,7 +590,7 @@ export function App() {
           plugins={
             astarMode
               ? ASTAR_PLUGINS
-              : eventsLibMode
+              : eventsLibMode || agentBridgeMode
                 ? EVENT_LIB_PLUGINS
                 : params.get('engine') || params.get('eventio')
                   ? [...PLUGINS, engineBridgePlugin]

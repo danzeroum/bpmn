@@ -983,3 +983,56 @@ export function buildEscalationDiagram(): BpmnDiagram {
   };
   return diagram;
 }
+
+/**
+ * `?agentbridge=1` — Handoff 18 §5c: the agent→human escalation bridge. An
+ * agentTask (autonomy declared via its governed workflow ref) carries a
+ * NON-INTERRUPTING escalation boundary GOVERNED-bound to `esc-alcada@1.2.0`
+ * (the VIGENTE chip), declaring its authority (`↟ Gate G2`); the escalation
+ * routes to a human review/signature `userTask`. The three elements the e2e
+ * asserts: agentTask (🤖 + ref), boundary (esc@ chip + authority chip), human
+ * review. The boundary needs the event-library plugin (resolver) — App wires
+ * `EVENT_LIB_PLUGINS` for this param. Simulating the raise is EC-5 (no honest
+ * trigger yet); the ledger `escalationRaisedEntry` glue lands there too.
+ */
+export function buildEscalationBridgeDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-agentbridge', name: 'Ponte agente→humano', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 60, 120),
+    agent: make('agentTask', 'agent', 'Analisar contrato', 180, 98, {
+      agentWorkflowRef: 'analisar-contrato@1.0.0',
+      autonomyLevel: 1,
+    }),
+    // Non-interrupting escalation boundary, GOVERNED-bound → esc@ VIGENTE chip;
+    // authority declared → the green ↟ chip. cancelActivity:false = personality.
+    bnd: make('boundaryEvent', 'bnd', 'Acima da alçada', 222, 140, {
+      attachedToRef: 'agent',
+      cancelActivity: false,
+      eventDefinition: 'escalation',
+      eventDefinitionRef: 'gov-esc-alcada',
+      eventDefinitionBinding: 'esc-alcada@1.2.0',
+      escalationAuthority: 'ana.ruiz (Gate G2)',
+      boundarySide: 'bottom',
+      boundaryT: 0.5,
+    }),
+    review: make('userTask', 'review', 'Revisar e assinar', 200, 260),
+    end: make('endEvent', 'end', 'Fim', 400, 120),
+  };
+  diagram.edges = {
+    f1: createEdge({ id: 'f1', sourceId: 'start', targetId: 'agent', versionId: v }),
+    f2: createEdge({ id: 'f2', sourceId: 'agent', targetId: 'end', versionId: v }),
+    f3: createEdge({ id: 'f3', sourceId: 'bnd', targetId: 'review', versionId: v }),
+  };
+  diagram.definitions = {
+    messages: [],
+    signals: [],
+    errors: [],
+    // The gov-* mirror the governed binding pins (read-only, Biblioteca-managed).
+    escalations: [{ id: 'gov-esc-alcada', name: 'Acima da alçada', escalationCode: 'OVER_BUDGET' }],
+  };
+  return diagram;
+}
