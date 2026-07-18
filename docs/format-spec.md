@@ -152,6 +152,35 @@ engine simply ignores it:
   the element tag stays standard.
 - `bpmnr:property name value` — free-form properties (`value` is JSON-encoded).
 
+## Foreign extension passthrough (`zeebe:*`, `camunda:*`, …)
+
+Extension content from OTHER namespaces is preserved through the round-trip instead of being
+dropped:
+
+- **What is preserved.** Foreign children of `extensionElements` on flow nodes, sequence/message
+  flows, data associations' host elements and the `<bpmn:process>` itself (e.g.
+  `zeebe:taskDefinition`, `zeebe:ioMapping`, `zeebe:userTaskForm`,
+  `camunda:executionListener`); foreign-prefixed **attributes** on those elements (e.g.
+  `zeebe:modelerTemplate`, `camunda:asyncBefore`); and the root's foreign `xmlns:*` declarations,
+  re-declared on export in sorted-prefix order. Model storage: `foreignExtensions` /
+  `foreignAttributes` on nodes and edges, `processForeignExtensions` / `foreignNamespaces` on the
+  diagram — all optional, so extension-free diagrams keep their exact pre-passthrough bytes and
+  hashes.
+- **The guarantee.** Semantically lossless on import and **byte-stable between bpmn-react
+  exports**: export → import → export is byte-identical. Byte-identity with the ORIGINAL
+  third-party file is NOT promised — formatting is normalized by our writer, exactly like other
+  BPMN tools.
+- **Text normalization (contract).** Element text is whitespace-**trimmed at the edges** on
+  import, and `CDATA` sections are read raw but re-emitted as **escaped text** (semantically
+  equal XML). Both normalizations happen once, on first import; every later pass is byte-stable.
+- **Diffing.** A changed foreign extension appears in `computeDiff`/`diffDiagrams` as a NAMED
+  field — the element tag (`zeebe:taskDefinition`) or `@`-prefixed attribute name
+  (`@zeebe:modelerTemplate`) — never as an opaque blob, so the review ΔN popover renders it per
+  field.
+- **Not preserved (registered scope).** Foreign children of `definitions` outside the process
+  (messages, signals, errors — part of the compensation/choreography coverage pendency) and
+  unprefixed legacy `property`/`meta` children, which are still read as bpmn-react's own.
+
 ## Parser guarantees
 
 - Structure validation only — no XSD schema validation.

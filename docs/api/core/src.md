@@ -3155,6 +3155,45 @@ history: AuditEventRecord[];
 
 ***
 
+### XmlSubtree
+
+A JSON-serializable XML subtree — the storage shape of FOREIGN extension
+elements (`zeebe:*`, `camunda:*`, …) preserved through the round-trip
+(passthrough PR). Mirrors the parser's element shape so re-emission is a
+pure tree walk. Contract (format-spec §passthrough): text is
+whitespace-trimmed at import and CDATA is re-emitted as escaped text —
+semantically lossless, byte-stable between OUR exports.
+
+#### Properties
+
+##### tag
+
+```ts
+tag: string;
+```
+
+Prefixed tag exactly as parsed, e.g. "zeebe:taskDefinition".
+
+##### attributes
+
+```ts
+attributes: Record<string, string>;
+```
+
+##### children
+
+```ts
+children: XmlSubtree[];
+```
+
+##### text
+
+```ts
+text: string;
+```
+
+***
+
 ### BpmnNode
 
 #### Properties
@@ -3210,6 +3249,23 @@ properties: Record<string, unknown>;
 ```
 
 Free-form, domain-extensible properties (exported via extensionElements).
+
+##### foreignExtensions?
+
+```ts
+optional foreignExtensions?: XmlSubtree[];
+```
+
+Foreign `extensionElements` children (non-`bpmnr` namespaces) preserved
+verbatim in original order — never interpreted, always re-exported.
+
+##### foreignAttributes?
+
+```ts
+optional foreignAttributes?: Record<string, string>;
+```
+
+Foreign-prefixed attributes of the source element (e.g. `zeebe:modelerTemplate`).
 
 ##### createdInVersion
 
@@ -3292,6 +3348,22 @@ Optional fixed routing points (world coordinates).
 ```ts
 properties: Record<string, unknown>;
 ```
+
+##### foreignExtensions?
+
+```ts
+optional foreignExtensions?: XmlSubtree[];
+```
+
+Foreign `extensionElements` children preserved verbatim (passthrough).
+
+##### foreignAttributes?
+
+```ts
+optional foreignAttributes?: Record<string, string>;
+```
+
+Foreign-prefixed attributes of the source element.
 
 ##### createdInVersion
 
@@ -3515,6 +3587,24 @@ edges: Record<string, BpmnEdge>;
 ```ts
 metadata: Record<string, unknown>;
 ```
+
+##### processForeignExtensions?
+
+```ts
+optional processForeignExtensions?: XmlSubtree[];
+```
+
+Foreign `extensionElements` children of the `<bpmn:process>` element
+(e.g. `zeebe:userTaskForm`) preserved verbatim (passthrough).
+
+##### foreignNamespaces?
+
+```ts
+optional foreignNamespaces?: Record<string, string>;
+```
+
+Foreign `xmlns:*` declarations captured from the imported root
+(prefix → uri), re-declared on export in sorted-prefix order.
 
 ***
 

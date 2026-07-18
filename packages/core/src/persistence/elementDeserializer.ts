@@ -171,7 +171,7 @@ export class ElementDeserializer {
 
   readNode(el: XmlElement, warnings: string[]): BpmnNode | undefined {
     const tag = localName(el.tag);
-    const { properties, meta, elements } = this.ext.readExtensionElements(el);
+    const { properties, meta, elements, foreign } = this.ext.readExtensionElements(el);
     // Agent Lane (Handoff 12 §5): a dedicated bpmnr:agentWorkflowSnapshot child
     // round-trips the read-degraded sub-workflow snapshot. It lives outside the
     // property soup, so read it back symmetrically (byte-stable both ways).
@@ -222,6 +222,11 @@ export class ElementDeserializer {
       width: def.defaultSize.width,
       height: def.defaultSize.height,
       properties,
+      // Passthrough: foreign extension children + foreign-prefixed attributes
+      // survive the import verbatim (absent keys when there are none, so
+      // hashes of extension-free diagrams never change).
+      ...(foreign.length > 0 ? { foreignExtensions: foreign } : {}),
+      ...withForeignAttributes(el),
       createdInVersion: meta.createdInVersion ?? '0',
       ...(meta.removedInVersion ? { removedInVersion: meta.removedInVersion } : {}),
       audit: { createdAt: new Date().toISOString(), createdBy: 'import', history: [] },
@@ -266,7 +271,7 @@ export class ElementDeserializer {
       );
       return undefined;
     }
-    const { properties, meta } = this.ext.readExtensionElements(el);
+    const { properties, meta, foreign } = this.ext.readExtensionElements(el);
     return {
       id: el.attributes.id ?? generateId(),
       type: meta.type ?? defaultType,
@@ -275,12 +280,31 @@ export class ElementDeserializer {
       ...(el.attributes.name ? { label: el.attributes.name } : {}),
       ...(meta.purpose ? { purpose: meta.purpose } : {}),
       properties,
+      ...(foreign.length > 0 ? { foreignExtensions: foreign } : {}),
+      ...withForeignAttributes(el),
       createdInVersion: meta.createdInVersion ?? '0',
       ...(meta.removedInVersion ? { removedInVersion: meta.removedInVersion } : {}),
       ...(meta.supersedesEdgeId ? { supersedesEdgeId: meta.supersedesEdgeId } : {}),
       audit: { createdAt: new Date().toISOString(), createdBy: 'import', history: [] },
     };
   }
+}
+
+/**
+ * Foreign-prefixed attributes of an element (e.g. `zeebe:modelerTemplate`,
+ * `camunda:asyncBefore`) — every attribute with a namespace prefix other than
+ * `xmlns`. Returns a spreadable object: empty when there are none, so
+ * extension-free elements keep their exact pre-passthrough shape.
+ */
+function withForeignAttributes(el: XmlElement): { foreignAttributes?: Record<string, string> } {
+  let found: Record<string, string> | undefined;
+  for (const [name, value] of Object.entries(el.attributes)) {
+    const colon = name.indexOf(':');
+    if (colon <= 0) continue;
+    if (name.startsWith('xmlns')) continue;
+    (found ??= {})[name] = value;
+  }
+  return found ? { foreignAttributes: found } : {};
 }
 
 /**

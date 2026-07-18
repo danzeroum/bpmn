@@ -90,14 +90,14 @@ Da sequência de paridade/interop (2026-07): entregues context pad, auto-layout/
 distribute/smart guides, busca Ctrl+F, `@buildtovalue/lint` (etiqueta + executabilidade) e
 `complexGateway` nativo. Ficaram abertos, cada um com escopo próprio:
 
-- **Passthrough de extensões estrangeiras (`zeebe:*`/`camunda:*`)** — hoje `readExtensionElements`
-  consome só `bpmnr:property`/`bpmnr:meta`; elementos de outros namespaces são lidos e perdidos no
-  export. Preservá-los (armazenar a árvore no modelo + re-emitir + capturar `xmlns:*` do root)
-  interage com os testes de byte-estabilidade e o corpus externo de conformance — PR dedicada.
-  As regras `EXEC_*` do pacote lint já aceitam as grafias `zeebe:`/`camunda:` quando o host as
-  injeta via propriedades.
-- **Deploy direto para engine (Camunda 8/Flowable)** — integração de rede/produto; depende do
-  passthrough acima para ser útil.
+- ~~**Passthrough de extensões estrangeiras (`zeebe:*`/`camunda:*`)**~~ → ENTREGUE (PR dedicada,
+  2026-07-18): `foreignExtensions`/`foreignAttributes` em nós/arestas,
+  `processForeignExtensions`/`foreignNamespaces` no diagrama; round-trip semanticamente lossless,
+  byte-estável entre exports, Δ nomeado no diff/review; contrato de trim/CDATA no format-spec.
+  Segue fora: mapear `zeebe:taskDefinition` preservada para as regras `EXEC_*` do lint (hoje o
+  host injeta via propriedades — funciona; a leitura direta do passthrough é follow-up opcional).
+- **Deploy direto para engine (Camunda 8/Flowable)** — integração de rede/produto; o passthrough
+  acima (entregue) o destravou do lado do arquivo.
 - **Compensação/transação e coreografia** — extensão de cobertura BPMN aditiva (event definitions
   + marcadores + round-trip); especificar junto com a publicação comparativa da CONFORMANCE.
 

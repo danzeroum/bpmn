@@ -1,5 +1,6 @@
 import type { XmlBuilder } from '../xml/XmlBuilder.js';
 import { firstChildByLocalName, localName, type XmlElement } from '../xml/MiniXmlParser.js';
+import type { XmlSubtree } from '../model/types.js';
 
 /** Namespace under which bpmn-react writes its `<extensionElements>` payload. */
 export interface ExtensionNamespace {
@@ -76,14 +77,27 @@ export class ExtensionHandler {
     properties: Record<string, unknown>;
     meta: Record<string, string>;
     elements: XmlElement[];
+    /**
+     * Foreign children (any prefix other than ours — `zeebe:*`, `camunda:*`…)
+     * preserved verbatim in original order (passthrough). Empty array when
+     * the element carries none.
+     */
+    foreign: XmlSubtree[];
   } {
     const container = firstChildByLocalName(el, 'extensionElements');
     const properties: Record<string, unknown> = {};
     let meta: Record<string, string> = {};
+    const foreign: XmlSubtree[] = [];
     const elements: XmlElement[] = container?.children ?? [];
     for (const child of elements) {
       const tag = localName(child.tag);
-      if (tag === 'property') {
+      const prefix = child.tag.includes(':') ? child.tag.slice(0, child.tag.indexOf(':')) : '';
+      // Ours = our configured prefix, or unprefixed (legacy tolerance — the
+      // pre-passthrough reader matched by localName only). A DIFFERENT
+      // prefix (`zeebe:`, `camunda:`…) is a foreign extension now preserved
+      // verbatim instead of being misread or dropped.
+      const ours = prefix === this.ns.prefix || prefix === '';
+      if (ours && tag === 'property') {
         const name = child.attributes.name;
         const raw = child.attributes.value;
         if (name !== undefined && raw !== undefined) {
@@ -93,10 +107,33 @@ export class ExtensionHandler {
             properties[name] = raw;
           }
         }
-      } else if (tag === 'meta') {
+      } else if (ours && tag === 'meta') {
         meta = { ...child.attributes };
+      } else if (!ours) {
+        foreign.push(toSubtree(child));
       }
     }
-    return { properties, meta, elements };
+    return { properties, meta, elements, foreign };
   }
+
+  /** Re-emits one preserved foreign subtree exactly as stored. */
+  writeSubtree(xml: XmlBuilder, subtree: XmlSubtree): void {
+    if (subtree.children.length === 0) {
+      xml.element(subtree.tag, subtree.attributes, subtree.text || undefined);
+      return;
+    }
+    xml.open(subtree.tag, subtree.attributes);
+    for (const child of subtree.children) this.writeSubtree(xml, child);
+    xml.close();
+  }
+}
+
+/** Parser element → JSON-serializable storage shape (structuredClone-safe). */
+function toSubtree(el: XmlElement): XmlSubtree {
+  return {
+    tag: el.tag,
+    attributes: { ...el.attributes },
+    children: el.children.map(toSubtree),
+    text: el.text,
+  };
 }

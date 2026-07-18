@@ -43,6 +43,11 @@ export class ElementSerializer {
         parentVersionId: diagram.version.parentVersionId,
       });
       this.ext.writeProperties(xml, Object.entries(diagram.metadata));
+      // Passthrough: process-level foreign extensions (zeebe:userTaskForm…)
+      // re-emitted verbatim after our payload, in original order.
+      for (const subtree of diagram.processForeignExtensions ?? []) {
+        this.ext.writeSubtree(xml, subtree);
+      }
     });
   }
 
@@ -126,6 +131,9 @@ export class ElementSerializer {
       calledElement,
       dataStoreRef,
       dataObjectRef,
+      // Passthrough: foreign-prefixed attributes re-emitted after the
+      // standard ones, exactly as imported.
+      ...(node.foreignAttributes ?? {}),
     };
     const hasChildren =
       eventDef !== undefined ||
@@ -139,28 +147,32 @@ export class ElementSerializer {
       propEntries.length > 0 ||
       node.createdInVersion !== '0' ||
       agentSnapshot !== undefined;
+    const foreign = node.foreignExtensions ?? [];
 
-    if (!needsMeta && !hasChildren) {
+    if (!needsMeta && !hasChildren && foreign.length === 0) {
       xml.element(`bpmn:${tag}`, attrs);
       return;
     }
     xml.open(`bpmn:${tag}`, attrs);
-    if (needsMeta) {
+    if (needsMeta || foreign.length > 0) {
       const metaAttrs = {
         type: node.type !== tag ? node.type : undefined,
         createdInVersion: node.createdInVersion !== '0' ? node.createdInVersion : undefined,
         removedInVersion: node.removedInVersion,
       };
-      if (agentSnapshot === undefined) {
-        this.ext.writeMetaBlock(xml, metaAttrs, propEntries);
-      } else {
-        // Same extensionElements block as meta+properties, plus the snapshot.
-        this.ext.writeExtensionElements(xml, () => {
+      // ONE extensionElements block: our bpmnr payload first (byte-stable
+      // when no foreigners exist), then the preserved foreign subtrees in
+      // their original order.
+      this.ext.writeExtensionElements(xml, () => {
+        if (needsMeta) {
           this.ext.writeMeta(xml, metaAttrs);
           this.ext.writeProperties(xml, propEntries);
-          xml.element(`${this.ext.prefix}:agentWorkflowSnapshot`, { snapshot: agentSnapshot });
-        });
-      }
+          if (agentSnapshot !== undefined) {
+            xml.element(`${this.ext.prefix}:agentWorkflowSnapshot`, { snapshot: agentSnapshot });
+          }
+        }
+        for (const subtree of foreign) this.ext.writeSubtree(xml, subtree);
+      });
     }
     if (eventDef !== undefined) {
       xml.element(`bpmn:${eventDef}EventDefinition`, { id: `${node.id}_def` });
@@ -259,6 +271,7 @@ export class ElementSerializer {
       sourceRef: edge.sourceId,
       targetRef: edge.targetId,
       name: edge.label,
+      ...(edge.foreignAttributes ?? {}),
     };
     const needsMeta =
       edge.type !== tag ||
@@ -267,23 +280,26 @@ export class ElementSerializer {
       edge.supersedesEdgeId !== undefined ||
       Object.keys(edge.properties).length > 0 ||
       edge.createdInVersion !== '0';
+    const foreign = edge.foreignExtensions ?? [];
 
-    if (!needsMeta) {
+    if (!needsMeta && foreign.length === 0) {
       xml.element(`bpmn:${tag}`, attrs);
       return;
     }
     xml.open(`bpmn:${tag}`, attrs);
-    this.ext.writeMetaBlock(
-      xml,
-      {
-        type: edge.type !== tag ? edge.type : undefined,
-        purpose: edge.purpose,
-        createdInVersion: edge.createdInVersion !== '0' ? edge.createdInVersion : undefined,
-        removedInVersion: edge.removedInVersion,
-        supersedesEdgeId: edge.supersedesEdgeId,
-      },
-      Object.entries(edge.properties),
-    );
+    this.ext.writeExtensionElements(xml, () => {
+      if (needsMeta) {
+        this.ext.writeMeta(xml, {
+          type: edge.type !== tag ? edge.type : undefined,
+          purpose: edge.purpose,
+          createdInVersion: edge.createdInVersion !== '0' ? edge.createdInVersion : undefined,
+          removedInVersion: edge.removedInVersion,
+          supersedesEdgeId: edge.supersedesEdgeId,
+        });
+        this.ext.writeProperties(xml, Object.entries(edge.properties));
+      }
+      for (const subtree of foreign) this.ext.writeSubtree(xml, subtree);
+    });
     xml.close();
   }
 }

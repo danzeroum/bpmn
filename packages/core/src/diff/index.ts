@@ -1,4 +1,4 @@
-import type { BpmnDiagram, BpmnEdge, BpmnNode } from '../model/types.js';
+import type { BpmnDiagram, BpmnEdge, BpmnNode, XmlSubtree } from '../model/types.js';
 import { canonicalJson, roundCoord } from '../persistence/hash.js';
 
 export interface FieldChange {
@@ -70,6 +70,44 @@ function differs(rawA: unknown, rawB: unknown): boolean {
   return canonicalJson(a) !== canonicalJson(b);
 }
 
+/**
+ * Named changes of the PRESERVED foreign extensions (passthrough PR): each
+ * foreign element tag ("zeebe:taskDefinition") and each foreign attribute
+ * ("@zeebe:modelerTemplate", XML-convention @ prefix) is its own change key —
+ * never an opaque `foreignExtensions` blob. This is what the review's ΔN
+ * popover (Handoff 15 §2a) renders per field.
+ */
+function foreignChanges(
+  before: { foreignExtensions?: XmlSubtree[]; foreignAttributes?: Record<string, string> },
+  after: { foreignExtensions?: XmlSubtree[]; foreignAttributes?: Record<string, string> },
+): Record<string, FieldChange> {
+  const changes: Record<string, FieldChange> = {};
+  const group = (list?: XmlSubtree[]) => {
+    const map = new Map<string, XmlSubtree[]>();
+    for (const subtree of list ?? []) {
+      map.set(subtree.tag, [...(map.get(subtree.tag) ?? []), subtree]);
+    }
+    return map;
+  };
+  const a = group(before.foreignExtensions);
+  const b = group(after.foreignExtensions);
+  const flatten = (list: XmlSubtree[] | undefined) =>
+    list === undefined ? undefined : list.length === 1 ? list[0] : list;
+  for (const tag of new Set([...a.keys(), ...b.keys()])) {
+    const from = flatten(a.get(tag));
+    const to = flatten(b.get(tag));
+    if (differs(from, to)) changes[tag] = { from: from ?? null, to: to ?? null };
+  }
+  const aa = before.foreignAttributes ?? {};
+  const ba = after.foreignAttributes ?? {};
+  for (const name of new Set([...Object.keys(aa), ...Object.keys(ba)])) {
+    if (differs(aa[name], ba[name])) {
+      changes[`@${name}`] = { from: aa[name] ?? null, to: ba[name] ?? null };
+    }
+  }
+  return changes;
+}
+
 function fieldChanges<T extends object>(
   before: T,
   after: T,
@@ -99,8 +137,11 @@ export function computeDiff(before: BpmnDiagram, after: BpmnDiagram): BpmnDiff {
     if (!previous) {
       diff.nodes.push({ op: 'add', node });
     } else {
-      const changes = fieldChanges(previous, node, NODE_FIELDS);
-      if (changes) diff.nodes.push({ op: 'update', nodeId: id, changes });
+      const changes = {
+        ...(fieldChanges(previous, node, NODE_FIELDS) ?? {}),
+        ...foreignChanges(previous, node),
+      };
+      if (Object.keys(changes).length > 0) diff.nodes.push({ op: 'update', nodeId: id, changes });
     }
   }
   for (const id of Object.keys(before.nodes)) {
@@ -118,8 +159,11 @@ export function computeDiff(before: BpmnDiagram, after: BpmnDiagram): BpmnDiff {
         diff.edges.push({ op: 'add', edge });
       }
     } else {
-      const changes = fieldChanges(previous, edge, EDGE_FIELDS);
-      if (changes) diff.edges.push({ op: 'update', edgeId: id, changes });
+      const changes = {
+        ...(fieldChanges(previous, edge, EDGE_FIELDS) ?? {}),
+        ...foreignChanges(previous, edge),
+      };
+      if (Object.keys(changes).length > 0) diff.edges.push({ op: 'update', edgeId: id, changes });
     }
   }
   for (const id of Object.keys(before.edges)) {
@@ -148,8 +192,11 @@ export function computeDiff(before: BpmnDiagram, after: BpmnDiagram): BpmnDiff {
 export function edgeVersionDiff(before: BpmnEdge, after: BpmnEdge): BpmnDiff {
   const diff: BpmnDiff = { nodes: [], edges: [], metadata: {} };
   diff.edges.push({ op: 'supersede', edgeId: before.id, newEdgeId: after.id });
-  const changes = fieldChanges(before, after, EDGE_FIELDS);
-  if (changes) diff.edges.push({ op: 'update', edgeId: after.id, changes });
+  const changes = {
+    ...(fieldChanges(before, after, EDGE_FIELDS) ?? {}),
+    ...foreignChanges(before, after),
+  };
+  if (Object.keys(changes).length > 0) diff.edges.push({ op: 'update', edgeId: after.id, changes });
   return diff;
 }
 
@@ -179,6 +226,8 @@ export function normalizeForDiff(diagram: BpmnDiagram): NormalizedDiagramContent
       width: roundCoord(n.width),
       height: roundCoord(n.height),
       properties: canonProps(n.properties),
+      ...(n.foreignExtensions ? { foreignExtensions: n.foreignExtensions } : {}),
+      ...(n.foreignAttributes ? { foreignAttributes: canonProps(n.foreignAttributes) } : {}),
       ...(n.removedInVersion ? { removedInVersion: n.removedInVersion } : {}),
     }))
     .sort((a, b) => (a.id < b.id ? -1 : 1));
@@ -191,6 +240,8 @@ export function normalizeForDiff(diagram: BpmnDiagram): NormalizedDiagramContent
       ...(e.label !== undefined && e.label !== '' ? { label: e.label } : {}),
       ...(e.purpose !== undefined && e.purpose !== '' ? { purpose: e.purpose } : {}),
       properties: canonProps(e.properties),
+      ...(e.foreignExtensions ? { foreignExtensions: e.foreignExtensions } : {}),
+      ...(e.foreignAttributes ? { foreignAttributes: canonProps(e.foreignAttributes) } : {}),
       ...(e.removedInVersion ? { removedInVersion: e.removedInVersion } : {}),
       ...(e.supersedesEdgeId ? { supersedesEdgeId: e.supersedesEdgeId } : {}),
     }))
