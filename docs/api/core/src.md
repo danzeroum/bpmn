@@ -1869,7 +1869,7 @@ eventDefinitionRemoval: object;
 ###### kind
 
 ```ts
-kind: "error" | "message" | "signal";
+kind: "error" | "message" | "signal" | "escalation";
 ```
 
 ###### definitionId
@@ -3757,6 +3757,7 @@ touches nodes, E-0 decision 5).
 #### Extended by
 
 - [`ErrorEventDefinition`](#erroreventdefinition)
+- [`EscalationEventDefinition`](#escalationeventdefinition)
 
 #### Properties
 
@@ -3812,6 +3813,48 @@ optional errorCode?: string;
 
 ***
 
+### EscalationEventDefinition
+
+`bpmn:escalation` root element (Handoff 18 §5a) — carries the OMG
+`escalationCode`, the exact mould of `errorCode` (per-type asymmetry). The
+code is optional and OMITTED from the XML when undefined (never an empty
+attribute), like `errorCode`. Authority (`escalationAuthority`) is NOT an OMG
+concept — it stays a common `bpmnr:property`, never a root attribute.
+
+#### Extends
+
+- [`NamedEventDefinition`](#namedeventdefinition)
+
+#### Properties
+
+##### id
+
+```ts
+id: string;
+```
+
+###### Inherited from
+
+[`NamedEventDefinition`](#namedeventdefinition).[`id`](#id-10)
+
+##### name
+
+```ts
+name: string;
+```
+
+###### Inherited from
+
+[`NamedEventDefinition`](#namedeventdefinition).[`name`](#name-1)
+
+##### escalationCode?
+
+```ts
+optional escalationCode?: string;
+```
+
+***
+
 ### EventDefinitions
 
 The named-definition buckets, one per referenceable kind.
@@ -3835,6 +3878,19 @@ signals: NamedEventDefinition[];
 ```ts
 errors: ErrorEventDefinition[];
 ```
+
+##### escalations?
+
+```ts
+optional escalations?: EscalationEventDefinition[];
+```
+
+Escalation definitions (Handoff 18 §5a) — the 4th bucket, entering the
+SAME single sources as messages/signals/errors (zero fork). OPTIONAL and
+additive so pre-existing `definitions` literals stay valid; every read
+goes through [eventDefinitionsOf](#eventdefinitionsof), which fills the missing bucket, so
+downstream code treats it as always-present. Absent/empty emits nothing —
+the pre-existing frozen fixtures stay byte-identical.
 
 ***
 
@@ -4722,13 +4778,16 @@ grazing across it. This is the cheap variant of `pendencias.md §2`.
 ### EVENT\_DEFINITION\_REF\_KINDS
 
 ```ts
-const EVENT_DEFINITION_REF_KINDS: readonly ["message", "signal", "error"];
+const EVENT_DEFINITION_REF_KINDS: readonly ["message", "signal", "error", "escalation"];
 ```
 
 Named event definitions — headless helpers (Handoff 16 §3a, E-1).
-The three referenceable kinds map 1:1 to the OMG root elements
-(`bpmn:message`/`bpmn:signal`/`bpmn:error`) and to the event KINDS the
-nodes already carry in `properties.eventDefinition`.
+The referenceable kinds map 1:1 to the OMG root elements
+(`bpmn:message`/`bpmn:signal`/`bpmn:error`/`bpmn:escalation`) and to the
+event KINDS the nodes already carry in `properties.eventDefinition`.
+Handoff 18 §5a adds `escalation` as the 4th kind through this SAME single
+source (zero fork) — buckets, id prefix, picker and refs follow by
+construction.
 
 ***
 
@@ -4758,6 +4817,12 @@ readonly signal: "signals" = 'signals';
 
 ```ts
 readonly error: "errors" = 'errors';
+```
+
+##### escalation
+
+```ts
+readonly escalation: "escalations" = 'escalations';
 ```
 
 ***
@@ -5324,11 +5389,11 @@ Adds a named definition (the «+» flow builds the auto id via `nextEventDefinit
 
 ##### kind
 
-`"error"` \| `"message"` \| `"signal"`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"`
 
 ##### definition
 
-[`ErrorEventDefinition`](#erroreventdefinition)
+`EditableDefinition`
 
 #### Returns
 
@@ -5345,13 +5410,13 @@ function updateEventDefinitionCommand(
    patch): Command;
 ```
 
-Rename / errorCode patch — nodes reference by ID, so nothing else moves.
+Rename / errorCode / escalationCode patch — nodes reference by ID, so nothing else moves.
 
 #### Parameters
 
 ##### kind
 
-`"error"` \| `"message"` \| `"signal"`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"`
 
 ##### definitionId
 
@@ -5364,6 +5429,10 @@ Rename / errorCode patch — nodes reference by ID, so nothing else moves.
 `string`
 
 ###### errorCode?
+
+`string`
+
+###### escalationCode?
 
 `string`
 
@@ -5387,7 +5456,7 @@ silent and never cascades (§3a: excluir bloqueado listando usos).
 
 ##### kind
 
-`"error"` \| `"message"` \| `"signal"`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"`
 
 ##### definitionId
 
@@ -6491,10 +6560,12 @@ Empty, frozen-shape buckets — the starting point when `definitions` is absent.
 ### eventDefinitionsOf()
 
 ```ts
-function eventDefinitionsOf(diagram): EventDefinitions;
+function eventDefinitionsOf(diagram): Required<EventDefinitions>;
 ```
 
-The definitions bag of a diagram, tolerant of the absent field.
+The definitions bag of a diagram, tolerant of the absent field AND of the
+additive `escalations` bucket being absent from an older literal — every
+bucket is filled so callers treat all four as always-present (Handoff 18).
 
 #### Parameters
 
@@ -6504,7 +6575,7 @@ The definitions bag of a diagram, tolerant of the absent field.
 
 #### Returns
 
-[`EventDefinitions`](#eventdefinitions)
+`Required`\<[`EventDefinitions`](#eventdefinitions)\>
 
 ***
 
@@ -6513,7 +6584,8 @@ The definitions bag of a diagram, tolerant of the absent field.
 ```ts
 function eventDefinitionList(diagram, kind): readonly (
   | NamedEventDefinition
-  | ErrorEventDefinition)[];
+  | ErrorEventDefinition
+  | EscalationEventDefinition)[];
 ```
 
 Definition list of one kind (empty array when absent).
@@ -6526,13 +6598,14 @@ Definition list of one kind (empty array when absent).
 
 ##### kind
 
-`"error"` \| `"message"` \| `"signal"`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"`
 
 #### Returns
 
 readonly (
   \| [`NamedEventDefinition`](#namedeventdefinition)
-  \| [`ErrorEventDefinition`](#erroreventdefinition))[]
+  \| [`ErrorEventDefinition`](#erroreventdefinition)
+  \| [`EscalationEventDefinition`](#escalationeventdefinition))[]
 
 ***
 
@@ -6545,6 +6618,7 @@ function findEventDefinition(
    id): 
   | NamedEventDefinition
   | ErrorEventDefinition
+  | EscalationEventDefinition
   | undefined;
 ```
 
@@ -6558,7 +6632,7 @@ Lookup by id inside a kind's bucket.
 
 ##### kind
 
-`"error"` \| `"message"` \| `"signal"`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"`
 
 ##### id
 
@@ -6568,6 +6642,7 @@ Lookup by id inside a kind's bucket.
 
   \| [`NamedEventDefinition`](#namedeventdefinition)
   \| [`ErrorEventDefinition`](#erroreventdefinition)
+  \| [`EscalationEventDefinition`](#escalationeventdefinition)
   \| `undefined`
 
 ***
@@ -6590,7 +6665,7 @@ skips taken ids).
 
 ##### kind
 
-`"error"` \| `"message"` \| `"signal"`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"`
 
 #### Returns
 
@@ -6639,7 +6714,7 @@ never cross-matches.
 
 ##### kind
 
-`"error"` \| `"message"` \| `"signal"`
+`"error"` \| `"message"` \| `"signal"` \| `"escalation"`
 
 ##### id
 
@@ -7201,8 +7276,8 @@ function eventDefinitionOf(node):
   | "message"
   | "signal"
   | "link"
-  | "timer"
   | "escalation"
+  | "timer"
   | "conditional"
   | "terminate"
   | undefined;
@@ -7222,8 +7297,8 @@ Returns the event-definition kind stored on a node, if it is a valid kind.
   \| `"message"`
   \| `"signal"`
   \| `"link"`
-  \| `"timer"`
   \| `"escalation"`
+  \| `"timer"`
   \| `"conditional"`
   \| `"terminate"`
   \| `undefined`

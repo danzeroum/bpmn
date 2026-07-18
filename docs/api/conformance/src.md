@@ -284,7 +284,7 @@ OMG conformance sub-class the element counts toward.
 ### GENERATED\_CORPUS\_FILES
 
 ```ts
-const GENERATED_CORPUS_FILES: 58 = 58;
+const GENERATED_CORPUS_FILES: 59 = 59;
 ```
 
 Corpus policy (Handoff 11 N-2): the single source for the real/generated

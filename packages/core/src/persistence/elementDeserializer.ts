@@ -337,7 +337,10 @@ function readEventDefinition(
     const kind = match?.[1];
     if (kind && (EVENT_DEFINITION_KINDS as readonly string[]).includes(kind)) {
       const ref =
-        child.attributes.messageRef ?? child.attributes.signalRef ?? child.attributes.errorRef;
+        child.attributes.messageRef ??
+        child.attributes.signalRef ??
+        child.attributes.errorRef ??
+        child.attributes.escalationRef;
       // Canonical timer (E-5): the standard timeDate/timeDuration/timeCycle
       // child of a timerEventDefinition → properties.timer.
       let timer: TimerProperty | undefined;

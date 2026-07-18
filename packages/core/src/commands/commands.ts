@@ -512,22 +512,30 @@ export function restoreDiagramCommand(
 import {
   EVENT_DEFINITION_BUCKETS,
   emptyEventDefinitions,
+  eventDefinitionsOf,
   type EventDefinitionRefKind,
 } from '../model/eventDefinitions.js';
-import type { ErrorEventDefinition, EventDefinitions } from '../model/types.js';
+import type { NamedEventDefinition, EventDefinitions } from '../model/types.js';
+
+/**
+ * Widest bucket element: `errorCode` (error) and `escalationCode` (escalation,
+ * Handoff 18 §5a) are per-type codes on the same mould — one editable shape
+ * keeps the kind-generic CRUD a single source across all four buckets.
+ */
+type EditableDefinition = NamedEventDefinition & { errorCode?: string; escalationCode?: string };
 
 function withDefinitions(diagram: BpmnDiagram, definitions: EventDefinitions): BpmnDiagram {
   return { ...diagram, definitions };
 }
 
-function bucketOf(diagram: BpmnDiagram, kind: EventDefinitionRefKind): ErrorEventDefinition[] {
-  return [...((diagram.definitions ?? emptyEventDefinitions())[EVENT_DEFINITION_BUCKETS[kind]])];
+function bucketOf(diagram: BpmnDiagram, kind: EventDefinitionRefKind): EditableDefinition[] {
+  return [...eventDefinitionsOf(diagram)[EVENT_DEFINITION_BUCKETS[kind]]];
 }
 
 function replaceBucket(
   diagram: BpmnDiagram,
   kind: EventDefinitionRefKind,
-  list: ErrorEventDefinition[],
+  list: EditableDefinition[],
 ): BpmnDiagram {
   return withDefinitions(diagram, {
     ...(diagram.definitions ?? emptyEventDefinitions()),
@@ -538,7 +546,7 @@ function replaceBucket(
 /** Adds a named definition (the «+» flow builds the auto id via `nextEventDefinitionId`). */
 export function addEventDefinitionCommand(
   kind: EventDefinitionRefKind,
-  definition: ErrorEventDefinition,
+  definition: EditableDefinition,
 ): Command {
   let hadDefinitions = true;
   return {
@@ -571,13 +579,13 @@ export function addEventDefinitionCommand(
   };
 }
 
-/** Rename / errorCode patch — nodes reference by ID, so nothing else moves. */
+/** Rename / errorCode / escalationCode patch — nodes reference by ID, so nothing else moves. */
 export function updateEventDefinitionCommand(
   kind: EventDefinitionRefKind,
   definitionId: string,
-  patch: { name?: string; errorCode?: string },
+  patch: { name?: string; errorCode?: string; escalationCode?: string },
 ): Command {
-  let previous: ErrorEventDefinition | undefined;
+  let previous: EditableDefinition | undefined;
   return {
     id: generateId(),
     description: `Update ${kind} definition`,
@@ -590,6 +598,7 @@ export function updateEventDefinitionCommand(
         ...previous,
         ...(patch.name !== undefined ? { name: patch.name } : {}),
         ...(patch.errorCode !== undefined ? { errorCode: patch.errorCode } : {}),
+        ...(patch.escalationCode !== undefined ? { escalationCode: patch.escalationCode } : {}),
       };
       return replaceBucket(diagram, kind, list);
     },
@@ -625,7 +634,7 @@ export function removeEventDefinitionCommand(
   kind: EventDefinitionRefKind,
   definitionId: string,
 ): EventDefinitionRemovalCommand {
-  let removed: ErrorEventDefinition | undefined;
+  let removed: EditableDefinition | undefined;
   return {
     id: generateId(),
     description: `Remove ${kind} definition`,

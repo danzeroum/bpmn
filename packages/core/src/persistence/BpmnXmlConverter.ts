@@ -152,6 +152,15 @@ export class BpmnXmlConverter {
           errorCode: error.errorCode,
         });
       }
+      // Handoff 18 §5a: escalation roots follow the same OMG mould, emitted
+      // after error (XSD rootElement group), escalationCode omitted when absent.
+      for (const escalation of diagram.definitions.escalations ?? []) {
+        xml.element('bpmn:escalation', {
+          id: escalation.id,
+          name: escalation.name || undefined,
+          escalationCode: escalation.escalationCode,
+        });
+      }
     }
 
     // Pools become participants inside a collaboration referencing the process.
@@ -251,17 +260,25 @@ export class BpmnXmlConverter {
     };
 
     // Named event definitions (§3a): OMG root elements → diagram.definitions.
-    const readDefinitions = (tag: string, withCode: boolean) =>
+    // `codeAttr` names the per-type code attribute (error → errorCode,
+    // escalation → escalationCode, Handoff 18 §5a); message/signal have none.
+    const readDefinitions = (tag: string, codeAttr?: 'errorCode' | 'escalationCode') =>
       childrenByLocalName(root, tag).map((el) => ({
         id: el.attributes.id ?? generateId(),
         name: el.attributes.name ?? el.attributes.id ?? '',
-        ...(withCode && el.attributes.errorCode ? { errorCode: el.attributes.errorCode } : {}),
+        ...(codeAttr && el.attributes[codeAttr] ? { [codeAttr]: el.attributes[codeAttr] } : {}),
       }));
-    const messages = readDefinitions('message', false);
-    const signals = readDefinitions('signal', false);
-    const errors = readDefinitions('error', true);
-    if (messages.length > 0 || signals.length > 0 || errors.length > 0) {
-      diagram.definitions = { messages, signals, errors };
+    const messages = readDefinitions('message');
+    const signals = readDefinitions('signal');
+    const errors = readDefinitions('error', 'errorCode');
+    const escalations = readDefinitions('escalation', 'escalationCode');
+    if (
+      messages.length > 0 ||
+      signals.length > 0 ||
+      errors.length > 0 ||
+      escalations.length > 0
+    ) {
+      diagram.definitions = { messages, signals, errors, escalations };
     }
 
     // Pools and message flows live in a <collaboration> at the root.
@@ -306,10 +323,18 @@ export class BpmnXmlConverter {
       const kind = node.properties.eventDefinition;
       const ref = node.properties.eventDefinitionRef;
       if (typeof ref !== 'string' || ref === '') continue;
-      if (kind !== 'message' && kind !== 'signal' && kind !== 'error') continue;
-      const bucketKey = kind === 'message' ? 'messages' : kind === 'signal' ? 'signals' : 'errors';
-      diagram.definitions ??= { messages: [], signals: [], errors: [] };
-      const bucket = diagram.definitions[bucketKey];
+      if (kind !== 'message' && kind !== 'signal' && kind !== 'error' && kind !== 'escalation')
+        continue;
+      const bucketKey =
+        kind === 'message'
+          ? 'messages'
+          : kind === 'signal'
+            ? 'signals'
+            : kind === 'error'
+              ? 'errors'
+              : 'escalations';
+      diagram.definitions ??= { messages: [], signals: [], errors: [], escalations: [] };
+      const bucket = (diagram.definitions[bucketKey] ??= []);
       if (bucket.some((definition) => definition.id === ref)) continue;
       bucket.push({ id: ref, name: ref });
       warnings.push(
