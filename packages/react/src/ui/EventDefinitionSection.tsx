@@ -18,7 +18,15 @@ import {
 } from '@buildtovalue/core';
 import { useCanvasStore } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
+import { useEditorConfig } from '../contexts/EditorConfigContext.js';
 import { panViewportTo, reducedMotion } from '../canvas/viewport.js';
+import {
+  bindingStateOf,
+  buildBindCommand,
+  buildUnbindCommand,
+  eventBindingOf,
+  isMirrorDefinition,
+} from '../canvas/eventBinding.js';
 import { useT } from '../i18n/I18nContext.js';
 
 /**
@@ -43,13 +51,19 @@ export function eventKindOf(node: BpmnNode): EventDefinitionRefKind | null {
   return typeof kind === 'string' && REF_KINDS.has(kind) ? (kind as EventDefinitionRefKind) : null;
 }
 
+/** Picker option value of a governed catalog entry (`bind:` scheme). */
+const BIND_PREFIX = 'bind:';
+
 export function EventDefinitionSection({ node, readOnly }: { node: BpmnNode; readOnly: boolean }) {
   const { diagram, execute } = useDiagram();
   const store = useCanvasStore();
+  const config = useEditorConfig();
   const t = useT();
   const panRaf = useRef<number | null>(null);
   const kind = eventKindOf(node);
   const ref = eventDefinitionRefOf(node);
+  const resolver = config.eventDefinitionResolver;
+  const binding = eventBindingOf(node);
   // The MANAGED definition survives unlinking: picking "" clears the node's
   // ref but keeps the definition block visible, so the Axelor flow "trocar
   // ref → excluir" is reachable — the delete veto stays honest (any active
@@ -70,8 +84,31 @@ export function EventDefinitionSection({ node, readOnly }: { node: BpmnNode; rea
 
   const list = eventDefinitionList(diagram, kind);
   const usages = definition ? eventDefinitionUsages(diagram, kind, definition.id) : [];
+  // §3b — governed refs: catalog entries from the INJECTED resolver (react
+  // never consults a registry), the pinned binding's resolution state for the
+  // seal, and the reforço-10 read-only mirror flag.
+  const catalog = resolver ? resolver.list(kind) : [];
+  const bindingState = binding && resolver ? bindingStateOf(resolver, binding, kind) : null;
+  const mirror = definition ? isMirrorDefinition(definition.id) : false;
+  const fieldsLocked = readOnly || mirror;
 
+  // Picker dispatch: `bind:{nome@semver}` values bind through the Biblioteca
+  // (ONE composite: mirror upsert + ref + pin); leaving a binding for a local
+  // definition (or none) unbinds in ONE composite that garbage-collects the
+  // orphaned mirror.
   const setRef = (value: string) => {
+    if (value.startsWith(BIND_PREFIX)) {
+      const target = value.slice(BIND_PREFIX.length);
+      if (target === binding || !resolver) return;
+      const resolved = resolver.resolve(target, kind);
+      if (!resolved) return;
+      void execute(buildBindCommand(diagram, node, kind, target, resolved, t('eventDefs.compose.bind')));
+      return;
+    }
+    if (binding) {
+      void execute(buildUnbindCommand(diagram, node, kind, t('eventDefs.compose.unbind'), value));
+      return;
+    }
     void execute(
       updateNodeCommand(node.id, { properties: { eventDefinitionRef: value || undefined } }),
     );
@@ -116,20 +153,56 @@ export function EventDefinitionSection({ node, readOnly }: { node: BpmnNode; rea
       <label className="bpmnr-eventdefs-picker">
         <span>{t('eventDefs.picker.label')}</span>
         <select
-          value={ref ?? ''}
+          value={binding ? `${BIND_PREFIX}${binding}` : (ref ?? '')}
           disabled={readOnly}
           aria-label={t('eventDefs.picker.label')}
           data-testid="eventdefs-picker"
           onChange={(event) => setRef(event.target.value)}
         >
           <option value="">{t('eventDefs.picker.none')}</option>
-          {list.map((entry) => (
-            <option key={entry.id} value={entry.id}>
-              {entry.name} ({entry.id})
-            </option>
-          ))}
+          <optgroup label={t('eventDefs.local.group')}>
+            {/* Mirrors are Biblioteca-managed: they never appear as free local
+                choices (that would break the pin), except to keep an imported
+                un-pinned ref visible instead of a blank select. */}
+            {list
+              .filter((entry) => !isMirrorDefinition(entry.id) || (!binding && entry.id === ref))
+              .map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.name} ({entry.id})
+                </option>
+              ))}
+          </optgroup>
+          {catalog.length > 0 && (
+            <optgroup label={t('eventDefs.library.group')}>
+              {catalog.map((entry) => {
+                const value = `${entry.name}@${entry.semanticVersion}`;
+                return (
+                  <option key={value} value={`${BIND_PREFIX}${value}`}>
+                    {value}
+                  </option>
+                );
+              })}
+            </optgroup>
+          )}
         </select>
       </label>
+      {binding && bindingState && (
+        <span
+          className="bpmnr-eventdefs-seal"
+          data-testid="eventdefs-seal"
+          data-binding-state={bindingState.state}
+        >
+          {/* i18n-exempt — state glyphs; the text is the translation */}
+          {bindingState.state === 'active' && `✓ ${t('eventDefs.binding.active')}`}
+          {bindingState.state === 'stale' && `⚠ ${t('eventDefs.binding.stale')}`}
+          {bindingState.state === 'missing' && `✕ ${t('eventDefs.binding.missing')}`}
+        </span>
+      )}
+      {binding && !resolver && (
+        <p className="bpmnr-eventdefs-degraded" data-testid="eventdefs-degraded">
+          {t('eventDefs.binding.degraded')} <code>{binding}</code>
+        </p>
+      )}
       {!readOnly && (
         <button
           type="button"
@@ -143,17 +216,25 @@ export function EventDefinitionSection({ node, readOnly }: { node: BpmnNode; rea
       )}
       {definition && (
         <>
+          {/* E-3 reforço 10 — the gov-* mirror is Biblioteca-managed: rename
+              and errorCode are LOCKED here; editing happens by promoting a new
+              artifact version and explicitly re-binding (audited). */}
+          {mirror && (
+            <p className="bpmnr-eventdefs-mirror-notice" data-testid="eventdefs-mirror-notice">
+              {t('eventDefs.mirror.notice')}
+            </p>
+          )}
           <label className="bpmnr-eventdefs-field">
             <span>{t('eventDefs.name.label')}</span>
             <input
               type="text"
               value={name}
-              disabled={readOnly}
+              disabled={fieldsLocked}
               aria-label={t('eventDefs.name.label')}
               data-testid="eventdefs-name"
               onChange={(event) => setName(event.target.value)}
               onBlur={() => {
-                if (name !== definition.name && kind) {
+                if (!mirror && name !== definition.name && kind) {
                   void execute(updateEventDefinitionCommand(kind, definition.id, { name }));
                 }
               }}
@@ -169,12 +250,12 @@ export function EventDefinitionSection({ node, readOnly }: { node: BpmnNode; rea
               <input
                 type="text"
                 value={errorCode}
-                disabled={readOnly}
+                disabled={fieldsLocked}
                 aria-label={t('eventDefs.errorCode.label')}
                 data-testid="eventdefs-errorcode"
                 onChange={(event) => setErrorCode(event.target.value)}
                 onBlur={() => {
-                  if (errorCode !== codeOf(definition) && kind) {
+                  if (!mirror && errorCode !== codeOf(definition) && kind) {
                     void execute(updateEventDefinitionCommand(kind, definition.id, { errorCode }));
                   }
                 }}

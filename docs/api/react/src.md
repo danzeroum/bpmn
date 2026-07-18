@@ -2223,6 +2223,7 @@ single console warning per session.
 `T` *extends* 
   \| `"command.undone"`
   \| `"review.changes.requested"`
+  \| `"command.executed"`
   \| `"import.warning"`
   \| `"diagram.loaded"`
   \| `"element.added"`
@@ -2230,7 +2231,6 @@ single console warning per session.
   \| `"element.removed"`
   \| `"edge.connected"`
   \| `"selection.changed"`
-  \| `"command.executed"`
   \| `"validation.changed"`
   \| `"promotion.completed"`
   \| `"render.slow"`
@@ -2267,6 +2267,14 @@ engine: EngineBridge | null;
 ```
 
 Execution-engine bridge (Handoff 14 §1f); null → no "Execução" tab.
+
+##### eventDefinitionResolver
+
+```ts
+eventDefinitionResolver: EventDefinitionResolver | null;
+```
+
+Governed event-definition resolver (Handoff 16 §3b); null → declared degradation.
 
 ***
 
@@ -3414,6 +3422,168 @@ Execution-engine bridge (Handoff 14 §1f): registering one turns on the
 "Execução" tab of the properties panel for executable activities. First
 plugin providing one wins (same rule as `lifecycleConfig`). Actual
 deployment stays HOST-owned and GATED — see [EngineBridge](#enginebridge).
+
+##### eventDefinitionResolver?
+
+```ts
+optional eventDefinitionResolver?: EventDefinitionResolver;
+```
+
+Governed event-definition resolution (Handoff 16 §3b): registering one
+turns on the "Da Biblioteca" section of the event picker and the
+vigência chip/seal on the canvas. First plugin providing one wins. The
+editor NEVER consults a registry — resolution is host-owned; without a
+resolver the degradation is declared (binding renders as text + notice).
+
+***
+
+### EventDefinitionCatalogEntry
+
+One catalog entry the picker's Biblioteca section lists.
+
+#### Extended by
+
+- [`ResolvedEventDefinition`](#resolvedeventdefinition)
+
+#### Properties
+
+##### name
+
+```ts
+name: string;
+```
+
+Artifact name — the `nome` half of `nome@semver`.
+
+##### semanticVersion
+
+```ts
+semanticVersion: string;
+```
+
+##### status
+
+```ts
+status: string;
+```
+
+Lifecycle status of that version ('active' = VIGENTE seal).
+
+***
+
+### ResolvedEventDefinition
+
+A governed ref resolved to its definition payload.
+
+#### Extends
+
+- [`EventDefinitionCatalogEntry`](#eventdefinitioncatalogentry)
+
+#### Properties
+
+##### name
+
+```ts
+name: string;
+```
+
+Artifact name — the `nome` half of `nome@semver`.
+
+###### Inherited from
+
+[`EventDefinitionCatalogEntry`](#eventdefinitioncatalogentry).[`name`](#name-1)
+
+##### semanticVersion
+
+```ts
+semanticVersion: string;
+```
+
+###### Inherited from
+
+[`EventDefinitionCatalogEntry`](#eventdefinitioncatalogentry).[`semanticVersion`](#semanticversion)
+
+##### status
+
+```ts
+status: string;
+```
+
+Lifecycle status of that version ('active' = VIGENTE seal).
+
+###### Inherited from
+
+[`EventDefinitionCatalogEntry`](#eventdefinitioncatalogentry).[`status`](#status)
+
+##### definition
+
+```ts
+definition: object;
+```
+
+###### name
+
+```ts
+name: string;
+```
+
+###### errorCode?
+
+```ts
+optional errorCode?: string;
+```
+
+***
+
+### EventDefinitionResolver
+
+Host-injected resolver of governed event-definition refs (§3b — the
+resolveCallActivities/EngineBridge mold): SYNCHRONOUS, the host preloads.
+`ref` is the canonical `nome@semver` string. The BINDING PINS the exact
+version: a newer artifact version never moves an existing binding — only
+an explicit ref change does (audited by the host's ledger glue).
+
+#### Methods
+
+##### list()
+
+```ts
+list(kind): EventDefinitionCatalogEntry[];
+```
+
+Entries offered in the picker's "Da Biblioteca" section, per kind.
+
+###### Parameters
+
+###### kind
+
+`"error"` \| `"message"` \| `"signal"`
+
+###### Returns
+
+[`EventDefinitionCatalogEntry`](#eventdefinitioncatalogentry)[]
+
+##### resolve()
+
+```ts
+resolve(ref, kind): ResolvedEventDefinition | undefined;
+```
+
+Resolve a pinned `nome@semver` ref; undefined → SIG_REF_MISSING.
+
+###### Parameters
+
+###### ref
+
+`string`
+
+###### kind
+
+`"error"` \| `"message"` \| `"signal"`
+
+###### Returns
+
+[`ResolvedEventDefinition`](#resolvedeventdefinition) \| `undefined`
 
 ***
 
@@ -6870,6 +7040,14 @@ Named router: 'astar' | 'orthogonal' | 'bezier' | 'straight'. Default 'astar'.
 
 ## Type Aliases
 
+### BindingState
+
+```ts
+type BindingState = "active" | "stale" | "missing";
+```
+
+***
+
 ### RouteMode
 
 ```ts
@@ -7188,6 +7366,30 @@ const SETTLE_MS: 160 = 160;
 ```
 
 Crossfade duration for the settle preview (Handoff 10 R-2b).
+
+***
+
+### SIG\_REF\_MISSING
+
+```ts
+const SIG_REF_MISSING: "SIG_REF_MISSING" = 'SIG_REF_MISSING';
+```
+
+Governed event-definition bindings (Handoff 16 §3b). The binding is the
+PINNED `nome@semver` string stored in `properties.eventDefinitionBinding` —
+which serializes as a `bpmnr:property` (never `camunda:modelRefCode`) and
+round-trips byte-stable by construction. Binding keeps a LOCAL MIRROR
+definition (`gov-{nome}`) so the OMG export stays valid (`messageRef`
+present); the mirror is read-only in the UI (E-3 reforço 10) and counts as
+a normal usage for the deletion veto (E-0/E-3 ponto 6).
+
+***
+
+### SIG\_REF\_STALE
+
+```ts
+const SIG_REF_STALE: "SIG_REF_STALE" = 'SIG_REF_STALE';
+```
 
 ***
 
@@ -8094,6 +8296,225 @@ Computes the layout PROPOSAL; null when out of scope or a no-op.
 
 ***
 
+### eventBindingOf()
+
+```ts
+function eventBindingOf(node): string | undefined;
+```
+
+The pinned `nome@semver` binding of an event node, when present.
+
+#### Parameters
+
+##### node
+
+`BpmnNode`
+
+#### Returns
+
+`string` \| `undefined`
+
+***
+
+### mirrorIdOf()
+
+```ts
+function mirrorIdOf(binding): string;
+```
+
+Stable mirror-definition id of a binding (`gov-{nome}`).
+
+#### Parameters
+
+##### binding
+
+`string`
+
+#### Returns
+
+`string`
+
+***
+
+### isMirrorDefinition()
+
+```ts
+function isMirrorDefinition(definitionId): boolean;
+```
+
+True when the definition is a Biblioteca mirror (read-only in the UI).
+
+#### Parameters
+
+##### definitionId
+
+`string`
+
+#### Returns
+
+`boolean`
+
+***
+
+### bindingStateOf()
+
+```ts
+function bindingStateOf(
+   resolver, 
+   binding, 
+   kind): object;
+```
+
+Resolution state of a binding: vigente / candidata (warning) / não resolvida (erro).
+
+#### Parameters
+
+##### resolver
+
+[`EventDefinitionResolver`](#eventdefinitionresolver-2)
+
+##### binding
+
+`string`
+
+##### kind
+
+`"error"` \| `"message"` \| `"signal"`
+
+#### Returns
+
+`object`
+
+##### state
+
+```ts
+state: BindingState;
+```
+
+##### resolved?
+
+```ts
+optional resolved?: ResolvedEventDefinition;
+```
+
+***
+
+### buildBindCommand()
+
+```ts
+function buildBindCommand(
+   diagram, 
+   node, 
+   kind, 
+   binding, 
+   resolved, 
+   description): Command;
+```
+
+ONE composite (1 undo): upsert the local mirror from the resolved artifact,
+point the node's `eventDefinitionRef` at it and pin the binding.
+
+#### Parameters
+
+##### diagram
+
+`BpmnDiagram`
+
+##### node
+
+`BpmnNode`
+
+##### kind
+
+`"error"` \| `"message"` \| `"signal"`
+
+##### binding
+
+`string`
+
+##### resolved
+
+[`ResolvedEventDefinition`](#resolvedeventdefinition)
+
+##### description
+
+`string`
+
+#### Returns
+
+`Command`
+
+***
+
+### buildUnbindCommand()
+
+```ts
+function buildUnbindCommand(
+   diagram, 
+   node, 
+   kind, 
+   description, 
+   nextRef?): Command;
+```
+
+ONE composite (1 undo): clear the binding (+ ref) and garbage-collect the
+mirror when this node was its LAST usage — intentional composite: the
+unlink inside the same atomic step is what makes the removal safe, so the
+marker-based veto (which sees only top-level commands) is deliberately
+bypassed here and only here.
+
+#### Parameters
+
+##### diagram
+
+`BpmnDiagram`
+
+##### node
+
+`BpmnNode`
+
+##### kind
+
+`"error"` \| `"message"` \| `"signal"`
+
+##### description
+
+`string`
+
+##### nextRef?
+
+`string`
+
+#### Returns
+
+`Command`
+
+***
+
+### eventBindingRule()
+
+```ts
+function eventBindingRule(resolver): ValidationRule;
+```
+
+Validation rule factory (§3b — the callActivityBindingRule mold): the host
+wires it as a plugin `validationRules` entry with the SAME resolver it
+injects. Unresolvable binding → ERROR `SIG_REF_MISSING`; resolvable but not
+VIGENTE → WARNING `SIG_REF_STALE`. Badges paint through the existing
+issueBadges overlay — glyph+text, never color alone.
+
+#### Parameters
+
+##### resolver
+
+[`EventDefinitionResolver`](#eventdefinitionresolver-2)
+
+#### Returns
+
+`ValidationRule`
+
+***
+
 ### ConnectionPreview()
 
 ```ts
@@ -8198,6 +8619,24 @@ the Aplicar/Recusar card is open, every node the layout wants to move shows
 a dashed outline at its PROPOSED position — the "DEPOIS" preview. Nothing
 on the real diagram moves until the user applies. Stripped from exports
 (TRANSIENT_SELECTORS).
+
+#### Returns
+
+`Element` \| `null`
+
+***
+
+### EventBindingOverlay()
+
+```ts
+function EventBindingOverlay(): Element | null;
+```
+
+Governed-binding chip (Handoff 16 §3b): every event carrying a pinned
+`nome@semver` binding shows a mono chip below the node — the binding text
+plus a GLYPH+TEXT state seal (✓ VIGENTE / ⚠ CANDIDATA / ✕ NÃO RESOLVIDA),
+never color alone. Without a resolver the chip renders the binding text
+with the declared-degradation notice glyph (~). Transient: never exported.
 
 #### Returns
 

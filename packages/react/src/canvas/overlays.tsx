@@ -1,5 +1,7 @@
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
+import { useEditorConfig } from '../contexts/EditorConfigContext.js';
+import { useT } from '../i18n/I18nContext.js';
 import { theme } from '../shapes/common.js';
 
 /** Dashed preview line while a connection gesture is in progress. */
@@ -235,6 +237,66 @@ export function LayoutPreviewOverlay() {
           />
         </g>
       ))}
+    </g>
+  );
+}
+
+/**
+ * Governed-binding chip (Handoff 16 §3b): every event carrying a pinned
+ * `nome@semver` binding shows a mono chip below the node — the binding text
+ * plus a GLYPH+TEXT state seal (✓ VIGENTE / ⚠ CANDIDATA / ✕ NÃO RESOLVIDA),
+ * never color alone. Without a resolver the chip renders the binding text
+ * with the declared-degradation notice glyph (~). Transient: never exported.
+ */
+export function EventBindingOverlay() {
+  const { diagram } = useDiagram();
+  const config = useEditorConfig();
+  const t = useT();
+  const resolver = config.eventDefinitionResolver;
+  const chips = Object.values(diagram.nodes).filter(
+    (node) => !node.removedInVersion && typeof node.properties.eventDefinitionBinding === 'string',
+  );
+  if (chips.length === 0) return null;
+  return (
+    <g data-event-bindings>
+      {chips.map((node) => {
+        const binding = node.properties.eventDefinitionBinding as string;
+        const kind = node.properties.eventDefinition;
+        const refKind =
+          kind === 'message' || kind === 'signal' || kind === 'error' ? kind : null;
+        let seal = `~ ${t('eventDefs.binding.unresolved')}`;
+        let state = 'degraded';
+        if (resolver && refKind) {
+          const resolved = resolver.resolve(binding, refKind);
+          if (!resolved) {
+            seal = `✕ ${t('eventDefs.binding.missing')}`;
+            state = 'missing';
+          } else if (resolved.status === 'active') {
+            seal = `✓ ${t('eventDefs.binding.active')}`;
+            state = 'active';
+          } else {
+            seal = `⚠ ${t('eventDefs.binding.stale')}`;
+            state = 'stale';
+          }
+        }
+        const cx = node.x + node.width / 2;
+        const top = node.y + node.height + 12;
+        return (
+          <g
+            key={node.id}
+            className="bpmnr-event-binding"
+            data-event-binding={node.id}
+            data-binding-state={state}
+          >
+            <text x={cx} y={top} textAnchor="middle" className="bpmnr-event-binding-ref">
+              {binding}
+            </text>
+            <text x={cx} y={top + 11} textAnchor="middle" className="bpmnr-event-binding-seal">
+              {seal}
+            </text>
+          </g>
+        );
+      })}
     </g>
   );
 }

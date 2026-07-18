@@ -390,6 +390,60 @@ optional now?: () => string;
 
 ***
 
+### GovernedEventDefinitionRecord
+
+One governed definition version as the host's catalog records it.
+
+#### Properties
+
+##### kind
+
+```ts
+kind: "error" | "message" | "signal";
+```
+
+##### name
+
+```ts
+name: string;
+```
+
+Artifact name — the `nome` half of the pinned `nome@semver` binding.
+
+##### semanticVersion
+
+```ts
+semanticVersion: string;
+```
+
+##### status
+
+```ts
+status: "draft" | "test" | "candidate" | "active" | "deprecated" | "retired";
+```
+
+##### definition
+
+```ts
+definition: object;
+```
+
+The payload mirrored into diagrams on bind.
+
+###### name
+
+```ts
+name: string;
+```
+
+###### errorCode?
+
+```ts
+optional errorCode?: string;
+```
+
+***
+
 ### RecipeAdapter
 
 #### Extends
@@ -1169,6 +1223,16 @@ const BTV_ARTIFACT_KINDS: readonly BtvArtifactKind[];
 
 ***
 
+### EVENT\_BINDING\_CHANGED\_TYPE
+
+```ts
+const EVENT_BINDING_CHANGED_TYPE: "EVENT_BINDING_CHANGED" = 'EVENT_BINDING_CHANGED';
+```
+
+An explicit change of a governed event-definition binding on the chain.
+
+***
+
 ### REPLAY\_ANALYSIS\_TYPE
 
 ```ts
@@ -1555,6 +1619,74 @@ function dmnDecisionAdapter(registry, options?): RegistryArtifactAdapter;
 #### Returns
 
 [`RegistryArtifactAdapter`](#registryartifactadapter)
+
+***
+
+### eventBindingChangedEntry()
+
+```ts
+function eventBindingChangedEntry(input): AuditEntryInput;
+```
+
+Maps a binding change (bind, re-bind or unbind) to a ledger append input.
+`from`/`to` are pinned `nome@semver` strings — absent `from` means a first
+bind, absent `to` means an unbind. `details.artifactId` mirrors the event
+node so the Ledger Explorer's per-artifact filter works.
+
+#### Parameters
+
+##### input
+
+###### diagramId
+
+`string`
+
+###### versionId
+
+`string`
+
+###### nodeId
+
+`string`
+
+###### actor
+
+`Pick`\<`UserContext`, `"id"`\>
+
+###### from?
+
+`string`
+
+###### to?
+
+`string`
+
+#### Returns
+
+`AuditEntryInput`
+
+***
+
+### eventDefinitionCatalogAdapter()
+
+```ts
+function eventDefinitionCatalogAdapter(records): ArtifactAdapter;
+```
+
+Read-only catalog adapter: one card per definition NAME, its version
+timeline in the drawer. `artifactId` is the name; the editor's picker lists
+the same records through the injected `EventDefinitionResolver` — one
+catalog, never a parallel truth.
+
+#### Parameters
+
+##### records
+
+readonly [`GovernedEventDefinitionRecord`](#governedeventdefinitionrecord)[]
+
+#### Returns
+
+`ArtifactAdapter`
 
 ***
 

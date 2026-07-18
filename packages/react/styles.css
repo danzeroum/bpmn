@@ -4316,3 +4316,58 @@
     min-height: 44px;
   }
 }
+
+/* --- Governed event-definition bindings (Handoff 16 E-3, §3b). --- */
+.bpmnr-eventdefs-seal {
+  align-self: flex-start;
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  border-radius: 999px;
+  color: var(--bpmnr-text-muted, #6f675a);
+}
+.bpmnr-eventdefs-seal[data-binding-state='active'] {
+  border-color: var(--bpmnr-status-active-fg, #2e6b3f);
+  color: var(--bpmnr-status-active-fg, #2e6b3f);
+}
+.bpmnr-eventdefs-seal[data-binding-state='stale'] {
+  border-color: var(--bpmnr-warning-fg, #8a6d1a);
+  color: var(--bpmnr-warning-fg, #8a6d1a);
+}
+.bpmnr-eventdefs-seal[data-binding-state='missing'] {
+  border-color: var(--bpmnr-status-deprecated-fg, #b3372f);
+  color: var(--bpmnr-status-deprecated-fg, #b3372f);
+}
+.bpmnr-eventdefs-degraded,
+.bpmnr-eventdefs-mirror-notice {
+  margin: 0;
+  font-size: 11px;
+  color: var(--bpmnr-text-muted, #6f675a);
+}
+.bpmnr-eventdefs-degraded code {
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+  font-size: 11px;
+}
+/* Canvas chip under bound events: pinned ref + glyph+text seal (transient —
+   excluded from SVG/PNG exports via [data-event-bindings]). */
+.bpmnr-event-binding text {
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  fill: var(--bpmnr-text-muted, #6f675a);
+}
+.bpmnr-event-binding[data-binding-state='stale'] text.bpmnr-event-binding-seal {
+  fill: var(--bpmnr-warning-fg, #8a6d1a);
+}
+.bpmnr-event-binding[data-binding-state='missing'] text.bpmnr-event-binding-seal {
+  fill: var(--bpmnr-status-deprecated-fg, #b3372f);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-bpmnr-theme]) .bpmnr-eventdefs-seal {
+    border-color: #44403a;
+  }
+}
+[data-bpmnr-theme='dark'] .bpmnr-eventdefs-seal {
+  border-color: #44403a;
+}

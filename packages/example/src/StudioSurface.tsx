@@ -17,12 +17,14 @@ import {
   copilotPromptAdapter,
   createRecipeAdapter,
   dmnDecisionAdapter,
+  eventDefinitionCatalogAdapter,
   latestReplayAnalysis,
   personaAdapter,
   policyAdapter,
   promptAdapter,
   replayAnalysisEntry,
 } from '@buildtovalue/adapters-bpmn';
+import { DEMO_EVENT_CATALOG } from './eventLibrary.js';
 import type { ArtifactAction, ArtifactAdapter, ArtifactRef, LibraryQuery, LifecycleStatus, LibrarySort } from '@buildtovalue/library';
 import type { Signer } from '@buildtovalue/identity';
 import { createGitAnchor, type GitAnchorTransport } from '@buildtovalue/anchor-git';
@@ -256,6 +258,9 @@ async function buildWorld(): Promise<StudioWorld> {
       // Handoff 9 CP-5 (§1.5 dogfooding): the copilot's own prompt templates
       // as "mais um adapter" — type PROMPT DO COPILOTO, shipped version active.
       copilotPromptAdapter(),
+      // Handoff 16 E-3 (§3b): governed event definitions — the SAME catalog
+      // the editor's resolver reads; read-only, pin semantics in the drawer.
+      eventDefinitionCatalogAdapter(DEMO_EVENT_CATALOG),
     ],
     candidates: [candidate],
     baseline,

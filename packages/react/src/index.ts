@@ -30,6 +30,8 @@ export * from './canvas/EdgeRenderer.js';
 export * from './canvas/SettlingOverlay.js';
 export * from './canvas/Defs.js';
 export * from './canvas/overlays.js';
+// Handoff 16 E-3 (§3b) — governed event-definition bindings (nome@semver).
+export * from './canvas/eventBinding.js';
 export * from './canvas/viewport.js';
 export * from './canvas/useInteractions.js';
 export * from './canvas/routers.js';

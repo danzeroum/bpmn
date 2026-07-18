@@ -62,6 +62,17 @@ const EXPECTED_EXPORTS = [
   // Handoff 16 E-2 (§3a) — named-definition section of the properties panel.
   'EventDefinitionSection',
   'eventKindOf',
+  // Handoff 16 E-3 (§3b) — governed nome@semver bindings via the Biblioteca.
+  'EventBindingOverlay',
+  'SIG_REF_MISSING',
+  'SIG_REF_STALE',
+  'bindingStateOf',
+  'buildBindCommand',
+  'buildUnbindCommand',
+  'eventBindingOf',
+  'eventBindingRule',
+  'isMirrorDefinition',
+  'mirrorIdOf',
   'EditorConfigProvider',
   'EndEventShape',
   'ComplexGatewayShape',

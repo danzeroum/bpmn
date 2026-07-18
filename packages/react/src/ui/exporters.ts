@@ -34,6 +34,7 @@ const TRANSIENT_SELECTORS = [
   '.bpmnr-cmdk',
   '.bpmnr-cheatsheet',
   '[data-bpmnr-empty-state]',
+  '[data-event-bindings]',
 ];
 
 /** Transient state ATTRIBUTES on otherwise-permanent elements (e.g. the node
