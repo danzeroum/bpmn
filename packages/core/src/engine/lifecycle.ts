@@ -93,6 +93,11 @@ export async function computeDiagramHash(diagram: BpmnDiagram): Promise<string> 
       nodes: strippedNodes,
       edges: strippedEdges,
       metadata: diagram.metadata,
+      // Passthrough fields are content: preserved foreign extensions join the
+      // hash. Absent (undefined) keys serialize to nothing, so every
+      // pre-passthrough hash is byte-for-byte unchanged.
+      processForeignExtensions: diagram.processForeignExtensions,
+      foreignNamespaces: diagram.foreignNamespaces,
     }),
   );
 }

@@ -61,4 +61,30 @@ describe.skipIf(files.length === 0)('external interoperability corpus (real file
       expect(normalizeForDiff(second.diagram)).toEqual(normalizeForDiff(first.diagram));
     });
   }
+
+  // Passthrough (PR dedicada): em TODO arquivo real que carrega extensão
+  // estrangeira preservada no modelo, o re-export contém cada elemento (tag)
+  // e cada atributo prefixado — e pelo menos UM arquivo do corpus exercita o
+  // caminho (ex.: <qa:analysisDetails> do custom-elements do bpmn-js,
+  // camunda:asyncBefore dos quick-starts).
+  it('preserva as extensões estrangeiras dos arquivos reais no re-export', () => {
+    let exercised = 0;
+    for (const name of files) {
+      const xml = readFileSync(join(CORPUS_DIR, name), 'utf8');
+      const { diagram } = converter().fromXml(xml);
+      const foreignTags = new Set<string>();
+      const foreignAttrs = new Set<string>();
+      for (const el of [...Object.values(diagram.nodes), ...Object.values(diagram.edges)]) {
+        for (const subtree of el.foreignExtensions ?? []) foreignTags.add(subtree.tag);
+        for (const attr of Object.keys(el.foreignAttributes ?? {})) foreignAttrs.add(attr);
+      }
+      for (const subtree of diagram.processForeignExtensions ?? []) foreignTags.add(subtree.tag);
+      if (foreignTags.size === 0 && foreignAttrs.size === 0) continue;
+      exercised++;
+      const reExport = converter().toXml(diagram);
+      for (const tag of foreignTags) expect(reExport, `${name}: <${tag}>`).toContain(`<${tag}`);
+      for (const attr of foreignAttrs) expect(reExport, `${name}: ${attr}`).toContain(`${attr}="`);
+    }
+    expect(exercised).toBeGreaterThanOrEqual(1);
+  });
 });

@@ -53,6 +53,22 @@ export interface AuditTrail {
   history: AuditEventRecord[];
 }
 
+/**
+ * A JSON-serializable XML subtree — the storage shape of FOREIGN extension
+ * elements (`zeebe:*`, `camunda:*`, …) preserved through the round-trip
+ * (passthrough PR). Mirrors the parser's element shape so re-emission is a
+ * pure tree walk. Contract (format-spec §passthrough): text is
+ * whitespace-trimmed at import and CDATA is re-emitted as escaped text —
+ * semantically lossless, byte-stable between OUR exports.
+ */
+export interface XmlSubtree {
+  /** Prefixed tag exactly as parsed, e.g. "zeebe:taskDefinition". */
+  tag: string;
+  attributes: Record<string, string>;
+  children: XmlSubtree[];
+  text: string;
+}
+
 export interface BpmnNode {
   id: string;
   /** Node type key, resolved against the {@link NodeTypeRegistry}. */
@@ -64,6 +80,13 @@ export interface BpmnNode {
   height: number;
   /** Free-form, domain-extensible properties (exported via extensionElements). */
   properties: Record<string, unknown>;
+  /**
+   * Foreign `extensionElements` children (non-`bpmnr` namespaces) preserved
+   * verbatim in original order — never interpreted, always re-exported.
+   */
+  foreignExtensions?: XmlSubtree[];
+  /** Foreign-prefixed attributes of the source element (e.g. `zeebe:modelerTemplate`). */
+  foreignAttributes?: Record<string, string>;
   /** Version id in which this node was created. Immutable. */
   createdInVersion: string;
   /** Version id in which this node was closed. Present ⇒ node is retired from the flow. */
@@ -83,6 +106,10 @@ export interface BpmnEdge {
   /** Optional fixed routing points (world coordinates). */
   waypoints?: Point[];
   properties: Record<string, unknown>;
+  /** Foreign `extensionElements` children preserved verbatim (passthrough). */
+  foreignExtensions?: XmlSubtree[];
+  /** Foreign-prefixed attributes of the source element. */
+  foreignAttributes?: Record<string, string>;
   createdInVersion: string;
   removedInVersion?: string;
   /** Id of the edge this one replaces, forming a substitution chain. */
@@ -133,6 +160,16 @@ export interface BpmnDiagram {
   nodes: Record<string, BpmnNode>;
   edges: Record<string, BpmnEdge>;
   metadata: Record<string, unknown>;
+  /**
+   * Foreign `extensionElements` children of the `<bpmn:process>` element
+   * (e.g. `zeebe:userTaskForm`) preserved verbatim (passthrough).
+   */
+  processForeignExtensions?: XmlSubtree[];
+  /**
+   * Foreign `xmlns:*` declarations captured from the imported root
+   * (prefix → uri), re-declared on export in sorted-prefix order.
+   */
+  foreignNamespaces?: Record<string, string>;
 }
 
 /** Identifies the acting user for commands, promotions and audit entries. */

@@ -74,6 +74,24 @@ correspondente. Novas decisões entram no topo da seção "Decisões recentes".
 
 ---
 
+## Passthrough de extensões estrangeiras (`zeebe:*`/`camunda:*`) — FECHADO (2026-07-18)
+
+Decisões da PR dedicada (plano validado com 2 reforços):
+- **Garantia**: lossless SEMÂNTICO na importação + byte-estável entre os NOSSOS exports; nunca
+  byte-idêntico ao arquivo de terceiros. `trim()` de bordas do texto e CDATA→texto escapado são
+  contrato documentado no format-spec (reforço 2), não efeito colateral.
+- **Modelo**: campos opcionais aditivos (`foreignExtensions`/`foreignAttributes`/
+  `processForeignExtensions`/`foreignNamespaces`); ausentes ⇒ hashes e bytes pré-PR inalterados
+  (fixture congelada `passthroughFrozen.json` prova).
+- **Diff nomeado** (reforço 1): mudanças aparecem como o TAG do elemento estrangeiro
+  (`zeebe:taskDefinition`) ou `@atributo` (`@zeebe:modelerTemplate`) no computeDiff/diffDiagrams
+  e no popover ΔN do review — nunca blob.
+- **Mudança de leitura**: `property`/`meta` com prefixo DIFERENTE do nosso deixam de ser
+  misparseados como nossos (viravam propriedades silenciosamente) e agora são preservados como
+  estrangeiros; sem prefixo continua legado-tolerante.
+- **Fora de escopo registrado**: filhos estrangeiros de `definitions` fora do processo (pendência
+  compensação/coreografia) e o mapeamento lint `EXEC_*`←passthrough (follow-up opcional).
+
 ## 6. Boundary events — interação de anexação — FECHADO (Handoff 11 N-1)
 
 Entregue na N-1: **anexar por drag-and-drop** (zona de snap 12px com highlight da borda; soltar =

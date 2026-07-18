@@ -116,12 +116,20 @@ export class BpmnXmlConverter {
     }
     const processEdges = edgesByScope.get(undefined) ?? [];
 
+    // Passthrough: foreign xmlns declarations captured at import, re-declared
+    // in sorted-prefix order (deterministic bytes).
+    const foreignNs = Object.fromEntries(
+      Object.entries(diagram.foreignNamespaces ?? {})
+        .sort(([a], [b]) => (a < b ? -1 : 1))
+        .map(([prefix, uri]) => [`xmlns:${prefix}`, uri]),
+    );
     xml.open('bpmn:definitions', {
       'xmlns:bpmn': BPMN_NS,
       'xmlns:bpmndi': BPMNDI_NS,
       'xmlns:dc': DC_NS,
       'xmlns:di': DI_NS,
       [`xmlns:${this.ext.prefix}`]: this.ext.uri,
+      ...foreignNs,
       id: `Definitions_${processId}`,
       targetNamespace: 'http://bpmn-react.io/bpmn',
       exporter: 'bpmn-react',
@@ -202,6 +210,16 @@ export class BpmnXmlConverter {
     const diagramMeta = extension.elements.find((e) => localName(e.tag) === 'diagram');
     const versionMeta = extension.elements.find((e) => localName(e.tag) === 'version');
 
+    // Passthrough: foreign xmlns declarations of the root (any prefix outside
+    // the five we own) survive the import so re-export stays namespace-valid.
+    const OWN_PREFIXES = new Set(['bpmn', 'bpmndi', 'dc', 'di', this.ext.prefix]);
+    const foreignNamespaces: Record<string, string> = {};
+    for (const [name, value] of Object.entries(root.attributes)) {
+      if (!name.startsWith('xmlns:')) continue;
+      const prefix = name.slice('xmlns:'.length);
+      if (!OWN_PREFIXES.has(prefix)) foreignNamespaces[prefix] = value;
+    }
+
     const diagram: BpmnDiagram = {
       id: diagramMeta?.attributes.originalId ?? processEl.attributes.id ?? generateId(),
       name: processEl.attributes.name ?? 'Imported process',
@@ -210,6 +228,8 @@ export class BpmnXmlConverter {
       nodes: {},
       edges: {},
       metadata: extension.properties,
+      ...(extension.foreign.length > 0 ? { processForeignExtensions: extension.foreign } : {}),
+      ...(Object.keys(foreignNamespaces).length > 0 ? { foreignNamespaces } : {}),
     };
 
     // Pools and message flows live in a <collaboration> at the root.
