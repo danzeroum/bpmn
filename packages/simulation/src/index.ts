@@ -29,6 +29,8 @@ export {
 export type {
   BlockedDecision,
   BoundaryOption,
+  CompensateCard,
+  CompensationDestination,
   Decision,
   DecisionEvaluator,
   ErrorThrowOption,

@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react';
 import type {
   BoundaryOption,
+  CompensateCard,
+  CompensationDestination,
   CoverageSummary,
   ErrorThrowOption,
   EscalationDestination,
@@ -27,6 +29,10 @@ export interface SimulationPanelProps {
    * matches; each option shows its PREDICTED destination + mode (reforço 7). */
   escalationThrowOptions?: EscalationThrowOption[];
   onThrowEscalation?: (host: string, escalationRef?: string) => void;
+  /** "Compensate" card (Handoff 19 §6d) — broadcast (default) + per compensable
+   * activity; each option shows the SIZE/target of the reversal (reforço 10). */
+  compensateCard?: CompensateCard | null;
+  onCompensate?: (activityRef?: string) => void;
   /** Manual timer/conditional event-subprocess cards (ES-5 §4e): those kinds
    * NEVER auto-fire; the mode is shown so the user decides informed. */
   eventSubprocessOptions?: EventSubprocessOption[];
@@ -70,6 +76,28 @@ function escalationDestText(t: TFunction, dest: EscalationDestination): string {
 }
 
 /**
+ * One compensation option as glyph + text (Handoff 19 §6d reforço 10): the
+ * broadcast shows the reversal COUNT (+ named esubs), a specific shows its
+ * handler, a non-eligible option shows its reason — the user sees the size
+ * before firing.
+ */
+function compensationDestText(t: TFunction, dest: CompensationDestination): string {
+  switch (dest.kind) {
+    case 'broadcast': {
+      const handlers = t('sim.compensation.dest.handlers', { count: dest.handlerCount });
+      const esubs = dest.esubLabels.length
+        ? t('sim.compensation.dest.esubs', { labels: dest.esubLabels.join(', ') })
+        : '';
+      return handlers + esubs;
+    }
+    case 'activity':
+      return t('sim.compensation.dest.activity', { handler: dest.handlerLabel });
+    case 'notEligible':
+      return t('sim.compensation.dest.notEligible', { reason: dest.reason });
+  }
+}
+
+/**
  * The 300px simulation panel that replaces the inspector in simulation mode:
  * status + advance/restart, contextual boundary firing, path coverage,
  * session trail, and (via injection) ledger registration.
@@ -88,6 +116,8 @@ export function SimulationPanel(props: SimulationPanelProps) {
     onThrowError,
     escalationThrowOptions = [],
     onThrowEscalation,
+    compensateCard = null,
+    onCompensate,
     eventSubprocessOptions = [],
     onFireEventSubprocess,
     stepMode,
@@ -198,6 +228,42 @@ export function SimulationPanel(props: SimulationPanelProps) {
             ))}
           </div>
         ))}
+
+      {/* Handoff 19 (§6d): the «Compensate» card — a SINGLE card (compensation
+          is scope-wide). Broadcast (default) shows the reversal COUNT (reforço
+          10); each compensable activity is fireable when completed, else listed
+          NOT-ELIGIBLE with a reason. Glyph + text, informed BEFORE firing. */}
+      {onCompensate && compensateCard && (
+        <div className="bpmnr-sim-card" data-sim-compensate-card>
+          <div className="bpmnr-sim-card-title">
+            {t('sim.compensation.title', { scope: compensateCard.scopeLabel })}
+          </div>
+          {compensateCard.options.map((option) => {
+            const eligible = option.destination.kind !== 'notEligible';
+            return (
+              <button
+                key={option.activityRef ?? '(broadcast)'}
+                type="button"
+                data-sim-compensate={option.activityRef ?? ''}
+                data-sim-compensate-dest={option.destination.kind}
+                disabled={!eligible}
+                onClick={() => onCompensate(option.activityRef)}
+                className="bpmnr-sim-btn bpmnr-sim-btn-boundary bpmnr-sim-btn-compensate"
+              >
+                <span className="bpmnr-sim-compensate-label">
+                  {/* i18n-exempt — rewind glyph */}◀◀{' '}
+                  {option.activityRef !== undefined
+                    ? t('sim.compensation.specific', { label: option.label ?? option.activityRef })
+                    : t('sim.compensation.broadcast')}
+                </span>
+                <span className="bpmnr-sim-compensate-dest" data-sim-compensate-dest-text>
+                  {compensationDestText(t, option.destination)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* ES-5 (§4e): timer/conditional event subprocess NEVER auto-fires —
           this is the declared manual decision. The MODE is glyph + text

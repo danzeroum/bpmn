@@ -70,6 +70,7 @@ import {
   buildEsubSimDiagram,
   buildCompensationEditorDiagram,
   buildCompensationNoHandlerDiagram,
+  buildCompensationSimDiagram,
   buildEscalationBridgeDiagram,
   buildEscalationDiagram,
   buildEscalationNoCatchDiagram,
@@ -519,11 +520,13 @@ export function App() {
           diagram={
             escalationSim
               ? buildEscalationSimDiagram()
-              : params.get('esub')
-                ? buildEsubSimDiagram()
-                : params.get('errors')
-                  ? buildErrorSimDiagram()
-                  : buildSimulationDiagram()
+              : params.get('comp')
+                ? buildCompensationSimDiagram()
+                : params.get('esub')
+                  ? buildEsubSimDiagram()
+                  : params.get('errors')
+                    ? buildErrorSimDiagram()
+                    : buildSimulationDiagram()
           }
           plugins={PLUGINS}
           author="demo"

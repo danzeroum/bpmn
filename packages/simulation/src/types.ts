@@ -144,6 +144,33 @@ export interface EscalationThrowOption {
 }
 
 /**
+ * The predicted outcome of ONE compensation option, computed WITHOUT firing
+ * (Handoff 19 §6d reforço 10) so the «Compensar» card shows the user, per
+ * option, the SIZE of the reversal before firing — glyph + text.
+ */
+export type CompensationDestination =
+  /** Broadcast over the scope: N boundary handlers (reverse order) + the named
+   * compensation event subprocesses of the scope. */
+  | { kind: 'broadcast'; handlerCount: number; esubLabels: string[] }
+  /** A specific activity: its single handler. */
+  | { kind: 'activity'; handlerLabel: string }
+  /** The activity is compensable but NOT eligible NOW (not yet completed) —
+   * listed with the reason, never silently hidden (mock 6d). */
+  | { kind: 'notEligible'; reason: string };
+
+/**
+ * The «Compensar» card (§6d): a SINGLE card (compensation is scope-wide, not
+ * per-host) offering the broadcast (default) plus one option per compensable
+ * activity — completed ones fireable (`activity`), incomplete ones listed as
+ * `notEligible` with a reason. Absent when the diagram has no compensable
+ * activity at all.
+ */
+export interface CompensateCard {
+  scopeLabel: string;
+  options: Array<{ activityRef?: string; label?: string; destination: CompensationDestination }>;
+}
+
+/**
  * A timer/conditional event subprocess the user may fire MANUALLY (ES-5, §4e):
  * those kinds NEVER auto-fire in simulation — the card is the declared manual
  * decision (molde {@link BoundaryOption}). The mode is shown so the user
@@ -176,7 +203,13 @@ export type Decision =
   // the user fired is part of the scenario (an interrupting fire cancels
   // whatever is live at that moment), so the decision is anchored to the
   // trail position — replay advances up to `atStep` before applying it.
-  | { kind: 'eventSubprocess'; sub: string; atStep: number };
+  | { kind: 'eventSubprocess'; sub: string; atStep: number }
+  // Handoff 19 §6d: compensation. WHICH activities are completed depends on the
+  // trail at the moment of firing (reverse-order reversal of the COMPLETED), so
+  // like `eventSubprocess` the decision is anchored to `atStep`. `activityRef`
+  // absent = broadcast over the scope. `waitForCompletion` (OMG default true) is
+  // declared in the trail.
+  | { kind: 'compensate'; scope?: string; activityRef?: string; waitForCompletion: boolean; atStep: number };
 
 /**
  * Outcome of evaluating a node's decision table (Handoff 9 SF-2). Produced by
@@ -277,6 +310,8 @@ export interface SimulationState {
   errorThrowOptions: ErrorThrowOption[];
   /** "Throw escalation" cards per host with a resting token (Handoff 18 §5e). */
   escalationThrowOptions: EscalationThrowOption[];
+  /** The «Compensar» card (Handoff 19 §6d), or null when nothing is compensable. */
+  compensateCard: CompensateCard | null;
   /** Manual timer/conditional event-subprocess cards (ES-5, §4e). */
   eventSubprocessOptions: EventSubprocessOption[];
   /** A businessRuleTask waiting for decision inputs (SF-2), if any. */

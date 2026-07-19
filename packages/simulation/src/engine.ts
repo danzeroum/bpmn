@@ -1,10 +1,17 @@
-import { BpmnError, eligibleEscalationCatches, nodeParentId } from '@buildtovalue/core';
+import {
+  BpmnError,
+  compensableActivitiesOf,
+  eligibleEscalationCatches,
+  nodeParentId,
+} from '@buildtovalue/core';
 import type { BpmnDiagram } from '@buildtovalue/core';
 import { buildSimGraph, type SimGraph } from './graph.js';
 import { computeDominators, dominates } from './dominators.js';
 import type {
   BlockedDecision,
   BoundaryOption,
+  CompensateCard,
+  CompensationDestination,
   Decision,
   DecisionEvaluator,
   ErrorThrowOption,
@@ -19,6 +26,24 @@ import type {
   Token,
   TransitionRecord,
 } from './types.js';
+
+/** Node types that count as an ACTIVITY for compensation (a completed activity
+ * is compensable; a gateway/event is not). Kept local — the engine is headless
+ * and never consults the registry. */
+const ACTIVITY_TYPES = new Set([
+  'task',
+  'userTask',
+  'serviceTask',
+  'sendTask',
+  'receiveTask',
+  'manualTask',
+  'scriptTask',
+  'businessRuleTask',
+  'subProcess',
+  'callActivity',
+  'agentTask',
+  'transaction',
+]);
 
 /** What a single call to {@link SimulationEngine.advance} / choose produced. */
 export interface StepResult {
@@ -119,6 +144,7 @@ export class SimulationEngine {
       boundaryOptions: this.boundaryOptions,
       errorThrowOptions: this.errorThrowOptions,
       escalationThrowOptions: this.escalationThrowOptions,
+      compensateCard: this.compensateCard,
       eventSubprocessOptions: this.eventSubprocessOptions,
       pendingDecisionInput: this.pendingDecisionInput,
       blockedDecision: this.blocked ? { ...this.blocked } : null,
@@ -330,6 +356,7 @@ export class SimulationEngine {
     if (decision.kind === 'signal') return this.throwSignal(decision.ref);
     if (decision.kind === 'message') return this.throwMessage(decision.ref);
     if (decision.kind === 'eventSubprocess') return this.fireEventSubprocess(decision.sub);
+    if (decision.kind === 'compensate') return this.compensate(decision.scope, decision.activityRef, decision.waitForCompletion);
     const token = this.tokens.find((t) => t.nodeId === decision.gateway);
     if (!token) throw new SimulationError(`No token at gateway ${decision.gateway}`);
     const node = this.graph.nodes.get(token.nodeId)!;
@@ -633,6 +660,156 @@ export class SimulationEngine {
       cards.push({ host, hostLabel: hostNode.label || host, options });
     }
     return cards;
+  }
+
+  // ------------------------------------------------------ compensation (§6d)
+
+  /**
+   * Completed activities in COMPLETION ORDER (Handoff 19 §6d). An activity is
+   * completed when a token has LEFT it along a `'move'` edge — derived from the
+   * trail (decisão 2 da CO-0: `'move'`/`'end'`, never a second record type).
+   * DECLARED loop rule: the same activity completed twice keeps only its LAST
+   * completion (re-appended at the later position), so a looped activity is
+   * compensated once, at the position of its most recent run.
+   */
+  private completedActivityIds(): string[] {
+    const order: string[] = [];
+    for (const record of this.trail) {
+      if (record.type !== 'move' || record.edgeId === undefined) continue;
+      const edge = this.graph.edges.get(record.edgeId);
+      const source = edge ? this.graph.nodes.get(edge.source) : undefined;
+      if (!source || !ACTIVITY_TYPES.has(source.type)) continue;
+      const prev = order.indexOf(source.id);
+      if (prev !== -1) order.splice(prev, 1); // last completion wins
+      order.push(source.id);
+    }
+    return order;
+  }
+
+  /**
+   * The compensation handler of an activity: the target of the association that
+   * leaves its ⟲ boundary. RESOLVED sim-side over the FROZEN core enumeration
+   * (decisão B) — `compensableActivitiesOf` says WHICH activities are
+   * compensable (single source, never re-derived); the handler comes from the
+   * diagram's association (associations live in the diagram, not the flow graph).
+   */
+  private compensationHandlerOf(
+    activityId: string,
+  ): { handlerId: string; handlerLabel: string } | undefined {
+    const compensable = compensableActivitiesOf(this.diagram, this.graph.scope).find(
+      (c) => c.activityId === activityId,
+    );
+    if (!compensable) return undefined;
+    const assoc = Object.values(this.diagram.edges).find(
+      (e) => !e.removedInVersion && e.type === 'association' && e.sourceId === compensable.boundaryId,
+    );
+    if (!assoc) return undefined;
+    return { handlerId: assoc.targetId, handlerLabel: this.diagram.nodes[assoc.targetId]?.label || assoc.targetId };
+  }
+
+  /** The compensation event subprocesses of the scope (compensate esub-starts). */
+  private compensationEsubs(): SimNode[] {
+    return [...this.graph.nodes.values()].filter((n) => n.esubStart?.kind === 'compensate');
+  }
+
+  /**
+   * Compensate (Handoff 19 §6d): reverse the COMPLETED activities of the scope.
+   * `activityRef` present = compensate ONLY that activity's handler (reforço 9 —
+   * the esub-start does NOT participate; it is a SCOPE reaction, not an activity
+   * one). Absent = BROADCAST: every completed compensable activity's handler in
+   * REVERSE order, PLUS the compensation event subprocesses of the scope
+   * (compensation has NO ref-matching, so the ES-5 tier precedence does NOT
+   * apply — declared in limitations.md). A completed activity with no handler is
+   * a DECLARED trail line, never silence; a specific target that is
+   * non-compensable or not-yet-completed is a declared STOP.
+   */
+  compensate(scope?: string, activityRef?: string, waitForCompletion = true): StepResult {
+    const start = this.trail.length;
+    // Captured BEFORE any handler/esub token is placed: an interrupting
+    // compensation esub cancels the tokens that existed when compensation
+    // STARTED (the live flow), never the reversal tokens this call just placed.
+    const preExisting = new Set(this.tokens.map((t) => t.id));
+    const completed = new Set(this.completedActivityIds());
+    if (activityRef !== undefined) {
+      const label = this.graph.nodes.get(activityRef)?.label || activityRef;
+      const handler = this.compensationHandlerOf(activityRef);
+      if (!handler) {
+        this.blocked = { nodeId: activityRef, cell: activityRef, reason: `compensation target "${label}" has no compensation handler — nothing to compensate` };
+        this.record('decision-blocked', `Compensate "${label}": no handler ⟲ — declared stop`, { nodeId: activityRef });
+      } else if (!completed.has(activityRef)) {
+        this.blocked = { nodeId: activityRef, cell: activityRef, reason: `compensation target "${label}" has not completed — nothing to compensate` };
+        this.record('decision-blocked', `Compensate "${label}": not completed — declared stop`, { nodeId: activityRef });
+      } else {
+        this.placeToken(handler.handlerId);
+        this.record('event', `Compensate "${label}" → handler "${handler.handlerLabel}"`, { nodeId: handler.handlerId });
+      }
+    } else {
+      const reverse = this.completedActivityIds().reverse();
+      let index = 0;
+      for (const activityId of reverse) {
+        const label = this.graph.nodes.get(activityId)?.label || activityId;
+        const handler = this.compensationHandlerOf(activityId);
+        if (handler) {
+          index += 1;
+          this.placeToken(handler.handlerId);
+          this.record('event', `${index}. Compensate "${label}" → handler "${handler.handlerLabel}" (reverse order)`, { nodeId: handler.handlerId });
+        } else {
+          this.record('event', `"${label}" completed, no handler ⟲ — not compensated (declared)`, { nodeId: activityId });
+        }
+      }
+      const esubs = this.compensationEsubs();
+      if (esubs.length > 0) {
+        this.catchByEventSubprocess(
+          esubs,
+          preExisting,
+          (esub) => `Compensation event subprocess "${esub.label || esub.id}" fired (start ${esub.esubStart!.startId}`,
+        );
+      }
+      if (index === 0 && esubs.length === 0) {
+        this.record('event', 'Compensate scope: no completed compensable activity — nothing to compensate', {});
+      }
+    }
+    this.record(
+      'event',
+      `waitForCompletion: ${waitForCompletion ? 'true — the throw advances only after the handlers complete' : 'false — the throw advances immediately'}`,
+      {},
+    );
+    this.decisions.push({
+      kind: 'compensate',
+      ...(scope !== undefined ? { scope } : {}),
+      ...(activityRef !== undefined ? { activityRef } : {}),
+      waitForCompletion,
+      atStep: start,
+    });
+    this.settleOrJoins();
+    return { moved: true, transitions: this.trail.slice(start) };
+  }
+
+  /**
+   * The «Compensar» card (§6d): a SINGLE card (compensation is scope-wide). The
+   * broadcast option shows the COUNT of the reversal (reforço 10); each
+   * compensable activity is a fireable option when completed, else listed as
+   * NOT-ELIGIBLE with a reason (mock 6d — never hidden). Null when nothing in
+   * the scope is compensable.
+   */
+  get compensateCard(): CompensateCard | null {
+    const compensables = compensableActivitiesOf(this.diagram, this.graph.scope);
+    const esubs = this.compensationEsubs();
+    if (compensables.length === 0 && esubs.length === 0) return null;
+    const completed = new Set(this.completedActivityIds());
+    const handlerCount = compensables.filter((c) => completed.has(c.activityId) && this.compensationHandlerOf(c.activityId)).length;
+    const options: CompensateCard['options'] = [
+      { destination: { kind: 'broadcast', handlerCount, esubLabels: esubs.map((e) => e.label || e.id) } as CompensationDestination },
+    ];
+    for (const c of compensables) {
+      const handler = this.compensationHandlerOf(c.activityId);
+      if (completed.has(c.activityId) && handler) {
+        options.push({ activityRef: c.activityId, label: c.label, destination: { kind: 'activity', handlerLabel: handler.handlerLabel } });
+      } else {
+        options.push({ activityRef: c.activityId, label: c.label, destination: { kind: 'notEligible', reason: handler ? 'not yet completed' : 'no handler' } });
+      }
+    }
+    return { scopeLabel: this.scopeLabel(), options };
   }
 
   /**
@@ -967,6 +1144,19 @@ export class SimulationEngine {
         if (engine.blocked) break; // declared stop — the scenario ends here
         continue;
       }
+      // §6d: compensation is anchored to WHEN it fired (`atStep`) — the reversed
+      // set is the activities COMPLETED by then — so replay advances to the
+      // anchor before applying it, exactly like the manual event-subprocess fire.
+      if (next && next.kind === 'compensate') {
+        if (engine.trail.length < next.atStep && engine.canAdvance) {
+          engine.advance();
+          continue;
+        }
+        engine.compensate(next.scope, next.activityRef, next.waitForCompletion);
+        queue.shift();
+        if (engine.blocked) break; // declared stop — the scenario ends here
+        continue;
+      }
       if (engine.canAdvance) {
         engine.advance();
         continue;
@@ -987,7 +1177,8 @@ export class SimulationEngine {
       decision.kind === 'escalation' ||
       decision.kind === 'signal' ||
       decision.kind === 'message' ||
-      decision.kind === 'eventSubprocess'
+      decision.kind === 'eventSubprocess' ||
+      decision.kind === 'compensate'
     ) {
       return false;
     }

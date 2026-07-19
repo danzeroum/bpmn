@@ -160,6 +160,15 @@ export function BpmnSimulator({
           onThrowError={(host, errorRef) =>
             sim.choose({ kind: 'error', host, ...(errorRef !== undefined ? { errorRef } : {}) })
           }
+          compensateCard={state.compensateCard}
+          onCompensate={(activityRef) =>
+            sim.choose({
+              kind: 'compensate',
+              ...(activityRef !== undefined ? { activityRef } : {}),
+              waitForCompletion: true,
+              atStep: state.trail.length,
+            })
+          }
           escalationThrowOptions={state.escalationThrowOptions}
           onThrowEscalation={(host, escalationRef) => {
             // Capture the PREDICTED destination BEFORE firing (the throw mutates
