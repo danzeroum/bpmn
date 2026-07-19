@@ -43,6 +43,7 @@ import { callActivityBindingRule, VersionRegistry } from '@buildtovalue/registry
 import { soundnessPromotionRule, soundnessRules } from '@buildtovalue/soundness';
 import {
   activeCopilotPromptVersion,
+  compensationTriggeredEntry,
   escalationRaisedEntry,
   eventBindingChangedEntry,
   replayAnalysisEntry,
@@ -70,6 +71,7 @@ import {
   buildEsubSimDiagram,
   buildCompensationEditorDiagram,
   buildCompensationNoHandlerDiagram,
+  buildCompensationPackageDiagram,
   buildCompensationSimDiagram,
   buildEscalationBridgeDiagram,
   buildEscalationDiagram,
@@ -267,6 +269,13 @@ const simulationDemoLedger = new AuditLedger();
 /** Ledger the `?simulate=1&escalation=1` demo appends raised escalations into
  * (Handoff 18 §5e, path a): the «Escalate» throw fires `escalationRaisedEntry`. */
 const escalationDemoLedger = new AuditLedger();
+
+/** Ledger the `?compensation=1` demo appends triggered compensations into
+ * (Handoff 19 §6e, path a): the «Compensate» throw fires
+ * `compensationTriggeredEntry` ONLY when something actually reverses. The actor
+ * is an AI (`ia.copilot@…`) so the Ledger Explorer's ✦ seal renders; the entry
+ * ties the EXECUTED plan (compensated reverse + uncompensated declared). */
+const compensationDemoLedger = new AuditLedger();
 
 /** Two versions with bound runs for the `?replay` demo header (bindRun, 7B-3). */
 const REPLAY_VERSIONS = [
@@ -501,6 +510,50 @@ export function App() {
           plugins={PLUGINS}
           author="demo"
           decisions={createSfeelDecisionSupport(sfeelDiagram)}
+          onExit={() => {
+            window.location.search = '';
+          }}
+        />
+      </I18nProvider>
+    );
+  }
+  if (params.get('compensation') !== null) {
+    // Handoff 19 §6e: `?compensation=1` — the «pacote de viagem» reversal.
+    // Simulate → advance so hotel + passagem + cartão complete → «Compensar»
+    // reverses hotel + passagem in reverse order; the cartão (no ⟲) is a
+    // DECLARED uncompensated line. The throw fires `compensationTriggeredEntry`
+    // (path a — the engine stays pure), tying the EXECUTED plan. A blocked
+    // specific target appends NOTHING (reforço 8). The actor is an AI so the
+    // ✦ seal renders. The entry is surfaced on the body dataset for the e2e.
+    return (
+      <I18nProvider messages={PT_BR}>
+        <BpmnSimulator
+          diagram={buildCompensationPackageDiagram()}
+          plugins={PLUGINS}
+          author="ia.copilot@buildtovalue"
+          onCompensationTriggered={({ scope, compensated, uncompensated }) => {
+            const actor = { id: 'ia.copilot@buildtovalue' };
+            void compensationDemoLedger.append(
+              compensationTriggeredEntry({
+                diagramId: 'demo-compensation-pkg',
+                versionId: 'v1',
+                scope,
+                actor,
+                compensated,
+                uncompensated,
+              }),
+            );
+            // Surface the EXECUTED plan for the e2e straight from the callback
+            // args + actor — `append` is async (hash), so reading the ledger back
+            // synchronously would race. The count reflects appends requested.
+            document.body.dataset.compensationEntries = String(
+              Number(document.body.dataset.compensationEntries ?? '0') + 1,
+            );
+            document.body.dataset.compensationCompensated = compensated.map((c) => `${c.activity}→${c.handler}`).join(' | ');
+            document.body.dataset.compensationUncompensated = uncompensated.map((u) => `${u.activity} (${u.reason})`).join(' | ');
+            // ✦ seal: an `ia.copilot@` author is AI-authored (the `aiAuthorOf` rule).
+            document.body.dataset.compensationSeal = actor.id.startsWith('ia.copilot@') ? '✦' : '';
+          }}
           onExit={() => {
             window.location.search = '';
           }}

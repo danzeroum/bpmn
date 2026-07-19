@@ -12,6 +12,8 @@ import type {
   BoundaryOption,
   CompensateCard,
   CompensationDestination,
+  CompensationPlan,
+  CompensationStep,
   Decision,
   DecisionEvaluator,
   ErrorThrowOption,
@@ -713,15 +715,52 @@ export class SimulationEngine {
   }
 
   /**
-   * Compensate (Handoff 19 §6d): reverse the COMPLETED activities of the scope.
-   * `activityRef` present = compensate ONLY that activity's handler (reforço 9 —
-   * the esub-start does NOT participate; it is a SCOPE reaction, not an activity
-   * one). Absent = BROADCAST: every completed compensable activity's handler in
-   * REVERSE order, PLUS the compensation event subprocesses of the scope
-   * (compensation has NO ref-matching, so the ES-5 tier precedence does NOT
-   * apply — declared in limitations.md). A completed activity with no handler is
-   * a DECLARED trail line, never silence; a specific target that is
-   * non-compensable or not-yet-completed is a declared STOP.
+   * The plan a `compensate(activityRef?)` will EXECUTE (Handoff 19 §6e) — a
+   * READ-ONLY computation (reforço 7: it reads the trail/diagram, never mutates
+   * state), the SINGLE source both `compensate()` (to record + run) and the
+   * host's ledger glue (to append the EXECUTED reversal) consume, so the two
+   * never re-derive. A SPECIFIC target that is non-compensable or not-yet-
+   * completed sets `blocked` and yields NO steps (nothing executes → no entry).
+   */
+  compensationPlan(activityRef?: string): CompensationPlan {
+    const completed = new Set(this.completedActivityIds());
+    const steps: CompensationStep[] = [];
+    if (activityRef !== undefined) {
+      const activity = this.graph.nodes.get(activityRef)?.label || activityRef;
+      const handler = this.compensationHandlerOf(activityRef);
+      if (!handler) {
+        return { steps: [], compensated: [], uncompensated: [], esubLabels: [], blocked: { activity, reason: `compensation target "${activity}" has no compensation handler — nothing to compensate`, kind: 'no-handler' } };
+      }
+      if (!completed.has(activityRef)) {
+        return { steps: [], compensated: [], uncompensated: [], esubLabels: [], blocked: { activity, reason: `compensation target "${activity}" has not completed — nothing to compensate`, kind: 'not-completed' } };
+      }
+      steps.push({ activityId: activityRef, activity, handlerId: handler.handlerId, handler: handler.handlerLabel });
+    } else {
+      for (const activityId of this.completedActivityIds().reverse()) {
+        const activity = this.graph.nodes.get(activityId)?.label || activityId;
+        const handler = this.compensationHandlerOf(activityId);
+        if (handler) steps.push({ activityId, activity, handlerId: handler.handlerId, handler: handler.handlerLabel });
+        else steps.push({ activityId, activity, reason: 'no handler ⟲' });
+      }
+    }
+    return {
+      steps,
+      compensated: steps.filter((s) => s.handler !== undefined).map((s) => ({ activity: s.activity, handler: s.handler! })),
+      uncompensated: steps.filter((s) => s.handler === undefined).map((s) => ({ activity: s.activity, reason: s.reason! })),
+      // A specific target never triggers a scope esub (reforço 9); broadcast does.
+      esubLabels: activityRef !== undefined ? [] : this.compensationEsubs().map((e) => e.label || e.id),
+    };
+  }
+
+  /**
+   * Compensate (Handoff 19 §6d): reverse the COMPLETED activities of the scope,
+   * EXECUTING the {@link compensationPlan}. `activityRef` present = only that
+   * activity's handler (reforço 9 — the esub-start does NOT participate). Absent
+   * = BROADCAST: every completed compensable activity's handler in REVERSE order
+   * PLUS the compensation event subprocesses of the scope (no ref-matching, so
+   * no ES-5 tier precedence — declared in limitations.md). A completed activity
+   * with no handler is a DECLARED trail line; a specific non-compensable /
+   * not-yet-completed target is a declared STOP.
    */
   compensate(scope?: string, activityRef?: string, waitForCompletion = true): StepResult {
     const start = this.trail.length;
@@ -729,32 +768,29 @@ export class SimulationEngine {
     // compensation esub cancels the tokens that existed when compensation
     // STARTED (the live flow), never the reversal tokens this call just placed.
     const preExisting = new Set(this.tokens.map((t) => t.id));
-    const completed = new Set(this.completedActivityIds());
-    if (activityRef !== undefined) {
-      const label = this.graph.nodes.get(activityRef)?.label || activityRef;
-      const handler = this.compensationHandlerOf(activityRef);
-      if (!handler) {
-        this.blocked = { nodeId: activityRef, cell: activityRef, reason: `compensation target "${label}" has no compensation handler — nothing to compensate` };
-        this.record('decision-blocked', `Compensate "${label}": no handler ⟲ — declared stop`, { nodeId: activityRef });
-      } else if (!completed.has(activityRef)) {
-        this.blocked = { nodeId: activityRef, cell: activityRef, reason: `compensation target "${label}" has not completed — nothing to compensate` };
-        this.record('decision-blocked', `Compensate "${label}": not completed — declared stop`, { nodeId: activityRef });
-      } else {
-        this.placeToken(handler.handlerId);
-        this.record('event', `Compensate "${label}" → handler "${handler.handlerLabel}"`, { nodeId: handler.handlerId });
-      }
+    const plan = this.compensationPlan(activityRef);
+    if (plan.blocked) {
+      this.blocked = { nodeId: activityRef!, cell: activityRef!, reason: plan.blocked.reason };
+      this.record(
+        'decision-blocked',
+        plan.blocked.kind === 'no-handler'
+          ? `Compensate "${plan.blocked.activity}": no handler ⟲ — declared stop`
+          : `Compensate "${plan.blocked.activity}": not completed — declared stop`,
+        { nodeId: activityRef },
+      );
+    } else if (activityRef !== undefined) {
+      const step = plan.steps[0];
+      this.placeToken(step.handlerId!);
+      this.record('event', `Compensate "${step.activity}" → handler "${step.handler}"`, { nodeId: step.handlerId });
     } else {
-      const reverse = this.completedActivityIds().reverse();
       let index = 0;
-      for (const activityId of reverse) {
-        const label = this.graph.nodes.get(activityId)?.label || activityId;
-        const handler = this.compensationHandlerOf(activityId);
-        if (handler) {
+      for (const step of plan.steps) {
+        if (step.handler !== undefined) {
           index += 1;
-          this.placeToken(handler.handlerId);
-          this.record('event', `${index}. Compensate "${label}" → handler "${handler.handlerLabel}" (reverse order)`, { nodeId: handler.handlerId });
+          this.placeToken(step.handlerId!);
+          this.record('event', `${index}. Compensate "${step.activity}" → handler "${step.handler}" (reverse order)`, { nodeId: step.handlerId });
         } else {
-          this.record('event', `"${label}" completed, no handler ⟲ — not compensated (declared)`, { nodeId: activityId });
+          this.record('event', `"${step.activity}" completed, no handler ⟲ — not compensated (declared)`, { nodeId: step.activityId });
         }
       }
       const esubs = this.compensationEsubs();

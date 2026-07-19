@@ -1231,6 +1231,29 @@ const BTV_ARTIFACT_KINDS: readonly BtvArtifactKind[];
 
 ***
 
+### COMPENSATION\_TRIGGERED\_TYPE
+
+```ts
+const COMPENSATION_TRIGGERED_TYPE: "COMPENSATION_TRIGGERED" = 'COMPENSATION_TRIGGERED';
+```
+
+Compensation → ledger glue (Handoff 19 §6e). Same discipline as
+`escalationRaisedEntry` (EC-3): the ledger MOTOR stays intact — this is a PURE
+builder mapping a TRIGGERED compensation to the `AuditEntryInput` the HOST
+appends (via its `command.executed` / simulation glue); the adapter never
+touches the ledger, never imports react/simulation, and agentflow stays
+independent (no cross-package dependency).
+
+Semantics: `COMPENSATION_TRIGGERED` means the reversal ACTUALLY ran (the host
+appends only when `compensate()` did NOT block — reforço 8). The entry binds
+the EXECUTED plan: `compensated` in the real REVERSE order (`{activity,
+handler}`) and `uncompensated` (`{activity, reason}`) — the declared,
+never-omitted losses. `details.author` carries the actor so the Ledger
+Explorer's ✦ mixed-authorship seal renders for AI reversals (`ia.copilot@…`)
+via the existing `aiAuthorOf`, and stays absent for human ones — the same trail.
+
+***
+
 ### ESCALATION\_RAISED\_TYPE
 
 ```ts
@@ -1594,6 +1617,54 @@ Classifies a registered diagram into a catalog kind:
 #### Returns
 
 [`BtvArtifactKind`](#btvartifactkind)
+
+***
+
+### compensationTriggeredEntry()
+
+```ts
+function compensationTriggeredEntry(input): AuditEntryInput;
+```
+
+Maps a triggered compensation to a ledger append input.
+
+#### Parameters
+
+##### input
+
+###### diagramId
+
+`string`
+
+###### versionId
+
+`string`
+
+###### scope
+
+`string`
+
+`'broadcast'` or the specific activity id/label the throw targeted.
+
+###### actor
+
+`Pick`\<`UserContext`, `"id"`\>
+
+###### compensated
+
+`object`[]
+
+The reversed activities, in real reverse order.
+
+###### uncompensated
+
+`object`[]
+
+Completed activities left uncompensated — declared, never omitted.
+
+#### Returns
+
+`AuditEntryInput`
 
 ***
 

@@ -487,6 +487,29 @@ DIFFER at the edges — the binding contrast (cerca §5):
 
 [`StepResult`](#stepresult)
 
+##### compensationPlan()
+
+```ts
+compensationPlan(activityRef?): CompensationPlan;
+```
+
+The plan a `compensate(activityRef?)` will EXECUTE (Handoff 19 §6e) — a
+READ-ONLY computation (reforço 7: it reads the trail/diagram, never mutates
+state), the SINGLE source both `compensate()` (to record + run) and the
+host's ledger glue (to append the EXECUTED reversal) consume, so the two
+never re-derive. A SPECIFIC target that is non-compensable or not-yet-
+completed sets `blocked` and yields NO steps (nothing executes → no entry).
+
+###### Parameters
+
+###### activityRef?
+
+`string`
+
+###### Returns
+
+[`CompensationPlan`](#compensationplan-1)
+
 ##### compensate()
 
 ```ts
@@ -496,15 +519,14 @@ compensate(
    waitForCompletion?): StepResult;
 ```
 
-Compensate (Handoff 19 §6d): reverse the COMPLETED activities of the scope.
-`activityRef` present = compensate ONLY that activity's handler (reforço 9 —
-the esub-start does NOT participate; it is a SCOPE reaction, not an activity
-one). Absent = BROADCAST: every completed compensable activity's handler in
-REVERSE order, PLUS the compensation event subprocesses of the scope
-(compensation has NO ref-matching, so the ES-5 tier precedence does NOT
-apply — declared in limitations.md). A completed activity with no handler is
-a DECLARED trail line, never silence; a specific target that is
-non-compensable or not-yet-completed is a declared STOP.
+Compensate (Handoff 19 §6d): reverse the COMPLETED activities of the scope,
+EXECUTING the [compensationPlan](#compensationplan). `activityRef` present = only that
+activity's handler (reforço 9 — the esub-start does NOT participate). Absent
+= BROADCAST: every completed compensable activity's handler in REVERSE order
+PLUS the compensation event subprocesses of the scope (no ref-matching, so
+no ES-5 tier precedence — declared in limitations.md). A completed activity
+with no handler is a DECLARED trail line; a specific non-compensable /
+not-yet-completed target is a declared STOP.
 
 ###### Parameters
 
@@ -1388,6 +1410,132 @@ optional label?: string;
 
 ```ts
 destination: CompensationDestination;
+```
+
+***
+
+### CompensationStep
+
+One step of a compensation plan (Handoff 19 §6e): a completed activity and,
+when it carries a ⟲ handler, that handler — else the reason it is NOT
+compensated (declared, never omitted).
+
+#### Properties
+
+##### activityId
+
+```ts
+activityId: string;
+```
+
+##### activity
+
+```ts
+activity: string;
+```
+
+##### handlerId?
+
+```ts
+optional handlerId?: string;
+```
+
+##### handler?
+
+```ts
+optional handler?: string;
+```
+
+##### reason?
+
+```ts
+optional reason?: string;
+```
+
+***
+
+### CompensationPlan
+
+The plan a `compensate()` will EXECUTE (Handoff 19 §6e) — computed READ-ONLY
+(reforço 7: calling it never mutates state or the trail), CONSUMED by
+`compensate()` AND read by the demo's ledger glue so the two never re-derive
+the reversal. `steps` are in trail (reverse) order; `compensated` /
+`uncompensated` are the ledger-shaped slices; `blocked` is set when a SPECIFIC
+target is non-compensable or not-yet-completed — nothing executes, so the
+ledger appends NOTHING (reforço 8: the entry binds what HAPPENED).
+
+#### Properties
+
+##### steps
+
+```ts
+steps: CompensationStep[];
+```
+
+##### compensated
+
+```ts
+compensated: object[];
+```
+
+###### activity
+
+```ts
+activity: string;
+```
+
+###### handler
+
+```ts
+handler: string;
+```
+
+##### uncompensated
+
+```ts
+uncompensated: object[];
+```
+
+###### activity
+
+```ts
+activity: string;
+```
+
+###### reason
+
+```ts
+reason: string;
+```
+
+##### esubLabels
+
+```ts
+esubLabels: string[];
+```
+
+##### blocked?
+
+```ts
+optional blocked?: object;
+```
+
+###### activity
+
+```ts
+activity: string;
+```
+
+###### reason
+
+```ts
+reason: string;
+```
+
+###### kind
+
+```ts
+kind: "no-handler" | "not-completed";
 ```
 
 ***

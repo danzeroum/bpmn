@@ -35,6 +35,18 @@ export interface BpmnSimulatorProps {
     escalationRef?: string;
     destination: EscalationDestination;
   }) => void | Promise<void>;
+  /**
+   * Fired when the user COMPENSATES from the «Compensate» card (Handoff 19 §6e,
+   * path a — the engine stays pure). Carries the EXECUTED plan (`compensated` in
+   * reverse order + `uncompensated` declared) so the host appends
+   * `compensationTriggeredEntry`. Fired ONLY when the compensation actually ran:
+   * a blocked specific target (non-compensable) appends NOTHING (reforço 8).
+   */
+  onCompensationTriggered?: (info: {
+    scope: string;
+    compensated: Array<{ activity: string; handler: string }>;
+    uncompensated: Array<{ activity: string; reason: string }>;
+  }) => void | Promise<void>;
   /** Author recorded on the session (defaults to "anônimo"). */
   author?: string;
   /**
@@ -65,6 +77,7 @@ export function BpmnSimulator({
   onExit,
   onRecord,
   onEscalationThrown,
+  onCompensationTriggered,
   author = 'anônimo',
   recordedInfo,
   decisions,
@@ -161,14 +174,25 @@ export function BpmnSimulator({
             sim.choose({ kind: 'error', host, ...(errorRef !== undefined ? { errorRef } : {}) })
           }
           compensateCard={state.compensateCard}
-          onCompensate={(activityRef) =>
+          onCompensate={(activityRef) => {
+            // Read the plan BEFORE firing (read-only, reforço 7) so the ledger
+            // binds the EXECUTED reversal (one source, no re-derivation). Append
+            // ONLY when something ran — a blocked specific target does nothing.
+            const plan = sim.engine.compensationPlan(activityRef);
             sim.choose({
               kind: 'compensate',
               ...(activityRef !== undefined ? { activityRef } : {}),
               waitForCompletion: true,
               atStep: state.trail.length,
-            })
-          }
+            });
+            if (!plan.blocked && plan.compensated.length + plan.uncompensated.length > 0) {
+              void onCompensationTriggered?.({
+                scope: activityRef ?? 'broadcast',
+                compensated: plan.compensated,
+                uncompensated: plan.uncompensated,
+              });
+            }
+          }}
           escalationThrowOptions={state.escalationThrowOptions}
           onThrowEscalation={(host, escalationRef) => {
             // Capture the PREDICTED destination BEFORE firing (the throw mutates

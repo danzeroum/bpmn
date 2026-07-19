@@ -170,6 +170,34 @@ export interface CompensateCard {
   options: Array<{ activityRef?: string; label?: string; destination: CompensationDestination }>;
 }
 
+/** One step of a compensation plan (Handoff 19 §6e): a completed activity and,
+ * when it carries a ⟲ handler, that handler — else the reason it is NOT
+ * compensated (declared, never omitted). */
+export interface CompensationStep {
+  activityId: string;
+  activity: string;
+  handlerId?: string;
+  handler?: string;
+  reason?: string;
+}
+
+/**
+ * The plan a `compensate()` will EXECUTE (Handoff 19 §6e) — computed READ-ONLY
+ * (reforço 7: calling it never mutates state or the trail), CONSUMED by
+ * `compensate()` AND read by the demo's ledger glue so the two never re-derive
+ * the reversal. `steps` are in trail (reverse) order; `compensated` /
+ * `uncompensated` are the ledger-shaped slices; `blocked` is set when a SPECIFIC
+ * target is non-compensable or not-yet-completed — nothing executes, so the
+ * ledger appends NOTHING (reforço 8: the entry binds what HAPPENED).
+ */
+export interface CompensationPlan {
+  steps: CompensationStep[];
+  compensated: Array<{ activity: string; handler: string }>;
+  uncompensated: Array<{ activity: string; reason: string }>;
+  esubLabels: string[];
+  blocked?: { activity: string; reason: string; kind: 'no-handler' | 'not-completed' };
+}
+
 /**
  * A timer/conditional event subprocess the user may fire MANUALLY (ES-5, §4e):
  * those kinds NEVER auto-fire in simulation — the card is the declared manual

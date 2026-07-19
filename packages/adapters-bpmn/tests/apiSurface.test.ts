@@ -61,6 +61,8 @@ const EXPECTED_EXPORTS = [
   // Handoff 18 §5c — escalation raised → ledger glue (agent→human bridge).
   'escalationRaisedEntry',
   'ESCALATION_RAISED_TYPE',
+  'compensationTriggeredEntry',
+  'COMPENSATION_TRIGGERED_TYPE',
 ].sort();
 
 describe('@buildtovalue/adapters-bpmn public API surface', () => {

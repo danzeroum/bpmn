@@ -4591,6 +4591,38 @@ pattern as [onRecord](#onrecord).
 
 `void` \| `Promise`\<`void`\>
 
+##### onCompensationTriggered?
+
+```ts
+optional onCompensationTriggered?: (info) => void | Promise<void>;
+```
+
+Fired when the user COMPENSATES from the «Compensate» card (Handoff 19 §6e,
+path a — the engine stays pure). Carries the EXECUTED plan (`compensated` in
+reverse order + `uncompensated` declared) so the host appends
+`compensationTriggeredEntry`. Fired ONLY when the compensation actually ran:
+a blocked specific target (non-compensable) appends NOTHING (reforço 8).
+
+###### Parameters
+
+###### info
+
+###### scope
+
+`string`
+
+###### compensated
+
+`object`[]
+
+###### uncompensated
+
+`object`[]
+
+###### Returns
+
+`void` \| `Promise`\<`void`\>
+
 ##### author?
 
 ```ts
