@@ -2885,6 +2885,36 @@ matchType: "exact" | "catchAll";
 
 ***
 
+### CompensableActivity
+
+A compensable activity: an activity that carries a compensation boundary (⟲)
+and therefore CAN be compensated (Handoff 19 §6b). Reported with the boundary
+that makes it compensable so the UI can name the pair.
+
+#### Properties
+
+##### activityId
+
+```ts
+activityId: string;
+```
+
+##### label
+
+```ts
+label: string;
+```
+
+##### boundaryId
+
+```ts
+boundaryId: string;
+```
+
+The compensation boundary event attached to the activity.
+
+***
+
 ### CreateVersionOptions
 
 #### Properties
@@ -6789,6 +6819,42 @@ catch with a ref matches only a throw with the SAME ref. A kind-puro throw
 #### Returns
 
 [`EscalationCatch`](#escalationcatch)[]
+
+***
+
+### compensableActivitiesOf()
+
+```ts
+function compensableActivitiesOf(diagram, scope?): CompensableActivity[];
+```
+
+SHARED SOURCE (Handoff 19) — the activities of ONE scope that can be
+compensated: those carrying a compensation boundary (`eventDefinition:
+'compensate'`). Scope-aware by the OMG rule (a compensate throw reaches only
+the SAME level of sub-process): `scope` is the flow scope to enumerate within
+(`undefined` = the top process level), matched with the same `flowScopeOf`
+the graph builder uses, so an activity nested in a sub-process is NOT listed
+for a top-level throw and vice-versa.
+
+This is enumeration ONLY (no ordering, no throw-ref matching — compensation
+has none). It is the single source consumed by the throw's activity picker
+(CO-2), the lint `COMP_REF_NOT_COMPENSABLE` (CO-3) and `compensate()` (CO-4),
+so the three never fork the "what is compensable here" topology. An activity
+with more than one compensation boundary is listed once (its first boundary).
+
+#### Parameters
+
+##### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+##### scope?
+
+`string` \| `undefined`
+
+#### Returns
+
+[`CompensableActivity`](#compensableactivity)[]
 
 ***
 

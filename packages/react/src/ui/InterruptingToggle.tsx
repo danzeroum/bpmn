@@ -27,9 +27,13 @@ export function isEventSubprocessStart(diagram: BpmnDiagram, node: BpmnNode): bo
   return parent !== undefined && isEventSubprocess(parent);
 }
 
-/** The node kinds the interrupting toggle applies to (esub start or boundary). */
+/** The node kinds the interrupting toggle applies to (esub start or boundary).
+ * A COMPENSATION boundary (Handoff 19 §6b) is excluded: it fires AFTER its
+ * activity completes, so `cancelActivity` does not apply — the boundary is
+ * ALWAYS solid and the toggle is absent for this kind. */
 export function hasInterruptingToggle(diagram: BpmnDiagram, node: BpmnNode): boolean {
-  return node.type === 'boundaryEvent' || isEventSubprocessStart(diagram, node);
+  if (node.type === 'boundaryEvent') return node.properties.eventDefinition !== 'compensate';
+  return isEventSubprocessStart(diagram, node);
 }
 
 export function InterruptingToggle({ node, readOnly }: { node: BpmnNode; readOnly: boolean }) {

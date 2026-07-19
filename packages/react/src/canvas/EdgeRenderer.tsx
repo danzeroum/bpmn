@@ -29,11 +29,13 @@ const CHIP_MIN_ZOOM = 0.6;
 /** Visible purpose text is truncated to this many chars (full text in <title>). */
 const CHIP_MAX_CHARS = 24;
 
-const DOMAIN_MARKER: Record<NonNullable<EdgeStyle['marker']>, string> = {
+const DOMAIN_MARKER: Record<NonNullable<EdgeStyle['marker']>, string | undefined> = {
   filled: EDGE_MARKER_FILLED_ID,
   open: EDGE_MARKER_OPEN_ID,
   'double-chevron': EDGE_MARKER_CHEVRON_ID,
   disc: EDGE_MARKER_DISC_ID,
+  // Handoff 19 §6b: a BPMN association is a plain line with NO flow arrow.
+  none: undefined,
 };
 
 export interface EdgeRendererProps {
@@ -124,7 +126,7 @@ function EdgeRendererInner({
   let stroke = closed ? theme.textMuted : selected ? theme.strokeSelected : theme.stroke;
   let strokeWidth = selected ? 2.5 : 1.5;
   let dash: string | undefined = closed ? '6,4' : undefined;
-  let marker = closed
+  let marker: string | undefined = closed
     ? ARROW_MARKER_MUTED_ID
     : selected
       ? ARROW_MARKER_SELECTED_ID
@@ -212,7 +214,7 @@ function EdgeRendererInner({
         stroke={stroke}
         strokeWidth={strokeWidth}
         strokeDasharray={dash}
-        markerEnd={`url(#${marker})`}
+        markerEnd={marker ? `url(#${marker})` : undefined}
         pointerEvents="none"
       />
       {decoration === 'check-disc' && (

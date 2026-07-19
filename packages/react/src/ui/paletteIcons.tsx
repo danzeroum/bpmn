@@ -142,6 +142,12 @@ export const CORE_PALETTE_ICONS: Record<string, ReactNode> = {
       <path d="M 6 11 L 9 6 L 12 11" strokeWidth={1.3} strokeLinecap="round" strokeLinejoin="round" />
     </Icon>
   ),
+  compensationPair: (
+    <Icon>
+      <circle cx={9} cy={9} r={6.5} strokeWidth={1.3} />
+      <path d="M 9 6 L 6 9 L 9 12 Z M 12 6 L 9 9 L 12 12 Z" strokeWidth={1.1} strokeLinejoin="round" />
+    </Icon>
+  ),
   businessRuleTask: (
     <Icon>
       <rect x={2.5} y={4.75} width={13} height={8.5} rx={2} />

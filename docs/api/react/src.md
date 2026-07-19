@@ -3278,7 +3278,7 @@ SVG dash array, e.g. '5,4'. Solid when omitted.
 ##### marker?
 
 ```ts
-optional marker?: "filled" | "open" | "double-chevron" | "disc";
+optional marker?: "none" | "filled" | "open" | "double-chevron" | "disc";
 ```
 
 Arrowhead at the target end. Default 'filled'. 'disc' is the DMN
@@ -12279,6 +12279,9 @@ function hasInterruptingToggle(diagram, node): boolean;
 ```
 
 The node kinds the interrupting toggle applies to (esub start or boundary).
+A COMPENSATION boundary (Handoff 19 §6b) is excluded: it fires AFTER its
+activity completes, so `cancelActivity` does not apply — the boundary is
+ALWAYS solid and the toggle is absent for this kind.
 
 #### Parameters
 
@@ -13013,6 +13016,32 @@ lint-clean — boundary + LOCAL escalation definition + ref in ONE undo,
 Reforço 7: a boundary needs a host — the drop must land on an activity
 (attaches via the N-1 side/t anchor); on empty canvas it DECLINES with a
 declared veto (announced on the 🔒), never an orphan boundary.
+
+#### Parameters
+
+##### ctx
+
+[`PaletteBuildContext`](#palettebuildcontext)
+
+#### Returns
+
+[`PaletteInsertResult`](#paletteinsertresult)
+
+***
+
+### buildCompensationPairInsert()
+
+```ts
+function buildCompensationPairInsert(ctx): PaletteInsertResult;
+```
+
+The «Compensation (pair)» palette composite (Handoff 19 §6b): ONE undoable
+command that drops the compensation boundary (⟲) on the host, a handler
+activity BELOW it (declared offset), and the `bpmn:association` linking the
+two — the pair is born complete and lint-clean (the ES-2 ruler). Drop demands
+an activity host (the EC-2 veto). The association is seeded with explicit DI
+waypoints (boundary center → handler center) so the freshly-created diagram
+re-exports byte-stably (reforço 9).
 
 #### Parameters
 

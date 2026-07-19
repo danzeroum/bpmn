@@ -68,6 +68,7 @@ import {
   DEMO_DECISION_TABLE,
   buildErrorSimDiagram,
   buildEsubSimDiagram,
+  buildCompensationEditorDiagram,
   buildEscalationBridgeDiagram,
   buildEscalationDiagram,
   buildEscalationNoCatchDiagram,
@@ -374,6 +375,7 @@ export function App() {
     if (params.get('escalation')) return buildEscalationDiagram();
     if (params.get('escno')) return buildEscalationNoCatchDiagram();
     if (params.get('agentbridge')) return buildEscalationBridgeDiagram();
+    if (params.get('comp')) return buildCompensationEditorDiagram();
     if (params.get('drd')) return buildDrdDiagram();
     if (params.get('closed')) return buildClosedDiagram();
     if (params.get('hc')) return buildHealthcareDiagram();

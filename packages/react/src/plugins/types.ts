@@ -267,7 +267,7 @@ export interface EdgeStyle {
   dash?: string;
   /** Arrowhead at the target end. Default 'filled'. 'disc' is the DMN
    * authority-requirement tip (filled circle r 3.5). */
-  marker?: 'filled' | 'open' | 'double-chevron' | 'disc';
+  marker?: 'filled' | 'open' | 'double-chevron' | 'disc' | 'none';
   /** Routing override for this edge type: 'straight' draws a border-anchored
    * line (DMN DRD requirement edges). Default: the editor's router. */
   routing?: 'straight';

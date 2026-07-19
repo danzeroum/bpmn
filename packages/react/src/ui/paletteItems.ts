@@ -1,6 +1,10 @@
 import type { PaletteGroup, PaletteItem } from '../plugins/types.js';
 import { CORE_PALETTE_ICONS } from './paletteIcons.js';
-import { buildEscalationBoundaryInsert, buildEventSubprocessInsert } from './paletteInsert.js';
+import {
+  buildCompensationPairInsert,
+  buildEscalationBoundaryInsert,
+  buildEventSubprocessInsert,
+} from './paletteInsert.js';
 
 /** Built-in palette sections: the standard set plus the F6 event sub-menu. */
 export const BUILT_IN_PALETTE_GROUPS: PaletteGroup[] = [
@@ -39,5 +43,9 @@ export const BUILT_IN_PALETTE: PaletteItem[] = [
   // boundary + local definition + ref, cancelActivity:false explicit; the drop
   // must land on a host activity (reforço 7) or it declines with a veto.
   { id: 'escalationBoundary', label: 'Escalation (boundary)', nodeType: 'boundaryEvent', icon: CORE_PALETTE_ICONS.escalationBoundary, group: 'events', build: buildEscalationBoundaryInsert },
+  // Handoff 19 §6b: composite compensation PAIR — boundary ⟲ + handler
+  // (isForCompensation) BELOW the host + the linking association, in ONE undo,
+  // lint-clean by construction. The drop must land on a host activity.
+  { id: 'compensationPair', label: 'Compensation (pair)', nodeType: 'boundaryEvent', icon: CORE_PALETTE_ICONS.compensationPair, group: 'events', build: buildCompensationPairInsert },
   { id: 'eventBasedGateway', label: 'Event Gateway', nodeType: 'eventBasedGateway', icon: CORE_PALETTE_ICONS.eventBasedGateway, group: 'events' },
 ];

@@ -4391,6 +4391,12 @@
   font-size: 9px;
   fill: var(--bpmnr-status-active-fg, #1a6a54);
 }
+/* Handoff 19 §6b — compensation throw chip «⟲ compensa: …» (transient). */
+.bpmnr-event-compensation text.bpmnr-event-compensation-chip {
+  font-family: var(--bpmnr-font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  fill: var(--btv-gold, #9a7b1e);
+}
 @media (prefers-color-scheme: dark) {
   :root:not([data-bpmnr-theme]) .bpmnr-eventdefs-seal {
     border-color: #44403a;
@@ -4475,6 +4481,48 @@
   .bpmnr-interrupting-label {
     min-height: 44px;
   }
+}
+
+/* --- Compensation target picker (Handoff 19 §6b). --- */
+.bpmnr-compensation-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--bpmnr-border, #d8d2c6);
+}
+.bpmnr-compensation-label {
+  font-size: 11px;
+  color: var(--bpmnr-text-muted, #6f675a);
+}
+.bpmnr-compensation-select {
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 8px;
+  border: 1px solid var(--bpmnr-border, #d8d2c6);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--bpmnr-text, #262220);
+}
+.bpmnr-compensation-hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--bpmnr-text-muted, #6f675a);
+}
+@media (pointer: coarse) {
+  .bpmnr-compensation-select {
+    min-height: 44px;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-bpmnr-theme]) .bpmnr-compensation-select {
+    color: #e8e3da;
+    border-color: #44403a;
+  }
+}
+[data-bpmnr-theme='dark'] .bpmnr-compensation-select {
+  color: #e8e3da;
+  border-color: #44403a;
 }
 
 /* --- Event I/O on the Execução tab (Handoff 16 E-4, §3c). --- */

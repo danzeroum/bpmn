@@ -90,6 +90,8 @@ const EXPECTED_EXPORTS = [
   'buildEventSubprocessInsert',
   // Handoff 18 §5b — composite escalation-boundary palette factory.
   'buildEscalationBoundaryInsert',
+  // Handoff 19 §6b — composite compensation-pair palette factory.
+  'buildCompensationPairInsert',
   'insertPaletteItem',
   'paletteInsertCommand',
   'paletteItemLabel',

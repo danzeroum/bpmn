@@ -80,6 +80,14 @@ export function resolveEditorConfig(plugins: BpmnPlugin[] = []): EditorConfig {
       dash: '2,4',
       marker: 'open',
     },
+    // Handoff 19 §6b: a BPMN association (compensation handler link, text
+    // annotation, …) is a dashed line with NO flow arrow — it lives outside the
+    // sequence. Global by design (BPMN-correct for every association).
+    association: {
+      stroke: 'var(--bpmnr-text-muted, #6f675a)',
+      dash: '3,3',
+      marker: 'none',
+    },
   };
   const ruleEngine = createDefaultRuleEngine();
   const validationRules = [...BUILT_IN_VALIDATION_RULES];

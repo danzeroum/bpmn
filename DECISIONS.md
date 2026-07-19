@@ -780,6 +780,17 @@ a re-otimização global sob demanda.
 - **Veto estrutural cobre os DOIS lados (reforço da CO-1):** o handler (`isForCompensation`) não
   recebe nem emite sequence flow **E** o boundary ⟲ não emite sequence flow de saída (só associação);
   testes dos dois + negativo (boundary de erro continua emitindo fluxo normal).
+- **Estilo de `association` é GLOBAL (CO-2, decisão 1):** o `edgeStyle` do tipo `association`
+  (tracejado `3,3`, marcador `none` — sem seta de fluxo) vale para **toda** associação, não só a de
+  compensação. É BPMN-correto (associação vive fora da sequência). Isso muda também associações de
+  `textAnnotation` (antes sólidas com seta) — mudança INTENCIONAL e aprovada pelo owner. Nenhum
+  snapshot commitado exercita marcador de associação, então a suíte react (567) passou sem
+  atualização de snapshot; a mudança é visível no editor/export.
+- **`compensableActivitiesOf` no CORE (CO-2, decisão 2):** fonte única scope-aware (atividades do
+  MESMO escopo com boundary ⟲) que o picker (CO-2), o `COMP_REF_NOT_COMPENSABLE` (CO-3) e o
+  `compensate()` (CO-4) consomem — zero fork, precedente `eligibleEscalationCatches`.
+- **Marcador ◀◀ lê `isForCompensation` direto (CO-2, decisão 3):** não é `properties.marker`
+  (loop/MI); coexiste com o loop marker (◀◀ desloca à esquerda quando há loop). Teste de coexistência.
 
 ---
 
