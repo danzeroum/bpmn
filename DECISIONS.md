@@ -791,6 +791,19 @@ a re-otimização global sob demanda.
   `compensate()` (CO-4) consomem — zero fork, precedente `eligibleEscalationCatches`.
 - **Marcador ◀◀ lê `isForCompensation` direto (CO-2, decisão 3):** não é `properties.marker`
   (loop/MI); coexiste com o loop marker (◀◀ desloca à esquerda quando há loop). Teste de coexistência.
+- **Piso de cobertura por-pacote: checar com `--project <pkg> --coverage` (lição CO-3/CO-4):** o CI
+  aplica pisos de branches por pacote (ex.: `lint`/`simulation` ≥85%) via `test:coverage`. O CI
+  **constrói antes de testar**, então testes de OUTRO pacote (ex.: react) importam o alvo
+  **construído (dist)** e NÃO contam para `<alvo>/src`. Localmente, sem build, importam a FONTE e
+  inflam o número — mascarando a falha. A checagem fiel do piso de um pacote é
+  `npx vitest run --project <pkg> --coverage` (só os testes do próprio pacote contam para
+  `<pkg>/src`), rodada ANTES do push. `npx vitest run --coverage` agregado não substitui isso.
+- **`compensate()` na simulação (CO-4, decisões A/B/C):** completados DERIVADOS da trilha (`'move'`
+  edge.source atividade), última conclusão vence no loop (declarado); handler resolvido sim-side
+  sobre a enumeração congelada do core (`compensableActivitiesOf`) via a associação do boundary;
+  compensação sem ref-matching → **sem tiers** da ES-5 (broadcast = boundary-handlers + esub-starts
+  do escopo juntos; específica = só aquele handler, esub-start não participa — declarado em
+  `limitations.md`).
 
 ---
 
