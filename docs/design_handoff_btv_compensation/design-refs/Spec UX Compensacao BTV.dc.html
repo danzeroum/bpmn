@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Fraunces:opsz,wght@9..144,500;9..144,600&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #2b2824; }
+  a { color: #33567e; } a:hover { color: #24405f; }
+  ::selection { background: #e3ecf7; }
+</style>
+</helmet>
+<section style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #262220; padding: 34px 30px 70px;">
+  <div style="max-width: 1560px; margin: 0 auto;">
+    <div style="color: #efece6; margin-bottom: 24px;">
+      <div style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 3px; color: #c9a94e;">SPEC DE REFERÊNCIA · HANDOFF 19 · COMPENSAÇÃO — DESFAZER GOVERNADO</div>
+      <h1 style="font-family: 'Fraunces', serif; font-weight: 600; font-size: 34px; margin: 8px 0 6px;">Compensação — "desfazer o que já foi feito, na ordem certa" fecha 100% da família OMG</h1>
+      <div style="font-size: 13px; color: #a49c8f; max-width: 104ch;">⚠ <strong style="color: #c9a94e;">Compensação NÃO segue o caminho do H18</strong> — pesquisa OMG validada: não há root nomeado nem 5º bucket; o <span style="font-family: 'IBM Plex Mono', monospace;">activityRef</span> do throw aponta para uma ATIVIDADE do mesmo escopo; o handler liga por ASSOCIAÇÃO (nunca sequence flow) e carrega <span style="font-family: 'IBM Plex Mono', monospace;">isForCompensation</span>; o boundary não tem cancelActivity (dispara APÓS a atividade completar); a execução de referência é em ordem REVERSA à conclusão. Reuso real: boundary/esub-start ES-1/ES-2, lint 1.4.0, paradas honestas E-6/ES-5. <strong style="color: #c9a94e;">Pré-requisito: Handoffs 16–18 completos na main (estão).</strong></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(560px, 1fr)); gap: 20px; align-items: start;">
+
+      <!-- 6a MODELO -->
+      <div id="6a" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">6a</span>
+          <span style="font-size: 14px; font-weight: 600;">Modelo + XML OMG — sem bucket; activityRef + associação + isForCompensation</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #262220; overflow: hidden;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #a49c8f; padding: 9px 12px; border-bottom: 1px solid #3a352f;">XML — O TRIO OMG DA COMPENSAÇÃO</div>
+              <pre style="margin: 0; padding: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 8.8px; line-height: 1.62; color: #d8d2c6; white-space: pre-wrap;">&lt;bpmn:boundaryEvent id="b1"
+    attachedToRef<span style="color: #c9a94e;">&#61;</span>"reservar-hotel"&gt;
+  <span style="color: #7fb59a;">&lt;bpmn:compensateEventDefinition/&gt;</span>
+&lt;/bpmn:boundaryEvent&gt;          <span style="color: #6b6357;">← SEM cancelActivity
+
+</span><span style="color: #c9a94e;">&lt;bpmn:association</span> id="a1"
+  sourceRef<span style="color: #c9a94e;">&#61;</span>"b1" targetRef<span style="color: #c9a94e;">&#61;</span>"cancelar-reserva"/&gt;
+
+&lt;bpmn:serviceTask id="cancelar-reserva"
+    <span style="color: #7fb59a;">isForCompensation&#61;"true"</span> …/&gt;
+
+&lt;bpmn:intermediateThrowEvent id="t1"&gt;
+  &lt;bpmn:compensateEventDefinition
+    <span style="color: #c9a94e;">activityRef&#61;"reservar-hotel"</span>/&gt;  <span style="color: #6b6357;">← opcional;
+       ausente &#61; broadcast no escopo</span></pre>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 12px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; margin-bottom: 7px;">O QUE É NOVO DE VERDADE NO MODELO</div>
+              <div style="font-size: 10.5px; line-height: 1.7; color: #3a352f;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #9a7b1e;">bpmn:association</span> como ARESTA de primeira classe (tracejada, sem seta de fluxo) — reconciliar com a dataAssociation do F7-3: tipo próprio, nunca fork<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #9a7b1e;">properties.isForCompensation</span> → atributo OMG padrão (default false omitido, molde ES-1)<br><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: #9a7b1e;">properties.compensateActivityRef</span> no throw → atributo do child; <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">waitForCompletion</span> default TRUE omitido<br>Catch NUNCA emite activityRef/waitForCompletion (a OMG os reserva ao throw; ferramentas de referência ignoram com warning)</div>
+              <div style="border-top: 1px dashed #e2ddd3; margin-top: 8px; padding-top: 8px; font-size: 10px; line-height: 1.6; color: #6b6357;"><strong style="color: #3a352f;">Veto estrutural no core:</strong> handler (isForCompensation) não recebe nem emite SEQUENCE FLOW — só associação do boundary; veto declarado (canal da ES-1) nos dois sentidos.</div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Kind `compensation` já existe no registry (H6) — ganha semântica, nunca segundo kind<br>Boundary de compensação: `cancelActivity` NUNCA emitido (não se aplica — dispara pós-conclusão)<br>activityRef válido = atividade do MESMO escopo com boundary de compensação (OMG)<br>Import externo (Camunda/Flowable) com o trio completo vira modelo de primeira classe</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ round-trip byte-estável do trio (boundary + associação + isForCompensation) e do throw com/sem activityRef<br>□ defaults omitidos: waitForCompletion true / isForCompensation false / cancelActivity ausente<br>□ fixture congelada compensationFrozen; as 4 anteriores intactas<br>□ corpus ≥1 arquivo real (Camunda book-hotel ou equivalente) importando o trio sem warning<br>□ CONFORMANCE promove compensate + association via gerador; apiSurface core</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6b VISUAL -->
+      <div id="6b" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">6b</span>
+          <span style="font-size: 14px; font-weight: 600;">Visual — o par «fazer ⟲ desfazer» legível de relance</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 14px;">
+            <svg width="100%" viewBox="0 0 520 178" style="display: block;">
+              <rect x="14" y="16" width="150" height="58" rx="8" fill="#fff" stroke="#44403a" stroke-width="1.3"></rect>
+              <text x="89" y="42" text-anchor="middle" font-size="10.5" fill="#262220" font-family="Space Grotesk, sans-serif">Reservar hotel</text>
+              <text x="89" y="56" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#1a6a54">✓ completada</text>
+              <!-- compensation boundary: solid double circle, rewind glyph -->
+              <circle cx="120" cy="74" r="14" fill="#fdfcfa" stroke="#44403a" stroke-width="1.4"></circle>
+              <circle cx="120" cy="74" r="10.5" fill="none" stroke="#44403a" stroke-width="1.1"></circle>
+              <path d="M 119 69 L 113 74 L 119 79 Z M 126 69 L 120 74 L 126 79 Z" fill="none" stroke="#44403a" stroke-width="1.2"></path>
+              <!-- association dashed, no flow arrow -->
+              <path d="M 120 88 C 120 112, 160 118, 196 118" fill="none" stroke="#6b6357" stroke-width="1.2" stroke-dasharray="3 3"></path>
+              <!-- handler -->
+              <rect x="200" y="96" width="150" height="46" rx="8" fill="#fdfcfa" stroke="#44403a" stroke-width="1.3"></rect>
+              <text x="275" y="116" text-anchor="middle" font-size="10" fill="#262220" font-family="Space Grotesk, sans-serif">Cancelar reserva</text>
+              <path d="M 213 130 L 208 134.5 L 213 139 Z M 220 130 L 215 134.5 L 220 139 Z" fill="none" stroke="#44403a" stroke-width="1.1"></path>
+              <text x="284" y="134" text-anchor="middle" font-size="7.2" font-family="IBM Plex Mono, monospace" fill="#a49c8f">handler · isForCompensation</text>
+              <!-- throw -->
+              <circle cx="420" cy="45" r="15" fill="#fdfcfa" stroke="#44403a" stroke-width="1.4"></circle>
+              <circle cx="420" cy="45" r="11.5" fill="none" stroke="#44403a" stroke-width="1.1"></circle>
+              <path d="M 419 39 L 412 45 L 419 51 Z M 427 39 L 420 45 L 427 51 Z" fill="#44403a" stroke="#44403a" stroke-width="1"></path>
+              <text x="420" y="74" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#6b6357">throw (glifo cheio)</text>
+              <rect x="358" y="82" width="128" height="16" rx="8" fill="#fdfaf1" stroke="#9a7b1e"></rect>
+              <text x="422" y="93" text-anchor="middle" font-size="7.4" font-family="IBM Plex Mono, monospace" fill="#9a7b1e">⟲ compensa: Reservar hotel</text>
+              <text x="264" y="168" text-anchor="middle" font-size="7.5" font-family="IBM Plex Mono, monospace" fill="#a49c8f">associação TRACEJADA sem seta de fluxo · handler com marcador ⟲⟲ · chip do alvo no throw</text>
+            </svg>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Glifo rewind ◀◀ da fonte única eventGlyph (throw cheio / catch vazado)<br>Boundary de compensação SEMPRE sólido (nunca tracejado — não há não-interrupting aqui); toggle da EC-2 AUSENTE para esse kind<br>Handler: marcador ◀◀ no rodapé (molde dos marcadores de loop H7) + associação tracejada SEM marcador de seta de fluxo<br>Chip no throw: «⟲ compensa: {nome}» quando activityRef; «⟲ compensa: escopo» quando broadcast — TRANSIENT<br>Paleta «Compensação (par)»: UM composto cria boundary + associação + handler task já nomeado — o par nasce completo (régua ES-2)</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ glifo na fonte única; boundary sólido sempre; toggle ausente (RTL negativo)<br>□ associação tracejada sem seta; handler com marcador; snapshot dos boundaries comuns intacto<br>□ paleta = 1 composto (3 elementos + associação), 1 undo, nasce lint-clean; drop exige host (veto EC-2 herdado)<br>□ picker do throw lista ATIVIDADES compensáveis do escopo (com boundary ⟲) — nunca definições; broadcast é a opção default<br>□ dark theme; chips TRANSIENT; touch ≥44px; export SVG fiel (geometria)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6c INTERACOES/LINT -->
+      <div id="6c" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">6c</span>
+          <span style="font-size: 14px; font-weight: 600;">Interações + veto — a associação é o único caminho do handler</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 12px;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; margin-bottom: 8px;">GESTOS VETADOS (SEMPRE DECLARADOS)</div>
+              <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #b3372f; background: #fdf3f1; border-radius: 8px; padding: 8px 10px; margin-bottom: 6px;">
+                <span style="font-size: 12px;">🔒</span>
+                <span style="font-size: 10px; color: #b3372f; line-height: 1.5;">Handler de compensação não recebe fluxo de sequência — ele é alcançado pela associação do boundary (OMG).</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; border: 1px solid #b3372f; background: #fdf3f1; border-radius: 8px; padding: 8px 10px;">
+                <span style="font-size: 12px;">🔒</span>
+                <span style="font-size: 10px; color: #b3372f; line-height: 1.5;">Boundary de compensação conecta só por associação ao handler — nunca fluxo de sequência de saída.</span>
+              </div>
+              <div style="font-size: 10px; color: #6b6357; margin-top: 8px; line-height: 1.6;">Gesto de conexão porta→handler ou boundary⟲→nó via fluxo: veto pelo canal `lastVeto`/`announceVeto` (ES-3). Gesto boundary⟲→task SEM associação existente: cria a ASSOCIAÇÃO (não fluxo) e seta `isForCompensation` no alvo — UM composto declarado no toast.</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; overflow: hidden;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; padding: 9px 12px; border-bottom: 1px solid #eee9df; background: #faf9f6;">DOCK — política: lint-etiquette@1.4.0 ● VIGENTE</div>
+              <div style="font-size: 10px; line-height: 1.5;">
+                <div style="display: flex; align-items: center; gap: 7px; padding: 6px 12px; border-bottom: 1px solid #f2eee6;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #b3372f;"></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #b3372f;">COMP_HANDLER_FLOW</span><span>handler «Cancelar reserva» tem fluxo de sequência (import)</span></div>
+                <div style="display: flex; align-items: center; gap: 7px; padding: 6px 12px; border-bottom: 1px solid #f2eee6;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #b3372f;"></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #b3372f;">COMP_BOUNDARY_NO_HANDLER</span><span>boundary ⟲ sem associação a handler</span><span style="border: 1px solid #1a6a54; color: #1a6a54; border-radius: 6px; padding: 1px 7px; font-size: 8.5px; margin-left: auto;">corrigir</span></div>
+                <div style="display: flex; align-items: center; gap: 7px; padding: 6px 12px; border-bottom: 1px solid #f2eee6;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #9a7b1e;"></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #9a7b1e;">COMP_REF_NOT_COMPENSABLE</span><span>throw aponta atividade sem boundary ⟲ (warning)</span></div>
+                <div style="display: flex; align-items: center; gap: 7px; padding: 6px 12px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #9a7b1e;"></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 8px; color: #9a7b1e;">COMP_CATCH_ATTRS</span><span>catch com activityRef/waitForCompletion (ignorados — OMG)</span></div>
+              </div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Veto no editor + lint no import (dupla cobertura, molde ES-3/ES-4)<br>Quick-fix mecânico SÓ para COMP_BOUNDARY_NO_HANDLER: cria handler + associação (a FORMA do composto da paleta — uma fonte); demais → ✦ C5<br>EVT_SUBPROC_START ganha compensation (start de compensação SÓ em esub — nunca inicia processo, OMG); EVT_ERROR/ESCALATION_START_TOPLEVEL ganham o irmão COMP_START_TOPLEVEL<br>Perfis 1.3.0 → 1.4.0 pela MESMA fonte</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ vetos nos dois gestos com mensagem (teste dos dois + negativos: task comum conecta normal)<br>□ gesto boundary⟲→task cria associação + isForCompensation em 1 composto (teste + e2e)<br>□ 4 regras com positivos E negativos; quick-fix reusa o builder da paleta (igualdade de forma)<br>□ COMP_CATCH_ATTRS: import externo com os attrs no catch → warning + attrs preservados no soup (passthrough, nunca re-emitidos no child)<br>□ política 1.4.0 na MESMA fonte (dock + adapter + teste)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6d SIMULACAO -->
+      <div id="6d" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35);">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">6d</span>
+          <span style="font-size: 14px; font-weight: 600;">Simulação — reversa, pós-conclusão, honesta</span>
+        </div>
+        <div style="padding: 18px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #fff; padding: 12px;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #6b6357; margin-bottom: 8px;">CARD «COMPENSAR» + TRILHA (ORDEM REVERSA NOMEADA)</div>
+            <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 12px;">
+              <div style="font-size: 10.5px; line-height: 1.6; color: #3a352f;">
+                <div style="padding: 6px 8px; background: #fdfaf1; border-radius: 6px; border: 1px solid #9a7b1e;">⟲ compensar ESCOPO (broadcast) — 2 handlers elegíveis</div>
+                <div style="padding: 6px 8px; color: #6b6357;">⟲ compensar «Reservar hotel» (específica)</div>
+                <div style="padding: 6px 8px; color: #6b6357;">⟲ compensar «Comprar passagem» (específica)</div>
+                <div style="padding: 5px 8px; color: #a49c8f; font-size: 9.5px;">«Emitir voucher» — ainda não completada · não compensável (declarado)</div>
+              </div>
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; line-height: 1.75; color: #6b6357; border-left: 1px dashed #e2ddd3; padding-left: 12px;">TRILHA:<br><span style="color: #9a7b1e;">⟲ compensation broadcast — 2 completed activities, REVERSE order</span><br><span>1. «Comprar passagem» → handler «Estornar passagem»</span><br><span>2. «Reservar hotel» → handler «Cancelar reserva»</span><br><span style="color: #b3372f;">· «Pagar cartão» completed SEM handler ⟲ — declarado, não compensada</span></div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px;">
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">compensate(scope)</span> e <span style="font-family: 'IBM Plex Mono', monospace; font-size: 9px;">compensate(activityRef)</span> — SÓ atividades COMPLETADAS (a trilha de transitions é a fonte), ordem REVERSA à conclusão (OMG/referência)<br>Completada sem handler = linha declarada na trilha, nunca silêncio; nada completado = card desabilitado com razão<br>Específica sem boundary ⟲ = warning do lint no desenho; no motor, parada declarada<br>Handler roda como token próprio; waitForCompletion true = o throw só avança após handlers (declarado na trilha)<br>esub de compensação: start ⟲ dispara pelo MESMO compensate (tier de escopo ES-5); decisions serializáveis; replay bit a bit; COMPAT E-6/ES-5/EC-5 obrigatória</div>
+            </div>
+            <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+              <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+              <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ broadcast compensa SÓ completadas em ordem reversa NOMEADA na trilha (teste com 3 atividades, 1 incompleta)<br>□ completada sem handler → linha declarada (teste); nada completado → card com razão<br>□ específica compensa 1; específica não-compensável → parada declarada<br>□ replay bit a bit inclusive do estado declarado; compat: cenários anteriores replayam idênticos<br>□ limitations.md: snapshot de variáveis NÃO simulado; compensação não propaga a callActivity (referência); e2e do fluxo completo</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6e LEDGER + DEMO -->
+      <div id="6e" style="background: #faf9f6; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 40px rgba(0,0,0,0.35); grid-column: 1 / -1;">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 18px; background: #262220; color: #efece6;">
+          <span style="background: #c9a94e; color: #262220; font-weight: 700; font-size: 11px; border-radius: 6px; padding: 2px 8px;">6e</span>
+          <span style="font-size: 14px; font-weight: 600;">Ledger + demo «pacote de viagem» — auditoria de reversões + 100% da família OMG</span>
+        </div>
+        <div style="padding: 18px; display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 12px;">
+          <div style="border: 1px solid #e2ddd3; border-radius: 12px; background: #262220; overflow: hidden;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #a49c8f; padding: 9px 12px; border-bottom: 1px solid #3a352f;">LEDGER · COMPENSATION_TRIGGERED</div>
+            <pre style="margin: 0; padding: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 8.8px; line-height: 1.7; color: #d8d2c6; white-space: pre-wrap;">compensationTriggeredEntry({
+  actor,            <span style="color: #6b6357;">// humano ou ia.copilot@… (✦)</span>
+  scope,            <span style="color: #6b6357;">// 'broadcast' | activityRef</span>
+  compensated: [    <span style="color: #6b6357;">// ordem REVERSA real</span>
+    {activity, handler},
+    …
+  ],
+  uncompensated: [  <span style="color: #6b6357;">// declaradas, nunca omitidas</span>
+    {activity, reason}
+  ]
+})</pre>
+          </div>
+          <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #9a7b1e; margin-bottom: 7px;">SEMÂNTICA VINCULANTE</div>
+            <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">Builder no adapters-bpmn (molde escalationRaisedEntry EC-3); demo appenda no compensate (caminho (a) da EC-5 — motor puro); ✦ para IA via aiAuthorOf<br>A entrada carrega compensadas E não-compensadas — o rastro completo da reversão, auditável (cadeia verifica)<br>Demo «pacote de viagem» (?compensation=1): reservar hotel ⟲ + comprar passagem ⟲ + pagar cartão SEM handler (o risco visível) + esub de erro com throw de compensação (o padrão de referência erro→reverter)<br>Catálogo N-3 fica em 16 (nenhum evento novo)</div>
+          </div>
+          <div style="border: 1px solid #e2ddd3; border-radius: 10px; padding: 11px 13px; background: #fff;">
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 8.5px; letter-spacing: 1.5px; color: #1a6a54; margin-bottom: 7px;">CHECKLIST DE ACEITE ✓</div>
+            <div style="font-size: 11px; line-height: 1.7; color: #3a352f;">□ builder + host-append + cadeia verifica (teste); ✦ presente para IA, ausente para humano na MESMA trilha<br>□ e2e do demo: simular falha do cartão → esub de erro → compensar → trilha reversa nomeada → entrada no ledger com uncompensated declarado<br>□ matriz CONFORMANCE: família de gatilhos 100% (message/signal/error/escalation/compensation) — o marco registrado no CONFORMANCE.md e README<br>□ zero dependência nova entre pacotes (guards)<br>□ balanço final do handoff no fechamento</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top: 26px; color: #a49c8f; font-size: 11.5px; display: flex; gap: 26px; flex-wrap: wrap;">
+      <span><strong style="color: #c9a94e;">Ordem vinculante:</strong> CO-0 reconciliação → CO-1 core (trio+veto) → CO-2 react (visual+paleta+picker) → CO-3 lint 1.4.0 → CO-4 simulação → CO-5 ledger+demo+balanço</span>
+      <span><strong style="color: #c9a94e;">Cercas:</strong> OMG puro (sem bucket — activityRef é para ATIVIDADE) · associação nunca fluxo · defaults omitidos · fixtures intactas · reversa pós-conclusão honesta · transversais completos</span>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>
