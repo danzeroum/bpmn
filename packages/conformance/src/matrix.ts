@@ -66,6 +66,7 @@ export const CONFORMANCE_MATRIX: ConformanceEntry[] = [
   { element: 'bpmn:errorEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'error'" },
   { element: 'bpmn:signalEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'signal'" },
   { element: 'bpmn:escalationEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'escalation'" },
+  { element: 'bpmn:compensateEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'compensate'", notes: 'Handoff 19 §6a: completes the OMG trigger family. No named root/bucket — the throw carries an OPTIONAL activityRef (target activity; absent = broadcast) and waitForCompletion (default true omitted); the handler links by bpmn:association and carries isForCompensation; the boundary has no cancelActivity. Catch never emits activityRef/waitForCompletion (COMP_CATCH_ATTRS warns + preserves on import).' },
   { element: 'bpmn:conditionalEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'conditional'" },
   { element: 'bpmn:linkEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'link'" },
   { element: 'bpmn:terminateEventDefinition', status: 'supported', conformanceClass: 'analytic', mappedTo: "eventDefinition: 'terminate'" },

@@ -215,6 +215,39 @@ whole, no new containment model. Its start event may carry `properties.isInterru
   classification — the execution-tab matrix and the lint rules consume these helpers, so
   editor, lint and simulator agree by construction.
 
+## Compensation (`compensateEventDefinition` / `isForCompensation` / `bpmn:association`)
+
+Compensation (Handoff 19 §6a) completes the OMG trigger family, and it does **not** follow the
+named-definition path of the other kinds — there is NO root element and NO bucket. The internal
+event kind is `compensate` (the OMG element prefix `compensateEventDefinition`), so it round-trips
+through the generic `${kind}EventDefinition` machinery with zero special-case.
+
+- **The trio.** A `<bpmn:boundaryEvent>` with a `<bpmn:compensateEventDefinition/>` (the ⟲ catch)
+  is linked to its HANDLER activity by a `<bpmn:association sourceRef="boundary" targetRef="handler"/>`
+  — never a sequence flow — and the handler carries `isForCompensation="true"`. A
+  `<bpmn:intermediateThrowEvent>`/`<bpmn:endEvent>` with a `<bpmn:compensateEventDefinition/>` raises
+  the compensation.
+- **Attributes, defaults OMITTED.** `isForCompensation` (`properties.isForCompensation`) is a native
+  BPMN attribute, written only when `true` (default `false` omitted, the `triggeredByEvent` mold).
+  The THROW's `compensateEventDefinition` carries an OPTIONAL `activityRef`
+  (`properties.compensateActivityRef` — the target activity; **absent = broadcast** over the scope)
+  and `waitForCompletion` (`properties.waitForCompletion`, default `true` omitted — only
+  `waitForCompletion="false"` is ever written). A CATCH (boundary / event-subprocess start) **never**
+  emits `activityRef`/`waitForCompletion` — the OMG reserves them to the throw (a catch that imports
+  them is non-OMG: the lint warns, `COMP_CATCH_ATTRS`, and the values are preserved, never
+  re-emitted on the child).
+- **No cancelActivity.** A compensation boundary fires AFTER its activity completes, so
+  `cancelActivity` does not apply and is **never** emitted (the non-interrupting toggle is absent for
+  this kind).
+- **`bpmn:association` is reused, not forked.** It is already a first-class built-in edge type
+  (`BUILT_IN_EDGE_TYPES`), excluded from flow (`NON_FLOW_EDGE_TYPES`) and round-tripping byte-stably;
+  compensation gives it its governed use, no new edge infrastructure.
+- **Structure (veto, both sides).** A handler (`isForCompensation`) neither receives nor emits
+  sequence flow, and a compensation boundary emits no OUTGOING sequence flow — it links to the
+  handler only by association. Both are vetoed by the default rules (`edge.connect.pre`); an error
+  or message boundary keeps emitting flow normally (the veto is kind-gated). Associations are
+  explicitly allowed to pass.
+
 ## Canonical timer (`properties.timer`)
 
 A timer event stores its expression as `properties.timer = { kind: 'date' | 'duration' |

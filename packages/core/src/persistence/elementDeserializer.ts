@@ -198,6 +198,18 @@ export class ElementDeserializer {
       properties.eventDefinition = eventDef.kind;
       if (eventDef.ref) properties.eventDefinitionRef = eventDef.ref;
       if (eventDef.timer) properties.timer = eventDef.timer;
+      // Handoff 19: the compensate throw's optional activityRef / waitForCompletion.
+      if (eventDef.compensateActivityRef) {
+        properties.compensateActivityRef = eventDef.compensateActivityRef;
+      }
+      if (eventDef.waitForCompletion === false) properties.waitForCompletion = false;
+    }
+    // Handoff 19: isForCompensation on a handler activity (molde triggeredByEvent).
+    // OMG default false is omitted; only `true` is read, so extension-free
+    // activities keep their exact shape. Un-prefixed standard attribute — it
+    // would otherwise be dropped (withForeignAttributes only keeps prefixed).
+    if (el.attributes.isForCompensation === 'true') {
+      properties.isForCompensation = true;
     }
     // Boundary event host + interrupting flag from native attributes.
     if (type === 'boundaryEvent') {
@@ -331,7 +343,13 @@ function withForeignAttributes(el: XmlElement): { foreignAttributes?: Record<str
  */
 function readEventDefinition(
   el: XmlElement,
-): { kind: EventDefinitionKind; ref?: string; timer?: TimerProperty } | undefined {
+): {
+  kind: EventDefinitionKind;
+  ref?: string;
+  timer?: TimerProperty;
+  compensateActivityRef?: string;
+  waitForCompletion?: boolean;
+} | undefined {
   for (const child of el.children) {
     const match = /^(.+)EventDefinition$/.exec(localName(child.tag));
     const kind = match?.[1];
@@ -341,6 +359,22 @@ function readEventDefinition(
         child.attributes.signalRef ??
         child.attributes.errorRef ??
         child.attributes.escalationRef;
+      // Handoff 19: the compensate throw carries an OPTIONAL activityRef (the
+      // target activity; absent = broadcast) and waitForCompletion (default
+      // TRUE, so only `false` is meaningful). These live on the throw; a catch
+      // that carries them is non-OMG — the lint (CO-3 COMP_CATCH_ATTRS) warns
+      // and preserves, the converter here just reads what it sees.
+      if (kind === 'compensate') {
+        const activityRef = child.attributes.activityRef;
+        const waitForCompletion =
+          child.attributes.waitForCompletion === 'false' ? false : undefined;
+        return {
+          kind: kind as EventDefinitionKind,
+          ...(ref ? { ref } : {}),
+          ...(activityRef ? { compensateActivityRef: activityRef } : {}),
+          ...(waitForCompletion === false ? { waitForCompletion: false } : {}),
+        };
+      }
       // Canonical timer (E-5): the standard timeDate/timeDuration/timeCycle
       // child of a timerEventDefinition → properties.timer.
       let timer: TimerProperty | undefined;

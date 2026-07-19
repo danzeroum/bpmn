@@ -4900,7 +4900,7 @@ Built-in edge types. Custom types may be registered by plugins.
 ### EVENT\_DEFINITION\_KINDS
 
 ```ts
-const EVENT_DEFINITION_KINDS: readonly ["message", "timer", "error", "signal", "escalation", "conditional", "link", "terminate"];
+const EVENT_DEFINITION_KINDS: readonly ["message", "timer", "error", "signal", "escalation", "compensate", "conditional", "link", "terminate"];
 ```
 
 BPMN event-definition kinds. An event node (`startEvent`, `endEvent`,
@@ -7344,6 +7344,7 @@ function eventDefinitionOf(node):
   | "escalation"
   | "link"
   | "timer"
+  | "compensate"
   | "conditional"
   | "terminate"
   | undefined;
@@ -7365,6 +7366,7 @@ Returns the event-definition kind stored on a node, if it is a valid kind.
   \| `"escalation"`
   \| `"link"`
   \| `"timer"`
+  \| `"compensate"`
   \| `"conditional"`
   \| `"terminate"`
   \| `undefined`

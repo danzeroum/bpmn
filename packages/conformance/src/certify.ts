@@ -102,6 +102,7 @@ const LOCAL_TO_MATRIX: Record<string, string> = {
   errorEventDefinition: 'bpmn:errorEventDefinition',
   signalEventDefinition: 'bpmn:signalEventDefinition',
   escalationEventDefinition: 'bpmn:escalationEventDefinition',
+  compensateEventDefinition: 'bpmn:compensateEventDefinition',
   conditionalEventDefinition: 'bpmn:conditionalEventDefinition',
   linkEventDefinition: 'bpmn:linkEventDefinition',
   terminateEventDefinition: 'bpmn:terminateEventDefinition',

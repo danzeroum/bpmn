@@ -11,7 +11,7 @@
  *   must exercise byte-exact upstream files (decision recorded in
  *   pendencias.md §13).
  */
-export const GENERATED_CORPUS_FILES = 59;
+export const GENERATED_CORPUS_FILES = 60;
 
 /** The round-trip gate requires at least this many real files when fetched. */
 export const EXTERNAL_CORPUS_MIN = 20;
