@@ -90,6 +90,26 @@ everywhere else, never a guessed route:
   A specific + a catch-all, or an event subprocess + a boundary in different tiers, is **NOT**
   ambiguity. More than one candidate in the winning tier IS — a `BlockedDecision` naming node,
   reason and candidates. The trail names the catching start, its ref and its mode.
+- **Escalation throws** (`throwEscalation`, Handoff 18 §5e): the candidates are the host's
+  escalation boundaries AND the eligible escalation-start **event subprocesses of the token's
+  scope** — enumerated by the SAME shared core source as the lint (`eligibleEscalationCatches`),
+  never a forked topology. The precedence order and the ambiguity rule are IDENTICAL to the error
+  throw (the four tiers above, `especificidade > escopo > catch-all`; >1 in the winning tier is a
+  `BlockedDecision`). Two things differ, both DECLARED:
+  - **The personality is non-interrupting.** A non-interrupting catch (the escalation default)
+    leaves the host token in place and re-emerges a PARALLEL token at the catch — the host CONTINUES
+    while the escalation is handled. An interrupting catch reuses the error path (cancels naming the
+    count + scope).
+  - **No eligible catch = the escalation DISSOLVES** — a declared **no-op** in the trail
+    (“escalation dissolves (OMG); the host token continues”), NOT a stop. This is the binding
+    contrast with the error throw, where an uncaught error is a declared STOP: escalation is “raise
+    to whoever has authority — and if no one is listening, carry on”, so an unhandled escalation
+    never halts the token. What is still NOT modelled is escalation **propagation up the containment
+    chain** (an escalation climbing to an outer scope's catch) — like error propagation, that is a
+    declared boundary of the direct-scope resolution, not a guess.
+  The «Escalate» card predicts each option's destination + mode (glyph + text) BEFORE the throw so
+  the choice is informed; the demo maps a fired escalation to a ledger entry (`escalationRaisedEntry`
+  — the escalation ACTUALLY happened), the engine itself staying pure.
 - **Signals** (`throwSignal`): broadcast — every WAITING matching catch advances and every
   matching SIGNAL-start event subprocess fires (deterministic).
 - **Messages** (`throwMessage`): single destination — the candidate set includes matching
@@ -115,7 +135,10 @@ What it deliberately does **NOT** decide:
 - **Error propagation beyond the direct scope** — an error uncaught by the host's boundaries and
   the scope's event subprocesses is a declared stop, not an escalation up the containment chain
   (sub-process descent is not modelled, above).
-- **Escalation and compensation events** — the compensation/choreography pendency
+- **Escalation propagation beyond the direct scope** — an escalation uncaught in the direct scope
+  DISSOLVES (a declared no-op, above), not a climb to an outer scope's catch. The matching semantics
+  themselves ARE modelled now (Handoff 18 §5e); only cross-scope propagation stays out.
+- **Compensation events** — the compensation/choreography pendency
   ([`pendencias.md`](../pendencias.md)); they carry no matching semantics here.
 
 ## Replay / conformance (`@buildtovalue/replay`, Handoff 7B)

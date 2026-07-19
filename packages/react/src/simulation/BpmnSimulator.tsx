@@ -1,6 +1,6 @@
 import { useCallback, useState, type ReactNode } from 'react';
 import type { BpmnDiagram } from '@buildtovalue/core';
-import type { DecisionEvaluator } from '@buildtovalue/simulation';
+import type { DecisionEvaluator, EscalationDestination } from '@buildtovalue/simulation';
 import { buildSession, coveragePercent, type SimulationSession } from '@buildtovalue/simulation';
 import { BpmnEditor } from '../BpmnEditor.js';
 import type { BpmnPlugin } from '../plugins/types.js';
@@ -22,6 +22,19 @@ export interface BpmnSimulatorProps {
    * injection. Button hides when absent.
    */
   onRecord?: (session: SimulationSession) => void | Promise<void>;
+  /**
+   * Fired when the user THROWS an escalation from the «Escalate» card (Handoff
+   * 18 §5e, path a — the engine stays pure). The host maps it to a ledger
+   * append (`escalationRaisedEntry`): `ESCALATION_RAISED` means the escalation
+   * ACTUALLY happened. Carries the host node, the chosen ref, and the PREDICTED
+   * destination so the entry's `target` names where it landed. Same injection
+   * pattern as {@link onRecord}.
+   */
+  onEscalationThrown?: (info: {
+    host: string;
+    escalationRef?: string;
+    destination: EscalationDestination;
+  }) => void | Promise<void>;
   /** Author recorded on the session (defaults to "anônimo"). */
   author?: string;
   /**
@@ -51,6 +64,7 @@ export function BpmnSimulator({
   plugins,
   onExit,
   onRecord,
+  onEscalationThrown,
   author = 'anônimo',
   recordedInfo,
   decisions,
@@ -146,6 +160,24 @@ export function BpmnSimulator({
           onThrowError={(host, errorRef) =>
             sim.choose({ kind: 'error', host, ...(errorRef !== undefined ? { errorRef } : {}) })
           }
+          escalationThrowOptions={state.escalationThrowOptions}
+          onThrowEscalation={(host, escalationRef) => {
+            // Capture the PREDICTED destination BEFORE firing (the throw mutates
+            // the state the card is derived from), so the ledger entry names
+            // where it landed. Path a: the engine stays pure — the demo/host
+            // decides whether to append `escalationRaisedEntry`.
+            const option = state.escalationThrowOptions
+              .find((card) => card.host === host)
+              ?.options.find((o) => o.escalationRef === escalationRef);
+            sim.choose({
+              kind: 'escalation',
+              host,
+              ...(escalationRef !== undefined ? { escalationRef } : {}),
+            });
+            if (option) {
+              void onEscalationThrown?.({ host, escalationRef, destination: option.destination });
+            }
+          }}
           eventSubprocessOptions={state.eventSubprocessOptions}
           onFireEventSubprocess={sim.fireEventSubprocess}
           stepMode={sim.stepMode}

@@ -32,6 +32,8 @@ export type {
   Decision,
   DecisionEvaluator,
   ErrorThrowOption,
+  EscalationDestination,
+  EscalationThrowOption,
   EsubStartInfo,
   EventSubprocessOption,
   DecisionOutcome,

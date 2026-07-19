@@ -217,6 +217,89 @@ describe('event subprocess na simulação (ES-5 §4e)', () => {
   });
 });
 
+/** threePaths + uma boundary de escalação no host `prod` (Handoff 18 §5e). */
+function withEscalationBoundary(opts: { interrupting?: boolean } = {}): BpmnDiagram {
+  const diagram = threePaths();
+  diagram.nodes.escb = createNode({
+    id: 'escb',
+    type: 'boundaryEvent',
+    label: 'Alçada',
+    x: 150,
+    y: 40,
+    properties: {
+      attachedToRef: 'prod',
+      eventDefinition: 'escalation',
+      eventDefinitionRef: 'esc-1',
+      ...(opts.interrupting === false ? { cancelActivity: false } : {}),
+    },
+  });
+  diagram.nodes.rev = createNode({ id: 'rev', type: 'task', label: 'Revisar', x: 300, y: 20 });
+  diagram.edges.esce = createEdge({ id: 'esce', sourceId: 'escb', targetId: 'rev' });
+  diagram.definitions = {
+    messages: [],
+    signals: [],
+    errors: [],
+    escalations: [{ id: 'esc-1', name: 'Acima da alçada', escalationCode: 'OVER' }],
+  };
+  return diagram;
+}
+
+describe('escalação na simulação (Handoff 18 §5e)', () => {
+  it('o card «Escalar» mostra o DESTINO PREVISTO por opção (glifo+texto, reforço 7)', () => {
+    const { container } = render(
+      <BpmnSimulator diagram={withEscalationBoundary({ interrupting: false })} />,
+    );
+    fireEvent.click(container.querySelector('[data-sim-advance]')!); // s → prod
+    const card = container.querySelector('[data-sim-escalate-card="prod"]')!;
+    expect(card).toBeTruthy();
+    expect(card.textContent).toContain('Escalate on “prod”');
+    // A opção catalogada prevê o boundary não-interrupting: glifo ↟ + texto.
+    const opt = card.querySelector('[data-sim-throw-escalation="esc-1"]')!;
+    expect(opt.getAttribute('data-sim-escalation-dest')).toBe('boundary');
+    const dest = opt.querySelector('[data-sim-escalation-dest-text]')!;
+    expect(dest.textContent).toContain('→ boundary “Alçada”');
+    expect(dest.textContent).toContain('↟ non-interrupting');
+    // A não catalogada prevê a dissolução (declarada ANTES do disparo).
+    const uncat = card.querySelector('[data-sim-throw-escalation=""]')!;
+    expect(uncat.getAttribute('data-sim-escalation-dest')).toBe('dissolve');
+    cleanup();
+  });
+
+  it('disparar a escalação NI faz o host SEGUIR e um token PARALELO re-emergir no catch', () => {
+    const { container } = render(
+      <BpmnSimulator diagram={withEscalationBoundary({ interrupting: false })} />,
+    );
+    fireEvent.click(container.querySelector('[data-sim-advance]')!); // s → prod
+    const card = container.querySelector('[data-sim-escalate-card="prod"]')!;
+    fireEvent.click(card.querySelector('[data-sim-throw-escalation="esc-1"]')!);
+    const trail = container.querySelector('[data-sim-trail]')!.textContent!;
+    expect(trail).toContain('caught by boundary "Alçada" (non-interrupting — host continues + parallel token)');
+    // Dois tokens visíveis: o host e o catch.
+    expect(container.querySelector('[data-sim-active-node="prod"]')).toBeTruthy();
+    expect(container.querySelector('[data-sim-active-node="escb"]')).toBeTruthy();
+    cleanup();
+  });
+
+  it('escalação SEM catch dissolve (no-op declarado) — a trilha nomeia, o host segue', () => {
+    const diagram = threePaths();
+    diagram.nodes.esci = createNode({
+      id: 'esci',
+      type: 'intermediateThrowEvent',
+      label: 'Subir',
+      x: 150,
+      y: 40,
+      properties: { eventDefinition: 'escalation' },
+    });
+    // Sem boundary/esub de escalação: o card não aparece (nada catalogado),
+    // mas o motor dissolve por API se disparado — cobrimos o motor no pacote
+    // simulation; aqui garantimos que o card SÓ existe quando há catch elegível.
+    const { container } = render(<BpmnSimulator diagram={diagram} />);
+    fireEvent.click(container.querySelector('[data-sim-advance]')!); // s → prod
+    expect(container.querySelector('[data-sim-escalate-card="prod"]')).toBeNull();
+    cleanup();
+  });
+});
+
 describe('edgeGeometryFor', () => {
   it('rounds explicit waypoints and computes a node center', () => {
     const diagram = threePaths();

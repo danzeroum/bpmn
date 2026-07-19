@@ -32,6 +32,13 @@ function canonicalDecision(decision: Decision): Record<string, unknown> {
         host: decision.host,
         ...(decision.errorRef !== undefined ? { errorRef: decision.errorRef } : {}),
       };
+    // §5e: escalation throw — same stable shape, replayed by matching.
+    case 'escalation':
+      return {
+        kind: 'escalation',
+        host: decision.host,
+        ...(decision.escalationRef !== undefined ? { escalationRef: decision.escalationRef } : {}),
+      };
     case 'signal':
     case 'message':
       return { kind: decision.kind, ref: decision.ref };

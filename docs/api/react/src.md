@@ -4558,6 +4558,39 @@ injection. Button hides when absent.
 
 `void` \| `Promise`\<`void`\>
 
+##### onEscalationThrown?
+
+```ts
+optional onEscalationThrown?: (info) => void | Promise<void>;
+```
+
+Fired when the user THROWS an escalation from the «Escalate» card (Handoff
+18 §5e, path a — the engine stays pure). The host maps it to a ledger
+append (`escalationRaisedEntry`): `ESCALATION_RAISED` means the escalation
+ACTUALLY happened. Carries the host node, the chosen ref, and the PREDICTED
+destination so the entry's `target` names where it landed. Same injection
+pattern as [onRecord](#onrecord).
+
+###### Parameters
+
+###### info
+
+###### host
+
+`string`
+
+###### escalationRef?
+
+`string`
+
+###### destination
+
+`EscalationDestination`
+
+###### Returns
+
+`void` \| `Promise`\<`void`\>
+
 ##### author?
 
 ```ts
@@ -4756,6 +4789,35 @@ optional onThrowError?: (host, errorRef?) => void;
 `string`
 
 ###### errorRef?
+
+`string`
+
+###### Returns
+
+`void`
+
+##### escalationThrowOptions?
+
+```ts
+optional escalationThrowOptions?: EscalationThrowOption[];
+```
+
+"Escalate" cards (Handoff 18 §5e) — user picks the escalation, engine
+matches; each option shows its PREDICTED destination + mode (reforço 7).
+
+##### onThrowEscalation?
+
+```ts
+optional onThrowEscalation?: (host, escalationRef?) => void;
+```
+
+###### Parameters
+
+###### host
+
+`string`
+
+###### escalationRef?
 
 `string`
 

@@ -1,4 +1,4 @@
-import { BpmnError } from '@buildtovalue/core';
+import { BpmnError, eligibleEscalationCatches, nodeParentId } from '@buildtovalue/core';
 import type { BpmnDiagram } from '@buildtovalue/core';
 import { buildSimGraph, type SimGraph } from './graph.js';
 import { computeDominators, dominates } from './dominators.js';
@@ -8,6 +8,8 @@ import type {
   Decision,
   DecisionEvaluator,
   ErrorThrowOption,
+  EscalationDestination,
+  EscalationThrowOption,
   EventSubprocessOption,
   PendingChoice,
   PendingDecisionInput,
@@ -116,6 +118,7 @@ export class SimulationEngine {
       pendingChoice: this.pendingChoice,
       boundaryOptions: this.boundaryOptions,
       errorThrowOptions: this.errorThrowOptions,
+      escalationThrowOptions: this.escalationThrowOptions,
       eventSubprocessOptions: this.eventSubprocessOptions,
       pendingDecisionInput: this.pendingDecisionInput,
       blockedDecision: this.blocked ? { ...this.blocked } : null,
@@ -323,6 +326,7 @@ export class SimulationEngine {
     if (decision.kind === 'boundary') return this.fireBoundary(decision.boundary);
     if (decision.kind === 'decision') return this.decideDecision(decision);
     if (decision.kind === 'error') return this.throwError(decision.host, decision.errorRef);
+    if (decision.kind === 'escalation') return this.throwEscalation(decision.host, decision.escalationRef);
     if (decision.kind === 'signal') return this.throwSignal(decision.ref);
     if (decision.kind === 'message') return this.throwMessage(decision.ref);
     if (decision.kind === 'eventSubprocess') return this.fireEventSubprocess(decision.sub);
@@ -477,6 +481,158 @@ export class SimulationEngine {
     this.decisions.push({ kind: 'error', host, ...(errorRef !== undefined ? { errorRef } : {}) });
     this.settleOrJoins();
     return { moved: true, transitions: this.trail.slice(start) };
+  }
+
+  /**
+   * The 4 escalation tiers for a throw on `host`, BUILT ON the core
+   * `eligibleEscalationCatches` enumeration (Handoff 18 §5d/§5e — never
+   * re-derived): the sim adds only SCOPE (boundaries on the host, esub-starts
+   * of the token's scope — the graph is already scope-limited) and the TOTAL
+   * order (especificidade > escopo > catch-all):
+   *   1. esub-start EXACT · 2. boundary EXACT · 3. esub-start catch-all · 4. boundary catch-all
+   */
+  private escalationTiers(host: string, escalationRef?: string): { candidates: SimNode[]; esub: boolean }[] {
+    const boundaryIds = new Set(this.graph.boundariesByHost.get(host) ?? []);
+    // A boundary catch resolves to the boundary SimNode; an esub-start catch
+    // resolves to its SHELL SimNode (the node carrying `esubStart`) — the same
+    // node `catchByEventSubprocess` needs, exactly as `errorEventSubprocesses`
+    // yields for `throwError`. The core enumeration tags the START event, so
+    // esub catches are re-keyed to the parent shell here.
+    const inScope = eligibleEscalationCatches(this.diagram, escalationRef)
+      .map((c) => ({
+        c,
+        sim: this.graph.nodes.get(c.catchKind === 'esubStart' ? nodeParentId(c.node) ?? '' : c.node.id),
+      }))
+      .filter((x): x is { c: (typeof x)['c']; sim: SimNode } => x.sim !== undefined)
+      .filter((x) => (x.c.catchKind === 'boundary' ? boundaryIds.has(x.c.node.id) : true));
+    const tier = (catchKind: 'boundary' | 'esubStart', matchType: 'exact' | 'catchAll'): SimNode[] =>
+      inScope.filter((x) => x.c.catchKind === catchKind && x.c.matchType === matchType).map((x) => x.sim);
+    return [
+      { candidates: tier('esubStart', 'exact'), esub: true },
+      { candidates: tier('boundary', 'exact'), esub: false },
+      { candidates: tier('esubStart', 'catchAll'), esub: true },
+      { candidates: tier('boundary', 'catchAll'), esub: false },
+    ];
+  }
+
+  /**
+   * Throw an ESCALATION on a host (Handoff 18 §5e): the SAME total order as
+   * `throwError` (built on the shared core enumeration), but the semantics
+   * DIFFER at the edges — the binding contrast (cerca §5):
+   *
+   * - Non-interrupting catch (the personality default): the host token SEGUE
+   *   and a PARALLEL token spawns at the catch (`applyBoundary`/esub already do
+   *   this) — the test that separates escalation from error.
+   * - Interrupting catch: the ES-5 path is reused (cancels naming count+scope).
+   * - NO eligible destination: the escalation DISSOLVES — a DECLARED no-op in
+   *   the trail ("escalation dissolves — OMG"), the host token continues, and
+   *   `this.blocked` is NEVER set. This is the difference from `throwError`,
+   *   where an uncaught error is a declared STOP.
+   *
+   * >1 candidate in the winning tier is a `BlockedDecision` naming candidates.
+   */
+  throwEscalation(host: string, escalationRef?: string): StepResult {
+    const token = this.tokens.find((t) => t.nodeId === host);
+    if (!token) throw new SimulationError(`No token on host ${host} to throw an escalation on`);
+    const hostNode = this.graph.nodes.get(host)!;
+    const start = this.trail.length;
+    const thrown = escalationRef !== undefined ? `escalation "${escalationRef}"` : 'uncatalogued escalation';
+    const tiers = this.escalationTiers(host, escalationRef);
+    const winner = tiers.find((tier) => tier.candidates.length > 0);
+    let moved = false;
+    if (winner && winner.candidates.length === 1) {
+      const target = winner.candidates[0];
+      moved = true;
+      if (winner.esub) {
+        const preExisting = new Set(this.tokens.map((t) => t.id));
+        this.catchByEventSubprocess(
+          [target],
+          preExisting,
+          (esub) =>
+            `Escalated ${thrown} on "${hostNode.label || host}": caught by event subprocess "${esub.label || esub.id}" (start ${esub.esubStart!.startId}`,
+        );
+      } else {
+        const mode = target.interrupting === false ? 'non-interrupting — host continues + parallel token' : 'interrupting';
+        this.record(
+          'event',
+          `Escalated ${thrown} on "${hostNode.label || host}": caught by boundary "${target.label || target.id}" (${mode})`,
+          { nodeId: target.id },
+        );
+        this.applyBoundary(target, token);
+      }
+    } else if (!winner) {
+      // THE contrast (cerca §5): no destination → the escalation DISSOLVES, a
+      // DECLARED no-op — the host token continues, never a stop (unlike error).
+      this.record(
+        'event',
+        `Escalated ${thrown} on "${hostNode.label || host}": no eligible catch — escalation dissolves (OMG); the host token continues`,
+        { nodeId: host },
+      );
+    } else {
+      const candidates = winner.candidates.map((c) => `${c.id} ("${c.label || c.id}")`).join(', ');
+      this.blocked = {
+        nodeId: host,
+        cell: escalationRef ?? '(uncatalogued)',
+        reason: `ambiguous catch for ${thrown}: candidates ${candidates} — refine the escalationRefs`,
+      };
+      this.record(
+        'decision-blocked',
+        `Escalated ${thrown} on "${hostNode.label || host}" is AMBIGUOUS: candidates ${candidates} — declared stop`,
+        { nodeId: host },
+      );
+    }
+    this.decisions.push({ kind: 'escalation', host, ...(escalationRef !== undefined ? { escalationRef } : {}) });
+    this.settleOrJoins();
+    return { moved, transitions: this.trail.slice(start) };
+  }
+
+  /** The predicted destination of an escalation option (reforço 7) — the same
+   * tier resolution as {@link throwEscalation}, WITHOUT firing. */
+  private predictEscalation(host: string, escalationRef?: string): EscalationDestination {
+    const winner = this.escalationTiers(host, escalationRef).find((t) => t.candidates.length > 0);
+    if (!winner) return { kind: 'dissolve' };
+    if (winner.candidates.length > 1) {
+      return { kind: 'ambiguous', candidates: winner.candidates.map((c) => c.label || c.id) };
+    }
+    const target = winner.candidates[0];
+    return {
+      kind: winner.esub ? 'esubStart' : 'boundary',
+      label: target.label || target.id,
+      interrupting: winner.esub ? target.esubStart!.interrupting : target.interrupting !== false,
+    };
+  }
+
+  /**
+   * "Throw escalation" cards (§5e): one per host with a resting token and an
+   * eligible escalation catch (boundary on the host OR an escalation esub-start
+   * of the scope). The options are the DISTINCT catchable refs + the
+   * uncatalogued escalation (`escalationRef: undefined`, reforço 10), each
+   * carrying its PREDICTED destination+mode (reforço 7) so the user decides
+   * informed BEFORE the throw.
+   */
+  get escalationThrowOptions(): EscalationThrowOption[] {
+    const cards: EscalationThrowOption[] = [];
+    const esubs = [...this.graph.nodes.values()].filter((n) => n.esubStart?.kind === 'escalation');
+    const hosts = new Set(this.tokens.map((t) => t.nodeId));
+    for (const host of hosts) {
+      const hostNode = this.graph.nodes.get(host)!;
+      const boundaries = (this.graph.boundariesByHost.get(host) ?? [])
+        .map((id) => this.graph.nodes.get(id)!)
+        .filter((node) => node.eventKind === 'escalation');
+      if (boundaries.length === 0 && esubs.length === 0) continue;
+      const seen = new Set<string>();
+      const options: EscalationThrowOption['options'] = [];
+      for (const catchNode of [...boundaries, ...esubs]) {
+        const ref = catchNode.eventKind === 'escalation' ? catchNode.eventRef : catchNode.esubStart!.ref;
+        if (ref === undefined || seen.has(ref)) continue;
+        seen.add(ref);
+        const label = catchNode.eventRefLabel ?? catchNode.esubStart?.refLabel;
+        options.push({ escalationRef: ref, ...(label ? { label } : {}), destination: this.predictEscalation(host, ref) });
+      }
+      options.push({ destination: this.predictEscalation(host, undefined) }); // uncatalogued
+      cards.push({ host, hostLabel: hostNode.label || host, options });
+    }
+    return cards;
   }
 
   /**
@@ -782,6 +938,15 @@ export class SimulationEngine {
         if (engine.blocked) break; // declared stop — the scenario ends here
         continue;
       }
+      // §5e: a thrown escalation re-resolves through the SAME matching, as
+      // soon as its host holds a token — no destination is a declared no-op
+      // (dissolve), never a stop, so replay simply continues past it.
+      if (next && next.kind === 'escalation' && engine.tokens.some((t) => t.nodeId === next.host)) {
+        engine.throwEscalation(next.host, next.escalationRef);
+        queue.shift();
+        if (engine.blocked) break; // >1 candidate = declared stop — ends here
+        continue;
+      }
       // E-6: signal/message throws re-resolve at their queue position.
       if (next && (next.kind === 'signal' || next.kind === 'message')) {
         engine.choose(next);
@@ -819,6 +984,7 @@ export class SimulationEngine {
       decision.kind === 'boundary' ||
       decision.kind === 'decision' ||
       decision.kind === 'error' ||
+      decision.kind === 'escalation' ||
       decision.kind === 'signal' ||
       decision.kind === 'message' ||
       decision.kind === 'eventSubprocess'

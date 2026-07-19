@@ -43,6 +43,7 @@ import { callActivityBindingRule, VersionRegistry } from '@buildtovalue/registry
 import { soundnessPromotionRule, soundnessRules } from '@buildtovalue/soundness';
 import {
   activeCopilotPromptVersion,
+  escalationRaisedEntry,
   eventBindingChangedEntry,
   replayAnalysisEntry,
   simulationSessionEntry,
@@ -70,6 +71,7 @@ import {
   buildEscalationBridgeDiagram,
   buildEscalationDiagram,
   buildEscalationNoCatchDiagram,
+  buildEscalationSimDiagram,
   buildEventDefsDiagram,
   buildEventIoDiagram,
   buildTimerDiagram,
@@ -258,6 +260,10 @@ const EVENT_LIB_PLUGINS = [...PLUGINS, eventLibraryPlugin];
 
 /** In-memory ledger the `?simulate` demo registers sessions into (Handoff 7A-3). */
 const simulationDemoLedger = new AuditLedger();
+
+/** Ledger the `?simulate=1&escalation=1` demo appends raised escalations into
+ * (Handoff 18 §5e, path a): the «Escalate» throw fires `escalationRaisedEntry`. */
+const escalationDemoLedger = new AuditLedger();
 
 /** Two versions with bound runs for the `?replay` demo header (bindRun, 7B-3). */
 const REPLAY_VERSIONS = [
@@ -498,15 +504,22 @@ export function App() {
     );
   }
   if (simulateMode) {
+    // Handoff 18 §5e: `?simulate=1&escalation=1` throws a governed escalation;
+    // the «Escalate» throw appends `escalationRaisedEntry` (path a — the engine
+    // stays pure). The actor is an AI (`ia.copilot@…`) so the Ledger Explorer's
+    // ✦ seal renders; `target` names the predicted destination.
+    const escalationSim = params.get('escalation') !== null;
     return (
       <I18nProvider messages={PT_BR}>
         <BpmnSimulator
           diagram={
-            params.get('esub')
-              ? buildEsubSimDiagram()
-              : params.get('errors')
-                ? buildErrorSimDiagram()
-                : buildSimulationDiagram()
+            escalationSim
+              ? buildEscalationSimDiagram()
+              : params.get('esub')
+                ? buildEsubSimDiagram()
+                : params.get('errors')
+                  ? buildErrorSimDiagram()
+                  : buildSimulationDiagram()
           }
           plugins={PLUGINS}
           author="demo"
@@ -515,6 +528,22 @@ export function App() {
           // in-memory ledger, which certify would turn into SACM evidence.
           onRecord={(session) => {
             void simulationDemoLedger.append(simulationSessionEntry(session, { id: 'demo' }));
+          }}
+          onEscalationThrown={({ host, escalationRef, destination }) => {
+            const target =
+              destination.kind === 'boundary' || destination.kind === 'esubStart'
+                ? destination.label
+                : destination.kind; // 'dissolve' | 'ambiguous'
+            void escalationDemoLedger.append(
+              escalationRaisedEntry({
+                diagramId: 'demo-escalation-sim',
+                versionId: 'v1',
+                nodeId: host,
+                actor: { id: 'ia.copilot@buildtovalue' },
+                ...(escalationRef !== undefined ? { code: escalationRef } : {}),
+                target,
+              }),
+            );
           }}
           onExit={() => {
             window.location.search = '';

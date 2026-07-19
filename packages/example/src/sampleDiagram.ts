@@ -985,6 +985,54 @@ export function buildEscalationDiagram(): BpmnDiagram {
 }
 
 /**
+ * `?simulate=1&escalation=1` — Handoff 18 §5e: the escalation THROW demo. A
+ * governed userTask (`Aprovar despesa`) carries a NON-INTERRUPTING escalation
+ * boundary on `esc-alcada` routing to a human `Rever alçada` — the personality
+ * default. The «Escalate» card offers TWO informed options (reforço 7): the
+ * catalogued `esc-alcada` (→ boundary ↟ non-interrupting: the host CONTINUES
+ * and a PARALLEL token re-emerges at the catch) and the UNCATALOGUED escalation
+ * (→ no catch = the escalation DISSOLVES, a declared no-op — the binding
+ * contrast with error's stop). Throwing it fires the demo's ledger glue
+ * (`escalationRaisedEntry`, path a): an AI actor (`ia.copilot@…`) so the Ledger
+ * Explorer's ✦ mixed-authorship seal renders.
+ */
+export function buildEscalationSimDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-escalation-sim', name: 'Escalação governada', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 60, 150),
+    aprovar: make('userTask', 'aprovar', 'Aprovar despesa', 220, 128),
+    bnd: make('boundaryEvent', 'bnd', 'Acima da alçada', 262, 170, {
+      attachedToRef: 'aprovar',
+      cancelActivity: false,
+      eventDefinition: 'escalation',
+      eventDefinitionRef: 'esc-alcada',
+      boundarySide: 'bottom',
+      boundaryT: 0.5,
+    }),
+    rever: make('userTask', 'rever', 'Rever alçada', 240, 300),
+    end: make('endEvent', 'end', 'Fim', 460, 150),
+    fimRev: make('endEvent', 'fimRev', 'Fim (revisão)', 240, 420),
+  };
+  diagram.edges = {
+    f1: createEdge({ id: 'f1', sourceId: 'start', targetId: 'aprovar', versionId: v }),
+    f2: createEdge({ id: 'f2', sourceId: 'aprovar', targetId: 'end', versionId: v }),
+    f3: createEdge({ id: 'f3', sourceId: 'bnd', targetId: 'rever', versionId: v }),
+    f4: createEdge({ id: 'f4', sourceId: 'rever', targetId: 'fimRev', versionId: v }),
+  };
+  diagram.definitions = {
+    messages: [],
+    signals: [],
+    errors: [],
+    escalations: [{ id: 'esc-alcada', name: 'Acima da alçada', escalationCode: 'OVER_BUDGET' }],
+  };
+  return diagram;
+}
+
+/**
  * `?escno=1` — Handoff 18 §5d: an escalation END-throw (ref `esc-1`) with a
  * matching boundary catch, so the ESC_NO_CATCH warning is ABSENT at rest.
  * Deleting the catch surfaces the WARNING (the escalation would dissolve —

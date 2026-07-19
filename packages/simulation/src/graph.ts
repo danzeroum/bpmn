@@ -59,7 +59,7 @@ function eligibleStartOf(diagram: BpmnDiagram, subId: string): EsubStartInfo | u
   const ref = eventDefinitionRefOf(start);
   if (ref !== undefined) {
     info.ref = ref;
-    if (kind === 'message' || kind === 'signal' || kind === 'error') {
+    if (kind === 'message' || kind === 'signal' || kind === 'error' || kind === 'escalation') {
       info.refLabel =
         findEventDefinition(diagram, kind as EventDefinitionRefKind, ref)?.name ?? ref;
     }
@@ -125,7 +125,12 @@ export function buildSimGraph(diagram: BpmnDiagram, scope: string | undefined = 
       const ref = eventDefinitionRefOf(node);
       if (ref !== undefined) {
         sim.eventRef = ref;
-        if (eventKind === 'message' || eventKind === 'signal' || eventKind === 'error') {
+        if (
+          eventKind === 'message' ||
+          eventKind === 'signal' ||
+          eventKind === 'error' ||
+          eventKind === 'escalation'
+        ) {
           sim.eventRefLabel =
             findEventDefinition(diagram, eventKind as EventDefinitionRefKind, ref)?.name ?? ref;
         }

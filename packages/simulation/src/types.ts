@@ -122,6 +122,28 @@ export interface ErrorThrowOption {
 }
 
 /**
+ * The predicted destination of ONE escalation option, computed WITHOUT firing
+ * (Handoff 18 §5e reforço 7) so the «Escalar» card shows the user, per option,
+ * WHERE the escalation would land and in which MODE — glyph+text, informed
+ * decision before the throw.
+ */
+export type EscalationDestination =
+  | { kind: 'boundary' | 'esubStart'; label: string; interrupting: boolean }
+  /** No eligible catch — the escalation dissolves (legal in the OMG). */
+  | { kind: 'dissolve' }
+  /** >1 candidate in the winning tier — firing will BLOCK (declared). */
+  | { kind: 'ambiguous'; candidates: string[] };
+
+/** "Throw escalation" card (§5e): one per host with a resting token; the
+ * options are the DISTINCT catchable refs + the uncatalogued escalation, each
+ * carrying its predicted {@link EscalationDestination}. */
+export interface EscalationThrowOption {
+  host: string;
+  hostLabel: string;
+  options: Array<{ escalationRef?: string; label?: string; destination: EscalationDestination }>;
+}
+
+/**
  * A timer/conditional event subprocess the user may fire MANUALLY (ES-5, §4e):
  * those kinds NEVER auto-fire in simulation — the card is the declared manual
  * decision (molde {@link BoundaryOption}). The mode is shown so the user
@@ -145,6 +167,9 @@ export type Decision =
   // E-6 (§3e): thrown events — the engine resolves the destination by
   // matching; serialized in scenarios and replayed through the SAME matching.
   | { kind: 'error'; host: string; errorRef?: string }
+  // Handoff 18 §5e: escalation throw — resolved through the SAME total order as
+  // error, but with no destination = DISSOLVE (a declared no-op, not a stop).
+  | { kind: 'escalation'; host: string; escalationRef?: string }
   | { kind: 'signal'; ref: string }
   | { kind: 'message'; ref: string }
   // ES-5 (§4e): manual firing of a timer/conditional event subprocess. WHEN
@@ -250,6 +275,8 @@ export interface SimulationState {
   boundaryOptions: BoundaryOption[];
   /** "Throw error" cards per host with a resting token (E-6, §3e). */
   errorThrowOptions: ErrorThrowOption[];
+  /** "Throw escalation" cards per host with a resting token (Handoff 18 §5e). */
+  escalationThrowOptions: EscalationThrowOption[];
   /** Manual timer/conditional event-subprocess cards (ES-5, §4e). */
   eventSubprocessOptions: EventSubprocessOption[];
   /** A businessRuleTask waiting for decision inputs (SF-2), if any. */
