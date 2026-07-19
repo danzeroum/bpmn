@@ -21,7 +21,7 @@ test('TIMER_MALFORMED + EVT_REF_MISSING no dock → fix por kind → editor limp
   await page.getByTestId('lint-toggle').click();
   const panel = page.getByTestId('lint-panel');
   await expect(panel).toBeVisible();
-  await expect(page.getByTestId('lint-policy')).toContainText('lint-engine@1.3.0');
+  await expect(page.getByTestId('lint-policy')).toContainText('lint-engine@1.4.0');
   await expect(panel.locator('[data-lint-group="timer-malformed"]')).toContainText(
     'TIMER_MALFORMED',
   );
