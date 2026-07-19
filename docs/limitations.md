@@ -12,6 +12,9 @@ Documented deliberately so expectations are managed — none of these fail silen
   (tracked in [`pendencias.md`](../pendencias.md)).
 - Boundary events, message/timer event definitions, call activities and nested sub-process content
   are ignored with import warnings.
+- Custom (plugin) node types are resolved on import via `preferredTypes`; a requested identity is
+  never dropped silently — see the [`preferredTypes` contract matrix](format-spec.md#type-resolution--the-preferredtypes-contract)
+  for the respected/degraded/unsupported outcomes.
 - The XML parser validates structure, not the official XSD.
 
 ## Rendering & performance

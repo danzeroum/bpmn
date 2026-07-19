@@ -162,6 +162,33 @@ engine simply ignores it:
   the element tag stays standard.
 - `bpmnr:property name value` — free-form properties (`value` is JSON-encoded).
 
+## Type resolution & the `preferredTypes` contract
+
+On import, every element's node-type identity is resolved by `ElementDeserializer.readNode` in a
+fixed order: an explicit `bpmnr:meta type` (when registered) wins; otherwise the element's XML
+tag is matched, with a host's `preferredTypes` list breaking ties in favour of a custom type over
+the built-in one (`NodeTypeRegistry.typeForXmlTag` — a pure primitive). A requested identity is
+never dropped in silence: the two degradation paths emit a warning (surfaced by the host, e.g. the
+demo's `import.warning` event).
+
+The full contract, one row per outcome — the status column uses the conformance vocabulary
+(`supported` / `degraded` / `unsupported`), and each row names the test in
+`packages/core/tests/preferredTypesContract.test.ts` that pins it (matrix and suite cannot drift):
+
+| Import situation | `preferredTypes` role | Outcome | Status | Pinned by |
+|---|---|---|---|---|
+| `bpmnr:meta type=X`, X registered | ignored (meta wins) | exact custom type | `supported` | `meta.type registrado vence` |
+| No meta; tag matches a preferred registered type | decisive | preferred wins over built-in | `supported` | `preferred registrado vence o built-in` |
+| No meta; tag matches only the built-in | n/a | built-in type (interoperable downgrade, no warning) | `supported` | `sem meta nem preferred — built-in da tag` |
+| A `preferredTypes` entry is not registered | skipped | first same-tag match; **warning** `Preferred type "X" is not registered — ignored` (once per requested type) | `degraded` | `preferred NÃO registrado — degradação declarada` |
+| `meta.type` present but not registered | fallback to tag | tag type; **warning** `… requested meta type "X", which is not registered — imported as <tag>` (per element) | `degraded` | `meta.type NÃO registrado — degradação declarada` |
+| Tag matches no registered type | n/a | node dropped; **warning** `Ignored unsupported element <tag>` | `unsupported` | `tag desconhecida — warning + descartado` |
+| `pool` / `lane` element | never consulted | fixed `pool`/`lane` type | `supported` | `pool/lane ignora preferredTypes` |
+
+Note the tag-vs-type asymmetry (ES-4): native OMG attributes keyed on the XML tag
+(`triggeredByEvent`, `isInterrupting`) round-trip even when a host remaps the tag to a custom
+type via `preferredTypes`; a foreign import interop fix is measured against this table.
+
 ## Named event definitions (`bpmn:message` / `bpmn:signal` / `bpmn:error` / `bpmn:escalation`)
 
 First-class named definitions (Handoff 16 §3a; escalation added in Handoff 18 §5a) follow the

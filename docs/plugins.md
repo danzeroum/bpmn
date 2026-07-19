@@ -59,7 +59,7 @@ Use it:
 
 | Field | Effect |
 |---|---|
-| `nodeTypes` | Registered into the `NodeTypeRegistry`; the `xml.tag` mapping keeps exports interoperable while `extensionElements` preserve the custom type identity on round-trip. |
+| `nodeTypes` | Registered into the `NodeTypeRegistry` and added to `preferredTypes`; the `xml.tag` mapping keeps exports interoperable while `extensionElements` preserve the custom type identity on round-trip. How a custom type is resolved (or degraded with a warning) on import is the [`preferredTypes` contract matrix](format-spec.md#type-resolution--the-preferredtypes-contract). |
 | `shapes` | React components keyed by node type; receive `{ node, selected }`. |
 | `paletteItems` | Extra palette buttons (`defaultProperties` seed new nodes). |
 | `validationRules` | Appended to the `ValidationEngine` (run by the toolbar Validate button and the CLI). |

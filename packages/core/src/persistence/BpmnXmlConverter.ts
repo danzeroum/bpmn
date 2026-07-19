@@ -216,6 +216,7 @@ export class BpmnXmlConverter {
 
   fromXml(xmlText: string): ImportResult {
     const warnings: string[] = [];
+    this.deserializer.beginImport();
     const root = this.adapter.parse(xmlText);
     if (localName(root.tag) !== 'definitions') {
       throw new BpmnParseError(`Expected <definitions> root element, got <${root.tag}>`);
