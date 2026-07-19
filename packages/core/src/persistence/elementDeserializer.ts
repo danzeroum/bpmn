@@ -41,6 +41,18 @@ export class ElementDeserializer {
     private readonly ext: ExtensionHandler,
   ) {}
 
+  /**
+   * Preferred types already flagged as unregistered during this import — dedup
+   * so an unregistered `preferredTypes` entry warns ONCE per requested type
+   * (config-level miss), not once per element. Reset by {@link beginImport}.
+   */
+  private readonly warnedUnregisteredPreferred = new Set<string>();
+
+  /** Reset per-import warning dedup state. Call once at the top of an import. */
+  beginImport(): void {
+    this.warnedUnregisteredPreferred.clear();
+  }
+
   /** Non-node children of a flow container, consumed elsewhere or ignorable. */
   private static readonly STRUCTURAL_CHILD_TAGS = new Set([
     'standardLoopCharacteristics',
@@ -185,6 +197,23 @@ export class ElementDeserializer {
     if (meta.type && this.registry.has(meta.type)) {
       type = meta.type;
     } else {
+      // The requested type identity can be dropped in two SILENT ways — declare
+      // both (the library never degrades in silence). `typeForXmlTag` stays a
+      // pure primitive; the detection lives here.
+      // (1) meta.type present but unregistered: a per-element identity drop.
+      if (meta.type) {
+        warnings.push(
+          `Element <${el.tag}> requested meta type "${meta.type}", which is not registered — imported as <${tag}>`,
+        );
+      }
+      // (2) an unregistered preferredTypes entry: a config-level miss, warned
+      // once per requested type (dedup across the import).
+      for (const preferred of this.preferredTypes) {
+        if (!this.registry.has(preferred) && !this.warnedUnregisteredPreferred.has(preferred)) {
+          this.warnedUnregisteredPreferred.add(preferred);
+          warnings.push(`Preferred type "${preferred}" is not registered — ignored`);
+        }
+      }
       type = this.registry.typeForXmlTag(tag, this.preferredTypes)?.type;
     }
     if (!type) {
