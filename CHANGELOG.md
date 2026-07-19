@@ -6,6 +6,20 @@ All notable changes to the `@buildtovalue/*` packages are documented here. The p
 
 ## Unreleased
 
+### Changed — package scope rename `@bpmn-react/*` → `@buildtovalue/*` (2026-07-10)
+- The npm organization `@buildtovalue` was created and the whole monorepo was renamed in a
+  dedicated PR (package names, workspace dependencies, imports, docs, CONFORMANCE, lockfile).
+  It is a **pure scope swap** — the path after the scope is unchanged for every package, so the
+  migration is mechanical: replace `@bpmn-react/` with `@buildtovalue/` in your imports and
+  `package.json`. Applies to all 25 packages, e.g. `@bpmn-react/core` → `@buildtovalue/core`,
+  `@bpmn-react/react` → `@buildtovalue/react`, `@bpmn-react/cli` → `@buildtovalue/cli`, …
+- The provisional `"private": true` flags were removed — every library package now publishes;
+  only `example`, `domain-example` and `healthcare` (apps/demos) stay private.
+- **Deliberate carve-outs (unchanged on purpose):** the XML extension namespace prefix `bpmnr:`
+  and the CSS prefixes `bpmnr-` / `btv-` stay (renaming them would break the round-trip of
+  already-exported files and host theming); the CLI binary stays `bpmn-react`
+  (`bpmn-react certify …`) — renaming the command is a separate product decision.
+
 ### Library (`@buildtovalue/library`) — new package (Handoff 6, S-1)
 - Generic, ecosystem-independent artifact catalog: the `ArtifactAdapter` contract
   (`list`/`get`/optional `subscribe`), the shared six-state `LifecycleStatus` vocabulary,
@@ -14,7 +28,6 @@ All notable changes to the `@buildtovalue/*` packages are documented here. The p
   sorting (name/updated/status), chip counts — read-only by construction, no DOM.
 - Adapter validation with warnings (never crashes); independence enforced by a dependency-graph
   test (no imports from `core`/`registry`/`react` — Handoff 6 §10.2).
-- Workspace-only (`private: true`) until the npm-scope decision (pendências §1).
 
 ### Adapters BPMN (`@buildtovalue/adapters-bpmn`) — new package (Handoff 6, S-2)
 - Concrete `ArtifactAdapter`s over the version registry: flow, persona, prompt, connector and
@@ -26,7 +39,6 @@ All notable changes to the `@buildtovalue/*` packages are documented here. The p
   with `--btv-*` token colors — thumbnails are data, never imported components (§3.1).
 - The "recipe" acid-test fixture (`createRecipeAdapter`) + `tests/acidez.test.ts` proving the
   library works with a non-BPMN adapter alone (Handoff 6 §10.1).
-- Workspace-only (`private: true`) until the npm-scope decision (pendências §1).
 
 ### Library React (`@buildtovalue/library-react`) — new package (Handoff 6, S-3)
 - `<LibraryView>`: the Biblioteca gallery (visual spec Handoff 3 §5) — fixed status chips +
@@ -38,7 +50,6 @@ All notable changes to the `@buildtovalue/*` packages are documented here. The p
 - UI half of the §10.1 acid test: the whole gallery exercised with the S-2 recipe adapter alone.
 - **S-6**: `initialSelection`/`onSelectionChange` on `LibraryView`/`useLibrary` — selection joins
   the URL-state seam so back-navigation restores filters AND selection (§10.7).
-- Workspace-only (`private: true`) until the npm-scope decision (pendências §1).
 
 ### Studio (`@buildtovalue/studio`) — new package (Handoff 6, S-4)
 - `StudioShell`: header with the three-screen nav (Biblioteca | Revisão | Auditoria) and
@@ -50,8 +61,7 @@ All notable changes to the `@buildtovalue/*` packages are documented here. The p
 - Decisions as immutable ledger entries: `approvePromotion` (`APPROVAL_RECORDED`, via
   `engine.approve`) and `rejectPromotion` (`PROMOTION_REJECTED`, justification min 10 chars).
   Approving NEVER activates — separação solicitante/aprovador (§11).
-- Headless halves exported and DOM-free testable; workspace-only (`private: true`) until the
-  npm-scope decision (pendências §1).
+- Headless halves exported and DOM-free testable.
 - **S-5 — Ledger Explorer (Auditoria, §6)**: pure event categorization + filters
   (`categorizeEntry`/`filterEntries` — the same filter feeds the trail and the XES export),
   vertical trail with per-category dots, detail column with visible chaining (seq/hash/prev)

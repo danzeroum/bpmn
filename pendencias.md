@@ -284,3 +284,20 @@ O que FICA como pendência do Handoff 18 (registrado, fora do escopo entregue):
   matching em si JÁ é modelada (EC-5); só a propagação cross-escopo fica.
 - **Compensação/coreografia:** segue como pendência anterior (nenhuma semântica de matching aqui) —
   independente da família de gatilhos OMG completada por este handoff.
+
+---
+
+## 10. Passe mobile / Chrome mobile (onda de produto futura)
+
+**(decisão de produto — onda futura, não bug)** Levantado na triagem do Handoff 21 (notas do
+bpmnPlay). O editor hoje é desenhado para desktop: os `pointer events` básicos funcionam em telas
+de toque, mas **pinch-zoom e menus de long-press não são implementados** (registrado como limitação
+em [`docs/limitations.md`](docs/limitations.md) — "Interaction"); os handoffs de design pedem alvos
+de toque ≥44px, mas não há um passe de UX mobile completo (gestos, layout responsivo dos painéis,
+paleta/inspector em telas estreitas).
+
+Um **"passe mobile do Chrome"** — varredura de usabilidade em Chrome mobile, com gestos de toque de
+primeira classe e adaptação responsiva das superfícies — é uma **onda de produto** própria, não um
+defeito da entrega atual. Fica registrado aqui para não se perder; entra quando for priorizado
+(depende de decisão de produto sobre quais superfícies ganham suporte mobile primeiro). A limitação
+de toque em `limitations.md` continua sendo o contrato honesto até lá (nada falha em silêncio).
