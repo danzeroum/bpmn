@@ -3,10 +3,13 @@ import type {
   BoundaryOption,
   CoverageSummary,
   ErrorThrowOption,
+  EscalationDestination,
+  EscalationThrowOption,
   EventSubprocessOption,
   TransitionRecord,
 } from '@buildtovalue/simulation';
 import { useT } from '../i18n/I18nContext.js';
+import type { TFunction } from '../i18n/messages.js';
 
 export interface SimulationPanelProps {
   sessionNumber: number;
@@ -20,6 +23,10 @@ export interface SimulationPanelProps {
   /** "Throw error" cards (E-6 §3e) — user picks the ERROR, engine matches. */
   errorThrowOptions?: ErrorThrowOption[];
   onThrowError?: (host: string, errorRef?: string) => void;
+  /** "Escalate" cards (Handoff 18 §5e) — user picks the escalation, engine
+   * matches; each option shows its PREDICTED destination + mode (reforço 7). */
+  escalationThrowOptions?: EscalationThrowOption[];
+  onThrowEscalation?: (host: string, escalationRef?: string) => void;
   /** Manual timer/conditional event-subprocess cards (ES-5 §4e): those kinds
    * NEVER auto-fire; the mode is shown so the user decides informed. */
   eventSubprocessOptions?: EventSubprocessOption[];
@@ -33,6 +40,33 @@ export interface SimulationPanelProps {
   onRecord?: () => void;
   canRecord?: boolean;
   recordedInfo?: ReactNode;
+}
+
+/**
+ * The predicted destination of one escalation option as glyph + text (Handoff
+ * 18 §5e reforço 7): catch kind + mode, never color-only — the user reads WHERE
+ * it lands and in which MODE before firing. Ambiguity/dissolve are declared.
+ */
+function escalationDestText(t: TFunction, dest: EscalationDestination): string {
+  switch (dest.kind) {
+    case 'boundary':
+    case 'esubStart': {
+      const where = t(
+        dest.kind === 'boundary' ? 'sim.escalation.dest.boundary' : 'sim.escalation.dest.esubStart',
+        { label: dest.label },
+      );
+      const mode = t(
+        dest.interrupting
+          ? 'sim.escalation.dest.interrupting'
+          : 'sim.escalation.dest.nonInterrupting',
+      );
+      return where + mode;
+    }
+    case 'ambiguous':
+      return t('sim.escalation.dest.ambiguous', { candidates: dest.candidates.join(', ') });
+    case 'dissolve':
+      return t('sim.escalation.dest.dissolve');
+  }
 }
 
 /**
@@ -52,6 +86,8 @@ export function SimulationPanel(props: SimulationPanelProps) {
     onFireBoundary,
     errorThrowOptions = [],
     onThrowError,
+    escalationThrowOptions = [],
+    onThrowEscalation,
     eventSubprocessOptions = [],
     onFireEventSubprocess,
     stepMode,
@@ -124,6 +160,40 @@ export function SimulationPanel(props: SimulationPanelProps) {
                 {option.errorRef !== undefined
                   ? t('sim.error.throw', { label: option.label ?? option.errorRef })
                   : t('sim.error.uncatalogued')}
+              </button>
+            ))}
+          </div>
+        ))}
+
+      {/* Handoff 18 (§5e): the «Escalate» card — like «Throw error», the user
+          picks the escalation (named or uncatalogued, reforço 10) and the
+          ENGINE resolves the catch. Each option shows its PREDICTED destination
+          + mode as glyph + text (reforço 7): the informed decision BEFORE the
+          throw. No catch = dissolve (declared no-op); >1 = will block. */}
+      {onThrowEscalation &&
+        escalationThrowOptions.map((card) => (
+          <div key={card.host} className="bpmnr-sim-card" data-sim-escalate-card={card.host}>
+            <div className="bpmnr-sim-card-title">
+              {t('sim.escalation.title', { host: card.hostLabel })}
+            </div>
+            {card.options.map((option) => (
+              <button
+                key={option.escalationRef ?? '(uncatalogued)'}
+                type="button"
+                data-sim-throw-escalation={option.escalationRef ?? ''}
+                data-sim-escalation-dest={option.destination.kind}
+                onClick={() => onThrowEscalation(card.host, option.escalationRef)}
+                className="bpmnr-sim-btn bpmnr-sim-btn-boundary bpmnr-sim-btn-escalate"
+              >
+                <span className="bpmnr-sim-escalate-label">
+                  {/* i18n-exempt — escalation chevron glyph */}↟{' '}
+                  {option.escalationRef !== undefined
+                    ? t('sim.escalation.throw', { label: option.label ?? option.escalationRef })
+                    : t('sim.escalation.uncatalogued')}
+                </span>
+                <span className="bpmnr-sim-escalate-dest" data-sim-escalation-dest-text>
+                  {escalationDestText(t, option.destination)}
+                </span>
               </button>
             ))}
           </div>

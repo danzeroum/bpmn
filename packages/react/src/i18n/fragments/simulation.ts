@@ -18,6 +18,18 @@ export const simulation: { en: Messages; ptBR: Messages } = {
     'sim.error.title': 'Throw error on “{host}”',
     'sim.error.throw': 'Error “{label}”',
     'sim.error.uncatalogued': 'Uncatalogued error',
+    // Handoff 18 §5e: «Escalate» card — the user picks the escalation, the
+    // engine matches; each option shows its PREDICTED destination + mode
+    // (reforço 7) so the decision is informed BEFORE the throw.
+    'sim.escalation.title': 'Escalate on “{host}”',
+    'sim.escalation.throw': 'Escalation “{label}”',
+    'sim.escalation.uncatalogued': 'Uncatalogued escalation',
+    'sim.escalation.dest.boundary': '→ boundary “{label}”',
+    'sim.escalation.dest.esubStart': '→ event subprocess “{label}”',
+    'sim.escalation.dest.interrupting': ' · interrupting',
+    'sim.escalation.dest.nonInterrupting': ' ↟ non-interrupting',
+    'sim.escalation.dest.dissolve': '→ no catch — the escalation dissolves (no-op)',
+    'sim.escalation.dest.ambiguous': '→ several candidates ({candidates}) — will block',
     // ES-5 (§4e): manual event-subprocess card — never auto-fires.
     'sim.esub.title': 'Event subprocess “{label}”',
     'sim.esub.interrupting': 'interrupting — cancels the tokens of this scope',
@@ -82,6 +94,18 @@ export const simulation: { en: Messages; ptBR: Messages } = {
     'sim.error.title': 'Lançar erro em “{host}”',
     'sim.error.throw': 'Erro “{label}”',
     'sim.error.uncatalogued': 'Erro não catalogado',
+    // Handoff 18 §5e: card «Escalar» — o usuário escolhe a escalação, o motor
+    // resolve por matching; cada opção mostra o DESTINO PREVISTO + modo
+    // (reforço 7) para a decisão ser informada ANTES do disparo.
+    'sim.escalation.title': 'Escalar em “{host}”',
+    'sim.escalation.throw': 'Escalação “{label}”',
+    'sim.escalation.uncatalogued': 'Escalação não catalogada',
+    'sim.escalation.dest.boundary': '→ boundary “{label}”',
+    'sim.escalation.dest.esubStart': '→ event subprocess “{label}”',
+    'sim.escalation.dest.interrupting': ' · interruptivo',
+    'sim.escalation.dest.nonInterrupting': ' ↟ não-interruptivo',
+    'sim.escalation.dest.dissolve': '→ sem catch — a escalação dissolve (no-op)',
+    'sim.escalation.dest.ambiguous': '→ vários candidatos ({candidates}) — vai bloquear',
     // ES-5 (§4e): card manual do event subprocess — nunca auto-dispara.
     'sim.esub.title': 'Event subprocess “{label}”',
     'sim.esub.interrupting': 'interruptivo — cancela os tokens deste escopo',

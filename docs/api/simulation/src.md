@@ -314,6 +314,25 @@ The serializable scenario: the ordered decisions plus provenance.
 
 [`Scenario`](#scenario-1)
 
+##### escalationThrowOptions
+
+###### Get Signature
+
+```ts
+get escalationThrowOptions(): EscalationThrowOption[];
+```
+
+"Throw escalation" cards (§5e): one per host with a resting token and an
+eligible escalation catch (boundary on the host OR an escalation esub-start
+of the scope). The options are the DISTINCT catchable refs + the
+uncatalogued escalation (`escalationRef: undefined`, reforço 10), each
+carrying its PREDICTED destination+mode (reforço 7) so the user decides
+informed BEFORE the throw.
+
+###### Returns
+
+[`EscalationThrowOption`](#escalationthrowoption)[]
+
 #### Methods
 
 ##### reset()
@@ -408,6 +427,41 @@ beyond the direct scope is not simulated).
 `string`
 
 ###### errorRef?
+
+`string`
+
+###### Returns
+
+[`StepResult`](#stepresult)
+
+##### throwEscalation()
+
+```ts
+throwEscalation(host, escalationRef?): StepResult;
+```
+
+Throw an ESCALATION on a host (Handoff 18 §5e): the SAME total order as
+`throwError` (built on the shared core enumeration), but the semantics
+DIFFER at the edges — the binding contrast (cerca §5):
+
+- Non-interrupting catch (the personality default): the host token SEGUE
+  and a PARALLEL token spawns at the catch (`applyBoundary`/esub already do
+  this) — the test that separates escalation from error.
+- Interrupting catch: the ES-5 path is reused (cancels naming count+scope).
+- NO eligible destination: the escalation DISSOLVES — a DECLARED no-op in
+  the trail ("escalation dissolves — OMG"), the host token continues, and
+  `this.blocked` is NEVER set. This is the difference from `throwError`,
+  where an uncaught error is a declared STOP.
+
+>1 candidate in the winning tier is a `BlockedDecision` naming candidates.
+
+###### Parameters
+
+###### host
+
+`string`
+
+###### escalationRef?
 
 `string`
 
@@ -1195,6 +1249,52 @@ optional label?: string;
 
 ***
 
+### EscalationThrowOption
+
+"Throw escalation" card (§5e): one per host with a resting token; the
+options are the DISTINCT catchable refs + the uncatalogued escalation, each
+carrying its predicted [EscalationDestination](#escalationdestination).
+
+#### Properties
+
+##### host
+
+```ts
+host: string;
+```
+
+##### hostLabel
+
+```ts
+hostLabel: string;
+```
+
+##### options
+
+```ts
+options: object[];
+```
+
+###### escalationRef?
+
+```ts
+optional escalationRef?: string;
+```
+
+###### label?
+
+```ts
+optional label?: string;
+```
+
+###### destination
+
+```ts
+destination: EscalationDestination;
+```
+
+***
+
 ### EventSubprocessOption
 
 A timer/conditional event subprocess the user may fire MANUALLY (ES-5, §4e):
@@ -1571,6 +1671,14 @@ errorThrowOptions: ErrorThrowOption[];
 
 "Throw error" cards per host with a resting token (E-6, §3e).
 
+##### escalationThrowOptions
+
+```ts
+escalationThrowOptions: EscalationThrowOption[];
+```
+
+"Throw escalation" cards per host with a resting token (Handoff 18 §5e).
+
 ##### eventSubprocessOptions
 
 ```ts
@@ -1634,6 +1742,68 @@ the BPMN node type and its fan-in/fan-out when the graph is built.
 
 ***
 
+### EscalationDestination
+
+```ts
+type EscalationDestination = 
+  | {
+  kind: "boundary" | "esubStart";
+  label: string;
+  interrupting: boolean;
+}
+  | {
+  kind: "dissolve";
+}
+  | {
+  kind: "ambiguous";
+  candidates: string[];
+};
+```
+
+The predicted destination of ONE escalation option, computed WITHOUT firing
+(Handoff 18 §5e reforço 7) so the «Escalar» card shows the user, per option,
+WHERE the escalation would land and in which MODE — glyph+text, informed
+decision before the throw.
+
+#### Union Members
+
+##### Type Literal
+
+```ts
+{
+  kind: "boundary" | "esubStart";
+  label: string;
+  interrupting: boolean;
+}
+```
+
+***
+
+##### Type Literal
+
+```ts
+{
+  kind: "dissolve";
+}
+```
+
+No eligible catch — the escalation dissolves (legal in the OMG).
+
+***
+
+##### Type Literal
+
+```ts
+{
+  kind: "ambiguous";
+  candidates: string[];
+}
+```
+
+>1 candidate in the winning tier — firing will BLOCK (declared).
+
+***
+
 ### Decision
 
 ```ts
@@ -1662,6 +1832,11 @@ type Decision =
   kind: "error";
   host: string;
   errorRef?: string;
+}
+  | {
+  kind: "escalation";
+  host: string;
+  escalationRef?: string;
 }
   | {
   kind: "signal";

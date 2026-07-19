@@ -268,11 +268,19 @@ Itens deferidos DE PROPÓSITO na sequência EC-0..EC-5 do Handoff 18, cada um co
   esub-start capturam escalação). O ERRO tem a mesma restrição e hoje NÃO é acusado nesse host; uma
   regra geral "kind catch-only em intermediateCatchEvent" cobrindo erro+escalação de uma vez é um
   follow-up nomeado (não silêncio: a escalação já é acusada; o erro fica registrado aqui).
-- **Cola runtime do `escalationRaisedEntry` no ledger (EC-3 → EC-5):** o builder
-  `escalationRaisedEntry({actor, code, target})` existe no `adapters-bpmn` e a cadeia verifica
-  (teste do builder + host-append com gatilho demonstrativo). Mas `ESCALATION_RAISED` significa
-  "a escalação ACONTECEU" — desenhar/anexar o boundary NÃO é escalar. Não há gatilho honesto até o
-  simulador ganhar `throwEscalation` na **EC-5**; só lá o host demo appenda a entrada de verdade
-  (via `command.executed`) e um e2e observa a trilha com o selo ✦. O demo `?agentbridge=1` mostra o
-  desenho da ponte (agentTask + boundary governado + autoridade + revisão humana), sem observar o
-  ledger ainda.
+- ~~**Cola runtime do `escalationRaisedEntry` no ledger (EC-3 → EC-5):**~~ → **RESOLVIDO na EC-5**:
+  o simulador ganhou `throwEscalation` e o `BpmnSimulator` expõe o callback `onEscalationThrown`
+  (path a — o motor fica PURO). O demo `?simulate=1&escalation=1` dispara a escalação pelo card
+  «Escalar» e o host appenda `escalationRaisedEntry` de verdade (ator IA `ia.copilot@…` → selo ✦),
+  com `target` nomeando o destino previsto. `ESCALATION_RAISED` = "a escalação ACONTECEU" (o disparo,
+  não o desenho). Transitório fechado. O demo `?agentbridge=1` (EC-3) segue mostrando o DESENHO da
+  ponte (agentTask + boundary governado + autoridade + revisão humana).
+
+O que FICA como pendência do Handoff 18 (registrado, fora do escopo entregue):
+
+- **Propagação da escalação além do escopo direto:** uma escalação não capturada no escopo direto
+  DISSOLVE (no-op declarado); a subida pela cadeia de contêineres (o catch de um escopo externo) não
+  é modelada — mesma fronteira declarada da propagação do erro (`limitations.md`). A semântica de
+  matching em si JÁ é modelada (EC-5); só a propagação cross-escopo fica.
+- **Compensação/coreografia:** segue como pendência anterior (nenhuma semântica de matching aqui) —
+  independente da família de gatilhos OMG completada por este handoff.
