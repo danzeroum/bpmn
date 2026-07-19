@@ -179,6 +179,42 @@ describe('card «Compensar» — contagem + não-elegíveis (§6d ponto 6 + refo
   });
 });
 
+describe('cobertura dos ramos declarados', () => {
+  it('específica compensável mas NÃO completada = parada declarada (ramo distinto)', () => {
+    const engine = new SimulationEngine(fourInLine());
+    engine.advance(); // s→a1: a1 tem handler mas ainda NÃO completou
+    engine.compensate(undefined, 'a1');
+    expect(engine.state.blockedDecision?.reason).toMatch(/has not completed/);
+  });
+
+  it('boundary ⟲ SEM associação = sem handler: card notEligible e específica bloqueia', () => {
+    const diagram = flow(
+      ['s:startEvent', 'a1:task', 'e:endEvent'],
+      ['s->a1', 'a1->e'],
+      (d) => {
+        // ⟲ boundary mas NENHUMA associação → handler não resolve.
+        d.nodes.b1 = createNode({ id: 'b1', type: 'boundaryEvent', label: '⟲ a1', x: 0, y: 0, properties: { attachedToRef: 'a1', eventDefinition: 'compensate' } });
+      },
+    );
+    const engine = new SimulationEngine(diagram);
+    step(engine, 2); // a1 completou
+    const opt = engine.state.compensateCard!.options.find((o) => o.activityRef === 'a1')!;
+    expect(opt.destination).toMatchObject({ kind: 'notEligible', reason: 'no handler' });
+    engine.compensate(undefined, 'a1');
+    expect(engine.state.blockedDecision?.reason).toMatch(/no compensation handler/);
+  });
+
+  it('canonicalize da compensate com scope + activityRef + waitForCompletion false', () => {
+    const engine = new SimulationEngine(fourInLine());
+    step(engine, 4);
+    engine.compensate('top', 'a2', false);
+    const canonical = canonicalizeScenario(engine.scenario);
+    expect(canonical).toContain('"scope":"top"');
+    expect(canonical).toContain('"activityRef":"a2"');
+    expect(canonical).toContain('"waitForCompletion":false');
+  });
+});
+
 describe('replay bit a bit + compat (§6d ponto 5)', () => {
   it('a decisão compensate serializa (com atStep) e replaya idêntico', () => {
     const build = () => fourInLine();
