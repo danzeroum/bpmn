@@ -6,7 +6,8 @@ import type {
   EventDefinitions,
   NamedEventDefinition,
 } from './types.js';
-import { activeNodes, isEventSubprocess, nodeParentId } from './types.js';
+import { activeNodes, boundaryAttachedTo, isEventSubprocess, nodeParentId } from './types.js';
+import { flowScopeOf } from './flow.js';
 
 /**
  * Named event definitions — headless helpers (Handoff 16 §3a, E-1).
@@ -157,4 +158,51 @@ export function eligibleEscalationCatches(
     }
   }
   return catches;
+}
+
+/**
+ * A compensable activity: an activity that carries a compensation boundary (⟲)
+ * and therefore CAN be compensated (Handoff 19 §6b). Reported with the boundary
+ * that makes it compensable so the UI can name the pair.
+ */
+export interface CompensableActivity {
+  activityId: string;
+  label: string;
+  /** The compensation boundary event attached to the activity. */
+  boundaryId: string;
+}
+
+/**
+ * SHARED SOURCE (Handoff 19) — the activities of ONE scope that can be
+ * compensated: those carrying a compensation boundary (`eventDefinition:
+ * 'compensate'`). Scope-aware by the OMG rule (a compensate throw reaches only
+ * the SAME level of sub-process): `scope` is the flow scope to enumerate within
+ * (`undefined` = the top process level), matched with the same `flowScopeOf`
+ * the graph builder uses, so an activity nested in a sub-process is NOT listed
+ * for a top-level throw and vice-versa.
+ *
+ * This is enumeration ONLY (no ordering, no throw-ref matching — compensation
+ * has none). It is the single source consumed by the throw's activity picker
+ * (CO-2), the lint `COMP_REF_NOT_COMPENSABLE` (CO-3) and `compensate()` (CO-4),
+ * so the three never fork the "what is compensable here" topology. An activity
+ * with more than one compensation boundary is listed once (its first boundary).
+ */
+export function compensableActivitiesOf(
+  diagram: BpmnDiagram,
+  scope: string | undefined = undefined,
+): CompensableActivity[] {
+  const seen = new Set<string>();
+  const result: CompensableActivity[] = [];
+  for (const node of activeNodes(diagram)) {
+    if (node.type !== 'boundaryEvent') continue;
+    if (node.properties.eventDefinition !== 'compensate') continue;
+    const host = boundaryAttachedTo(node);
+    if (host === undefined || seen.has(host)) continue;
+    const hostNode = diagram.nodes[host];
+    if (!hostNode || hostNode.removedInVersion) continue;
+    if (flowScopeOf(diagram, hostNode) !== scope) continue;
+    seen.add(host);
+    result.push({ activityId: host, label: hostNode.label || host, boundaryId: node.id });
+  }
+  return result;
 }

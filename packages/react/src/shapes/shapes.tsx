@@ -42,6 +42,15 @@ function eventGlyph(kind: EventDefinitionKind, cx: number, cy: number, r: number
       return <path d={`M ${cx} ${cy - s} L ${cx + s} ${cy + s * 0.7} L ${cx - s} ${cy + s * 0.7} Z`} fill={fill} stroke={color} strokeWidth={1.3} strokeLinejoin="round" />;
     case 'escalation':
       return <path d={`M ${cx - s * 0.8} ${cy + s * 0.7} L ${cx} ${cy - s} L ${cx + s * 0.8} ${cy + s * 0.7}`} fill={filled ? color : 'none'} stroke={color} strokeWidth={1.3} strokeLinejoin="round" strokeLinecap="round" />;
+    case 'compensate':
+      // Rewind ◀◀ — two back-to-back left triangles (Handoff 19 §6b); throw
+      // filled, catch hollow, driven by `filled` like every other kind.
+      return (
+        <g fill={fill} stroke={color} strokeWidth={1.2} strokeLinejoin="round">
+          <path d={`M ${cx - s * 0.05} ${cy - s * 0.78} L ${cx - s * 0.85} ${cy} L ${cx - s * 0.05} ${cy + s * 0.78} Z`} />
+          <path d={`M ${cx + s * 0.85} ${cy - s * 0.78} L ${cx + s * 0.05} ${cy} L ${cx + s * 0.85} ${cy + s * 0.78} Z`} />
+        </g>
+      );
     case 'conditional':
       return (
         <g {...base}>

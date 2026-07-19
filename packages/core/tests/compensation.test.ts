@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   BpmnXmlConverter,
+  compensableActivitiesOf,
   computeDiagramHash,
   createDefaultRuleEngine,
   createDiagram,
@@ -187,3 +188,55 @@ describe('CO-1 §1.4 — compensationFrozen trava os bytes', () => {
     expect(await computeDiagramHash(diagram)).toBe(FROZEN.hash);
   });
 });
+
+describe('CO-2 §6b — compensableActivitiesOf (fonte única, scope-aware)', () => {
+  it('lista a atividade compensável do escopo com o boundary que a faz compensável', () => {
+    const list = compensableActivitiesOf(frozenDiagram());
+    expect(list).toEqual([{ activityId: 'hotel', label: 'Reservar hotel', boundaryId: 'b1' }]);
+  });
+
+  it('atividade com 2 boundaries ⟲ é listada UMA vez', () => {
+    const d = frozenDiagram();
+    d.nodes.b2 = createNode({
+      id: 'b2',
+      type: 'boundaryEvent',
+      label: 'Outra',
+      x: 220,
+      y: 120,
+      properties: { attachedToRef: 'hotel', eventDefinition: 'compensate' },
+    });
+    expect(compensableActivitiesOf(d).map((c) => c.activityId)).toEqual(['hotel']);
+  });
+
+  it('reforço 8: SÓ o mesmo escopo — atividade compensável dentro de subProcess NÃO é listada no topo, e vice-versa', () => {
+    const d = frozenDiagram();
+    // Um subProcess comum com uma atividade compensável DENTRO dele.
+    d.nodes.sub = createNode({ id: 'sub', type: 'subProcess', label: 'Bloco', x: 40, y: 320 });
+    d.nodes.inner = createNode({
+      id: 'inner',
+      type: 'serviceTask',
+      label: 'Emitir voucher',
+      x: 60,
+      y: 360,
+      properties: { parentId: 'sub' },
+    });
+    d.nodes.bInner = createNode({
+      id: 'bInner',
+      type: 'boundaryEvent',
+      label: 'Compensar voucher',
+      x: 100,
+      y: 400,
+      properties: { attachedToRef: 'inner', eventDefinition: 'compensate' },
+    });
+    // No TOPO (scope undefined): só hotel; inner NÃO aparece.
+    expect(compensableActivitiesOf(d, undefined).map((c) => c.activityId)).toEqual(['hotel']);
+    // No escopo do subProcess: só inner; hotel NÃO aparece.
+    expect(compensableActivitiesOf(d, 'sub').map((c) => c.activityId)).toEqual(['inner']);
+  });
+
+  it('boundary de ERRO não conta como compensável (kind-gated)', () => {
+    const d = frozenDiagram();
+    d.nodes.b1.properties.eventDefinition = 'error';
+    expect(compensableActivitiesOf(d)).toEqual([]);
+  });
+})

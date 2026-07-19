@@ -129,6 +129,26 @@ function ActivityMarker({ node }: Pick<ShapeProps, 'node'>) {
   return <path d={bars} stroke={stroke} strokeWidth={1.2} strokeLinecap="round" />;
 }
 
+/**
+ * Compensation handler marker ◀◀ (Handoff 19 §6b): rendered when the activity
+ * carries `isForCompensation` (read directly, NOT `properties.marker` — that is
+ * loop/MI). It coexists with a loop/MI marker: when one is present the ◀◀ shifts
+ * left so both sit side by side; alone it centers on the bottom edge.
+ */
+function CompensationMarker({ node }: Pick<ShapeProps, 'node'>) {
+  if (node.properties.isForCompensation !== true) return null;
+  const hasLoopMarker = activityMarkerOf(node) !== undefined;
+  const cx = node.width / 2 + (hasLoopMarker ? -13 : 0);
+  const cy = node.height - 9;
+  const s = 4;
+  return (
+    <g fill="none" stroke={theme.textMuted} strokeWidth={1.2} strokeLinejoin="round" data-comp-marker>
+      <path d={`M ${cx} ${cy - s} L ${cx - s} ${cy} L ${cx} ${cy + s} Z`} />
+      <path d={`M ${cx + s} ${cy - s} L ${cx} ${cy} L ${cx + s} ${cy + s} Z`} />
+    </g>
+  );
+}
+
 /** Rounded-rectangle body shared by all activity shapes. */
 export function ActivityBox({
   node,
@@ -149,6 +169,7 @@ export function ActivityBox({
       {children}
       <ShapeLabel label={node.label} width={node.width} y={node.height / 2 + 4} />
       <ActivityMarker node={node} />
+      <CompensationMarker node={node} />
     </g>
   );
 }

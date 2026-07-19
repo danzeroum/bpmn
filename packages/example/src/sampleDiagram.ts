@@ -952,6 +952,44 @@ export function buildEventDefsDiagram(withLibrary = false): BpmnDiagram {
  * (settled on blur) and the interrupting toggle. The palette-drop veto is driven
  * on the empty canvas (`?empty=1`).
  */
+/**
+ * `?comp=1` — Handoff 19 §6b: the compensation editor demo. A completed activity
+ * with a compensation boundary (⟲) linked by ASSOCIATION to its handler
+ * (isForCompensation, ◀◀ marker), plus a compensate THROW targeting the activity
+ * (the «⟲ compensa: …» chip). Exercises the visual + picker; the full
+ * «pacote de viagem» simulation demo lands in CO-5 (`?compensation=1`).
+ */
+export function buildCompensationEditorDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-compensation', name: 'Compensação', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 60, 120),
+    hotel: make('serviceTask', 'hotel', 'Reservar hotel', 180, 98),
+    bnd: make('boundaryEvent', 'bnd', 'Compensar hotel', 222, 140, {
+      attachedToRef: 'hotel',
+      eventDefinition: 'compensate',
+      boundarySide: 'bottom',
+      boundaryT: 0.5,
+    }),
+    cancel: make('serviceTask', 'cancel', 'Cancelar reserva', 180, 240, { isForCompensation: true }),
+    thr: make('intermediateThrowEvent', 'thr', 'Reverter', 380, 102, {
+      eventDefinition: 'compensate',
+      compensateActivityRef: 'hotel',
+    }),
+    end: make('endEvent', 'end', 'Fim', 500, 120),
+  };
+  diagram.edges = {
+    f1: createEdge({ id: 'f1', sourceId: 'start', targetId: 'hotel', versionId: v }),
+    f2: createEdge({ id: 'f2', sourceId: 'hotel', targetId: 'thr', versionId: v }),
+    f3: createEdge({ id: 'f3', sourceId: 'thr', targetId: 'end', versionId: v }),
+    a1: createEdge({ id: 'a1', type: 'association', sourceId: 'bnd', targetId: 'cancel', versionId: v }),
+  };
+  return diagram;
+}
+
 export function buildEscalationDiagram(): BpmnDiagram {
   const registry = createDefaultRegistry();
   const diagram = createDiagram({ id: 'demo-escalation', name: 'Escalação', createdBy: 'demo' });

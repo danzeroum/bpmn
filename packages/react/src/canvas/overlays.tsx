@@ -267,7 +267,18 @@ export function EventBindingOverlay() {
       typeof node.properties.escalationAuthority === 'string' &&
       node.properties.escalationAuthority.trim() !== '',
   );
-  if (chips.length === 0 && authorityChips.length === 0) return null;
+  // Compensation chip (Handoff 19 §6b): a compensate THROW shows «⟲ compensa:
+  // {activity|scope}» — the SETTLED activityRef names the target; absent =
+  // broadcast over the scope. Transient (never exported), glyph + text.
+  const compensationChips = Object.values(diagram.nodes).filter(
+    (node) =>
+      !node.removedInVersion &&
+      node.properties.eventDefinition === 'compensate' &&
+      (node.type === 'intermediateThrowEvent' || node.type === 'endEvent'),
+  );
+  if (chips.length === 0 && authorityChips.length === 0 && compensationChips.length === 0) {
+    return null;
+  }
   return (
     <g data-event-bindings>
       {chips.map((node) => {
@@ -325,6 +336,31 @@ export function EventBindingOverlay() {
             {/* i18n-exempt — the ↟ glyph; the text is the translation */}
             <text x={cx} y={top} textAnchor="middle" className="bpmnr-event-authority-chip">
               {`↟ ${t('eventDefs.authority.chip', { name: authority })}`}
+            </text>
+          </g>
+        );
+      })}
+      {compensationChips.map((node) => {
+        const ref = node.properties.compensateActivityRef;
+        const target =
+          typeof ref === 'string' && ref.trim() !== ''
+            ? diagram.nodes[ref]?.label || ref
+            : undefined;
+        const cx = node.x + node.width / 2;
+        const top = node.y + node.height + 12;
+        return (
+          <g
+            key={`comp-${node.id}`}
+            className="bpmnr-event-compensation"
+            data-event-compensation={node.id}
+          >
+            {/* i18n-exempt — the ⟲ glyph; the text is the translation */}
+            <text x={cx} y={top} textAnchor="middle" className="bpmnr-event-compensation-chip">
+              {`⟲ ${
+                target !== undefined
+                  ? t('eventDefs.compensation.chip', { name: target })
+                  : t('eventDefs.compensation.broadcast')
+              }`}
             </text>
           </g>
         );
