@@ -9,6 +9,7 @@ import {
 import {
   compBoundaryNoHandlerRule,
   compCatchAttrsRule,
+  compensationHandlerCommands,
   compHandlerFlowRule,
   compRefNotCompensableRule,
   compStartToplevelRule,
@@ -173,6 +174,73 @@ describe('COMP_START_TOPLEVEL (molde do de escalação)', () => {
       s: node('s', 'startEvent', { parentId: 'esub', eventDefinition: 'compensate' }),
     });
     expect(compStartToplevelRule(inEsub)).toHaveLength(0);
+  });
+});
+
+describe('cobertura dos ramos declarados', () => {
+  it('COMP_CATCH_ATTRS também acusa no esub-start; e com só um dos attrs', () => {
+    // esub-start catch (não boundary) com só waitForCompletion.
+    const esub = graph({
+      shell: node('shell', 'subProcess', { triggeredByEvent: true }, 'Reverter'),
+      st: node('st', 'startEvent', {
+        parentId: 'shell',
+        eventDefinition: 'compensate',
+        waitForCompletion: true,
+      }),
+    });
+    expect(compCatchAttrsRule(esub)).toHaveLength(1);
+    // boundary com SÓ activityRef (sem waitForCompletion).
+    const onlyRef = graph({
+      hotel: node('hotel', 'serviceTask', {}, 'H'),
+      bnd: node('bnd', 'boundaryEvent', { attachedToRef: 'hotel', eventDefinition: 'compensate', compensateActivityRef: 'hotel' }),
+    });
+    expect(compCatchAttrsRule(onlyRef)).toHaveLength(1);
+    // Um start de compensação NO TOPO (não esub) com attrs NÃO é um catch → não acusa aqui.
+    const topStart = graph({ s: node('s', 'startEvent', { eventDefinition: 'compensate', waitForCompletion: false }) });
+    expect(compCatchAttrsRule(topStart)).toHaveLength(0);
+  });
+
+  it('COMP_REF_NOT_COMPENSABLE também cobre o end-throw com activityRef', () => {
+    const diagram = graph({
+      hotel: node('hotel', 'serviceTask', {}, 'H'),
+      end: node('end', 'endEvent', { eventDefinition: 'compensate', compensateActivityRef: 'hotel' }),
+    });
+    expect(compRefNotCompensableRule(diagram)).toHaveLength(1);
+  });
+
+  it('o quick-fix é null fora do contrato (nó não-compensate; host ausente)', () => {
+    // nodeId aponta um nó que não é boundary de compensação → o guard do fix devolve null.
+    const notComp = graph({ t: node('t', 'task', {}, 'T') });
+    const findingNotComp = {
+      code: 'COMP_BOUNDARY_NO_HANDLER',
+      severity: 'error' as const,
+      nodeId: 't',
+      ruleId: 'comp-boundary-no-handler',
+      profileId: 'lint-etiquette',
+      source: 'etiquette' as const,
+      fixable: true,
+      message: '',
+    };
+    expect(fixCommandFor(notComp, findingNotComp, [ETIQUETTE_PROFILE])).toBeNull();
+    // boundary de compensação SEM host (attachedToRef inexistente) → null.
+    const noHost = graph({ bnd: node('bnd', 'boundaryEvent', { attachedToRef: 'ghost', eventDefinition: 'compensate' }, 'B') });
+    const finding = lintFindings(noHost, [ETIQUETTE_PROFILE]).find((f) => f.code === 'COMP_BOUNDARY_NO_HANDLER')!;
+    expect(fixCommandFor(noHost, finding, [ETIQUETTE_PROFILE])).toBeNull();
+  });
+
+  it('compensationHandlerCommands aceita um nome de handler (forma da paleta)', () => {
+    const diagram = graph({
+      hotel: node('hotel', 'serviceTask', {}, 'H'),
+      bnd: node('bnd', 'boundaryEvent', { attachedToRef: 'hotel', eventDefinition: 'compensate' }, 'B'),
+    });
+    const { commands, handlerId } = compensationHandlerCommands(diagram, {
+      boundary: diagram.nodes.bnd,
+      host: diagram.nodes.hotel,
+      handlerName: 'Cancelar reserva',
+    });
+    const next = commands.reduce((d, c) => c.execute(d), diagram);
+    expect(next.nodes[handlerId].label).toBe('Cancelar reserva');
+    expect(next.nodes[handlerId].properties.isForCompensation).toBe(true);
   });
 });
 
