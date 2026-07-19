@@ -13036,12 +13036,12 @@ function buildCompensationPairInsert(ctx): PaletteInsertResult;
 ```
 
 The «Compensation (pair)» palette composite (Handoff 19 §6b): ONE undoable
-command that drops the compensation boundary (⟲) on the host, a handler
-activity BELOW it (declared offset), and the `bpmn:association` linking the
-two — the pair is born complete and lint-clean (the ES-2 ruler). Drop demands
-an activity host (the EC-2 veto). The association is seeded with explicit DI
-waypoints (boundary center → handler center) so the freshly-created diagram
-re-exports byte-stably (reforço 9).
+command that drops the compensation boundary (⟲) on the host plus the handler
+activity + linking association — the pair is born complete and lint-clean (the
+ES-2 ruler). The handler + association come from the SHARED
+`compensationHandlerCommands` builder (Handoff 19 §6c, one form): the SAME
+source the COMP_BOUNDARY_NO_HANDLER quick-fix uses, so palette and fix never
+drift. Drop demands an activity host (the EC-2 veto).
 
 #### Parameters
 

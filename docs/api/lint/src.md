@@ -372,6 +372,75 @@ a general "catch-only kind on the wrong host" rule is a named follow-up in
 
 ***
 
+### compHandlerFlowRule
+
+```ts
+const compHandlerFlowRule: ValidationRule;
+```
+
+COMP_HANDLER_FLOW (Handoff 19 §6c): a compensation HANDLER (isForCompensation)
+lives OUTSIDE the sequence — it is reached only by the boundary's association,
+never by sequence flow. This catches the IMPORT path the editor's core veto
+(CO-1) cannot. ONE finding per edge, naming the handler(s) and the edge
+(reforço 9 — both roles: handler as source OR as target; a handler↔handler
+edge never yields two findings). A normal task flows normally.
+
+***
+
+### compBoundaryNoHandlerRule
+
+```ts
+const compBoundaryNoHandlerRule: ValidationRule;
+```
+
+COMP_BOUNDARY_NO_HANDLER (Handoff 19 §6c): a compensation boundary (⟲) with no
+association to a handler compensates nothing — an ERROR with a MECHANICAL
+quick-fix (the shared `compensationHandlerCommands` — the FORM of the palette
+composite, one source).
+
+***
+
+### compRefNotCompensableRule
+
+```ts
+const compRefNotCompensableRule: ValidationRule;
+```
+
+COMP_REF_NOT_COMPENSABLE (Handoff 19 §6c): a compensation THROW whose
+`compensateActivityRef` targets an activity that has NO compensation boundary
+in the throw's OWN scope — a WARNING (the throw is legal, but nothing will be
+compensated). Reads the SHARED `compensableActivitiesOf` (the SAME source the
+picker (CO-2) and the simulator (CO-4) consume), scoped by `flowScopeOf`.
+
+***
+
+### compCatchAttrsRule
+
+```ts
+const compCatchAttrsRule: ValidationRule;
+```
+
+COMP_CATCH_ATTRS (Handoff 19 §6c): a compensation CATCH (boundary or
+event-subprocess start) carrying `activityRef`/`waitForCompletion` — the OMG
+reserves these to the THROW. A WARNING only: the converter already PRESERVES
+them (CO-1 keeps them in the bpmnr: soup and NEVER re-emits them on the OMG
+child), so the fence is met — the rule just surfaces the non-OMG input.
+
+***
+
+### compStartToplevelRule
+
+```ts
+const compStartToplevelRule: ValidationRule;
+```
+
+COMP_START_TOPLEVEL (Handoff 19 §6c): a compensation START only exists inside
+an EVENT subprocess (the OMG "compensation event subprocess") — the EXACT
+mould of `evtEscalationStartToplevelRule`, the SAME core `isEventSubprocess`
+predicate, so lint and the Execução matrix agree by construction.
+
+***
+
 ### ETIQUETTE\_RULES
 
 ```ts
@@ -527,6 +596,65 @@ startId: string;
 
 ```ts
 definitionId: string;
+```
+
+***
+
+### compensationHandlerCommands()
+
+```ts
+function compensationHandlerCommands(diagram, options): object;
+```
+
+"Compensation handler + association" — THE shared builder (Handoff 19 §6c,
+anti-drift): the palette's «Compensação (par)» composite (react, CO-2) and the
+COMP_BOUNDARY_NO_HANDLER quick-fix both compose THIS — one FORM, one source
+(the ES-2/ES-4 precedent `typedMessageStartCommands`). Given a compensation
+boundary and its host, it creates the handler activity BELOW the host
+(declared offset, `isForCompensation`) and the `bpmn:association` linking the
+two, seeded with explicit DI waypoints (boundary center → handler center) so
+the result re-exports byte-stably.
+
+#### Parameters
+
+##### diagram
+
+`BpmnDiagram`
+
+##### options
+
+###### boundary
+
+`BpmnNode`
+
+###### host
+
+`BpmnNode`
+
+###### handlerName?
+
+`string`
+
+#### Returns
+
+`object`
+
+##### commands
+
+```ts
+commands: Command[];
+```
+
+##### handlerId
+
+```ts
+handlerId: string;
+```
+
+##### edgeId
+
+```ts
+edgeId: string;
 ```
 
 ***

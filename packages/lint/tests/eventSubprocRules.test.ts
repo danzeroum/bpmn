@@ -119,15 +119,25 @@ describe('EVT_SUBPROC_START (critério 2, reforços 7–8)', () => {
     expect(evtSubprocStartRule(diagram)).toHaveLength(0);
   });
 
-  it('reforço 8 — kind AINDA fora da lista (compensation, pendência) acusa NOMEANDO os aceitos', () => {
+  it('§6c — start de compensação em esub é LEGAL (migração da rejeição ES-4/§5d)', () => {
+    // Handoff 19 §6c: compensate entrou em SUBPROC_TRIGGER_KINDS (compensation
+    // event subprocess) → não acusa mais.
     const diagram = withGraph({
       esub: node('esub', 'subProcess', { triggeredByEvent: true }, 'Compensado'),
-      s: node('s', 'startEvent', { parentId: 'esub', eventDefinition: 'compensation' }),
+      s: node('s', 'startEvent', { parentId: 'esub', eventDefinition: 'compensate' }),
+    });
+    expect(evtSubprocStartRule(diagram)).toHaveLength(0);
+  });
+
+  it('reforço 8 — um kind AINDA fora da lista (link) acusa NOMEANDO os aceitos', () => {
+    const diagram = withGraph({
+      esub: node('esub', 'subProcess', { triggeredByEvent: true }, 'Link'),
+      s: node('s', 'startEvent', { parentId: 'esub', eventDefinition: 'link' }),
     });
     const issues = evtSubprocStartRule(diagram);
     expect(issues).toHaveLength(1);
-    expect(issues[0].message).toContain('kind "compensation" is not supported');
-    expect(issues[0].message).toContain('message, signal, error, timer, conditional, escalation');
+    expect(issues[0].message).toContain('kind "link" is not supported');
+    expect(issues[0].message).toContain('message, signal, error, timer, conditional, escalation, compensate');
   });
 });
 
@@ -239,8 +249,8 @@ describe('guardas e ramos do builder', () => {
 
 describe('política 1.2.0 (critério 5)', () => {
   it('perfis em 1.2.0 com as regras novas registradas na MESMA fonte', () => {
-    expect(ETIQUETTE_PROFILE.version).toBe('1.3.0');
-    expect(EXECUTABILITY_PROFILE.version).toBe('1.3.0');
+    expect(ETIQUETTE_PROFILE.version).toBe('1.4.0');
+    expect(EXECUTABILITY_PROFILE.version).toBe('1.4.0');
     const ids = ETIQUETTE_PROFILE.rules.map((rule) => rule.id);
     expect(ids).toContain('evt-subproc-flow');
     expect(ids).toContain('evt-subproc-start');
