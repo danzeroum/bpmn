@@ -179,6 +179,32 @@ describe('card «Compensar» — contagem + não-elegíveis (§6d ponto 6 + refo
   });
 });
 
+describe('compensationPlan — read-only + forma (§6e reforço 7)', () => {
+  it('chamá-lo N vezes NÃO muda estado nem trilha; só compensate() grava', () => {
+    const engine = new SimulationEngine(fourInLine());
+    step(engine, 4);
+    const trailBefore = trailText(engine);
+    const tokensBefore = engine.state.tokens.map((t) => t.nodeId).sort();
+    const p1 = engine.compensationPlan();
+    const p2 = engine.compensationPlan();
+    expect(p1).toEqual(p2); // determinístico
+    // Nada mudou.
+    expect(trailText(engine)).toBe(trailBefore);
+    expect(engine.state.tokens.map((t) => t.nodeId).sort()).toEqual(tokensBefore);
+    // O plano bate com o que o compensate() executa (compensated/uncompensated).
+    expect(p1.compensated.map((c) => c.activity)).toEqual(['a3', 'a2', 'a1']);
+  });
+
+  it('específica não-compensável = blocked no plano (nenhum step)', () => {
+    const engine = new SimulationEngine(fourInLine());
+    step(engine, 4);
+    const plan = engine.compensationPlan('a4'); // a4 sem handler
+    expect(plan.blocked).toMatchObject({ kind: 'no-handler' });
+    expect(plan.steps).toHaveLength(0);
+    expect(plan.compensated).toHaveLength(0);
+  });
+});
+
 describe('cobertura dos ramos declarados', () => {
   it('específica compensável mas NÃO completada = parada declarada (ramo distinto)', () => {
     const engine = new SimulationEngine(fourInLine());

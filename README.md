@@ -119,6 +119,13 @@ the **Analytic** class at **100%** — the full element-by-element matrix lives 
 50+ file interoperability corpus. Third parties can verify their own documents
 with `bpmn-react certify <file.bpmn> [--require descriptive|analytic]`.
 
+The **OMG trigger family is complete**: `message`, `signal`, `error`, `escalation` and
+`compensation` event definitions all round-trip byte-stably, lint under governed profiles,
+and drive the token simulator (throw/catch, non-interrupting escalation, reverse-order
+compensation). The named triggers (message/signal/error/escalation) carry versioned root
+definitions; compensation is unnamed by design (an optional `activityRef` + `bpmn:association`
+handler), per [docs/format-spec.md](docs/format-spec.md).
+
 ## Known limitations (summary)
 
 - The BPMN 2.0 XML converter supports a documented **profile** (see

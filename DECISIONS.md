@@ -804,6 +804,19 @@ a re-otimização global sob demanda.
   compensação sem ref-matching → **sem tiers** da ES-5 (broadcast = boundary-handlers + esub-starts
   do escopo juntos; específica = só aquele handler, esub-start não participa — declarado em
   `limitations.md`).
+- **Planner `compensationPlan(activityRef?)` público + READ-ONLY (CO-5, decisão aprovada + reforço
+  7):** o planner é a FONTE ÚNICA do plano de compensação — lê trilha/diagrama e **nunca muta
+  estado**. Tanto o `compensate()` (grava + executa) quanto a cola do ledger (appenda o revertido
+  EXECUTADO) o consomem, então os dois nunca re-derivam. Um alvo específico não-compensável ou
+  não-concluído fica `blocked` e não produz passos → nada executa. Tipos `CompensationPlan`/
+  `CompensationStep` exportados (type-only → apagam no runtime, fora do apiSurface).
+- **A entrada do ledger amarra o plano EXECUTADO, não o previsto (CO-5, reforço 8):** o
+  `compensationTriggeredEntry` (adapters-bpmn) é um builder PURO; o HOST appenda pelo callback
+  `onCompensationTriggered` do `BpmnSimulator` (caminho a — motor intacto) **só quando a
+  compensação ACONTECE**. Um alvo específico bloqueado (`plan.blocked`) appenda NADA. A entrada
+  carrega `compensated` (ordem reversa) + `uncompensated` (declaradas); `details.author` prefixado
+  `ia.copilot@` pinta o selo ✦ (regra do `aiAuthorOf`). Marco: a **família de gatilhos OMG**
+  (message/signal/error/escalation/compensation) fica 100% completa.
 
 ---
 

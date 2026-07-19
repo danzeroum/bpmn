@@ -31,6 +31,8 @@ export type {
   BoundaryOption,
   CompensateCard,
   CompensationDestination,
+  CompensationPlan,
+  CompensationStep,
   Decision,
   DecisionEvaluator,
   ErrorThrowOption,

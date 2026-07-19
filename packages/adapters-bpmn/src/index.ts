@@ -30,6 +30,7 @@ export { eventDefinitionCatalogAdapter } from './eventDefinitionCatalogAdapter.j
 export type { GovernedEventDefinitionRecord } from './eventDefinitionCatalogAdapter.js';
 export { eventBindingChangedEntry, EVENT_BINDING_CHANGED_TYPE } from './eventBindingLedger.js';
 export { escalationRaisedEntry, ESCALATION_RAISED_TYPE } from './escalationLedger.js';
+export { compensationTriggeredEntry, COMPENSATION_TRIGGERED_TYPE } from './compensationLedger.js';
 export {
   reviewChangesRequestedEntry,
   reviewCommentEntry,

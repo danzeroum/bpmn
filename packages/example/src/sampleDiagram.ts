@@ -1027,6 +1027,52 @@ export function buildCompensationSimDiagram(): BpmnDiagram {
 }
 
 /**
+ * `?compensation=1` — Handoff 19 §6e: the «pacote de viagem» compensation demo.
+ * hotel ⟲ + passagem ⟲ (handlers by association) + cartão WITHOUT a handler (the
+ * visible RISK) + an ERROR event subprocess with a compensate THROW (the
+ * reference "error → revert" pattern). The throw targets the card (which has no
+ * ⟲ boundary), so `COMP_REF_NOT_COMPENSABLE` fires — a DELIBERATE, pedagogical
+ * warning that names the risk; the rest is lint-clean. Simulate → advance so the
+ * activities complete → «Compensar» reverses hotel + passagem, the card is a
+ * declared uncompensated line → the demo appends `compensationTriggeredEntry`.
+ */
+export function buildCompensationPackageDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-compensation-pkg', name: 'Pacote de viagem', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 40, 120),
+    hotel: make('serviceTask', 'hotel', 'Reservar hotel', 140, 98),
+    flight: make('serviceTask', 'flight', 'Comprar passagem', 300, 98),
+    card: make('serviceTask', 'card', 'Pagar cartão', 460, 98),
+    end: make('endEvent', 'end', 'Fim', 620, 120),
+    bHotel: make('boundaryEvent', 'bHotel', 'Compensar hotel', 182, 140, { attachedToRef: 'hotel', eventDefinition: 'compensate', boundarySide: 'bottom', boundaryT: 0.5 }),
+    hHotel: make('serviceTask', 'hHotel', 'Cancelar reserva', 140, 250, { isForCompensation: true }),
+    bFlight: make('boundaryEvent', 'bFlight', 'Compensar passagem', 342, 140, { attachedToRef: 'flight', eventDefinition: 'compensate', boundarySide: 'bottom', boundaryT: 0.5 }),
+    hFlight: make('serviceTask', 'hFlight', 'Estornar passagem', 300, 250, { isForCompensation: true }),
+    // Error event subprocess (error → revert): an error start + a compensate
+    // throw. The throw TARGETS the card (no ⟲) — the pedagogical COMP_REF warning.
+    esub: make('subProcess', 'esub', 'Falha irrecuperável', 40, 360, { triggeredByEvent: true, isExpanded: true }),
+    est: make('startEvent', 'est', 'Erro', 70, 420, { parentId: 'esub', eventDefinition: 'error' }),
+    ethrow: make('intermediateThrowEvent', 'ethrow', 'Reverter', 180, 420, { parentId: 'esub', eventDefinition: 'compensate', compensateActivityRef: 'card' }),
+    eend: make('endEvent', 'eend', 'Cancelada', 300, 420, { parentId: 'esub' }),
+  };
+  diagram.edges = {
+    f1: createEdge({ id: 'f1', sourceId: 'start', targetId: 'hotel', versionId: v }),
+    f2: createEdge({ id: 'f2', sourceId: 'hotel', targetId: 'flight', versionId: v }),
+    f3: createEdge({ id: 'f3', sourceId: 'flight', targetId: 'card', versionId: v }),
+    f4: createEdge({ id: 'f4', sourceId: 'card', targetId: 'end', versionId: v }),
+    aHotel: createEdge({ id: 'aHotel', type: 'association', sourceId: 'bHotel', targetId: 'hHotel', versionId: v }),
+    aFlight: createEdge({ id: 'aFlight', type: 'association', sourceId: 'bFlight', targetId: 'hFlight', versionId: v }),
+    ef1: createEdge({ id: 'ef1', sourceId: 'est', targetId: 'ethrow', versionId: v }),
+    ef2: createEdge({ id: 'ef2', sourceId: 'ethrow', targetId: 'eend', versionId: v }),
+  };
+  return diagram;
+}
+
+/**
  * `?compno=1` — Handoff 19 §6c: a compensation boundary (⟲) with NO handler, so
  * `COMP_BOUNDARY_NO_HANDLER` shows in the lint dock with its quick-fix. Applying
  * it creates the handler + association (the shared builder = the palette FORM);
