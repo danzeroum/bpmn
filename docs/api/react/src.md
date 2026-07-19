@@ -4825,6 +4825,31 @@ optional onThrowEscalation?: (host, escalationRef?) => void;
 
 `void`
 
+##### compensateCard?
+
+```ts
+optional compensateCard?: CompensateCard | null;
+```
+
+"Compensate" card (Handoff 19 §6d) — broadcast (default) + per compensable
+activity; each option shows the SIZE/target of the reversal (reforço 10).
+
+##### onCompensate?
+
+```ts
+optional onCompensate?: (activityRef?) => void;
+```
+
+###### Parameters
+
+###### activityRef?
+
+`string`
+
+###### Returns
+
+`void`
+
 ##### eventSubprocessOptions?
 
 ```ts

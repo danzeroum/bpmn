@@ -110,6 +110,27 @@ everywhere else, never a guessed route:
   The «Escalate» card predicts each option's destination + mode (glyph + text) BEFORE the throw so
   the choice is informed; the demo maps a fired escalation to a ledger entry (`escalationRaisedEntry`
   — the escalation ACTUALLY happened), the engine itself staying pure.
+- **Compensation** (`compensate`, Handoff 19 §6d): reverses the **COMPLETED** activities of the
+  scope — completion is derived from the trail (an activity is completed when a token has LEFT it
+  along a `'move'` edge), never a second record type. `compensate(activityRef)` runs ONLY that
+  activity's handler; `compensate()` (broadcast) runs every completed compensable activity's handler
+  in **reverse order** (each line naming activity → handler) AND fires the compensation event
+  subprocesses of the scope. Which activities are compensable comes from the SAME shared core source
+  as the picker and the lint (`compensableActivitiesOf`); the handler is the target of the boundary's
+  association. Declared boundaries:
+  - **No precedence tiers.** Unlike error/escalation, compensation has NO ref-matching — so the ES-5
+    tier order (esub vs boundary) does **not** apply. Broadcast fires the boundary handlers AND the
+    scope's compensation event subprocesses TOGETHER; a specific `activityRef` fires only that
+    activity's handler and NEVER an esub-start (an esub-start is a SCOPE reaction, not an activity one).
+  - **Loop rule (declared).** If the same activity completed more than once (a loop), only its LAST
+    completion counts — it is compensated once, at the position of its most recent run.
+  - **Completed without handler** is a DECLARED trail line, never silence; a specific target that is
+    non-compensable or not-yet-completed is a declared STOP; nothing completed leaves the «Compensate»
+    card disabled with the reason.
+  - **`waitForCompletion`** (OMG default true) is DECLARED in the trail (the throw advances only after
+    the handlers; `false` advances immediately) — the handler's internal execution and its **variable
+    snapshot** (the OMG data semantics) are NOT simulated. Compensation does **not** propagate into a
+    `callActivity` (the reference implementations do not propagate either) — a declared boundary.
 - **Signals** (`throwSignal`): broadcast — every WAITING matching catch advances and every
   matching SIGNAL-start event subprocess fires (deterministic).
 - **Messages** (`throwMessage`): single destination — the candidate set includes matching

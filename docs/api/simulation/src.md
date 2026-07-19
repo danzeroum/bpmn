@@ -333,6 +333,24 @@ informed BEFORE the throw.
 
 [`EscalationThrowOption`](#escalationthrowoption)[]
 
+##### compensateCard
+
+###### Get Signature
+
+```ts
+get compensateCard(): CompensateCard | null;
+```
+
+The «Compensar» card (§6d): a SINGLE card (compensation is scope-wide). The
+broadcast option shows the COUNT of the reversal (reforço 10); each
+compensable activity is a fireable option when completed, else listed as
+NOT-ELIGIBLE with a reason (mock 6d — never hidden). Null when nothing in
+the scope is compensable.
+
+###### Returns
+
+[`CompensateCard`](#compensatecard-1) \| `null`
+
 #### Methods
 
 ##### reset()
@@ -464,6 +482,43 @@ DIFFER at the edges — the binding contrast (cerca §5):
 ###### escalationRef?
 
 `string`
+
+###### Returns
+
+[`StepResult`](#stepresult)
+
+##### compensate()
+
+```ts
+compensate(
+   scope?, 
+   activityRef?, 
+   waitForCompletion?): StepResult;
+```
+
+Compensate (Handoff 19 §6d): reverse the COMPLETED activities of the scope.
+`activityRef` present = compensate ONLY that activity's handler (reforço 9 —
+the esub-start does NOT participate; it is a SCOPE reaction, not an activity
+one). Absent = BROADCAST: every completed compensable activity's handler in
+REVERSE order, PLUS the compensation event subprocesses of the scope
+(compensation has NO ref-matching, so the ES-5 tier precedence does NOT
+apply — declared in limitations.md). A completed activity with no handler is
+a DECLARED trail line, never silence; a specific target that is
+non-compensable or not-yet-completed is a declared STOP.
+
+###### Parameters
+
+###### scope?
+
+`string`
+
+###### activityRef?
+
+`string`
+
+###### waitForCompletion?
+
+`boolean` = `true`
 
 ###### Returns
 
@@ -1295,6 +1350,48 @@ destination: EscalationDestination;
 
 ***
 
+### CompensateCard
+
+The «Compensar» card (§6d): a SINGLE card (compensation is scope-wide, not
+per-host) offering the broadcast (default) plus one option per compensable
+activity — completed ones fireable (`activity`), incomplete ones listed as
+`notEligible` with a reason. Absent when the diagram has no compensable
+activity at all.
+
+#### Properties
+
+##### scopeLabel
+
+```ts
+scopeLabel: string;
+```
+
+##### options
+
+```ts
+options: object[];
+```
+
+###### activityRef?
+
+```ts
+optional activityRef?: string;
+```
+
+###### label?
+
+```ts
+optional label?: string;
+```
+
+###### destination
+
+```ts
+destination: CompensationDestination;
+```
+
+***
+
 ### EventSubprocessOption
 
 A timer/conditional event subprocess the user may fire MANUALLY (ES-5, §4e):
@@ -1679,6 +1776,14 @@ escalationThrowOptions: EscalationThrowOption[];
 
 "Throw escalation" cards per host with a resting token (Handoff 18 §5e).
 
+##### compensateCard
+
+```ts
+compensateCard: CompensateCard | null;
+```
+
+The «Compensar» card (Handoff 19 §6d), or null when nothing is compensable.
+
 ##### eventSubprocessOptions
 
 ```ts
@@ -1804,6 +1909,73 @@ No eligible catch — the escalation dissolves (legal in the OMG).
 
 ***
 
+### CompensationDestination
+
+```ts
+type CompensationDestination = 
+  | {
+  kind: "broadcast";
+  handlerCount: number;
+  esubLabels: string[];
+}
+  | {
+  kind: "activity";
+  handlerLabel: string;
+}
+  | {
+  kind: "notEligible";
+  reason: string;
+};
+```
+
+The predicted outcome of ONE compensation option, computed WITHOUT firing
+(Handoff 19 §6d reforço 10) so the «Compensar» card shows the user, per
+option, the SIZE of the reversal before firing — glyph + text.
+
+#### Union Members
+
+##### Type Literal
+
+```ts
+{
+  kind: "broadcast";
+  handlerCount: number;
+  esubLabels: string[];
+}
+```
+
+Broadcast over the scope: N boundary handlers (reverse order) + the named
+compensation event subprocesses of the scope.
+
+***
+
+##### Type Literal
+
+```ts
+{
+  kind: "activity";
+  handlerLabel: string;
+}
+```
+
+A specific activity: its single handler.
+
+***
+
+##### Type Literal
+
+```ts
+{
+  kind: "notEligible";
+  reason: string;
+}
+```
+
+The activity is compensable but NOT eligible NOW (not yet completed) —
+listed with the reason, never silently hidden (mock 6d).
+
+***
+
 ### Decision
 
 ```ts
@@ -1849,6 +2021,13 @@ type Decision =
   | {
   kind: "eventSubprocess";
   sub: string;
+  atStep: number;
+}
+  | {
+  kind: "compensate";
+  scope?: string;
+  activityRef?: string;
+  waitForCompletion: boolean;
   atStep: number;
 };
 ```

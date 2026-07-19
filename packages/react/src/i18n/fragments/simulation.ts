@@ -30,6 +30,15 @@ export const simulation: { en: Messages; ptBR: Messages } = {
     'sim.escalation.dest.nonInterrupting': ' ↟ non-interrupting',
     'sim.escalation.dest.dissolve': '→ no catch — the escalation dissolves (no-op)',
     'sim.escalation.dest.ambiguous': '→ several candidates ({candidates}) — will block',
+    // Handoff 19 §6d — the «Compensate» card (broadcast + per activity).
+    'sim.compensation.title': 'Compensate — {scope}',
+    'sim.compensation.broadcast': 'Compensate scope (broadcast)',
+    'sim.compensation.specific': 'Compensate “{label}”',
+    'sim.compensation.dest.handlers_one': '→ {count} handler, reverse order',
+    'sim.compensation.dest.handlers_other': '→ {count} handlers, reverse order',
+    'sim.compensation.dest.esubs': ' + event subprocess “{labels}”',
+    'sim.compensation.dest.activity': '→ handler “{handler}”',
+    'sim.compensation.dest.notEligible': '→ {reason} — not eligible',
     // ES-5 (§4e): manual event-subprocess card — never auto-fires.
     'sim.esub.title': 'Event subprocess “{label}”',
     'sim.esub.interrupting': 'interrupting — cancels the tokens of this scope',
@@ -106,6 +115,15 @@ export const simulation: { en: Messages; ptBR: Messages } = {
     'sim.escalation.dest.nonInterrupting': ' ↟ não-interruptivo',
     'sim.escalation.dest.dissolve': '→ sem catch — a escalação dissolve (no-op)',
     'sim.escalation.dest.ambiguous': '→ vários candidatos ({candidates}) — vai bloquear',
+    // Handoff 19 §6d — o card «Compensar» (broadcast + por atividade).
+    'sim.compensation.title': 'Compensar — {scope}',
+    'sim.compensation.broadcast': 'Compensar o escopo (broadcast)',
+    'sim.compensation.specific': 'Compensar “{label}”',
+    'sim.compensation.dest.handlers_one': '→ {count} handler, ordem reversa',
+    'sim.compensation.dest.handlers_other': '→ {count} handlers, ordem reversa',
+    'sim.compensation.dest.esubs': ' + event subprocess “{labels}”',
+    'sim.compensation.dest.activity': '→ handler “{handler}”',
+    'sim.compensation.dest.notEligible': '→ {reason} — não elegível',
     // ES-5 (§4e): card manual do event subprocess — nunca auto-dispara.
     'sim.esub.title': 'Event subprocess “{label}”',
     'sim.esub.interrupting': 'interruptivo — cancela os tokens deste escopo',

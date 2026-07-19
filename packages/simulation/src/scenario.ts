@@ -46,6 +46,16 @@ function canonicalDecision(decision: Decision): Record<string, unknown> {
     // anchors WHEN it fired (part of the scenario: interruption depends on it).
     case 'eventSubprocess':
       return { kind: 'eventSubprocess', sub: decision.sub, atStep: decision.atStep };
+    // §6d: compensation — `atStep` anchors WHEN it fired (the reversed set is the
+    // activities completed by then); stable shape, replayed through the SAME trail.
+    case 'compensate':
+      return {
+        kind: 'compensate',
+        ...(decision.scope !== undefined ? { scope: decision.scope } : {}),
+        ...(decision.activityRef !== undefined ? { activityRef: decision.activityRef } : {}),
+        waitForCompletion: decision.waitForCompletion,
+        atStep: decision.atStep,
+      };
     case 'decision':
       return {
         kind: 'decision',

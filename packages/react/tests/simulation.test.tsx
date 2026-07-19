@@ -300,6 +300,71 @@ describe('escalação na simulação (Handoff 18 §5e)', () => {
   });
 });
 
+/** s → a1 → a2 → end, cada atividade compensável (⟲ boundary + handler). */
+function compFlow(): BpmnDiagram {
+  const diagram = createDiagram({ name: 'Comp', id: 'comp' });
+  const n = (id: string, type: string, x: number, y: number, props: Record<string, unknown> = {}) => {
+    diagram.nodes[id] = createNode({ id, type, label: id, x, y, properties: props });
+  };
+  n('s', 'startEvent', 0, 100);
+  n('a1', 'serviceTask', 100, 90);
+  n('a2', 'serviceTask', 260, 90);
+  n('e', 'endEvent', 420, 100);
+  n('b_a1', 'boundaryEvent', 120, 130, { attachedToRef: 'a1', eventDefinition: 'compensate' });
+  n('h_a1', 'serviceTask', 100, 220, { isForCompensation: true });
+  diagram.nodes.h_a1.label = 'Estornar A1';
+  const e = (id: string, s: string, t: string, type?: string) => {
+    diagram.edges[id] = createEdge({ id, sourceId: s, targetId: t, ...(type ? { type } : {}) });
+  };
+  e('e1', 's', 'a1');
+  e('e2', 'a1', 'a2');
+  e('e3', 'a2', 'e');
+  e('a_a1', 'b_a1', 'h_a1', 'association');
+  return diagram;
+}
+
+describe('compensação na simulação (Handoff 19 §6d)', () => {
+  it('o card «Compensar» mostra broadcast com a CONTAGEM + a específica; incompleta não aparece', () => {
+    const { container } = render(<BpmnSimulator diagram={compFlow()} />);
+    fireEvent.click(container.querySelector('[data-sim-advance]')!); // s → a1
+    fireEvent.click(container.querySelector('[data-sim-advance]')!); // a1 → a2 (a1 completou)
+    const card = container.querySelector('[data-sim-compensate-card]')!;
+    expect(card).toBeTruthy();
+    // Broadcast mostra a contagem (1 handler completado: a1).
+    const broadcast = card.querySelector('[data-sim-compensate=""]')!;
+    expect(broadcast.getAttribute('data-sim-compensate-dest')).toBe('broadcast');
+    expect(broadcast.textContent).toContain('1 handler');
+    // A específica de a1 é elegível (completou).
+    const a1 = card.querySelector('[data-sim-compensate="a1"]')!;
+    expect(a1.getAttribute('data-sim-compensate-dest')).toBe('activity');
+    expect(a1.textContent).toContain('Estornar A1');
+    cleanup();
+  });
+
+  it('disparar broadcast reverte na trilha e coloca token no handler', () => {
+    const { container } = render(<BpmnSimulator diagram={compFlow()} />);
+    fireEvent.click(container.querySelector('[data-sim-advance]')!); // s → a1
+    fireEvent.click(container.querySelector('[data-sim-advance]')!); // a1 → a2
+    fireEvent.click(container.querySelector('[data-sim-compensate-card] [data-sim-compensate=""]')!);
+    const trail = container.querySelector('[data-sim-trail]')!.textContent!;
+    expect(trail).toContain('Compensate "a1" → handler "Estornar A1"');
+    expect(container.querySelector('[data-sim-active-node="h_a1"]')).toBeTruthy();
+    cleanup();
+  });
+
+  it('nada completado → broadcast desabilitado (contagem 0)', () => {
+    const { container } = render(<BpmnSimulator diagram={compFlow()} />);
+    fireEvent.click(container.querySelector('[data-sim-advance]')!); // s → a1 (nada completou)
+    const broadcast = container.querySelector('[data-sim-compensate-card] [data-sim-compensate=""]') as HTMLButtonElement;
+    expect(broadcast.textContent).toContain('0 handlers');
+    // A específica a1 (ainda não completou) fica não-elegível/desabilitada.
+    const a1 = container.querySelector('[data-sim-compensate="a1"]') as HTMLButtonElement;
+    expect(a1.getAttribute('data-sim-compensate-dest')).toBe('notEligible');
+    expect(a1.disabled).toBe(true);
+    cleanup();
+  });
+});
+
 describe('edgeGeometryFor', () => {
   it('rounds explicit waypoints and computes a node center', () => {
     const diagram = threePaths();

@@ -991,6 +991,42 @@ export function buildCompensationEditorDiagram(): BpmnDiagram {
 }
 
 /**
+ * `?simulate=1&comp=1` — Handoff 19 §6d: the compensation SIMULATION. A travel
+ * booking flow (hotel → flight → card) where hotel and flight are compensable
+ * (⟲ boundary + handler by association) and the card is NOT. Advance so the
+ * first activities complete, then the «Compensar» card reverses them in reverse
+ * order (the card completed without a handler is a declared, non-compensated
+ * line). The full «pacote de viagem» ledger demo lands in CO-5.
+ */
+export function buildCompensationSimDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-compensation-sim', name: 'Compensação governada', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 40, 120),
+    hotel: make('serviceTask', 'hotel', 'Reservar hotel', 140, 98),
+    flight: make('serviceTask', 'flight', 'Comprar passagem', 300, 98),
+    card: make('serviceTask', 'card', 'Pagar cartão', 460, 98),
+    end: make('endEvent', 'end', 'Fim', 620, 120),
+    bHotel: make('boundaryEvent', 'bHotel', 'Compensar hotel', 182, 140, { attachedToRef: 'hotel', eventDefinition: 'compensate', boundarySide: 'bottom', boundaryT: 0.5 }),
+    hHotel: make('serviceTask', 'hHotel', 'Cancelar reserva', 140, 250, { isForCompensation: true }),
+    bFlight: make('boundaryEvent', 'bFlight', 'Compensar passagem', 342, 140, { attachedToRef: 'flight', eventDefinition: 'compensate', boundarySide: 'bottom', boundaryT: 0.5 }),
+    hFlight: make('serviceTask', 'hFlight', 'Estornar passagem', 300, 250, { isForCompensation: true }),
+  };
+  diagram.edges = {
+    f1: createEdge({ id: 'f1', sourceId: 'start', targetId: 'hotel', versionId: v }),
+    f2: createEdge({ id: 'f2', sourceId: 'hotel', targetId: 'flight', versionId: v }),
+    f3: createEdge({ id: 'f3', sourceId: 'flight', targetId: 'card', versionId: v }),
+    f4: createEdge({ id: 'f4', sourceId: 'card', targetId: 'end', versionId: v }),
+    aHotel: createEdge({ id: 'aHotel', type: 'association', sourceId: 'bHotel', targetId: 'hHotel', versionId: v }),
+    aFlight: createEdge({ id: 'aFlight', type: 'association', sourceId: 'bFlight', targetId: 'hFlight', versionId: v }),
+  };
+  return diagram;
+}
+
+/**
  * `?compno=1` — Handoff 19 §6c: a compensation boundary (⟲) with NO handler, so
  * `COMP_BOUNDARY_NO_HANDLER` shows in the lint dock with its quick-fix. Applying
  * it creates the handler + association (the shared builder = the palette FORM);
