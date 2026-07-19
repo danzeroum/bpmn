@@ -57,5 +57,6 @@
   "56-call-activity-data-v2.bpmn": 0,
   "57-call-activity-data-v3.bpmn": 0,
   "58-agent-task-v1.bpmn": 0,
-  "59-escalation-v1.bpmn": 0
+  "59-escalation-v1.bpmn": 0,
+  "60-compensation-v1.bpmn": 0
 }

@@ -49,6 +49,7 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:errorEventDefinition` | ✅ supported | analytic | `eventDefinition: 'error'` |  |
 | `bpmn:signalEventDefinition` | ✅ supported | analytic | `eventDefinition: 'signal'` |  |
 | `bpmn:escalationEventDefinition` | ✅ supported | analytic | `eventDefinition: 'escalation'` |  |
+| `bpmn:compensateEventDefinition` | ✅ supported | analytic | `eventDefinition: 'compensate'` | Handoff 19 §6a: completes the OMG trigger family. No named root/bucket — the throw carries an OPTIONAL activityRef (target activity; absent = broadcast) and waitForCompletion (default true omitted); the handler links by bpmn:association and carries isForCompensation; the boundary has no cancelActivity. Catch never emits activityRef/waitForCompletion (COMP_CATCH_ATTRS warns + preserves on import). |
 | `bpmn:conditionalEventDefinition` | ✅ supported | analytic | `eventDefinition: 'conditional'` |  |
 | `bpmn:linkEventDefinition` | ✅ supported | analytic | `eventDefinition: 'link'` |  |
 | `bpmn:terminateEventDefinition` | ✅ supported | analytic | `eventDefinition: 'terminate'` |  |
@@ -114,6 +115,7 @@ warning and downgraded; **unsupported** — ignored on import with a warning.
 | `bpmn:errorEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:signalEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:escalationEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
+| `bpmn:compensateEventDefinition` | ✅ supported | modela (declarado) | — |
 | `bpmn:conditionalEventDefinition` | ✅ supported | modela (declarado) | — |
 | `bpmn:linkEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
 | `bpmn:terminateEventDefinition` | ✅ supported | modela (declarado) | executa (declarado) |
@@ -152,7 +154,7 @@ detalhes em `docs/format-spec.md` §"Foreign extension passthrough".
 
 ## Corpus real vs gerado (Handoff 11 N-2)
 
-- **Gerados (commitados):** 59 arquivos em `corpus/` — equivalentes
+- **Gerados (commitados):** 60 arquivos em `corpus/` — equivalentes
   estruturais, zero material proprietário.
 - **Reais (fetch em CI):** ≥ 20 exigidos pelo gate (cap 40), baixados por
   `pnpm fetch:corpus` para `corpus-external/` (git-ignorado) a partir de:

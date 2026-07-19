@@ -95,6 +95,10 @@ export class ElementSerializer {
       node.type === 'dataObject' && typeof node.properties.dataObjectRef === 'string'
         ? node.properties.dataObjectRef
         : undefined;
+    // Handoff 19: a compensation HANDLER activity carries the native OMG
+    // attribute isForCompensation="true" (default false omitted), never a
+    // bpmnr:property — it is standard BPMN and interoperates.
+    const isForCompensation = node.properties.isForCompensation === true;
     // Containment and expansion are encoded structurally (nesting below and
     // the DI isExpanded attribute), never as bpmnr:property.
     const isSubProcess = node.type === 'subProcess';
@@ -133,6 +137,23 @@ export class ElementSerializer {
         ? node.properties.eventDefinitionRef
         : undefined;
     if (eventRef !== undefined) reserved.add('eventDefinitionRef');
+    // Handoff 19: the compensate THROW carries activityRef (the target activity;
+    // absent = broadcast) and waitForCompletion (default TRUE omitted, only
+    // `false` written) as attributes of the compensateEventDefinition child.
+    // ONLY on a throw event (intermediateThrow/end) — a catch NEVER emits them
+    // (the OMG reserves them to the throw; CO-3 lint warns + preserves on import).
+    const isThrowEvent = node.type === 'intermediateThrowEvent' || node.type === 'endEvent';
+    const compensateActivityRef =
+      eventDef === 'compensate' &&
+      isThrowEvent &&
+      typeof node.properties.compensateActivityRef === 'string' &&
+      node.properties.compensateActivityRef !== ''
+        ? node.properties.compensateActivityRef
+        : undefined;
+    if (compensateActivityRef !== undefined) reserved.add('compensateActivityRef');
+    const waitForCompletionFalse =
+      eventDef === 'compensate' && isThrowEvent && node.properties.waitForCompletion === false;
+    if (waitForCompletionFalse) reserved.add('waitForCompletion');
     // Canonical timer (Handoff 16 E-5): emitted as the standard
     // timeDate/timeDuration/timeCycle child of the timerEventDefinition —
     // ONLY on timer events (reforço 10: on any other node the property stays
@@ -158,6 +179,7 @@ export class ElementSerializer {
     if (calledElement !== undefined) reserved.add('calledElement');
     if (dataStoreRef !== undefined) reserved.add('dataStoreRef');
     if (dataObjectRef !== undefined) reserved.add('dataObjectRef');
+    if (isForCompensation) reserved.add('isForCompensation');
     if (isSubProcess) reserved.add('isExpanded');
     if (agentSnapshot !== undefined) reserved.add('agentWorkflowSnapshot');
     const propEntries = Object.entries(node.properties).filter(([key]) => !reserved.has(key));
@@ -171,6 +193,7 @@ export class ElementSerializer {
       calledElement,
       dataStoreRef,
       dataObjectRef,
+      isForCompensation: isForCompensation ? 'true' : undefined,
       // Passthrough: foreign-prefixed attributes re-emitted after the
       // standard ones, exactly as imported.
       ...(node.foreignAttributes ?? {}),
@@ -218,6 +241,8 @@ export class ElementSerializer {
       const defAttrs = {
         id: `${node.id}_def`,
         ...(refAttrName && eventRef !== undefined ? { [refAttrName]: eventRef } : {}),
+        ...(compensateActivityRef !== undefined ? { activityRef: compensateActivityRef } : {}),
+        ...(waitForCompletionFalse ? { waitForCompletion: 'false' } : {}),
       };
       if (timer !== undefined) {
         const timerTag =

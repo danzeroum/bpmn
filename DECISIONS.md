@@ -753,6 +753,36 @@ a re-otimização global sob demanda.
 
 ---
 
+## 16. Handoff 19 (Compensação — Desfazer Governado) — decisões registradas
+
+- **Errata do §0.2 do README (kind/glifo NÃO existiam):** a spec assumia que o kind `compensation`
+  e o glifo rewind já existiam desde o H6. A reconciliação da CO-0 corrigiu contra a main real:
+  `compensat` (case-insensitive) tem **zero** ocorrências em `core/src` e `react/src` —
+  `EVENT_DEFINITION_KINDS` (`core/model/types.ts:243-252`) não inclui compensação e `eventGlyph`
+  (`react/shapes/shapes.tsx`) não tem o caso. Kind e glifo são **NOVOS** (CO-1/CO-2), não extensão.
+- **Nome interno do kind = `compensate` (não `compensation`):** o tag OMG é `compensateEventDefinition`;
+  o serializer emite `bpmn:${kind}EventDefinition` e o deserializer extrai o prefixo por regex
+  (`/^(.+)EventDefinition$/`), então **todo kind atual tem nome interno == prefixo OMG**. `compensate`
+  round-trippa com **zero** special-case; o rótulo de UI é "compensação"/"compensa" (i18n). Validado
+  pelo owner na CO-0.
+- **`bpmn:association` já era aresta de primeira classe:** tipo embutido (`types.ts:234`), fora do
+  fluxo (`flow.ts:22`), round-trip byte-estável já testado (`converter.test.ts:387`) e já na matriz
+  de conformidade (`matrix.ts:82`). A compensação **reusa** a aresta (zero fork); o NOVO é criar a
+  associação boundary⟲→handler + o veto estrutural + a semântica. CO-1 promove só
+  `compensateEventDefinition`.
+- **`isForCompensation` era descartado em silêncio no import:** `readNode` não tinha o ramo e
+  `withForeignAttributes` só captura atributos com prefixo. Corrigido **dentro** da CO-1 (ler+emitir,
+  default `false` omitido), sem micro-PR à parte.
+- **Completados na simulação DERIVADOS da trilha:** `compensate()` lê as atividades já concluídas dos
+  records `'move'`/`'end'` da trilha (sem novo `TransitionRecord`, para não arriscar byte-drift nos
+  cenários das 4 famílias anteriores). Ambiguidade de loop (mesma atividade concluída 2×) é DECLARADA
+  na CO-4 (última conclusão vence), não vira registro. Validado pelo owner na CO-0.
+- **Veto estrutural cobre os DOIS lados (reforço da CO-1):** o handler (`isForCompensation`) não
+  recebe nem emite sequence flow **E** o boundary ⟲ não emite sequence flow de saída (só associação);
+  testes dos dois + negativo (boundary de erro continua emitindo fluxo normal).
+
+---
+
 ## Resolvidas (para histórico)
 
 - ~~Lane membership manual/data-only~~ → interativa na Fase 5a.

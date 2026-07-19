@@ -99,6 +99,39 @@ export function registerDefaultRules(engine: RuleEngine): void {
     return { allowed: true };
   });
 
+  // Handoff 19 §6c: compensation lives OUTSIDE the normal sequence — the
+  // handler is reached by ASSOCIATION, never sequence flow. Two structural
+  // vetoes (both directions), always DECLARED, same channel as the event
+  // subprocess shell above; associations are explicitly allowed to pass:
+  //  - a handler (isForCompensation) neither receives nor emits sequence flow;
+  //  - a compensation boundary (⟲) emits no OUTGOING sequence flow — it links
+  //    to the handler only by association.
+  // An ERROR/message boundary keeps emitting flow normally (kind-gated).
+  engine.register<ConnectPayload>('edge.connect.pre', (payload, diagram) => {
+    if (payload.edgeType === 'association') return { allowed: true };
+    for (const id of [payload.sourceId, payload.targetId]) {
+      const node = diagram.nodes[id];
+      if (node && node.properties.isForCompensation === true) {
+        return {
+          allowed: false,
+          reason: `Handler de compensação "${node.label || node.id}" não recebe nem emite fluxo de sequência — ele é alcançado pela associação do boundary (OMG).`,
+        };
+      }
+    }
+    const source = diagram.nodes[payload.sourceId];
+    if (
+      source &&
+      source.type === 'boundaryEvent' &&
+      source.properties.eventDefinition === 'compensate'
+    ) {
+      return {
+        allowed: false,
+        reason: `Boundary de compensação "${source.label || source.id}" conecta ao handler só por associação — nunca fluxo de sequência de saída.`,
+      };
+    }
+    return { allowed: true };
+  });
+
   // Handoff 16 §3a: removing a REFERENCED named event definition is vetoed
   // with the honest usage list — deletion never cascades and never silently
   // orphans an event.

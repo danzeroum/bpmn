@@ -246,6 +246,11 @@ export const EVENT_DEFINITION_KINDS = [
   'error',
   'signal',
   'escalation',
+  // Handoff 19: the internal kind is `compensate` (== the OMG element prefix
+  // `compensateEventDefinition`), so it round-trips through the generic
+  // `${kind}EventDefinition` machinery with zero special-case (the invariant
+  // every kind above already holds). UI labels it "compensação" via i18n.
+  'compensate',
   'conditional',
   'link',
   'terminate',
