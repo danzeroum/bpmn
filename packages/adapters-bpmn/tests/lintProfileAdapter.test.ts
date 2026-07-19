@@ -33,7 +33,7 @@ describe('lintProfileAdapter (§1d)', () => {
   it('detail carries the version timeline and the promotable explanation', async () => {
     const detail = await adapter.get('lint-etiquette');
     expect(detail.versions).toEqual([
-      { version: '1.3.0', status: 'active', note: 'Versão embarcada no @buildtovalue/lint.' },
+      { version: '1.4.0', status: 'active', note: 'Versão embarcada no @buildtovalue/lint.' },
     ]);
     expect(detail.changeSummary).toContain('nova versão promovível');
     expect(detail.actions).toEqual([]); // read-only: nothing mutating

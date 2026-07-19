@@ -990,6 +990,36 @@ export function buildCompensationEditorDiagram(): BpmnDiagram {
   return diagram;
 }
 
+/**
+ * `?compno=1` — Handoff 19 §6c: a compensation boundary (⟲) with NO handler, so
+ * `COMP_BOUNDARY_NO_HANDLER` shows in the lint dock with its quick-fix. Applying
+ * it creates the handler + association (the shared builder = the palette FORM);
+ * the finding clears. Drives the lint-dock e2e of the quick-fix.
+ */
+export function buildCompensationNoHandlerDiagram(): BpmnDiagram {
+  const registry = createDefaultRegistry();
+  const diagram = createDiagram({ id: 'demo-compno', name: 'Compensação sem handler', createdBy: 'demo' });
+  const v = diagram.version.id;
+  const make = (type: string, id: string, label: string, x: number, y: number, properties: Record<string, unknown> = {}) =>
+    createNode({ type, id, label, x, y, properties, versionId: v }, registry);
+  diagram.nodes = {
+    start: make('startEvent', 'start', 'Início', 60, 120),
+    hotel: make('serviceTask', 'hotel', 'Reservar hotel', 200, 98),
+    bnd: make('boundaryEvent', 'bnd', 'Compensar hotel', 242, 140, {
+      attachedToRef: 'hotel',
+      eventDefinition: 'compensate',
+      boundarySide: 'bottom',
+      boundaryT: 0.5,
+    }),
+    end: make('endEvent', 'end', 'Fim', 420, 120),
+  };
+  diagram.edges = {
+    f1: createEdge({ id: 'f1', sourceId: 'start', targetId: 'hotel', versionId: v }),
+    f2: createEdge({ id: 'f2', sourceId: 'hotel', targetId: 'end', versionId: v }),
+  };
+  return diagram;
+}
+
 export function buildEscalationDiagram(): BpmnDiagram {
   const registry = createDefaultRegistry();
   const diagram = createDiagram({ id: 'demo-escalation', name: 'Escalação', createdBy: 'demo' });

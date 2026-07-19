@@ -1,11 +1,9 @@
 import {
-  addEdgeCommand,
   addEventDefinitionCommand,
   addNodeCommand,
   boundaryAnchorOf,
   boundaryNodePosition,
   compositeCommand,
-  createEdge,
   createNode,
   nextEventDefinitionId,
   type BpmnDiagram,
@@ -13,7 +11,7 @@ import {
   type NodeTypeRegistry,
   type RuleVerdict,
 } from '@buildtovalue/core';
-import { typedMessageStartCommands } from '@buildtovalue/lint';
+import { compensationHandlerCommands, typedMessageStartCommands } from '@buildtovalue/lint';
 import { findNodeAtPoint } from '../canvas/hitTest.js';
 import { SUBPROCESS_TITLE_HEIGHT } from '../shapes/shapes.js';
 import type { CanvasStore } from '../state/canvasStore.js';
@@ -198,17 +196,14 @@ export function buildEscalationBoundaryInsert(ctx: PaletteBuildContext): Palette
   };
 }
 
-/** Vertical gap between a compensable host and its handler (declared offset). */
-const COMPENSATION_HANDLER_GAP = 40;
-
 /**
  * The «Compensation (pair)» palette composite (Handoff 19 §6b): ONE undoable
- * command that drops the compensation boundary (⟲) on the host, a handler
- * activity BELOW it (declared offset), and the `bpmn:association` linking the
- * two — the pair is born complete and lint-clean (the ES-2 ruler). Drop demands
- * an activity host (the EC-2 veto). The association is seeded with explicit DI
- * waypoints (boundary center → handler center) so the freshly-created diagram
- * re-exports byte-stably (reforço 9).
+ * command that drops the compensation boundary (⟲) on the host plus the handler
+ * activity + linking association — the pair is born complete and lint-clean (the
+ * ES-2 ruler). The handler + association come from the SHARED
+ * `compensationHandlerCommands` builder (Handoff 19 §6c, one form): the SAME
+ * source the COMP_BOUNDARY_NO_HANDLER quick-fix uses, so palette and fix never
+ * drift. Drop demands an activity host (the EC-2 veto).
  */
 export function buildCompensationPairInsert(ctx: PaletteBuildContext): PaletteInsertResult {
   const { diagram, registry, x, y, t } = ctx;
@@ -242,33 +237,15 @@ export function buildCompensationPairInsert(ctx: PaletteBuildContext): PaletteIn
     },
     registry,
   );
-  const handlerSize = registry.get('serviceTask').defaultSize;
-  const handler = createNode(
-    {
-      type: 'serviceTask',
-      // Handler BELOW the host (declared offset), horizontally aligned.
-      x: host.x,
-      y: host.y + host.height + COMPENSATION_HANDLER_GAP,
-      label: t('palette.compose.compensationHandler'),
-      properties: { isForCompensation: true },
-      versionId: diagram.version.id,
-    },
-    registry,
-  );
-  const boundaryCenter = { x: pos.x + size.width / 2, y: pos.y + size.height / 2 };
-  const handlerCenter = { x: handler.x + handlerSize.width / 2, y: handler.y + handlerSize.height / 2 };
-  const association = createEdge({
-    type: 'association',
-    sourceId: boundary.id,
-    targetId: handler.id,
-    waypoints: [boundaryCenter, handlerCenter],
-    versionId: diagram.version.id,
+  const { commands: handlerCommands } = compensationHandlerCommands(diagram, {
+    boundary,
+    host,
+    handlerName: t('palette.compose.compensationHandler'),
   });
   return {
     command: compositeCommand(t('palette.compose.compensationPair'), [
       addNodeCommand(boundary),
-      addNodeCommand(handler),
-      addEdgeCommand(association),
+      ...handlerCommands,
     ]),
     selectId: boundary.id,
   };

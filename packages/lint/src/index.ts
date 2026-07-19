@@ -4,12 +4,15 @@ import {
   addEdgeCommand,
   addEventDefinitionCommand,
   addNodeCommand,
+  boundaryAttachedTo,
   childrenOf,
+  compensableActivitiesOf,
   compositeCommand,
   createEdge,
   createNode,
   eligibleEscalationCatches,
   eventDefinitionRefOf,
+  flowScopeOf,
   isContainerType,
   isEventSubprocess,
   isEventType,
@@ -206,8 +209,9 @@ const END_FORBIDDEN_KINDS = new Set(['timer', 'conditional', 'link']);
 const NAMED_REF_KINDS = new Set(['message', 'signal', 'error', 'escalation']);
 
 /** Trigger kinds a typed event-subprocess start accepts. Handoff 18 §5d adds
- * `escalation` (a start of escalation in an esub is now legal); compensation
- * stays in its own pendency — declared, never silently accepted. */
+ * `escalation`; Handoff 19 §6c adds `compensate` (a compensation start ONLY
+ * exists inside an event subprocess — the OMG "compensation event subprocess";
+ * outside it is COMP_START_TOPLEVEL). */
 const SUBPROC_TRIGGER_KINDS = [
   'message',
   'signal',
@@ -215,6 +219,7 @@ const SUBPROC_TRIGGER_KINDS = [
   'timer',
   'conditional',
   'escalation',
+  'compensate',
 ] as const;
 const SUBPROC_TRIGGER_SET = new Set<string>(SUBPROC_TRIGGER_KINDS);
 
@@ -252,6 +257,49 @@ export function typedMessageStartCommands(
     ],
     startId: start.id,
     definitionId,
+  };
+}
+
+/** Vertical gap between a compensable host and its handler (declared offset). */
+const COMPENSATION_HANDLER_GAP = 40;
+
+/**
+ * "Compensation handler + association" — THE shared builder (Handoff 19 §6c,
+ * anti-drift): the palette's «Compensação (par)» composite (react, CO-2) and the
+ * COMP_BOUNDARY_NO_HANDLER quick-fix both compose THIS — one FORM, one source
+ * (the ES-2/ES-4 precedent `typedMessageStartCommands`). Given a compensation
+ * boundary and its host, it creates the handler activity BELOW the host
+ * (declared offset, `isForCompensation`) and the `bpmn:association` linking the
+ * two, seeded with explicit DI waypoints (boundary center → handler center) so
+ * the result re-exports byte-stably.
+ */
+export function compensationHandlerCommands(
+  diagram: BpmnDiagram,
+  options: { boundary: BpmnNode; host: BpmnNode; handlerName?: string },
+): { commands: Command[]; handlerId: string; edgeId: string } {
+  const { boundary, host } = options;
+  const handler = createNode({
+    type: 'serviceTask',
+    x: host.x,
+    y: host.y + host.height + COMPENSATION_HANDLER_GAP,
+    properties: { isForCompensation: true },
+    ...(options.handlerName !== undefined ? { label: options.handlerName } : {}),
+    versionId: diagram.version.id,
+  });
+  const association = createEdge({
+    type: 'association',
+    sourceId: boundary.id,
+    targetId: handler.id,
+    waypoints: [
+      { x: boundary.x + boundary.width / 2, y: boundary.y + boundary.height / 2 },
+      { x: handler.x + handler.width / 2, y: handler.y + handler.height / 2 },
+    ],
+    versionId: diagram.version.id,
+  });
+  return {
+    commands: [addNodeCommand(handler), addEdgeCommand(association)],
+    handlerId: handler.id,
+    edgeId: association.id,
   };
 }
 
@@ -437,6 +485,139 @@ export const evtEscalationCatchIllegalRule: ValidationRule = (diagram) =>
       nodeId: node.id,
     }));
 
+/**
+ * COMP_HANDLER_FLOW (Handoff 19 §6c): a compensation HANDLER (isForCompensation)
+ * lives OUTSIDE the sequence — it is reached only by the boundary's association,
+ * never by sequence flow. This catches the IMPORT path the editor's core veto
+ * (CO-1) cannot. ONE finding per edge, naming the handler(s) and the edge
+ * (reforço 9 — both roles: handler as source OR as target; a handler↔handler
+ * edge never yields two findings). A normal task flows normally.
+ */
+export const compHandlerFlowRule: ValidationRule = (diagram) => {
+  const issues: ValidationIssue[] = [];
+  for (const edge of activeEdges(diagram)) {
+    if (!isFlowEdge(edge)) continue;
+    const source = diagram.nodes[edge.sourceId];
+    const target = diagram.nodes[edge.targetId];
+    const handlers = [source, target].filter(
+      (node) => node !== undefined && node.properties.isForCompensation === true,
+    );
+    if (handlers.length === 0) continue;
+    const named = handlers.map((node) => `"${node!.label || node!.id}"`).join(' and ');
+    issues.push({
+      code: 'COMP_HANDLER_FLOW',
+      severity: 'error',
+      message: `Sequence flow "${edge.id}" touches the compensation handler ${named} — a handler is reached only by the boundary's association, never by flow`,
+      edgeId: edge.id,
+    });
+  }
+  return issues;
+};
+
+/**
+ * COMP_BOUNDARY_NO_HANDLER (Handoff 19 §6c): a compensation boundary (⟲) with no
+ * association to a handler compensates nothing — an ERROR with a MECHANICAL
+ * quick-fix (the shared `compensationHandlerCommands` — the FORM of the palette
+ * composite, one source).
+ */
+export const compBoundaryNoHandlerRule: ValidationRule = (diagram) =>
+  activeNodes(diagram)
+    .filter((node) => node.type === 'boundaryEvent' && eventKindOf(node) === 'compensate')
+    .filter(
+      (boundary) =>
+        !activeEdges(diagram).some(
+          (edge) => edge.type === 'association' && edge.sourceId === boundary.id,
+        ),
+    )
+    .map((boundary) => ({
+      code: 'COMP_BOUNDARY_NO_HANDLER',
+      severity: 'error' as const,
+      message: `Compensation boundary "${boundary.label || boundary.id}" has no handler — link it to a compensation activity by association`,
+      nodeId: boundary.id,
+    }));
+
+/**
+ * COMP_REF_NOT_COMPENSABLE (Handoff 19 §6c): a compensation THROW whose
+ * `compensateActivityRef` targets an activity that has NO compensation boundary
+ * in the throw's OWN scope — a WARNING (the throw is legal, but nothing will be
+ * compensated). Reads the SHARED `compensableActivitiesOf` (the SAME source the
+ * picker (CO-2) and the simulator (CO-4) consume), scoped by `flowScopeOf`.
+ */
+export const compRefNotCompensableRule: ValidationRule = (diagram) =>
+  activeNodes(diagram)
+    .filter(
+      (node) =>
+        (node.type === 'endEvent' || node.type === 'intermediateThrowEvent') &&
+        eventKindOf(node) === 'compensate' &&
+        typeof node.properties.compensateActivityRef === 'string' &&
+        node.properties.compensateActivityRef !== '',
+    )
+    .filter((node) => {
+      const ref = node.properties.compensateActivityRef as string;
+      return !compensableActivitiesOf(diagram, flowScopeOf(diagram, node)).some(
+        (activity) => activity.activityId === ref,
+      );
+    })
+    .map((node) => ({
+      code: 'COMP_REF_NOT_COMPENSABLE',
+      severity: 'warning' as const,
+      message: `Compensation throw "${node.label || node.id}" targets an activity with no compensation boundary in scope — nothing will be compensated`,
+      nodeId: node.id,
+    }));
+
+/**
+ * COMP_CATCH_ATTRS (Handoff 19 §6c): a compensation CATCH (boundary or
+ * event-subprocess start) carrying `activityRef`/`waitForCompletion` — the OMG
+ * reserves these to the THROW. A WARNING only: the converter already PRESERVES
+ * them (CO-1 keeps them in the bpmnr: soup and NEVER re-emits them on the OMG
+ * child), so the fence is met — the rule just surfaces the non-OMG input.
+ */
+export const compCatchAttrsRule: ValidationRule = (diagram) =>
+  activeNodes(diagram)
+    .filter((node) => {
+      if (eventKindOf(node) !== 'compensate') return false;
+      const isCatch =
+        node.type === 'boundaryEvent' ||
+        (node.type === 'startEvent' &&
+          (() => {
+            const parentId = nodeParentId(node);
+            const parent = parentId ? diagram.nodes[parentId] : undefined;
+            return parent !== undefined && isEventSubprocess(parent);
+          })());
+      if (!isCatch) return false;
+      return (
+        typeof node.properties.compensateActivityRef === 'string' ||
+        node.properties.waitForCompletion !== undefined
+      );
+    })
+    .map((node) => ({
+      code: 'COMP_CATCH_ATTRS',
+      severity: 'warning' as const,
+      message: `Compensation catch "${node.label || node.id}" carries activityRef/waitForCompletion — the OMG reserves these to the throw; they are ignored (preserved on import, never re-emitted on the child)`,
+      nodeId: node.id,
+    }));
+
+/**
+ * COMP_START_TOPLEVEL (Handoff 19 §6c): a compensation START only exists inside
+ * an EVENT subprocess (the OMG "compensation event subprocess") — the EXACT
+ * mould of `evtEscalationStartToplevelRule`, the SAME core `isEventSubprocess`
+ * predicate, so lint and the Execução matrix agree by construction.
+ */
+export const compStartToplevelRule: ValidationRule = (diagram) =>
+  activeNodes(diagram)
+    .filter((node) => {
+      if (node.type !== 'startEvent' || eventKindOf(node) !== 'compensate') return false;
+      const parentId = nodeParentId(node);
+      const parent = parentId ? diagram.nodes[parentId] : undefined;
+      return parent === undefined || !isEventSubprocess(parent);
+    })
+    .map((node) => ({
+      code: 'COMP_START_TOPLEVEL',
+      severity: 'error' as const,
+      message: `Compensation start event "${node.label || node.id}" sits outside an event subprocess — a compensation start only exists inside one`,
+      nodeId: node.id,
+    }));
+
 export const ETIQUETTE_RULES: ValidationRule[] = [
   labelRequiredRule,
   superfluousGatewayRule,
@@ -452,6 +633,11 @@ export const ETIQUETTE_RULES: ValidationRule[] = [
   escNoCatchRule,
   evtSubprocFlowRule,
   evtSubprocStartRule,
+  compHandlerFlowRule,
+  compBoundaryNoHandlerRule,
+  compRefNotCompensableRule,
+  compCatchAttrsRule,
+  compStartToplevelRule,
 ];
 
 // -------------------------------------------------------------- executability
@@ -738,13 +924,29 @@ function fixEvtSubprocStart(ctx: LintFixContext): Command | null {
   return compositeCommand('Create typed start for event subprocess', commands);
 }
 
-// E-5 (§3d) → 1.1.0; Handoff 17 ES-4 (§4d) → 1.2.0; Handoff 18 §5d → 1.3.0:
-// new rules = NEW promotable profile versions — the panel header and the
-// Biblioteca adapter reflect it from this one source.
+/**
+ * COMP_BOUNDARY_NO_HANDLER quick-fix (Handoff 19 §6c): MECHANICAL — ONE
+ * composite through the SHARED `compensationHandlerCommands` builder (the EXACT
+ * FORM of the CO-2 «Compensação (par)» palette composite — one form, one
+ * source). Creates the handler below the host + the linking association.
+ */
+function fixCompBoundaryNoHandler(ctx: LintFixContext): Command | null {
+  const boundary = ctx.issue.nodeId ? ctx.diagram.nodes[ctx.issue.nodeId] : undefined;
+  if (!boundary || eventKindOf(boundary) !== 'compensate') return null;
+  const hostId = boundaryAttachedTo(boundary);
+  const host = hostId ? ctx.diagram.nodes[hostId] : undefined;
+  if (!host) return null;
+  const { commands } = compensationHandlerCommands(ctx.diagram, { boundary, host });
+  return compositeCommand('Create compensation handler and association', commands);
+}
+
+// E-5 (§3d) → 1.1.0; Handoff 17 ES-4 (§4d) → 1.2.0; Handoff 18 §5d → 1.3.0;
+// Handoff 19 §6c → 1.4.0: new rules = NEW promotable profile versions — the
+// panel header and the Biblioteca adapter reflect it from this one source.
 export const ETIQUETTE_PROFILE: LintProfile = {
   id: 'lint-etiquette',
   name: 'Etiqueta de modelagem',
-  version: '1.3.0',
+  version: '1.4.0',
   source: 'etiquette',
   rules: [
     { id: 'label-required', run: labelRequiredRule },
@@ -761,13 +963,19 @@ export const ETIQUETTE_PROFILE: LintProfile = {
     { id: 'esc-no-catch', run: escNoCatchRule },
     { id: 'evt-subproc-flow', run: evtSubprocFlowRule },
     { id: 'evt-subproc-start', run: evtSubprocStartRule, fix: fixEvtSubprocStart },
+    // Handoff 19 §6c — compensation rules.
+    { id: 'comp-handler-flow', run: compHandlerFlowRule },
+    { id: 'comp-boundary-no-handler', run: compBoundaryNoHandlerRule, fix: fixCompBoundaryNoHandler },
+    { id: 'comp-ref-not-compensable', run: compRefNotCompensableRule },
+    { id: 'comp-catch-attrs', run: compCatchAttrsRule },
+    { id: 'comp-start-toplevel', run: compStartToplevelRule },
   ],
 };
 
 export const EXECUTABILITY_PROFILE: LintProfile = {
   id: 'lint-engine',
   name: 'Prontidão de execução (engine)',
-  version: '1.3.0',
+  version: '1.4.0',
   source: 'executability',
   rules: [
     { id: 'service-task-implementation', run: serviceTaskImplementationRule },

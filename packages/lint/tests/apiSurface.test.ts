@@ -35,6 +35,13 @@ const EXPECTED_EXPORTS = [
   'evtEscalationStartToplevelRule',
   'evtEscalationCatchIllegalRule',
   'escNoCatchRule',
+  // Handoff 19 §6c — compensation rules + shared builder (perfis 1.4.0).
+  'compHandlerFlowRule',
+  'compBoundaryNoHandlerRule',
+  'compRefNotCompensableRule',
+  'compCatchAttrsRule',
+  'compStartToplevelRule',
+  'compensationHandlerCommands',
 ].sort();
 
 describe('@buildtovalue/lint public API surface', () => {
