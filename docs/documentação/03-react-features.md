@@ -12,18 +12,20 @@ projeção de estado dos engines para SVG/DOM.
 ## simulation
 
 ### `packages/react/src/simulation/BpmnSimulator.tsx`
+> Δ 2026-07: dois novos callbacks de injeção — `onEscalationThrown` (H18 EC-5, path a: o motor fica puro, o host decide se anexa `escalationRaisedEntry`) e `onCompensationTriggered` (H19 CO-4/CO-5). Passa ao painel os novos cartões de simulação (throw error, escalar, compensar, event-subprocess). Os handlers de escalar/compensar leem a predição do motor ANTES de disparar (a chamada muta o estado do qual o card deriva), colando o destino/plano EXECUTADO no ledger sem re-derivar.
 **Papel:** Superfície drop-in do modo simulação — `BpmnEditor` read-only com overlay de token, cards de escolha e o painel de 300px; constrói o artefato de sessão para o ledger via injeção.
-**Entradas:** props `BpmnSimulatorProps` — `diagram: BpmnDiagram`, `plugins?: BpmnPlugin[]`, `onExit?`, `onRecord?: (session: SimulationSession) => void|Promise`, `author='anônimo'`, `recordedInfo?: ReactNode`, `decisions?: DecisionEvaluator` (suporte a tabela de decisão injetado pelo host). Do hook `useSimulation`: `state` (SimulationState), `coverage`, `travels`, etc.
-**Processamento (intermediário):** `sim = useSimulation(diagram, {decisions})`; deriva `choice = state.pendingChoice`, `gatewayLabel` (label do nó via `diagram.nodes[choice.nodeId]`), `advanceLabel` (string condicional a deadlocked/complete/choice), `defaultRecordedInfo` (JSX com hash+coverage). Estado local `recorded: SimulationSession|null`. `handleRecord` (useCallback) chama `buildSession(engine.scenario, coverage, {author, timestamp})` async, invoca `onRecord`, seta `recorded`.
-**Saídas:** JSX — `<BpmnEditor>` com `overlay=<SimulationOverlaySvg>`, slots para `GatewayChoiceCard`/`DecisionInputCard`/`BlockedDecisionNotice`, `<SimulationPanel>`; pill "MODO SIMULAÇÃO"; callback `onRecord(session)`.
-**Estruturas de dados que trafegam:** `BpmnSimulatorProps`, `SimulationSession` (scenarioHash, coverage {covered,total}, version, author, timestamp), `SimulationState`, `CoverageSummary`.
+**Entradas:** props `BpmnSimulatorProps` — `diagram: BpmnDiagram`, `plugins?: BpmnPlugin[]`, `onExit?`, `onRecord?: (session: SimulationSession) => void|Promise`, `onEscalationThrown?: (info: {host, escalationRef?, destination: EscalationDestination}) => void|Promise` (escalação DE FATO ocorrida), `onCompensationTriggered?: (info: {scope, compensated: {activity,handler}[], uncompensated: {activity,reason}[]}) => void|Promise` (só disparado quando a compensação de fato rodou), `author='anônimo'`, `recordedInfo?: ReactNode`, `decisions?: DecisionEvaluator` (suporte a tabela de decisão injetado pelo host). Do hook `useSimulation`: `state` (SimulationState), `coverage`, `travels`, etc.
+**Processamento (intermediário):** `sim = useSimulation(diagram, {decisions})`; deriva `choice = state.pendingChoice`, `gatewayLabel` (label do nó via `diagram.nodes[choice.nodeId]`), `advanceLabel` (string condicional a deadlocked/complete/choice), `defaultRecordedInfo` (JSX com hash+coverage). Estado local `recorded: SimulationSession|null`. `handleRecord` (useCallback) chama `buildSession(engine.scenario, coverage, {author, timestamp})` async, invoca `onRecord`, seta `recorded`. Escalar: monta `Decision {kind:'escalation', host, escalationRef?}` via `sim.choose`, mas ANTES captura `option.destination` da `escalationThrowOptions` (a predição, pois o throw muta o estado) → `onEscalationThrown`. Compensar: lê `plan = sim.engine.compensationPlan(activityRef)` (read-only, reforço 7), dispara `Decision {kind:'compensate', activityRef?, waitForCompletion:true, atStep: trail.length}` e só chama `onCompensationTriggered` se `!plan.blocked` e houver reversões (alvo específico bloqueado/não-compensável não anexa NADA). Throw error: `Decision {kind:'error', host, errorRef?}` (o usuário escolhe o ERRO, o motor casa o boundary).
+**Saídas:** JSX — `<BpmnEditor>` com `overlay=<SimulationOverlaySvg>`, slots para `GatewayChoiceCard`/`DecisionInputCard`/`BlockedDecisionNotice`, `<SimulationPanel>` (recebe `errorThrowOptions`/`onThrowError`, `escalationThrowOptions`/`onThrowEscalation`, `compensateCard`/`onCompensate`, `eventSubprocessOptions`/`onFireEventSubprocess`); pill "MODO SIMULAÇÃO"; callbacks `onRecord(session)`, `onEscalationThrown(info)`, `onCompensationTriggered(info)`.
+**Estruturas de dados que trafegam:** `BpmnSimulatorProps`, `SimulationSession` (scenarioHash, coverage {covered,total}, version, author, timestamp), `SimulationState`, `CoverageSummary`, `EscalationDestination` (kind boundary/esubStart/ambiguous/dissolve), `ErrorThrowOption`, `EscalationThrowOption`, `CompensateCard`, `EventSubprocessOption`, `Decision` (variantes error/escalation/compensate).
 
 ### `packages/react/src/simulation/useSimulation.ts`
+> Δ 2026-07: novo `fireEventSubprocess(subId)` (H17 ES-5 §4e) — timer/conditional event subprocess NUNCA auto-dispara, esta é a decisão manual explícita; espelha o mesmo padrão de `fireBoundary` (chama o motor, emite travels, faz fold da cobertura quando `engine.complete`). `choose` agora também transporta as variantes `Decision` de error/escalation/compensate (H16–19) sem mudança de assinatura.
 **Papel:** Controller React em torno do `SimulationEngine` headless — possui o engine + `CoverageTracker` (sobrevive a resets), espelha estado para React e transforma cada passo em animações de token sobre a geometria real da aresta.
 **Entradas:** `diagram: BpmnDiagram`, `options: { decisions?: DecisionEvaluator }`.
-**Processamento (intermediário):** `engine = useMemo(new SimulationEngine(diagram,{decisions}))`; `tracker = useMemo(new CoverageTracker(engine.graph))`. Estado local: `force` (rerender dummy), `sessionNumber`, `stepMode` (default = `prefersReducedMotion()`), `travels: TokenTravel[]`, `travelKey` (ref contador). `emitTravels(transitions)` filtra `TransitionRecord[]` por `type==='move'|'split'` com `edgeId`, gera `TokenTravel` {key, edgeId, targetNodeId, durationMs=450}. `advance/choose/fireBoundary` chamam o engine, emitem travels e, se `engine.complete`, `tracker.record(state.traversedEdges)`. `reset` faz fold da cobertura antes de `engine.reset()`. `statusLine` (useMemo) — string derivada de deadlocked/complete/blockedDecision/pendingDecisionInput/pendingChoice/token atual.
-**Saídas:** `UseSimulationResult` — `state`, `coverage`, `sessionNumber`, `stepMode`, `setStepMode`, `hasApproximateSemantics`, `canAdvance`, `travels`, `clearTravel`, `statusLine`, `advance/choose/fireBoundary/reset`, `engine` (acesso vivo para captura de cenário).
-**Estruturas de dados que trafegam:** `TokenTravel` {key:number, edgeId, targetNodeId, durationMs}, `SimulationState`, `TransitionRecord`, `CoverageSummary`, `Decision`, `DecisionEvaluator`.
+**Processamento (intermediário):** `engine = useMemo(new SimulationEngine(diagram,{decisions}))`; `tracker = useMemo(new CoverageTracker(engine.graph))`. Estado local: `force` (rerender dummy), `sessionNumber`, `stepMode` (default = `prefersReducedMotion()`), `travels: TokenTravel[]`, `travelKey` (ref contador). `emitTravels(transitions)` filtra `TransitionRecord[]` por `type==='move'|'split'` com `edgeId`, gera `TokenTravel` {key, edgeId, targetNodeId, durationMs=450 (TRAVEL_MS)}. `advance/choose/fireBoundary/fireEventSubprocess` chamam o engine, emitem travels e, se `engine.complete`, `tracker.record(state.traversedEdges)`. `reset` faz fold da cobertura antes de `engine.reset()`. `statusLine` (useMemo) — string derivada de deadlocked/complete/blockedDecision/pendingDecisionInput/pendingChoice/token atual.
+**Saídas:** `UseSimulationResult` — `state`, `coverage`, `sessionNumber`, `stepMode`, `setStepMode`, `hasApproximateSemantics`, `canAdvance`, `travels`, `clearTravel`, `statusLine`, `advance/choose/fireBoundary/fireEventSubprocess/reset`, `engine` (acesso vivo para captura de cenário / `compensationPlan`).
+**Estruturas de dados que trafegam:** `TokenTravel` {key:number, edgeId, targetNodeId, durationMs}, `SimulationState`, `TransitionRecord`, `CoverageSummary`, `Decision` (exclusive/inclusive/eventBased/decision/error/escalation/compensate), `DecisionEvaluator`.
 
 ### `packages/react/src/simulation/SimulationOverlaySvg.tsx`
 **Papel:** Camada SVG em coordenadas de mundo — arestas exercitadas em verde, highlight do nó com token, discos de token animados via `<animateMotion>` sobre a rota real.
@@ -33,13 +35,15 @@ projeção de estado dos engines para SVG/DOM.
 **Estruturas de dados que trafegam:** `SimulationOverlaySvgProps`, `TokenTravel`, `EdgeGeometry` {path,start,end,midpoint}, `BpmnNode`/`BpmnEdge`.
 
 ### `packages/react/src/simulation/SimulationPanel.tsx`
-**Papel:** Painel de 300px que substitui o inspector — status + avançar/reiniciar, disparo de boundary, cobertura de caminhos, trilha da sessão e registro no ledger.
-**Entradas:** props `SimulationPanelProps` — `sessionNumber`, `statusLine`, `canAdvance`, `onAdvance`, `onReset`, `advanceLabel`, `boundaryOptions: BoundaryOption[]`, `onFireBoundary(id)`, `stepMode`, `onToggleStepMode`, `coverage: CoverageSummary`, `trail: TransitionRecord[]`, `hasApproximateSemantics`, `onRecord?`, `canRecord?`, `recordedInfo?: ReactNode`. `t` de `useT()`.
-**Processamento (intermediário):** `pct = round(coverage.covered/coverage.total*100)` (transitório). Mapeia `coverage.paths` (id, label, covered) para `<li>`, `trail` (step, message, approximate) para `<div>`, `boundaryOptions` (boundary, label, interrupting) para botões.
-**Saídas:** JSX `<aside>` — botões avançar/reset/boundary, checkbox stepMode, card de cobertura com progressbar (`aria-valuenow=pct`), card de trilha, aviso de semântica aproximada, botão de registro; callbacks `onAdvance/onReset/onFireBoundary/onToggleStepMode/onRecord`.
-**Estruturas de dados que trafegam:** `SimulationPanelProps`, `BoundaryOption` {boundary, label, interrupting}, `CoverageSummary` {covered, total, paths[{id,label,covered}]}, `TransitionRecord` {step, message, approximate}.
+> Δ 2026-07: quatro novos blocos de cartão renderizados no painel — «Lançar erro» (H16 E-6 §3e: card INVERTIDO, o usuário escolhe o ERRO e o motor casa o boundary), «Escalar» (H18 EC-5 §5e: cada opção mostra o destino PREVISTO + modo como glifo+texto via `escalationDestText`), «Compensar» (H19 CO-4/6d: cartão ÚNICO — broadcast mostra a CONTAGEM de reversões via `compensationDestText`, cada atividade compensável é disparável quando concluída, senão listada NÃO-ELEGÍVEL com motivo) e event-subprocess manual (H17 ES-5 §4e: timer/conditional nunca auto-dispara; modo interrupting/non-interrupting como glifo+texto). Todos os rótulos passaram a chaves i18n `sim.*` (via `useT()`).
+**Papel:** Painel de 300px que substitui o inspector — status + avançar/reiniciar, disparo de boundary, os cartões de lançar-erro/escalar/compensar/event-subprocess, cobertura de caminhos, trilha da sessão e registro no ledger.
+**Entradas:** props `SimulationPanelProps` — `sessionNumber`, `statusLine`, `canAdvance`, `onAdvance`, `onReset`, `advanceLabel`, `boundaryOptions: BoundaryOption[]`, `onFireBoundary(id)`, `errorThrowOptions?: ErrorThrowOption[]`, `onThrowError?(host, errorRef?)`, `escalationThrowOptions?: EscalationThrowOption[]`, `onThrowEscalation?(host, escalationRef?)`, `compensateCard?: CompensateCard|null`, `onCompensate?(activityRef?)`, `eventSubprocessOptions?: EventSubprocessOption[]`, `onFireEventSubprocess?(subId)`, `stepMode`, `onToggleStepMode`, `coverage: CoverageSummary`, `trail: TransitionRecord[]`, `hasApproximateSemantics`, `onRecord?`, `canRecord?`, `recordedInfo?: ReactNode`. `t` de `useT()`.
+**Processamento (intermediário):** `pct = round(coverage.covered/coverage.total*100)` (transitório). Mapeia `coverage.paths` (id, label, covered) para `<li>`, `trail` (step, message, approximate) para `<div>`, `boundaryOptions` (boundary, label, interrupting) para botões. Helpers puros: `escalationDestText(t, dest: EscalationDestination)` traduz o destino (boundary/esubStart com modo interrupting, ambiguous com candidatos, dissolve) para glifo+texto; `compensationDestText(t, dest: CompensationDestination)` idem (broadcast com handlerCount + esubLabels, activity com handlerLabel, notEligible com reason). Cada opção de compensar fica `disabled` quando `destination.kind==='notEligible'`.
+**Saídas:** JSX `<aside>` — botões avançar/reset/boundary, cartões `data-sim-throw-card`/`data-sim-escalate-card`/`data-sim-compensate-card`/`data-sim-esub-card` com atributos de destino/modo (`data-sim-escalation-dest`, `data-sim-compensate-dest`, `data-sim-esub-mode`), checkbox stepMode, card de cobertura com progressbar (`aria-valuenow=pct`), card de trilha, aviso de semântica aproximada, botão de registro; callbacks `onAdvance/onReset/onFireBoundary/onThrowError/onThrowEscalation/onCompensate/onFireEventSubprocess/onToggleStepMode/onRecord`.
+**Estruturas de dados que trafegam:** `SimulationPanelProps`, `BoundaryOption` {boundary, label, interrupting}, `ErrorThrowOption` {host, hostLabel, options[{errorRef?, label?}]}, `EscalationThrowOption` {host, hostLabel, options[{escalationRef?, label?, destination: EscalationDestination}]}, `CompensateCard` {scopeLabel, options[{activityRef?, label?, destination: CompensationDestination}]}, `EventSubprocessOption` {sub, subLabel, kind:'timer'|'conditional', interrupting}, `CoverageSummary` {covered, total, paths[{id,label,covered}]}, `TransitionRecord` {step, message, approximate}.
 
 ### `packages/react/src/simulation/GatewayChoiceCard.tsx`
+> Δ 2026-07: todos os rótulos passaram a chaves i18n `sim.gateway.*`/`sim.choice.*` via `useT()` (título, aria, confirmação `{n}`, aviso de aproximação); comportamento de escolha inalterado.
 **Papel:** Card flutuante de escolha de gateway na base do canvas (touch-first, alvos ≥44px); OR-gateway é multi-seleção com confirmação explícita.
 **Entradas:** props — `choice: PendingChoice`, `gatewayLabel: string`, `onChoose(decision: Decision)`.
 **Processamento (intermediário):** estado local `selected: Set<string>` (edgeIds selecionados no modo múltiplo); `toggle(edgeId)` adiciona/remove do Set. Ramo por `choice.multiple` e `choice.kind`.
@@ -47,6 +51,7 @@ projeção de estado dos engines para SVG/DOM.
 **Estruturas de dados que trafegam:** `GatewayChoiceCardProps`, `PendingChoice` {nodeId, kind, multiple, approximate, options[{edgeId,label}]}, `Decision`.
 
 ### `packages/react/src/simulation/DecisionInputCard.tsx`
+> Δ 2026-07: rótulos localizados via `useT()` (`sim.decision.*`); o `BlockedDecisionNotice` (reexportado e reusado pelo Agent Studio) aponta para `docs/limitations.md` no GitHub. Coação de valores e "stop honesto" inalterados.
 **Papel:** Card de entrada de decisão S-FEEL (businessRuleTask) + o "stop honesto" `BlockedDecisionNotice` quando a decisão não é simulável.
 **Entradas:** `DecisionInputCard`: `pending: PendingDecisionInput`, `onDecide(decision)`. `BlockedDecisionNotice`: `blocked: BlockedDecision`.
 **Processamento (intermediário):** estado local `values: Record<string,string>` (texto por input). No submit, monta `context: Record<string, number|string|boolean>` coagindo cada `pending.inputs[i]` via `coerce()` (transitório: 'true'/'false'→boolean, numérico→number, resto→string).
@@ -59,6 +64,13 @@ projeção de estado dos engines para SVG/DOM.
 **Processamento (intermediário):** se `edge.waypoints.length>=2` → `waypointsToPath(points, EDGE_CORNER_RADIUS)` com start/end/midpoint derivados dos pontos; senão delega ao `edgeRouter(source,target)`. `null` se endpoint faltando.
 **Saídas:** `EdgeGeometry | null`; `nodeCenter` → `{x,y}` (centro em coordenadas de mundo).
 **Estruturas de dados que trafegam:** `BpmnEdge`, `BpmnNode`, `EdgeGeometry`, `EdgeRouterFn`.
+
+### `packages/react/src/simulation.ts`
+**Papel:** Barrel de subpath opt-in `@buildtovalue/react/simulation` — consumidores editor-only que importam de `@buildtovalue/react` não deveriam depender de tree-shaking para dropar esta superfície (melhorias F6); importam daqui. O barrel raiz segue reexportando por compatibilidade.
+**Entradas:** nenhuma (só reexports).
+**Processamento (intermediário):** `export *` dos módulos `simulation/{BpmnSimulator, SimulationPanel, SimulationOverlaySvg, GatewayChoiceCard, useSimulation, edgePath}`.
+**Saídas:** superfície pública de simulação (componentes + hook + geometria). Nota: `DecisionInputCard`/`BlockedDecisionNotice` NÃO são reexportados aqui — são internos, consumidos por `BpmnSimulator` e pelo Agent Studio via caminho direto.
+**Estruturas de dados que trafegam:** apenas identificadores reexportados.
 
 ---
 
@@ -106,6 +118,13 @@ projeção de estado dos engines para SVG/DOM.
 **Saídas:** string formatada (ex.: "6,4 h"); número (largura de traço).
 **Estruturas de dados que trafegam:** apenas primitivos (number → string/number).
 
+### `packages/react/src/replay.ts`
+**Papel:** Barrel de subpath opt-in `@buildtovalue/react/replay` (mesma racional de `simulation.ts` — não onerar consumidores editor-only).
+**Entradas:** nenhuma (só reexports).
+**Processamento (intermediário):** `export *` de `replay/{BpmnReplay, ReplayPanel, ReplayOverlaySvg, useReplay, diagramToReplayGraph, format}`.
+**Saídas:** superfície pública de replay (componentes + hook + adaptador + formatação).
+**Estruturas de dados que trafegam:** apenas identificadores reexportados.
+
 ---
 
 ## agent
@@ -131,6 +150,13 @@ projeção de estado dos engines para SVG/DOM.
 **Saídas:** `Command | null` — `compositeCommand('Propose agent error boundary', [addNodeCommand(node), attachBoundaryCommand(...)])` (um undo remove a proposta inteira).
 **Estruturas de dados que trafegam:** `BpmnDiagram`, `BpmnNode`, `Command`.
 
+### `packages/react/src/agent.ts`
+**Papel:** Barrel de subpath opt-in `@buildtovalue/react/agent` — expõe a UI do Agent Studio (mesma racional de `simulation.ts`).
+**Entradas:** nenhuma (só reexports).
+**Processamento (intermediário):** reexport nomeado `{ AgentStudio, AgentStudioProps, AgentSimulationRecord }` de `agent/AgentStudio.js` e `{ proposeErrorBoundaryCommand }` de `agent/agentBoundary.js`; `export *` de `agent/agentEditor.js` (transforms + reducer + layout).
+**Saídas:** superfície pública do Agent Studio (componente + tipos + comando de boundary + editor puro).
+**Estruturas de dados que trafegam:** apenas identificadores reexportados.
+
 ---
 
 ## copilot
@@ -141,6 +167,13 @@ projeção de estado dos engines para SVG/DOM.
 **Processamento (intermediário):** estado local: `messages: ChatEntry[]`, `input`, `busy`, `applied`, `conversationId` (ref generateId), `history: Msg[]` (ref — histórico de conversa), `appliedState: BpmnDiagram|null` (ref). `empty` (diagrama vazio → escolhe `COPILOT_DRAFT_PROMPT` senão `COPILOT_ADJUST_PROMPT`). `sndErrors = useMemo(soundnessErrors(diagram))`. `ask(text, promptTemplate?)`: monta `context` (JSON com nodes {id,type,label} + edges {id,sourceId,targetId}) e empurra em `history`; chama `provider.complete({system, messages})` → `raw`; `parseProposal(raw)`; `validateProposal(diagram, proposal)` (verdict com errors); `buildPlan(diagram, proposal, {providerId, conversationId})`; `execute(plan.command)`; resolve `ledgerHash`; empurra ChatEntry com footer. Botão "fix" reusa o mesmo pipeline com `COPILOT_FIX_PROMPT`.
 **Saídas:** JSX `<aside>` — header (provider id, template+versão, pill), selo de autoria mista, lista de erros de soundness + botão sugerir correção, chat com footer mono (autoria, ledger, comando, soundness), textarea, botões gerar/ajustar/desfazer-tudo; efeitos: `execute(Command)`, `undo()`.
 **Estruturas de dados que trafegam:** `CopilotPanelProps`, `ChatEntry` {role, text, footer?{author,commandId,ledgerHash?,soundness: SoundnessPreview}, error?}, `Msg` {role, content}, `AIProvider`, `CopilotPromptTemplate`, `PromptTemplateRef`, `SoundnessPreview` {errors,warnings}, `CopilotPlan` (command, soundnessPreview) via `buildPlan`.
+
+### `packages/react/src/copilot.ts`
+**Papel:** Barrel de subpath opt-in `@buildtovalue/react/copilot` (mesma racional de `simulation.ts`).
+**Entradas:** nenhuma (só reexports).
+**Processamento (intermediário):** `export *` de `copilot/CopilotPanel.js`.
+**Saídas:** superfície pública do copiloto (`CopilotPanel`, `CopilotPanelProps`).
+**Estruturas de dados que trafegam:** apenas identificadores reexportados.
 
 ---
 
@@ -186,6 +219,7 @@ projeção de estado dos engines para SVG/DOM.
 **Estruturas de dados que trafegam:** `TFunction`, `Messages`.
 
 ### `packages/react/src/i18n/en.ts` / `packages/react/src/i18n/ptBR.ts`
+> Δ 2026-07: mudança arquitetural consolidada — as tabelas NÃO são mais monólitos com literais embutidos; ambas são MONTADAS por composição a partir do array `FRAGMENTS` (`mergeMessages(...FRAGMENTS.map(f => f.en/ptBR))`). O conjunto cresceu de 12 → 18 fragmentos com as superfícies de H15–H19 (command palette, event definitions, timer, lint, review, aba Execução). Chave ausente no PT_BR cai para EN (degradação por chave).
 **Papel:** As duas tabelas de lookup planas oficiais — `EN` (fallback completo embutido) e `PT_BR` (segundo dicionário oficial), montadas a partir de todos os fragmentos.
 **Entradas:** `FRAGMENTS` (array de `{en, ptBR}`).
 **Processamento (intermediário):** `mergeMessages(...FRAGMENTS.map(f => f.en))` / `...f.ptBR`.
@@ -193,17 +227,20 @@ projeção de estado dos engines para SVG/DOM.
 **Estruturas de dados que trafegam:** `Messages`.
 
 ### `packages/react/src/i18n/fragments/index.ts`
+> Δ 2026-07: 12 → 18 fragmentos; adicionados `lint`, `review`, `commandPalette`, `eventDefs`, `timer` (H14–H19). Adicionar uma superfície = adicionar seu fragmento aqui.
 **Papel:** Registro de todos os fragmentos de dicionário — uma entrada por grupo de superfície migrada.
-**Entradas:** imports dos 12 fragmentos.
-**Processamento (intermediário):** array `FRAGMENTS` na ordem de montagem.
+**Entradas:** imports dos 18 fragmentos.
+**Processamento (intermediário):** array `FRAGMENTS` na ordem de montagem: `toolbar, properties, palette, versioning, pedigree, ledgerStatus, promotion, copilot, menus, simulation, studio, agentStudio, canvas, lint, review, commandPalette, eventDefs, timer`.
 **Saídas:** `FRAGMENTS: Array<{en: Messages; ptBR: Messages}>`.
 **Estruturas de dados que trafegam:** `Messages`.
 
 ### Fragmentos de dicionário (`fragments/*.ts`) — dados que carregam
+> Δ 2026-07: 18 fragmentos (eram 13 listados). Novos: `lint`, `review`, `commandPalette`, `eventDefs`, `timer`. `simulation.ts` ganhou os domínios `sim.error.*`/`sim.escalation.*`/`sim.compensation.*`/`sim.esub.*` (H16 E-6, H17 ES-5, H18 EC-5, H19 CO-4); `properties.ts` ganhou `execution.*` (aba Execução, H16 E-4). `studio.ts`/`review.ts` sobrepõem o namespace `review.*`.
+
 Cada arquivo é um `{ en: Messages; ptBR: Messages }` com mapas chave→string (namespaced por superfície), pares de plural `_one`/`_other` e tokens `{token}` de interpolação. Resumo por superfície de UI que os dados alimentam:
 
 - **`toolbar.ts`** (`toolbar.*`) — barra de ferramentas do editor: undo/redo, zoom/fit/snap, export XML/JSON/SVG/PNG, limpar/resetar roteamento (com plurais de arestas re-otimizadas/rotas manuais preservadas), resultado de validação.
-- **`properties.ts`** (`properties.*`) — inspector de propriedades: label/propósito, versão criada/encerrada, supersedes, add/remover propriedades, contagem de elementos selecionados.
+- **`properties.ts`** (`properties.*`, `execution.*`) — inspector de propriedades (label/propósito, versão criada/encerrada, supersedes, add/remover propriedades, contagem de selecionados) **+ a aba Execução** (Δ H16 E-4): título/essencial/avançado, jobType, retries, deploy, variáveis de código/mensagem de erro e o I/O de payload de eventos (`execution.payload.*` — add/remover, source/target) com o bloqueio que remete à promoção.
 - **`palette.ts`** (`palette.*`, `minimap.*`) — labels aria da paleta de elementos e do minimapa (labels de item vêm dos plugins, não das chaves).
 - **`versioning.ts`** (`version.*`, `diff.*`, `breadcrumb.*`, `status.*`, `signature.*`) — banner/timeline de versão, diff, breadcrumb de governança e o conjunto CANÔNICO de rótulos de selo de status (DRAFT/CANDIDATE/ACTIVE/...) e assinatura.
 - **`pedigree.ts`** (`pedigree.*`, `payload.*`, `anchor.*`) — tira de pedigree da aresta, card de payload canônico assinado e selo de âncora (ancorada/pendente/quebrada).
@@ -211,10 +248,15 @@ Cada arquivo é um `{ en: Messages; ptBR: Messages }` com mapas chave→string (
 - **`promotion.ts`** (`promotion.*`) — painel de promoção formal: change_summary, aprovadores/assinatura, soundness, cobertura, avisos de ativação (deprecação, runs presas), toasts de ledger.
 - **`copilot.ts`** (`copilot.*`) — painel do copiloto: título, pill "SÓ RASCUNHA", soundness, gerar/ajustar/desfazer, placeholders.
 - **`menus.ts`** (`contextMenu.*`, `edgeLabel.*`, `nodeLabel.*`) — menu de contexto e editores de rótulo inline.
-- **`simulation.ts`** (`sim.*`, `replay.*`) — painel de simulação, cards de escolha de gateway/decisão e painel de token-replay (fitness, desvios, variantes, legenda de import XES/CSV).
+- **`simulation.ts`** (`sim.*`, `replay.*`) — painel de simulação, cards de escolha de gateway/decisão e painel de token-replay (fitness, desvios, variantes, legenda de import XES/CSV). Δ H16–19: os domínios `sim.error.*` (lançar erro invertido), `sim.escalation.*` (cartão «Escalar» + destinos boundary/esubStart/ambiguous/dissolve + modo interrupting), `sim.compensation.*` (cartão «Compensar» broadcast/específico/não-elegível) e `sim.esub.*` (disparo manual de event subprocess timer/conditional).
 - **`canvas.ts`** (`canvas.*`) — superfícies SVG do canvas: aria de nó/porta/resize, selo FECHADO (`canvas.seal.*`), controles de subprocesso, `<title>` de rota sem corredor e banner de recuperação de rascunho — as últimas superfícies que carregavam strings fixas (e idioma misto EN/PT).
 - **`studio.ts`** (`studio.*`, `review.*`, `ledger.*`) — shell do Studio, Revisão do Aprovador (fila, request, diff, análise de replay anexada, decisão) e Ledger Explorer (verificação de cadeia, âncora, trilha, detalhe de entrada, query).
 - **`agentStudio.ts`** (`agent.*`) — o Agent Studio inteiro: título/autonomia, paleta de nós/decoradores/templates, inspector, footer de validação, simulação mock, proposta de boundary, escolha de template.
+- **`lint.ts`** (`lint.*`) — painel de Problemas (Δ H14 §1d): título/toggle, plurais de erros/avisos, política VIGENTE, corrigir/corrigir-todos/sugerir, fonte (etiqueta/engine), proposta inválida/rejeitada por inteiro.
+- **`review.ts`** (`review.*`) — fragmento dedicado da Revisão do Aprovador (namespace `review.*`, também tocado por `studio.ts`): fila, pedido de mudanças, ciclo EM REVISÃO, threads/pins e decisão.
+- **`commandPalette.ts`** (`cmdk.*`, `cheatsheet.*`, `shortcuts.*`, `emptyState.*`) — Δ H15 §2f: paleta Ctrl/⌘+K e a cola "?" (geradas da MESMA registry de comandos) + o estado de canvas vazio com o exemplo governado de um clique.
+- **`eventDefs.ts`** (`eventDefs.*`, `eventSubproc.*`, `palette.*`/`compensation.*` de compensação) — Δ H16 E-2 / H19 §6b: seção "Evento" do properties (picker de definição nomeada, «+» auto-criar, rename inline em cascata, lista de usos, deleção bloqueada, binding VIGENTE/CANDIDATA/NÃO-RESOLVIDA da Biblioteca) + par de compensação e picker de alvo (broadcast/específico) + toggle interrupting do event subprocess.
+- **`timer.ts`** (`timer.*`) — Δ H16 E-5: editor de timer (tipo date/duration/cycle, expressão ISO 8601) e o preview HUMANO montado do resultado estruturado do parser (unidades ano→segundo com plural; sem preview para expressão inválida — só o aviso glifo+texto).
 
 ---
 
@@ -222,9 +264,9 @@ Cada arquivo é um `{ en: Messages; ptBR: Messages }` com mapas chave→string (
 
 Formas de dado principais que atravessam estas superfícies (definidas nos engines headless, projetadas aqui para UI):
 
-- **`SimulationState`** — estado vivo do `SimulationEngine`: `tokens[{nodeId}]`, `traversedEdges: string[]`, `trail: TransitionRecord[]`, `pendingChoice`, `pendingDecisionInput`, `blockedDecision`, `boundaryOptions`, flags `complete`/`deadlocked`. Flui para overlay (tokens/arestas) e painel (trilha/status).
+- **`SimulationState`** — estado vivo do `SimulationEngine`: `tokens[{nodeId}]`, `traversedEdges: string[]`, `trail: TransitionRecord[]`, `pendingChoice`, `pendingDecisionInput`, `blockedDecision`, `boundaryOptions` e (Δ H16–19) `errorThrowOptions`, `escalationThrowOptions`, `compensateCard`, `eventSubprocessOptions`, flags `complete`/`deadlocked`. Flui para overlay (tokens/arestas) e painel (trilha/status/cartões).
 - **`TransitionRecord` / `TokenTravel`** — passo do engine (step, type 'move'/'split', edgeId, nodeId, message, approximate) convertido em `TokenTravel` {key, edgeId, targetNodeId, durationMs} para animação SVG `<animateMotion>`.
-- **`Decision` / `PendingChoice` / `PendingDecisionInput` / `BlockedDecision`** — o contrato de escolha do usuário: gateway exclusive/inclusive/eventBased ou decisão S-FEEL (context Record<string, number|string|boolean>) ou o "stop honesto".
+- **`Decision` / `PendingChoice` / `PendingDecisionInput` / `BlockedDecision`** — o contrato de escolha do usuário: gateway exclusive/inclusive/eventBased ou decisão S-FEEL (context Record<string, number|string|boolean>) ou o "stop honesto"; e (Δ H16–19) as variantes de disparo `{kind:'error', host, errorRef?}`, `{kind:'escalation', host, escalationRef?}` e `{kind:'compensate', activityRef?, waitForCompletion, atStep}` — em todas o usuário escolhe o evento e o MOTOR casa o destino.
 - **`CoverageSummary` + `SimulationSession`** — cobertura de caminhos {covered, total, paths[{id,label,covered}]} e o artefato de sessão registrável no ledger {scenarioHash, coverage, author, timestamp}.
 - **`ReplayAnalysis` / `AggregatedLog`** — resultado da agregação de log: `edges[{edgeId,count}]`, `nodes[{nodeId,avgMs}]`, `bottleneckNodeId`, `deviations[{from,to,cases}]`, `variants[{signature,count,share,activities}]`, `fitness`, `totalCases/totalEvents`, `unmapped`; `ReplayAnalysis` {headline,...} anexável à promoção.
 - **`ReplayGraph`** — projeção `{nodes:[{id,name}], edges:[{id,source,target}]}` do BpmnDiagram (adaptador do host).
@@ -233,4 +275,4 @@ Formas de dado principais que atravessam estas superfícies (definidas nos engin
 - **`CopilotPlan` (buildPlan) + proposta** — `parseProposal(raw)` → proposta validada (`validateProposal`) → `plan {command: Command, soundnessPreview: {errors,warnings}}`; comando composto único aplicado via `execute`, revertível em um undo.
 - **`Msg` / `AIProvider` / `ChatEntry`** — histórico de conversa (role/content), transporte do provider injetado e entradas de chat com footer rastreável (author, commandId, ledgerHash, soundness).
 - **`WorkerRequest` / `WorkerResponse` / `ComputeJob`** — payloads de postMessage `{__btvJob:true, id, job, input}` ⇄ `{__btvJob:true, id, result?, error?}`; job puro serializável (ex.: `RouteJobInput` {diagram, router?} → BpmnDiagram re-roteado).
-- **`Messages` / `TFunction` / `TParams`** — mapas planos chave→string (EN fallback + PT_BR), montados de 12 fragmentos; `t(key, params)` com plural `_one`/`_other` e interpolação `{token}`.
+- **`Messages` / `TFunction` / `TParams`** — mapas planos chave→string (EN fallback + PT_BR), montados de 18 fragmentos; `t(key, params)` com plural `_one`/`_other` e interpolação `{token}`.
