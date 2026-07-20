@@ -8,7 +8,7 @@ import {
   type LibrarySort,
   type LifecycleStatus,
 } from '@buildtovalue/library';
-import { SEAL_LABELS } from '@buildtovalue/react';
+import { I18nProvider, SEAL_LABELS, useT, type Messages } from '@buildtovalue/react';
 import { ArtifactCard } from './ArtifactCard.js';
 import { ArtifactDrawer } from './ArtifactDrawer.js';
 import { useLibrary } from './useLibrary.js';
@@ -26,12 +26,18 @@ export interface LibraryViewProps {
   /** Fired on every selection change so the host can sync URL state (§10.7). */
   onSelectionChange?: (ref: ArtifactRef | undefined) => void;
   onWarning?: (warning: AdapterWarning) => void;
+  /**
+   * i18n dictionary (#151) — same contract as the other surfaces: this prop
+   * wins, then an ancestor `<I18nProvider>`, then the per-key English
+   * fallback. Omitted with no provider → English, unchanged default.
+   */
+  messages?: Messages;
 }
 
-const SORTS: Array<{ value: LibrarySort; label: string }> = [
-  { value: 'name', label: 'nome' },
-  { value: 'updated', label: 'atualização' },
-  { value: 'status', label: 'status' },
+const SORTS: Array<{ value: LibrarySort; labelKey: string }> = [
+  { value: 'name', labelKey: 'library.sort.name' },
+  { value: 'updated', labelKey: 'library.sort.updated' },
+  { value: 'status', labelKey: 'library.sort.status' },
 ];
 
 /**
@@ -40,7 +46,14 @@ const SORTS: Array<{ value: LibrarySort; label: string }> = [
  * search, sortable card grid and the detail drawer. Read-only by
  * construction: the only outbound calls are `onAction` descriptors.
  */
-export function LibraryView({
+export function LibraryView({ messages, ...props }: LibraryViewProps) {
+  // Mirror of BpmnDesigner: the prop wraps a LOCAL provider; without it the
+  // body defers to an outer <I18nProvider> (or the English fallback).
+  const body = <LibraryViewBody {...props} />;
+  return messages !== undefined ? <I18nProvider messages={messages}>{body}</I18nProvider> : body;
+}
+
+function LibraryViewBody({
   adapters,
   onAction,
   initialQuery,
@@ -48,7 +61,8 @@ export function LibraryView({
   initialSelection,
   onSelectionChange,
   onWarning,
-}: LibraryViewProps) {
+}: Omit<LibraryViewProps, 'messages'>) {
+  const t = useT();
   const library = useLibrary({
     adapters,
     ...(initialQuery ? { initialQuery } : {}),
@@ -77,15 +91,15 @@ export function LibraryView({
 
   return (
     <div className="btv-lib" data-testid="library-view">
-      <div className="btv-lib-filters" role="toolbar" aria-label="Filtros da biblioteca">
-        <div className="btv-lib-chip-row" aria-label="Filtro por status">
+      <div className="btv-lib-filters" role="toolbar" aria-label={t('library.filters.aria')}>
+        <div className="btv-lib-chip-row" aria-label={t('library.filters.statusAria')}>
           <button
             type="button"
             className="btv-lib-chip"
             aria-pressed={!query.statuses?.length}
             onClick={() => setQuery({ ...query, statuses: [] })}
           >
-            Todos <span className="btv-lib-chip-count">{result?.counts.total ?? 0}</span>
+            {t('library.filters.all')} <span className="btv-lib-chip-count">{result?.counts.total ?? 0}</span>
           </button>
           {LIFECYCLE_STATUSES.map((status) => (
             <button
@@ -101,7 +115,7 @@ export function LibraryView({
             </button>
           ))}
         </div>
-        <div className="btv-lib-chip-row" aria-label="Filtro por tipo">
+        <div className="btv-lib-chip-row" aria-label={t('library.filters.typeAria')}>
           {library.adapters.map((adapter) => (
             <button
               key={adapter.id}
@@ -120,21 +134,21 @@ export function LibraryView({
           <input
             type="search"
             className="btv-lib-search"
-            placeholder="Buscar…"
-            aria-label="Buscar artefatos"
+            placeholder={t('library.search.placeholder')}
+            aria-label={t('library.search.aria')}
             value={query.text ?? ''}
             onChange={(e) => setQuery({ ...query, text: e.target.value })}
           />
           <label className="btv-lib-sort">
-            ordenar:
+            {t('library.sort.label')}
             <select
-              aria-label="Ordenação"
+              aria-label={t('library.sort.aria')}
               value={query.sort ?? 'name'}
               onChange={(e) => setQuery({ ...query, sort: e.target.value as LibrarySort })}
             >
               {SORTS.map((s) => (
                 <option key={s.value} value={s.value}>
-                  {s.label}
+                  {t(s.labelKey)}
                 </option>
               ))}
             </select>
@@ -143,7 +157,7 @@ export function LibraryView({
       </div>
 
       <div className="btv-lib-body">
-        <div className="btv-lib-grid" role="list" aria-label="Artefatos">
+        <div className="btv-lib-grid" role="list" aria-label={t('library.grid.aria')}>
           {result?.items.map((item) => (
             // role="listitem" satisfies the list's required-children contract
             // (a11y, N-8); display:contents keeps the card as the real grid item.
@@ -160,7 +174,7 @@ export function LibraryView({
             </div>
           ))}
           {result && result.items.length === 0 && (
-            <p className="btv-lib-empty">Nenhum artefato corresponde aos filtros.</p>
+            <p className="btv-lib-empty">{t('library.empty')}</p>
           )}
         </div>
         {detail && <ArtifactDrawer detail={detail} onAction={onAction} onClose={() => select(undefined)} />}

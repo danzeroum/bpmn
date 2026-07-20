@@ -70,6 +70,9 @@ const MIGRATED = [
   'packages/studio/src/StudioShell.tsx',
   'packages/studio/src/review/ReviewScreen.tsx',
   'packages/studio/src/ledger/LedgerExplorer.tsx',
+  'packages/library-react/src/LibraryView.tsx',
+  'packages/library-react/src/ArtifactCard.tsx',
+  'packages/library-react/src/ArtifactDrawer.tsx',
 ];
 
 const TEXT_ATTRS = /\b(aria-label|title|placeholder|alt)\s*=\s*"([^"]*[A-Za-z]{2,}[^"]*)"/;
