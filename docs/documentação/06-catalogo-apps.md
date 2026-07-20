@@ -86,15 +86,24 @@ A costura headless→React da Biblioteca. Toda a lógica de catálogo vive em `@
 
 ## adapters-bpmn
 
-Adapters concretos que mapeiam `RegistryEntry` → `ArtifactSummary`/`Detail`, o thumbnail SVG headless, e a cola de injeção de ledger (payloads `AuditEntryInput` para simulação/replay/sessões de agente).
+Adapters concretos que mapeiam `RegistryEntry` (e perfis de lint, definições de evento governadas) → `ArtifactSummary`/`Detail`, o thumbnail SVG headless, e a cola de injeção de ledger (payloads `AuditEntryInput` para simulação/replay/sessões de agente, e para binding de evento/escalação/compensação/review). Erros tipados via `AdapterError`.
 
 ### `packages/adapters-bpmn/src/registryAdapter.ts`
 > Δ 2026-07: lookups desconhecidos nos adapters BPMN lançam `AdapterError extends BpmnError` (code `ADAPTER`, novo `src/errors.ts`) — exceto `recipeAdapter`, que por teste ácido só importa de `@buildtovalue/library` e mantém `Error`.
+> Δ 2026-07: H15 §2e — novo `toLifecycleStatus` (exportado) colapsa o estado `in-review` do core no `candidate` das seis vidas da Biblioteca (perda documentada, V-0 decisão 2); a nuança sobrevive como o selo `⟲ EM REVISÃO` prefixado no `meta` do `ArtifactSummary` (nunca como novo estado da library). Usado também pelo `dmnDecisionAdapter`.
 **Papel:** Ponte genérica registry→library; cada adapter concreto do pacote é uma configuração fina desta factory. Read-only sobre o registry.
 **Entradas:** `RegistryAdapterOptions` (`id`, `typeLabel`, `registry: VersionRegistry`, `match?`, `target?: ObserverTarget`, `now?`, `boundRuns?`, `thumbnail?`); em runtime `LibraryQuery`/`artifactId`.
-**Processamento (intermediário):** `logicalArtifacts` agrupa `registry.list()` por `entry.snapshot.id` (`Map<string,RegistryEntry[]>`, ordenado por `version.createdAt`). `relevantEntry` escolhe a entry+`publication` visível ao observador (`openPublicationAt` casa channel/environment/janela `effectiveFrom..effectiveUntil`); sem target, a versão mais nova vence. `matching()` filtra por `match(snapshot)`. `toSummary`: conta nós ativos (`!removedInVersion`), monta `ArtifactSummary` (status vem da `publication?.status ?? version.status`, meta = description ou "N nós"). `versionTimeline` mapeia entries→`VersionEntry[]` (reverse, mais novo primeiro). `defaultActions` gera "Abrir no Designer"/"Diff vs versão ativa" com payload `{artifactId, versionId}`. `get`: adiciona approvers (userIds), changeSummary, provenance (`snapshotHash`/createdBy/createdAt), effectiveFrom/Until. Set de `listeners` para subscribe/notifyChanged.
+**Processamento (intermediário):** `logicalArtifacts` agrupa `registry.list()` por `entry.snapshot.id` (`Map<string,RegistryEntry[]>`, ordenado por `version.createdAt`). `relevantEntry` escolhe a entry+`publication` visível ao observador (`openPublicationAt` casa channel/environment/janela `effectiveFrom..effectiveUntil`); sem target, a versão mais nova vence. `matching()` filtra por `match(snapshot)`. `toSummary`: conta nós ativos (`!removedInVersion`), monta `ArtifactSummary` (status = `toLifecycleStatus(publication?.status ?? version.status)`, meta = description ou "N nós"; se `version.status === 'in-review'`, meta ganha o prefixo `⟲ EM REVISÃO ·`). `versionTimeline` mapeia entries→`VersionEntry[]` (reverse, mais novo primeiro, status via `toLifecycleStatus`). `defaultActions` gera "Abrir no Designer"/"Diff vs versão ativa" com payload `{artifactId, versionId}`. `get`: adiciona approvers (userIds), changeSummary, provenance (`snapshotHash`/createdBy/createdAt), effectiveFrom/Until. Set de `listeners` para subscribe/notifyChanged.
 **Saídas:** `ArtifactSummary[]`, `ArtifactDetail`, funções de subscribe/notify.
 **Estruturas de dados que trafegam:** `ObserverTarget` (`{channel, environment?}`), `RegistryAdapterOptions`, `RegistryArtifactAdapter` (+`notifyChanged`), `LogicalArtifact` (`{id, entries: RegistryEntry[]}`), `Publication`, `RegistryEntry`, `VersionEntry`, `ArtifactAction`.
+
+### `packages/adapters-bpmn/src/errors.ts`
+> Δ 2026-07: arquivo novo — classe de erro tipada dos adapters BPMN.
+**Papel:** Define `AdapterError extends BpmnError` para falhas de lookup/mapeamento (artefato desconhecido, referência ruim) nos adapters do pacote.
+**Entradas:** `message: string` (o construtor fixa o code).
+**Processamento (intermediário):** Chama `super('ADAPTER', message)` — o code `'ADAPTER'` é constante da classe; nenhuma outra lógica.
+**Saídas:** Instância de `AdapterError` lançada por `registryAdapter`/`dmnDecisionAdapter`/`lintProfileAdapter`/`eventDefinitionCatalogAdapter` (o `recipeAdapter` fica de fora — só importa de `@buildtovalue/library` e mantém `Error`).
+**Estruturas de dados que trafegam:** `AdapterError`, `BpmnError` (base, `@buildtovalue/core`).
 
 ### `packages/adapters-bpmn/src/adapters.ts`
 **Papel:** Fábricas dos adapters concretos BuildToValue (flow/persona/prompt/connector/policy).
@@ -118,9 +127,10 @@ Adapters concretos que mapeiam `RegistryEntry` → `ArtifactSummary`/`Detail`, o
 **Estruturas de dados que trafegam:** `ThumbnailSpec`, `BpmnNode`, `BpmnDiagram`.
 
 ### `packages/adapters-bpmn/src/dmnDecisionAdapter.ts`
+> Δ 2026-07: lookup desconhecido agora lança `AdapterError` (antes `Error`); status de summary/timeline passa por `toLifecycleStatus` (mapeia `in-review`→`candidate`, mesma regra do `registryAdapter`).
 **Papel:** Decisões DMN como artefatos de catálogo — "mais um adapter". Uma decisão é um nó `dmn:decision`; o id do artefato é `<diagramId>::<nodeId>`. Duck-typed sobre o vocabulário DMN (headless).
 **Entradas:** `VersionRegistry`, `DmnDecisionAdapterOptions` (`target?`, `now?`); `artifactId` em runtime.
-**Processamento (intermediário):** `decisions()` percorre `logicalArtifacts` e coleta nós `dmn:decision` ativos. `decisionTable(node)` extrai `properties.decisionTable` (`DecisionTableLike` — `{hitPolicy?, rules?}`). `toSummary`: conta `rules`, meta = "hit policy X · N regras", thumbnail via `decisionThumbnail(rules)`. `get`: split de `artifactId` por `::`, valida nó existe/ativo/tipo, monta timeline apenas das versões onde o nó existe (reverse), action única "Abrir no Designer" com `{artifactId, versionId, nodeId}`.
+**Processamento (intermediário):** `decisions()` percorre `logicalArtifacts` e coleta nós `dmn:decision` ativos. `decisionTable(node)` extrai `properties.decisionTable` (`DecisionTableLike` — `{hitPolicy?, rules?}`). `toSummary`: conta `rules`, meta = "hit policy X · N regras" (ou "sem tabela de decisão"), status via `toLifecycleStatus`, thumbnail via `decisionThumbnail(rules)`. `get`: split de `artifactId` por `::`, valida nó existe/ativo/tipo (senão `AdapterError`), monta timeline apenas das versões onde o nó existe (reverse), action única "Abrir no Designer" com `{artifactId, versionId, nodeId}`.
 **Saídas:** `ArtifactSummary`/`ArtifactDetail` (typeLabel "DECISÃO").
 **Estruturas de dados que trafegam:** `DmnDecisionAdapterOptions`, `DecisionTableLike`, `LogicalArtifact`, `BpmnNode`.
 
@@ -137,6 +147,22 @@ Adapters concretos que mapeiam `RegistryEntry` → `ArtifactSummary`/`Detail`, o
 **Processamento (intermediário):** `CAPABILITY_NAMES` (id→nome pt-BR C1..C6). `activeCopilotPromptVersion` faz lookup de `.version`. `toSummary`: status sempre `'active'`, meta cita "ia.copilot@<modelo> + este template", thumbnail `SPARK_SVG`. `get` monta detail com changeSummary fixo e uma única `VersionEntry` (sem actions).
 **Saídas:** `ArtifactSummary`/`ArtifactDetail`; `version` ativa ou `undefined`.
 **Estruturas de dados que trafegam:** `CopilotPromptTemplate`, `CAPABILITY_NAMES`, `SPARK_SVG`.
+
+### `packages/adapters-bpmn/src/lintProfileAdapter.ts`
+> Δ 2026-07: arquivo novo (H14 §1d) — perfis de lint como artefatos da Biblioteca.
+**Papel:** Perfis de lint (`LINT_PROFILES` de `@buildtovalue/lint`) como artefatos "POLÍTICA DE LINT", espelhando o padrão do `copilotPromptAdapter`: a versão embarcada é, por definição, a ativa (mudar o conjunto de regras = nova versão promovível). Read-only.
+**Entradas:** `profileId` (para `activeLintProfileVersion`); `artifactId` em runtime. Nenhum registry — lê `LINT_PROFILES` direto.
+**Processamento (intermediário):** `toSummary`: conta `profile.rules.length` e os `fixable` (regras com `.fix`), status sempre `'active'`, meta = "N regras (etiqueta|engine) · M com quick-fix mecânico", thumbnail `CHECK_SVG`. `get`: valida id (senão `AdapterError`), changeSummary fixo, uma única `VersionEntry` ("Versão embarcada no @buildtovalue/lint"), sem actions. `activeLintProfileVersion(id)` faz lookup de `.version` (ou `undefined`) para o cabeçalho do painel de lint.
+**Saídas:** `ArtifactSummary`/`ArtifactDetail` (typeLabel "POLÍTICA DE LINT"); `version` ativa ou `undefined`.
+**Estruturas de dados que trafegam:** `LintProfile`, `LINT_PROFILES`, `CHECK_SVG`.
+
+### `packages/adapters-bpmn/src/eventDefinitionCatalogAdapter.ts`
+> Δ 2026-07: arquivo novo (H16 E-3 §3b; `escalation` adicionado em H18 §5c) — definições de evento nomeadas e governadas como artefatos.
+**Papel:** Catálogo de definições de evento governadas como artefatos "DEFINIÇÃO DE EVENTO" — a MESMA fonte que o resolver do editor lê (uma verdade só). A versão ativa é a "vigente" que o selo do editor reporta; vínculos `nome@semver` são FIXOS (pin semantics) — trocar exige re-bind explícito e auditado. Read-only.
+**Entradas:** `readonly GovernedEventDefinitionRecord[]`; `artifactId` (= `name`) em runtime.
+**Processamento (intermediário):** `byName` agrupa registros por `name` (`Map`), ordena cada grupo por `compareSemver` (segmentos numéricos, mais novo primeiro). `toSummary`: escolhe a versão `active` (senão a primeira), typeLabel "DEFINIÇÃO DE EVENTO", meta = "`KIND_LABELS[kind]` · N versão(ões)" (kinds pt-BR: mensagem/sinal/erro/escalação), thumbnail `ENVELOPE_SVG`. `get`: valida nome (senão `AdapterError`), changeSummary explica a semântica de pin, timeline das versões (`note` cita `definition.name` + `errorCode` se houver), sem actions.
+**Saídas:** `ArtifactSummary`/`ArtifactDetail` (adapterId `event-definition`).
+**Estruturas de dados que trafegam:** `GovernedEventDefinitionRecord` (`{kind: EventDefinitionRefKind, name, semanticVersion, status, definition: {name, errorCode?, escalationCode?}}`), `KIND_LABELS`, `ENVELOPE_SVG`.
 
 ### `packages/adapters-bpmn/src/roteiroAdapter.ts`
 **Papel:** Sessão de simulação gravada oferecida à Biblioteca como artefato "ROTEIRO" versionado (Handoff 7A §3). Injeção de host; o pacote `simulation` fica headless.
@@ -166,6 +192,38 @@ Adapters concretos que mapeiam `RegistryEntry` → `ArtifactSummary`/`Detail`, o
 **Saídas:** `AuditEntryInput`.
 **Estruturas de dados que trafegam:** `AGENT_SIMULATION_SESSION_TYPE`, `AgentSimulationSession` (`workflowRef,steps,complete,blocked?,author,timestamp`).
 
+### `packages/adapters-bpmn/src/eventBindingLedger.ts`
+> Δ 2026-07: arquivo novo (H16 E-3 §3b) — cola de auditoria de vínculo de evento.
+**Papel:** Builder PURO que mapeia uma mudança de vínculo governado de evento para o `AuditEntryInput` que o HOST anexa (via seu glue `command.executed`) — o editor React nunca toca no ledger. Como o pin torna o re-bind explícito a ÚNICA forma de mover uma referência governada, toda troca é auditável.
+**Entradas:** `{diagramId, versionId, nodeId, actor:{id}, from?, to?}` (`from`/`to` são strings `nome@semver`; `from` ausente = primeiro bind, `to` ausente = unbind).
+**Processamento (intermediário):** Monta `AuditEntryInput` type `EVENT_BINDING_CHANGED`, `userId=actor.id`, `details.artifactId=nodeId` (para o filtro por artefato do Ledger Explorer), `diagramId`, e `from`/`to` só quando presentes.
+**Saídas:** `AuditEntryInput`.
+**Estruturas de dados que trafegam:** `EVENT_BINDING_CHANGED_TYPE`, `AuditEntryInput`.
+
+### `packages/adapters-bpmn/src/escalationLedger.ts`
+> Δ 2026-07: arquivo novo (H18 §5c, EC-3) — ponte agente→humano no ledger.
+**Papel:** Builder PURO que mapeia uma escalação LEVANTADA (um agente/humano escalou — desenhar um boundary ≠ escalar, reforço 7) para o `AuditEntryInput` que o host anexa. Mesma disciplina do `eventBindingChangedEntry`; agentflow permanece independente.
+**Entradas:** `{diagramId, versionId, nodeId, actor:{id}, code?, target?}`.
+**Processamento (intermediário):** Monta `AuditEntryInput` type `ESCALATION_RAISED`, `userId=actor.id`, `details.artifactId=nodeId`, `diagramId`, `details.author=actor.id` (lido pelo selo ✦ de autoria mista do Ledger Explorer via `aiAuthorOf` — atores `ia.copilot@…` ganham o selo, humanos não), e `code`/`target` só quando presentes.
+**Saídas:** `AuditEntryInput`.
+**Estruturas de dados que trafegam:** `ESCALATION_RAISED_TYPE`, `AuditEntryInput`.
+
+### `packages/adapters-bpmn/src/compensationLedger.ts`
+> Δ 2026-07: arquivo novo (H19 §6e) — ledger de compensação.
+**Papel:** Builder PURO que mapeia uma compensação DISPARADA (a reversão REALMENTE rodou — o host só anexa quando `compensate()` não bloqueou, reforço 8) para o `AuditEntryInput`. Mesma disciplina do `escalationRaisedEntry`; o motor do ledger fica intacto e agentflow independente.
+**Entradas:** `{diagramId, versionId, scope, actor:{id}, compensated: [{activity,handler}], uncompensated: [{activity,reason}]}` (`scope` = `'broadcast'` ou o alvo específico do throw).
+**Processamento (intermediário):** Monta `AuditEntryInput` type `COMPENSATION_TRIGGERED`, `userId=actor.id`, `details` com `diagramId`, `scope`, `author=actor.id` (selo ✦ via `aiAuthorOf`), `compensated` (plano executado, em ordem reversa real) e `uncompensated` (perdas declaradas, nunca omitidas).
+**Saídas:** `AuditEntryInput`.
+**Estruturas de dados que trafegam:** `COMPENSATION_TRIGGERED_TYPE`, `AuditEntryInput`.
+
+### `packages/adapters-bpmn/src/reviewLedger.ts`
+> Δ 2026-07: arquivo novo (H15 §2c/§2d/§2e, V-4) — ledger de review.
+**Papel:** Builders PUROS que mapeiam ações de review (comentário, dismissal justificado, pedido-de-mudanças assinado, resolução de thread) para `AuditEntryInput`s que o host anexa a partir do seu `ReviewStore`. Cada mensagem e cada resolução é sua PRÓPRIA entrada na cadeia; dado de review nunca toca o modelo BPMN nem seu XML (cerca §1.2).
+**Entradas:** `ReviewThreadRef` (`{id, elementId, versionRef}`) + payloads: `reviewCommentEntry(thread, {author,text,aiAssisted?})`; `reviewThreadDismissedEntry(thread, actor, justification)`; `reviewChangesRequestedEntry({diagramId, versionId, actor:{id,role}, justification, threadRefs, signedRequest?})`; `reviewThreadResolvedEntry(thread, actor)`.
+**Processamento (intermediário):** Cada builder emite um type próprio (`REVIEW_COMMENT_ADDED`/`REVIEW_THREAD_DISMISSED`/`REVIEW_CHANGES_REQUESTED`/`REVIEW_THREAD_RESOLVED`) com `details.artifactId` espelhando o elemento (comentário/dismissal/resolução) ou o diagrama (pedido-de-mudanças) para o filtro por artefato. `aiAssisted`/`justification`/`threadRefs`/`signedRequest` (assinatura Ed25519 verificável offline, espelho estrutural do `SignedApproval`) viajam quando presentes.
+**Saídas:** `AuditEntryInput` por builder.
+**Estruturas de dados que trafegam:** `ReviewThreadRef`, `SignedChangeRequestRef` (`{payload, signature, signer, signedAt}`), `REVIEW_COMMENT_TYPE`, `REVIEW_THREAD_DISMISSED_TYPE`, `REVIEW_CHANGES_REQUESTED_TYPE`, `REVIEW_THREAD_RESOLVED_TYPE`, `AuditEntryInput`.
+
 ### `packages/adapters-bpmn/src/agentWorkflowAdapter.ts`
 **Papel:** Agent Lane (A-6): adapter "AGENTE" bespoke sobre o contrato `ArtifactAdapter` (não um kindAdapter — evita a mentira de tipo de forçar `AgentWorkflow` num `BpmnDiagram`). Store próprio de versões como JSON canônico + hash.
 **Entradas:** `AgentWorkflowAdapterOptions` (`id?`, `typeLabel?`, `source: AgentArtifactSource`, `boundRuns?`); `artifactId` em runtime.
@@ -181,8 +239,9 @@ Adapters concretos que mapeiam `RegistryEntry` → `ArtifactSummary`/`Detail`, o
 **Estruturas de dados que trafegam:** `AgentReferenceWarning` (`{nodeId, ref, status, message}`), `RuleVerdict`, `AgentWorkflow`.
 
 ### `packages/adapters-bpmn/src/index.ts`
+> Δ 2026-07: novos exports — `lintProfileAdapter`+`activeLintProfileVersion`, `eventDefinitionCatalogAdapter`+`GovernedEventDefinitionRecord`, os ledgers de evento/escalação/compensação/review (`eventBindingChangedEntry`, `escalationRaisedEntry`, `compensationTriggeredEntry`, `reviewChangesRequestedEntry`/`reviewCommentEntry`/`reviewThreadDismissedEntry`/`reviewThreadResolvedEntry` + seus `*_TYPE`), tipos `ReviewThreadRef`/`SignedChangeRequestRef`, e `AdapterError`.
 **Papel:** Barril de exportação do pacote de adapters.
-**Entradas/Processamento:** N/A. **Saídas:** re-exporta classify/thumbnails/registryAdapter/adapters concretos/dmn/recipe/copilot/roteiro/simulation+replay+agent ledgers/agentWorkflowAdapter/agentGovernance.
+**Entradas/Processamento:** N/A. **Saídas:** re-exporta classify/thumbnails/registryAdapter/adapters concretos/dmn/recipe/copilot/lint/eventDefinition/roteiro/simulation+replay+agent ledgers/event-binding+escalation+compensation+review ledgers/agentWorkflowAdapter/agentGovernance/`AdapterError`.
 **Estruturas de dados que trafegam:** todas as acima.
 
 ---
@@ -213,18 +272,20 @@ O shell do BuildToValue Studio: três telas (Biblioteca, Revisão do Aprovador, 
 **Estruturas de dados que trafegam:** `ReviewCheck` (`{id:'soundness'|'conformance'|'ledger'|'dependencies', label, ok, detail}`), `ReviewChecksInput`.
 
 ### `packages/studio/src/review/decide.ts`
-**Papel:** Comandos de decisão da Revisão (§5): aprovar/rejeitar, ambos escrevem entrada imutável no ledger. Aprovar NUNCA ativa.
-**Entradas:** `ApprovePromotionInput` (`engine`, `ledger`, `diagram`, `actor`, `signedApproval?`); `RejectPromotionInput` (`ledger`, `diagram`, `actor`, `reason`).
-**Processamento (intermediário):** `approvePromotion`: `engine.approve` (muta `approvedBy` em cópia imutável), `ledger.append` com type `APPROVAL_RECORDED`, details (artifactId, role, semanticVersion, `signedApproval` opcional que entra na hash-chain). `rejectPromotion`: valida `reason.trim().length >= MIN_REJECTION_REASON_LENGTH` (10), append `PROMOTION_REJECTED`.
-**Saídas:** `DecisionResult` (`{kind:'approved'|'rejected', diagram, ledgerEntry}`).
-**Estruturas de dados que trafegam:** `APPROVAL_RECORDED`, `PROMOTION_REJECTED`, `MIN_REJECTION_REASON_LENGTH`, `DecisionResult`, `SignedApproval`, `AuditEntry`.
+> Δ 2026-07: H15 §2e — novo `requestChanges` ("pedir mudanças"), o caminho SUAVE PADRÃO do Studio (V-0 decisão 3; `rejectPromotion` continua o reject HARD). `DecisionResult.kind` agora inclui `'changes-requested'`.
+**Papel:** Comandos de decisão da Revisão (§5): aprovar/pedir-mudanças/rejeitar, todos escrevem entrada imutável no ledger. Aprovar NUNCA ativa.
+**Entradas:** `ApprovePromotionInput` (`engine`, `ledger`, `diagram`, `actor`, `signedApproval?`); `RequestChangesInput` (`engine`, `ledger`, `diagram`, `actor`, `justification`, `threadRefs?`, `signedRequest?`); `RejectPromotionInput` (`ledger`, `diagram`, `actor`, `reason`).
+**Processamento (intermediário):** `approvePromotion`: `engine.approve` (muta `approvedBy` em cópia imutável), `ledger.append` com type `APPROVAL_RECORDED`, details (artifactId, role, semanticVersion, `signedApproval` opcional que entra na hash-chain). `requestChanges`: valida `justification` (min 10 chars), `engine.promote({target:'in-review'})` (a transição candidate→`in-review` passa pela state machine do core, cerca §1.4 — a UI nunca seta status), depois `ledger.append(reviewChangesRequestedEntry(...))` carregando justificativa, threads abertas anexadas e (se assinado) a assinatura verificável; threads são CONTEXTO, não pré-requisito (funciona sem `ReviewStore`). `rejectPromotion`: valida `reason.trim().length >= MIN_REJECTION_REASON_LENGTH` (10), append `PROMOTION_REJECTED`.
+**Saídas:** `DecisionResult` (`{kind:'approved'|'changes-requested'|'rejected', diagram, ledgerEntry}`) — em `changes-requested`, `diagram` é a nova versão `in-review` encadeada à candidata via `parentVersionId`.
+**Estruturas de dados que trafegam:** `APPROVAL_RECORDED`, `PROMOTION_REJECTED`, `MIN_REJECTION_REASON_LENGTH`, `RequestChangesInput`, `DecisionResult`, `SignedApproval`, `SignedChangeRequestRef` (via `reviewChangesRequestedEntry` de `adapters-bpmn`), `AuditEntry`.
 
 ### `packages/studio/src/review/ReviewScreen.tsx`
-**Papel:** TELA 2 — Revisão do Aprovador (§5): fila à esquerda, área de revisão ao centro. Read-only absoluto exceto as duas decisões de governança. Suporta assinatura Ed25519 (I-2) e ancoragem externa (I-3).
-**Entradas:** `ReviewScreenProps` (`candidates`, `engine`, `ledger`, `actor`, `registry?`, `converter?`, `baselineOf?`, `onDecided?`, `onOpenInDesigner?`, `replayAnalysisFor?`, `explain?`, `now?`, `signer?`, `anchor?`).
-**Processamento (intermediário):** Estados: `requests`, `selectedId`, `checks`, `decisions` (Record por versionId), `rejecting`, `explanations`, `reason`, `payloadPreview`. `useEffect`→`pendingPromotions`. `queue` = requests sem decisão. `runReviewChecks` no selecionado. `buildApprovalPayloadFor` (payload canônico antes de assinar). `anchorHead`/`useAnchorCycle` para ancorar cabeça de aprovação assinada. `decide('approve'|'reject')`: assina (`signApproval`) se `signer`, chama approve/reject, grava em `decisions`. `computeDiff(baseline, diagram)`. `lastRole` calcula se é a última aprovação necessária.
-**Saídas:** Tela React (fila listbox, blocos de request/changeSummary/diff/replay/checks/payload/decisão); `onDecided(result)`.
-**Estruturas de dados que trafegam:** `PromotionRequest`, `ReviewCheck`, `DecisionResult`, `ReviewReplayAnalysis`, `CanonicalApprovalPayload`, `SignedApproval`, `Signer`, `AnchorAdapter`/`AnchorHead`.
+> Δ 2026-07: H15 §2d/§2e — três decisões agora (aprovar/pedir-mudanças/rejeitar). Novos props `reviewStore?` (canvas dividido de threads) e `onReviewEvent?` (ponte N-3 do evento de catálogo). Threads abertas BLOQUEIAM o botão aprovar; dismissals viram entrada auditada; o diff de re-submissão abre contra o pai `in-review` (v-pedido→v-nova).
+**Papel:** TELA 2 — Revisão do Aprovador (§5): fila à esquerda, área de revisão ao centro. Read-only absoluto exceto as três decisões de governança. Suporta assinatura Ed25519 (I-2), ancoragem externa (I-3) e o ciclo de review com threads (H15).
+**Entradas:** `ReviewScreenProps` (`candidates`, `engine`, `ledger`, `actor`, `registry?`, `converter?`, `baselineOf?`, `reviewStore?`, `onDecided?`, `onReviewEvent?`, `onOpenInDesigner?`, `replayAnalysisFor?`, `explain?`, `now?`, `signer?`, `anchor?`).
+**Processamento (intermediário):** Estados: `requests`, `selectedId`, `checks`, `decisions` (Record por versionId), `rejecting`, `requesting`/`requestReason` (pedir mudanças), `explanations`, `reason`, `payloadPreview`, `threadsTick`. `useEffect`→`pendingPromotions`. `queue` = requests sem decisão. `runReviewChecks` no selecionado. `buildApprovalPayloadFor` (payload canônico antes de assinar). `anchorHead`/`useAnchorCycle` para ancorar cabeça de aprovação assinada. `decide('approve'|'reject')`: assina (`signApproval`) se `signer`, chama approve/reject, grava em `decisions`. `confirmRequestChanges`: `buildChangeRequestPayloadFor`+assina (se `signer`) → `requestChanges` (candidate→in-review) → grava decisão + re-emite `onReviewEvent('review.changes.requested', {versionId, threadRefs})`. `openThreadRefs` (via `reviewStore.list()`, threads não-resolvidas/não-dismissed ancoradas em nós/arestas vivos; `subscribe` re-renderiza) determina `blockingReviewThreads` que desabilita o aprovar. Com `reviewStore`+`baseline`, o bloco de diff vira o SPLIT CANVAS (`BpmnDiffViewer` com pins + abas Threads/Mudanças, `onDismissThread`→`reviewThreadDismissedEntry` no ledger). `requestedFrom` (lineage puro pelo registry: pai `in-review`) faz o diff de re-submissão abrir contra a versão pedida. `computeDiff(baseline, diagram)`. `lastRole` calcula se é a última aprovação necessária.
+**Saídas:** Tela React (fila listbox, blocos de request/changeSummary/diff-ou-split-canvas/replay/checks/payload/decisão com selo de assinatura por tipo); `onDecided(result)`, `onReviewEvent(...)`, `onDismissThread`→ledger.
+**Estruturas de dados que trafegam:** `PromotionRequest`, `ReviewCheck`, `DecisionResult` (incl. `changes-requested`), `ReviewReplayAnalysis`, `ReviewStore`, `SignedChangeRequestRef`, `EditorEventPayloads['review.changes.requested']`, `CanonicalApprovalPayload`, `SignedApproval`, `Signer`, `AnchorAdapter`/`AnchorHead`.
 
 ### `packages/studio/src/ledger/categorize.ts`
 **Papel:** Categorização de eventos do ledger para os chips do Ledger Explorer (§6/§8) — função pura no studio (não há enum central no core).
@@ -241,8 +302,9 @@ O shell do BuildToValue Studio: três telas (Biblioteca, Revisão do Aprovador, 
 **Estruturas de dados que trafegam:** `LedgerAction` (`{id:'diff'|'open-designer', entry}`), `AnchorOutcome` (interno), `VerificationReport`, `LedgerQueryResult`, `AnchorReceipt`, `LedgerFilter`/`LedgerCategory`.
 
 ### `packages/studio/src/index.ts`
+> Δ 2026-07: exporta também `requestChanges`/`RequestChangesInput` (H15 §2e) e `ReviewReplayAnalysis`.
 **Papel:** Barril de exportação do pacote studio.
-**Entradas/Processamento:** N/A. **Saídas:** `StudioShell`, `ReviewScreen`, `queue`/`checks`/`decide`, `LedgerExplorer`, `categorize` + tipos.
+**Entradas/Processamento:** N/A. **Saídas:** `StudioShell`, `ReviewScreen`, `queue`/`checks`/`decide` (`approvePromotion`/`requestChanges`/`rejectPromotion`), `LedgerExplorer`, `categorize` + tipos.
 **Estruturas de dados que trafegam:** todas as acima.
 
 ---
@@ -315,18 +377,28 @@ App demo Vite/React. Um único `App.tsx` roteia por parâmetros de URL para deze
 **Estruturas de dados que trafegam:** N/A.
 
 ### `packages/example/src/sampleDiagram.ts`
+> Δ 2026-07: novos builders de evento/tempo/erro/escalação/compensação — `buildEventIoDiagram`, `buildTimerDiagram`, `buildEventDefsDiagram(withLibrary)` (H16), `buildErrorSimDiagram`, `buildEsubSimDiagram`, `buildEscalationDiagram`/`buildEscalationSimDiagram`/`buildEscalationNoCatchDiagram`/`buildEscalationBridgeDiagram` (H18), `buildCompensationEditorDiagram`/`buildCompensationSimDiagram`/`buildCompensationPackageDiagram`/`buildCompensationNoHandlerDiagram` (H19).
 **Papel:** Builders de diagramas de demonstração (fixtures sintéticas) + a tabela de decisão demo.
-**Entradas:** Parâmetros numéricos (ex.: `count`, `closedCount`, flag `bad`).
-**Processamento (intermediário):** `createDefaultRegistry` + registro de tipos de domínio/DMN/HC. Cada builder cria nós/arestas com `createNode`/`createEdge` e `versionId`. `buildSampleDiagram` (produção de conteúdo com boundary, sub-process, call activity, cadeia de supersessão de aresta, data store). `buildStressDiagram` (grade sintética NxN + banda de sub-processes para NFR 60fps; `closedCount` fecha nós). `buildDeadlockDiagram` (XOR-split→AND-join, trap de soundness). `buildAstar`/`Manual`/`Fallback`/`Fanout` (demos de roteamento). `buildSfeelDiagram` (tabela S-FEEL, `bad` injeta `date()` fora do subset). `buildSimulationDiagram` (3 caminhos: feliz/rejeição/timeout). `buildReplayTraces` (log de eventos sintético com gaps de tempo e desvios). `buildClosedDiagram`/`buildHealthcareDiagram`/`buildDrdDiagram`/`buildBoundaryDiagram`.
+**Entradas:** Parâmetros numéricos/flags (ex.: `count`, `closedCount`, `bad`, `withLibrary`).
+**Processamento (intermediário):** `createDefaultRegistry` + registro de tipos de domínio/DMN/HC. Cada builder cria nós/arestas com `createNode`/`createEdge` e `versionId`. `buildSampleDiagram` (produção de conteúdo com boundary, sub-process, call activity, cadeia de supersessão de aresta, data store). `buildStressDiagram` (grade sintética NxN + banda de sub-processes para NFR 60fps; `closedCount` fecha nós). `buildDeadlockDiagram` (XOR-split→AND-join, trap de soundness). `buildAstar`/`Manual`/`Fallback`/`Fanout` (demos de roteamento). `buildSfeelDiagram` (tabela S-FEEL, `bad` injeta `date()` fora do subset). `buildSimulationDiagram` (3 caminhos: feliz/rejeição/timeout). `buildReplayTraces` (log de eventos sintético com gaps de tempo e desvios). `buildClosedDiagram`/`buildHealthcareDiagram`/`buildDrdDiagram`/`buildBoundaryDiagram`. Novos: `buildEventIoDiagram`/`buildEventDefsDiagram`/`buildTimerDiagram` (eventos governados/temporizador, H16), `buildErrorSimDiagram`/`buildEsubSimDiagram` (erro + event sub-process), `buildEscalation*` (4 — sim/no-catch/ponte agente→humano, H18), `buildCompensation*` (4 — editor/sim/pacote-de-viagem/sem-handler, H19).
 **Saídas:** `BpmnDiagram` por builder; `DEMO_DECISION_TABLE`; array de traces.
 **Estruturas de dados que trafegam:** `BpmnDiagram`, `DecisionTable`, `DEMO_DECISION_TABLE`, traces (`{caseId, events:[{activity,timestamp}]}`).
 
+### `packages/example/src/eventLibrary.ts`
+> Δ 2026-07: arquivo novo (H16 E-3 §3b; escalação em H18 §5c) — catálogo demo de definições de evento governadas.
+**Papel:** A ÚNICA fonte que as duas superfícies leem: o picker/selo do editor (via o resolver injetado) e o card da Biblioteca (via `eventDefinitionCatalogAdapter`). `pedido.aprovado@1.0.0` é a VIGENTE, `@2.0.0` é candidata (bind mostra o selo ⚠ CANDIDATA / `SIG_REF_STALE`).
+**Entradas:** N/A (dados embutidos); em runtime, `ref`/`kind` para `demoEventResolver.resolve`.
+**Processamento (intermediário):** `DEMO_EVENT_CATALOG` (const de `GovernedEventDefinitionRecord[]` — message/error/escalation). `demoEventResolver`: `list(kind)` filtra o catálogo por kind e projeta `{name, semanticVersion, status}`; `resolve(ref, kind)` faz split do `ref` no último `@`, casa kind+name+version e devolve o record com `definition` (ou `undefined`).
+**Saídas:** `DEMO_EVENT_CATALOG`; `demoEventResolver` (contrato `EventDefinitionResolver` síncrono, injetado como plugin em `App.tsx`).
+**Estruturas de dados que trafegam:** `GovernedEventDefinitionRecord`, `EventDefinitionResolver`.
+
 ### `packages/example/src/App.tsx`
+> Δ 2026-07: novos modos de evento/tempo/escalação/compensação e a aba "Execução" (engine bridge). Params novos: `eventio`, `timer`, `events`+`lib` (biblioteca de eventos governados, H16), `escalation`/`escno`/`agentbridge`/`comp`/`esub`/`errors` (H18), `compensation`/`compno` (H19), `engine=candidate|active`/`signed` (H14 §1f), `empty` (H15 §2f). Novos plugins `eventLibraryPlugin` (resolver `demoEventResolver` + `eventBindingRule`, auditando binds via `eventBindingChangedEntry`) e `engineBridgePlugin` (aba Execução, deploy gated por assinatura). Handlers `onEscalationThrown`→`escalationRaisedEntry` e `onCompensationTriggered`→`compensationTriggeredEntry` (autor `ia.copilot@…` para o selo ✦; só anexam quando a escalação/compensação REALMENTE ocorre).
 **Papel:** Componente raiz + composição de plugins + roteamento por URL-param para todos os modos de demo.
-**Entradas:** `window.location.search` (params: `stress`, `astar`, `manual`, `fallback`, `fanout`, `deadlock`, `boundary`, `drd`, `closed`, `hc`, `library`, `studio`, `simulate`, `replay`, `sfeel`, `copilot`, `viewer`, `fix`, `bad`, `decision`); arquivo XML importado; eventos do editor.
-**Processamento (intermediário):** Define plugins (`observabilityPlugin`, `soundnessPlugin`, `bindingPlugin`, `dmnDemoPlugin`, `menuPlugin`, `astarSpyPlugin`) e a lista `PLUGINS`/`ASTAR_PLUGINS`. `demoProcessRegistry`/`DEMO_DECISIONS`/`searchDemoDecisions`. Ledgers em memória (`simulationDemoLedger`, `replayDemoLedger`). `makeFakeCopilotProvider` (provider determinístico com payloads de comandos JSON draft/adjust/fix). `App`: estado inicial de `diagram` escolhido pelos params; `lang`/`messages` (PT_BR/undefined). Ramifica para cada modo. `importXml` (converte, emite warnings). `CopilotDemo`/`DrdTableSurface`/`PedigreeSurface`/`SidePanels` são subcomponentes; `onRecord`/`onAttachAnalysis` injetam entradas de ledger via `simulationSessionEntry`/`replayAnalysisEntry`.
-**Saídas:** Telas React de todos os modos; entradas de ledger appended; navegação por `window.location`.
-**Estruturas de dados que trafegam:** `BpmnDiagram`, `BpmnPlugin`, `AIProvider`, `DecisionSummary`, `Messages`, payloads de comando do copiloto, `window.__routerCalls` (spy global).
+**Entradas:** `window.location.search` (params: `stress`, `astar`, `manual`, `fallback`, `fanout`, `deadlock`, `boundary`, `eventio`, `timer`, `events`+`lib`, `escalation`, `escno`, `compno`, `agentbridge`, `comp`, `compensation`, `esub`, `errors`, `engine`, `signed`, `empty`, `drd`, `closed`, `hc`, `library`, `studio`, `simulate`, `replay`, `sfeel`, `copilot`, `viewer`, `fix`, `bad`, `decision`); arquivo XML importado; eventos do editor.
+**Processamento (intermediário):** Define plugins (`observabilityPlugin`, `soundnessPlugin`, `bindingPlugin`, `dmnDemoPlugin`, `menuPlugin`, `astarSpyPlugin`, `eventLibraryPlugin`, `engineBridgePlugin`) e as listas `PLUGINS`/`ASTAR_PLUGINS`/`EVENT_LIB_PLUGINS`. `demoProcessRegistry`/`DEMO_DECISIONS`/`searchDemoDecisions`. Ledgers em memória (`simulationDemoLedger`, `replayDemoLedger`, `eventLibraryLedger`, `escalationDemoLedger`, `compensationDemoLedger`). `auditBindingChanges` compara `eventDefinitionBinding` prev/next e append `eventBindingChangedEntry` (marcando `document.body.dataset` para o e2e). `makeFakeCopilotProvider` (provider determinístico com payloads de comandos JSON draft/adjust/fix). `App`: estado inicial de `diagram` escolhido pelos params; `lang`/`messages` (PT_BR/undefined). Ramifica para cada modo (viewer/studio/library/replay/copilot/sfeel/compensation/simulate/editor). `importXml` (converte, emite warnings). `CopilotDemo`/`DrdTableSurface`/`PedigreeSurface`/`SidePanels` são subcomponentes; `onRecord`/`onAttachAnalysis`/`onEscalationThrown`/`onCompensationTriggered` injetam entradas de ledger via `simulationSessionEntry`/`replayAnalysisEntry`/`escalationRaisedEntry`/`compensationTriggeredEntry`.
+**Saídas:** Telas React de todos os modos; entradas de ledger appended; `document.body.dataset` (observabilidade e2e de binding/compensação); navegação por `window.location`.
+**Estruturas de dados que trafegam:** `BpmnDiagram`, `BpmnPlugin`, `AIProvider`, `DecisionSummary`, `Messages`, `EventDefinitionResolver` (`demoEventResolver`), payloads de comando do copiloto, `window.__routerCalls` (spy global).
 
 ### `packages/example/src/LibrarySurface.tsx`
 **Papel:** `?library=1` — superfície da Biblioteca (S-3): `LibraryView` sobre registry demo (bpmn/persona) + fixture recipe (teste ácido §10.1 ao vivo). Query round-trips na URL.
@@ -336,11 +408,12 @@ App demo Vite/React. Um único `App.tsx` roteia por parâmetros de URL para deze
 **Estruturas de dados que trafegam:** `ArtifactAdapter`, `ArtifactRef`, `ArtifactAction`, `LibraryQuery`, `VersionRegistry`, `BpmnNode`.
 
 ### `packages/example/src/StudioSurface.tsx`
-**Papel:** `?studio=1` — Studio completo (S-4/S-5/S-6): Biblioteca (todos os adapters incl. DMN e recipe), Revisão e Auditoria sobre um mundo demo. Papel do usuário alternável; assinatura/âncora opt-in.
-**Entradas:** params (`q`/`status`/`type`/`sort`/`sel`, `sign`, `anchor`, `anchorflaky`, `anchorbroken`, `tamper`); seleção de usuário.
-**Processamento (intermediário):** `demoNode`/`demoEdge`/`buildFlow`/`registerDefinition` montam o `StudioWorld` (`buildWorld`): registry com baseline onboarding v1 (contém `dmn:decision` "Limite de crédito"), definições persona/prompt/connector/política, candidato v2, ledger com NODE_ADDED/UPDATED/APPROVAL_RECORDED/VERSION_ATTESTED, `replayLedger` com análise anexada, âncora quebrada opcional, `tamper` forja um byte. `USERS` (Bruna/Carla). Query/seleção via URL (`libraryQueryFromUrl`/`selectionFromUrl`/`syncUrl`). Gera chave Ed25519 (`crypto.subtle`) e `Signer`; `createGitAnchor` sobre transport em memória. `review` memoizado com `baselineOf`/`replayAnalysisFor`(`latestReplayAnalysis`)/`explain` (fake determinístico). `query` do ledger (fake determinístico com citação real de aprovação).
-**Saídas:** `<StudioShell>` cabeado; `lastAction`; URL sincronizada.
-**Estruturas de dados que trafegam:** `StudioWorld`, `BpmnDiagram`, `UserContext`, `Signer`, `GitAnchorTransport`, `AnchorReceipt`, `ArtifactAdapter`, `AuditLedger`.
+> Δ 2026-07: H16 — `eventDefinitionCatalogAdapter(DEMO_EVENT_CATALOG)` entra na galeria. H15 — ciclo de review com threads: param `threads` cria um `createInMemoryReviewStore` com thread aberta e liga `reviewThreadsRule` no engine (o gate bloqueia aprovação); `onReviewDecided` registra a versão `in-review` no registry ao pedir mudanças; botão "Re-submeter (designer)" (`resubmit`) promove in-review→candidate pela MESMA state machine; `onReviewEvent` reflete o evento N-3 no `last-action`.
+**Papel:** `?studio=1` — Studio completo (S-4/S-5/S-6): Biblioteca (todos os adapters incl. DMN, recipe, copiloto e definições de evento), Revisão (com ciclo de threads/pedir-mudanças) e Auditoria sobre um mundo demo. Papel do usuário alternável; assinatura/âncora opt-in.
+**Entradas:** params (`q`/`status`/`type`/`sort`/`sel`, `sign`, `anchor`, `anchorflaky`, `anchorbroken`, `tamper`, `threads`); seleção de usuário.
+**Processamento (intermediário):** `demoNode`/`demoEdge`/`buildFlow`/`registerDefinition` montam o `StudioWorld` (`buildWorld`): registry com baseline onboarding v1 (contém `dmn:decision` "Limite de crédito"), definições persona/prompt/connector/política, candidato v2, ledger com NODE_ADDED/UPDATED/APPROVAL_RECORDED/VERSION_ATTESTED, `replayLedger` com análise anexada, âncora quebrada opcional, `tamper` forja um byte. Adapters incluem `eventDefinitionCatalogAdapter(DEMO_EVENT_CATALOG)` (H16). `USERS` (Bruna/Carla). Query/seleção via URL (`libraryQueryFromUrl`/`selectionFromUrl`/`syncUrl`). `reviewStore` (`?threads=1`) + `engine` com `promotionRules:[reviewThreadsRule(...)]` (V-5/V-6). Estado `inReview` + `resubmit` (designer re-submete). Gera chave Ed25519 (`crypto.subtle`) e `Signer`; `createGitAnchor` sobre transport em memória. `review` memoizado com `baselineOf`/`replayAnalysisFor`(`latestReplayAnalysis`)/`explain` (fake determinístico) + `reviewStore`/`onDecided`(`onReviewDecided`)/`onReviewEvent`. `query` do ledger (fake determinístico com citação real de aprovação).
+**Saídas:** `<StudioShell>` cabeado; `lastAction`; versão in-review/candidate registrada; URL sincronizada.
+**Estruturas de dados que trafegam:** `StudioWorld`, `DecisionResult`, `ReviewStore`, `BpmnDiagram`, `UserContext`, `Signer`, `GitAnchorTransport`, `AnchorReceipt`, `ArtifactAdapter`, `AuditLedger`, `GovernedEventDefinitionRecord` (via `DEMO_EVENT_CATALOG`).
 
 ### `packages/example/src/LifecyclePanel.tsx`
 **Papel:** Painel de governança demo: aprovar por papéis, promover, clonar draft, inspecionar diff, ativar via `PromotionPanel` (atestação).
@@ -397,9 +470,9 @@ App demo Vite/React. Um único `App.tsx` roteia por parâmetros de URL para deze
 
 O cluster gira em torno de **um contrato de dados unidirecional e read-only**. Toda a informação de catálogo colapsa em duas formas normalizadas:
 
-1. **`ArtifactSummary` / `ArtifactDetail`** — a moeda comum. Cada adapter concreto (registry, dmn, recipe, copilot, roteiro, agent) mapeia sua fonte nativa (`RegistryEntry`, nó `dmn:decision`, `Recipe`, `CopilotPromptTemplate`, `SimulationSession`, `AgentArtifactVersion`) para essas duas interfaces. A biblioteca genérica NUNCA conhece o tipo concreto — só `LifecycleStatus`, `ThumbnailSpec`, `ArtifactAction`, `VersionEntry`.
+1. **`ArtifactSummary` / `ArtifactDetail`** — a moeda comum. Cada adapter concreto (registry, dmn, recipe, copilot, lint, event-definition, roteiro, agent) mapeia sua fonte nativa (`RegistryEntry`, nó `dmn:decision`, `Recipe`, `CopilotPromptTemplate`, `LintProfile`, `GovernedEventDefinitionRecord`, `SimulationSession`, `AgentArtifactVersion`) para essas duas interfaces. A biblioteca genérica NUNCA conhece o tipo concreto — só `LifecycleStatus`, `ThumbnailSpec`, `ArtifactAction`, `VersionEntry` (o estado `in-review` do core colapsa em `candidate` via `toLifecycleStatus`, sobrevivendo como o selo ⟲ no `meta`).
 
-2. **`AuditEntryInput` / `AuditEntry`** — a moeda de governança. A cola de injeção (`simulationLedger`, `replayLedger`, `agentSimulationLedger`, `decide.ts`) empacota eventos em entradas de ledger hash-chained, sempre carregando `details.artifactId` para o filtro "por artefato" funcionar de ponta a ponta.
+2. **`AuditEntryInput` / `AuditEntry`** — a moeda de governança. A cola de injeção (`simulationLedger`, `replayLedger`, `agentSimulationLedger`, `eventBindingLedger`, `escalationLedger`, `compensationLedger`, `reviewLedger`, `decide.ts`) empacota eventos em entradas de ledger hash-chained, sempre carregando `details.artifactId` para o filtro "por artefato" funcionar de ponta a ponta; `details.author` alimenta o selo ✦ de autoria IA.
 
 **Agregação (library):** `LibraryQuery` entra → `Promise.allSettled` sobre adapters → filtro textual → `LibraryCounts` (contadas antes do estreitamento) → filtro por status/adapter → sort → `LibraryResult`. Falha de adapter degrada (warn), nunca quebra.
 
