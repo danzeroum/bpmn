@@ -280,6 +280,13 @@ export interface EdgeStyle {
   routing?: 'straight';
   /** Optional decoration drawn at the edge midpoint. */
   midDecoration?: 'purpose-chip' | 'check-disc';
+  /**
+   * Squad Lane SL-9 — style overrides merged only in the `colaboracao`
+   * `viewMode` (the Estrutura↔Colaboração toggle swaps just the renderer, same
+   * state). A style without this renders identically in both views, so no other
+   * domain (DMN, escalation, …) is affected. Additive/MINOR.
+   */
+  collaboration?: Partial<Omit<EdgeStyle, 'collaboration'>>;
 }
 
 /**

@@ -80,6 +80,8 @@ function EdgeRendererInner({
   // Boolean selector: an edge re-renders only when crossing the zoom threshold,
   // not on every zoom step. Zoom % is `1200 / viewport.width` (see Toolbar).
   const chipsVisible = useCanvasState((s) => 1200 / s.viewport.width >= CHIP_MIN_ZOOM);
+  // Squad Lane SL-9 — the Estrutura↔Colaboração perspective (one store key).
+  const viewMode = useCanvasState((s) => s.viewMode);
   if (!source || !target) return null;
 
   const shiftedSource = {
@@ -114,7 +116,13 @@ function EdgeRendererInner({
   }
 
   const closed = edge.removedInVersion !== undefined;
-  const domainStyle: EdgeStyle | undefined = config.edgeStyles[edge.type];
+  const baseStyle: EdgeStyle | undefined = config.edgeStyles[edge.type];
+  // Squad Lane SL-9 — merge the collaboration override ONLY in that view; a
+  // style without one renders identically in both perspectives (no regression).
+  const domainStyle: EdgeStyle | undefined =
+    baseStyle && viewMode === 'colaboracao' && baseStyle.collaboration
+      ? { ...baseStyle, ...baseStyle.collaboration }
+      : baseStyle;
   // DMN requirement edges route STRAIGHT regardless of the editor's router
   // (Handoff 5 §4.1); explicit waypoints still win.
   if (domainStyle?.routing === 'straight' && !(edge.waypoints && edge.waypoints.length >= 2 && !dragging)) {

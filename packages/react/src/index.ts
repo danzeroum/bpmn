@@ -44,6 +44,10 @@ export { proposeErrorBoundaryCommand } from './agent/agentBoundary.js';
 export { createToolProvider, type ToolProvider } from './agent/toolProvider.js';
 // Squad Lane (Handoff 22) SL-7 — host-injected prompt provider
 export { createPromptProvider, type PromptProvider } from './agent/promptProvider.js';
+// Squad Lane (Handoff 22) SL-9 — Squad Studio
+export { SquadStudio, type SquadStudioProps } from './squad/SquadStudio.js';
+export { buildSquadDiagram } from './squad/squadDiagram.js';
+export { createSquadPlugin, SQUAD_EDGE_STYLES, SQUAD_EDGE_GLYPH } from './squad/squadPlugin.js';
 export * from './agent/agentEditor.js';
 
 // Simulation (Handoff 7A)
