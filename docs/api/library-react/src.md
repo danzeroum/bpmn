@@ -28,6 +28,14 @@ onSelect: () => void;
 
 `void`
 
+##### messages?
+
+```ts
+optional messages?: Messages;
+```
+
+i18n dictionary (#151) — prop wins, then ancestor provider, then English.
+
 ***
 
 ### ArtifactDrawerProps
@@ -69,6 +77,14 @@ onClose: () => void;
 ###### Returns
 
 `void`
+
+##### messages?
+
+```ts
+optional messages?: Messages;
+```
+
+i18n dictionary (#151) — prop wins, then ancestor provider, then English.
 
 ***
 
@@ -171,6 +187,16 @@ optional onWarning?: (warning) => void;
 ###### Returns
 
 `void`
+
+##### messages?
+
+```ts
+optional messages?: Messages;
+```
+
+i18n dictionary (#151) — same contract as the other surfaces: this prop
+wins, then an ancestor `<I18nProvider>`, then the per-key English
+fallback. Omitted with no provider → English, unchanged default.
 
 ***
 
