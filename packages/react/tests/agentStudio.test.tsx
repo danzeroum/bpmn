@@ -185,27 +185,97 @@ describe('AgentStudio tool binding (Squad Lane SL-2)', () => {
   });
 });
 
-describe('AgentStudio Wave-1 tabs (Squad Lane SL-5)', () => {
-  it('organizes the node inspector into Identity + Intelligence tabs (Identity default)', () => {
+describe('AgentStudio inspector tabs (Squad Lane SL-5/SL-6)', () => {
+  it('lands on Intelligence by default; Identity + Contracts are deliberate clicks', () => {
     renderStudio(RESEARCH_AGENT);
     fireEvent.click(screen.getByRole('button', { name: 'Selecionar nó llm-1' }));
     const inspector = screen.getByLabelText('Inspector do nó do agente');
-    expect(within(inspector).getByRole('tab', { name: 'Identidade' })).toBeTruthy();
     expect(within(inspector).getByRole('tab', { name: 'Inteligência' })).toBeTruthy();
-    // Identity is the default panel; the model is not shown until Intelligence is active
+    expect(within(inspector).getByRole('tab', { name: 'Identidade' })).toBeTruthy();
+    expect(within(inspector).getByRole('tab', { name: 'Contratos' })).toBeTruthy();
+    // Intelligence is the default panel — the model is visible without a click
+    expect(within(inspector).getByDisplayValue('gpt-4o')).toBeTruthy();
+    expect(within(inspector).getByText('host-injetado')).toBeTruthy();
+    // Identity is metadata behind a deliberate click
+    fireEvent.click(within(inspector).getByRole('tab', { name: 'Identidade' }));
     expect(within(inspector).getByText('Tipo')).toBeTruthy();
     expect(within(inspector).queryByDisplayValue('gpt-4o')).toBeNull();
-    fireEvent.click(within(inspector).getByRole('tab', { name: 'Inteligência' }));
-    expect(within(inspector).getByDisplayValue('gpt-4o')).toBeTruthy();
-    // provider shown as a host-injected label (never a key field)
-    expect(within(inspector).getByText('host-injetado')).toBeTruthy();
   });
 
-  it('keeps decorators available below the tabs (not gated behind Wave 1)', () => {
+  it('keeps decorators available below the tabs (not gated behind a wave)', () => {
     renderStudio(RESEARCH_AGENT);
     fireEvent.click(screen.getByRole('button', { name: 'Selecionar nó tool-2' }));
     const inspector = screen.getByLabelText('Inspector do nó do agente');
-    // Identity tab active, yet the ErrorBoundary decorator toggle is still present
     expect(within(inspector).getByLabelText('ErrorBoundary')).toBeTruthy();
+  });
+
+  it('Wave 2: the Contracts tab shows the I/O contract and the resolved tool effect', () => {
+    renderStudio(RESEARCH_AGENT, vi.fn(), vi.fn(), createToolProvider([browserSearch]));
+    fireEvent.click(screen.getByRole('button', { name: 'Selecionar nó tool-2' }));
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    fireEvent.click(within(inspector).getByRole('tab', { name: 'Contratos' }));
+    expect(within(inspector).getByText('Entrada')).toBeTruthy();
+    expect(within(inspector).getByText('Saída')).toBeTruthy();
+    expect(within(inspector).getByTestId('agent-contract').textContent).toMatch(/read/);
+  });
+
+  it('Wave 2: the Contracts tab degrades without a ToolProvider (never breaks)', () => {
+    renderStudio(RESEARCH_AGENT);
+    fireEvent.click(screen.getByRole('button', { name: 'Selecionar nó tool-2' }));
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    fireEvent.click(within(inspector).getByRole('tab', { name: 'Contratos' }));
+    expect(within(inspector).getByText(/ToolProvider injetado/)).toBeTruthy();
+  });
+});
+
+describe('AgentStudio Problems Panel (Squad Lane SL-6)', () => {
+  const brokenRetry = (): AgentWorkflow => {
+    const wf = structuredClone(RESEARCH_AGENT);
+    const dec = wf.nodes.find((n) => n.id === 'dec-3')!;
+    if (dec.type === 'decision') delete dec.config.onFalse.maxRetries;
+    return wf;
+  };
+
+  it('lists problems in business language with the stable code beside each', () => {
+    const { container } = renderStudio(brokenRetry());
+    const row = container.querySelector('[data-problem-code="RETRY_WITHOUT_MAX"]')!;
+    expect(row).toBeTruthy();
+    expect(row.textContent).toContain('Retentativa sem limite'); // business title (localized)
+    expect(row.textContent).toContain('RETRY_WITHOUT_MAX'); // stable code alongside
+    // remediation is localized too (PT), not the EN headless string
+    expect(row.textContent).toContain('Limite a rota que faz laço');
+    expect(row.textContent).not.toContain('Add maxRetries');
+  });
+
+  it('a safe quick-fix applies as ONE undoable command and clears the error', () => {
+    const { container } = renderStudio(brokenRetry());
+    const fix = container.querySelector('[data-quick-fix="RETRY_WITHOUT_MAX"]') as HTMLButtonElement;
+    expect(fix).toBeTruthy();
+    fireEvent.click(fix);
+    expect(container.querySelector('[data-problem-code="RETRY_WITHOUT_MAX"]')).toBeNull();
+    // undoable through the modal's isolated stack
+    fireEvent.click(screen.getByLabelText('Desfazer'));
+    expect(container.querySelector('[data-problem-code="RETRY_WITHOUT_MAX"]')).toBeTruthy();
+  });
+
+  it('contract/gate problems have NO quick-fix (never auto-changes an I/O contract)', () => {
+    const committing: ToolContract = { ...browserSearch, effect: 'external-commitment', authorization: 'automatica' };
+    const { container } = renderStudio(RESEARCH_AGENT, vi.fn(), vi.fn(), createToolProvider([committing]));
+    const row = container.querySelector('[data-problem-code="TOOL_EFFECT_UNGATED"]')!;
+    expect(row).toBeTruthy();
+    expect(row.textContent).toContain('Efeito irreversível sem gate');
+    expect(row.querySelector('[data-quick-fix]')).toBeNull();
+  });
+
+  it('Locate selects the problem node (no scrollIntoView)', () => {
+    const { container } = renderStudio(brokenRetry());
+    const locate = container.querySelector(
+      '[data-problem-code="RETRY_WITHOUT_MAX"] [data-locate="dec-3"]',
+    ) as HTMLButtonElement;
+    expect(locate).toBeTruthy();
+    fireEvent.click(locate);
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    // the node inspector header now shows the selected node
+    expect(within(inspector).getByText('◆ dec-3')).toBeTruthy();
   });
 });

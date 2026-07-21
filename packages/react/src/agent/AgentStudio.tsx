@@ -4,6 +4,7 @@ import {
   DEFAULT_TEMPLATE_ID,
   formatRef,
   minCoherentLevel,
+  normalizeSchema,
   requiresDownstreamGate,
   simulate,
   TEMPLATES,
@@ -13,6 +14,7 @@ import {
   type AgentWorkflow,
   type Fixtures,
   type NodeType,
+  type SchemaShape,
   type SimulationState,
   type ToolContract,
   type ValidationIssue,
@@ -24,6 +26,7 @@ import { useT } from '../i18n/I18nContext.js';
 import { BlockedDecisionNotice } from '../simulation/DecisionInputCard.js';
 import { proposeErrorBoundaryCommand } from './agentBoundary.js';
 import type { ToolProvider } from './toolProvider.js';
+import { hasQuickFix, quickFixFor } from './quickFix.js';
 import {
   addNode,
   agentEditorReducer,
@@ -428,7 +431,16 @@ export function AgentStudio(props: AgentStudioProps) {
               <>
                 <div style={eyebrow}>{t('agent.inspector.title')}</div>
                 {!selected && <div style={{ fontSize: 12, color: 'var(--bpmnr-text-muted)' }}>{t('agent.inspector.empty')}</div>}
-                {selected && <Inspector node={selected} t={t} toolProvider={toolProvider} onConfig={(patch) => apply(updateNodeConfig(wf, selected.id, patch))} onToggle={(d) => apply(toggleDecorator(wf, selected.id, d))} onRemove={() => { apply(removeNode(wf, selected.id)); setSelectedId(null); }} />}
+                {selected && <Inspector node={selected} wf={wf} t={t} toolProvider={toolProvider} onConfig={(patch) => apply(updateNodeConfig(wf, selected.id, patch))} onToggle={(d) => apply(toggleDecorator(wf, selected.id, d))} onRemove={() => { apply(removeNode(wf, selected.id)); setSelectedId(null); }} />}
+                <ProblemsPanel
+                  t={t}
+                  issues={issues}
+                  onLocate={(nodeId) => setSelectedId(nodeId)}
+                  onQuickFix={(issue) => {
+                    const result = quickFixFor(issue, wf);
+                    if (result) apply(result);
+                  }}
+                />
               </>
             )}
           </aside>
@@ -475,6 +487,7 @@ function subtitleFor(node: AgentNode): string {
 
 function Inspector({
   node,
+  wf,
   t,
   toolProvider,
   onConfig,
@@ -482,6 +495,7 @@ function Inspector({
   onRemove,
 }: {
   node: AgentNode;
+  wf: AgentWorkflow;
   t: ReturnType<typeof useT>;
   toolProvider?: ToolProvider;
   onConfig: (patch: Record<string, unknown>) => void;
@@ -489,18 +503,18 @@ function Inspector({
   onRemove: () => void;
 }) {
   const has = (d: string) => (node.decorators ?? []).some((x) => x.type === d);
-  // Squad Lane SL-5 — Wave 1 (O1) organizes the node inspector into Identity +
-  // Intelligence tabs. Decorators + remove stay BELOW the tabs (always visible):
-  // memory/governance are Waves 2/3, and keeping them out avoids pre-empting them
-  // and preserves the errorBoundary proposal flow.
-  const [tab, setTab] = useState<'identity' | 'intelligence'>('identity');
-  useEffect(() => setTab('identity'), [node.id]);
+  // Wave 1 (SL-5) + Wave 2 (SL-6). Default = Intelligence (the daily-work tab,
+  // prototype 02); Identity is metadata set once; Contracts is the I/O + tool
+  // contract (O2). Decorators + remove stay BELOW the tabs — memory/governance
+  // are Wave 3, and keeping them out preserves the errorBoundary proposal flow.
+  const [tab, setTab] = useState<'intelligence' | 'identity' | 'contracts'>('intelligence');
+  useEffect(() => setTab('intelligence'), [node.id]);
   const provider = node.type === 'llm' ? (node.config.provider ?? t('agent.inspector.providerDefault')) : '';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ fontSize: 13, fontWeight: 600 }}>{iconFor(node.type)} {node.id}</div>
       <div className="bpmnr-agent-inspector-tabs" role="tablist" aria-label={t('agent.inspector.tabsAria')} style={agentTabStrip}>
-        {(['identity', 'intelligence'] as const).map((id) => (
+        {(['intelligence', 'identity', 'contracts'] as const).map((id) => (
           <button
             key={id}
             type="button"
@@ -514,7 +528,7 @@ function Inspector({
           </button>
         ))}
       </div>
-      {tab === 'identity' ? (
+      {tab === 'identity' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} data-agent-tabpanel="identity">
           <div style={idRow}>
             <span style={idKey}>{t('agent.inspector.nodeType')}</span>
@@ -525,7 +539,8 @@ function Inspector({
             <code style={{ fontFamily: 'ui-monospace, monospace' }}>{node.id}</code>
           </div>
         </div>
-      ) : (
+      )}
+      {tab === 'intelligence' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }} data-agent-tabpanel="intelligence">
           {node.type === 'llm' && (
             <>
@@ -552,6 +567,16 @@ function Inspector({
           )}
         </div>
       )}
+      {tab === 'contracts' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} data-agent-tabpanel="contracts">
+          <div style={eyebrow}>{t('agent.contracts.io')}</div>
+          <SchemaView label={t('agent.contracts.input')} schema={wf.inputSchema} />
+          <SchemaView label={t('agent.contracts.output')} schema={wf.outputSchema} />
+          {node.type === 'tool' && (
+            <ToolContractView t={t} value={node.config.usesTool} provider={toolProvider} />
+          )}
+        </div>
+      )}
       <div style={eyebrow}>{t('agent.inspector.decorators')}</div>
       {(['memory', 'planner', 'errorBoundary'] as const).map((d) => (
         <label key={d} style={checkRow}>
@@ -561,6 +586,189 @@ function Inspector({
       ))}
       {has('errorBoundary') && <div style={notice}>{t('agent.decorator.boundaryNotice')}</div>}
       <button type="button" style={{ ...btn, minHeight: 36 }} onClick={onRemove}>{t('agent.inspector.remove')}</button>
+    </div>
+  );
+}
+
+/** Read-only schema view (Squad Lane SL-6, Wave 2) — `key: type`, `*` = required. */
+function SchemaView({ label, schema }: { label: string; schema: SchemaShape }) {
+  const normalized = normalizeSchema(schema);
+  const keys = Object.keys(normalized);
+  return (
+    <div>
+      <div style={idKey}>{label}</div>
+      {keys.map((key) => (
+        <div key={key} style={idRow}>
+          <code style={{ fontFamily: 'ui-monospace, monospace' }}>
+            {key}
+            {normalized[key].required ? '*' : ''}
+          </code>
+          <span style={{ color: 'var(--bpmnr-text-muted)' }}>{normalized[key].type}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Resolved tool contract summary (Squad Lane SL-6, Wave 2) — degrades honestly. */
+function ToolContractView({
+  t,
+  value,
+  provider,
+}: {
+  t: ReturnType<typeof useT>;
+  value: string;
+  provider?: ToolProvider;
+}) {
+  if (!provider) return <div style={notice}>{t('agent.contracts.noProvider')}</div>;
+  let contract: ToolContract | undefined;
+  try {
+    contract = value ? provider.resolve(toRef(value)) : undefined;
+  } catch {
+    contract = undefined;
+  }
+  if (!contract) {
+    return <div style={toolUnresolved} data-testid="agent-contract-unresolved">⚠ {t('agent.inspector.tool.unresolved')}</div>;
+  }
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }} data-testid="agent-contract">
+      <div style={eyebrow}>{t('agent.contracts.tool')}</div>
+      <div style={idRow}><span style={idKey}>{t('agent.contracts.capability')}</span><span>{contract.capability}</span></div>
+      <div style={idRow}><span style={idKey}>{t('agent.contracts.effect')}</span><span>{contract.effect}</span></div>
+      <div style={idRow}><span style={idKey}>{t('agent.contracts.authorization')}</span><span>{contract.authorization}</span></div>
+    </div>
+  );
+}
+
+/**
+ * Business-language title per validation code (Squad Lane SL-6). Each stable
+ * code maps to a localized title; an UNMAPPED code falls back to a generic
+ * localized title (never a raw code string), with the code always shown beside.
+ */
+const PROBLEM_TITLE_KEYS: Record<string, string> = {
+  EMPTY_INPUT_SCHEMA: 'agent.problem.emptyInputSchema',
+  EMPTY_OUTPUT_SCHEMA: 'agent.problem.emptyOutputSchema',
+  EDGE_ENDPOINT_MISSING: 'agent.problem.edgeEndpointMissing',
+  DECISION_ROUTE_MISSING: 'agent.problem.decisionRouteMissing',
+  DECISION_IMPLICIT_METRIC: 'agent.problem.implicitMetric',
+  RETRY_WITHOUT_MAX: 'agent.problem.retryWithoutMax',
+  CYCLE_WITHOUT_STOP: 'agent.problem.cycleWithoutStop',
+  LLM_NOT_STRUCTURED: 'agent.problem.llmNotStructured',
+  PROMPT_REF_INVALID: 'agent.problem.promptRefInvalid',
+  PROMPT_REF_ABBREVIATED: 'agent.problem.refAbbreviated',
+  DELEGATE_REF_INVALID: 'agent.problem.delegateRefInvalid',
+  DELEGATE_REF_ABBREVIATED: 'agent.problem.refAbbreviated',
+  DELEGATE_UNRESOLVED: 'agent.problem.delegateUnresolved',
+  AUTONOMY_INCOHERENT: 'agent.problem.autonomyIncoherent',
+  TOOL_REF_INVALID: 'agent.problem.toolRefInvalid',
+  TOOL_REF_ABBREVIATED: 'agent.problem.refAbbreviated',
+  TOOL_UNRESOLVED: 'agent.problem.toolUnresolved',
+  TOOL_PARAMS_MISMATCH: 'agent.problem.toolParamsMismatch',
+  TOOL_EFFECT_UNGATED: 'agent.problem.toolEffectUngated',
+  SCHEMA_UNSUPPORTED_KEYWORD: 'agent.problem.schemaUnsupported',
+  DELEGATE_CONTRACT_MISMATCH: 'agent.problem.delegateContractMismatch',
+  DELEGATE_CYCLE: 'agent.problem.delegateCycle',
+  AUTONOMY_CHAIN: 'agent.problem.autonomyChain',
+  BUDGET_MISSING: 'agent.problem.budgetMissing',
+  PROMPT_VAR_UNUSED: 'agent.problem.promptVarUnused',
+};
+
+function businessTitle(t: ReturnType<typeof useT>, code: string): string {
+  return t(PROBLEM_TITLE_KEYS[code] ?? 'agent.problem.fallback');
+}
+
+/**
+ * Localized business remediation per code (Squad Lane SL-6 follow-up, i18n F5).
+ * The headless `remediation` stays EN (host-agnostic guidance); the UI shows a
+ * localized version keyed by code, falling back to the EN string when a code has
+ * no mapping yet (the SL-13 sweep closes the remainder). A generic localized
+ * sentence (no node-specific detail) is intentional — the stable code + Locate
+ * carry the specifics.
+ */
+const PROBLEM_REMEDIATION_KEYS: Record<string, string> = {
+  EMPTY_INPUT_SCHEMA: 'agent.remediation.emptyInputSchema',
+  EMPTY_OUTPUT_SCHEMA: 'agent.remediation.emptyOutputSchema',
+  EDGE_ENDPOINT_MISSING: 'agent.remediation.edgeEndpointMissing',
+  DECISION_ROUTE_MISSING: 'agent.remediation.decisionRouteMissing',
+  DECISION_IMPLICIT_METRIC: 'agent.remediation.implicitMetric',
+  RETRY_WITHOUT_MAX: 'agent.remediation.retryWithoutMax',
+  CYCLE_WITHOUT_STOP: 'agent.remediation.cycleWithoutStop',
+  LLM_NOT_STRUCTURED: 'agent.remediation.llmNotStructured',
+  PROMPT_REF_INVALID: 'agent.remediation.promptRefInvalid',
+  DELEGATE_REF_INVALID: 'agent.remediation.delegateRefInvalid',
+  AUTONOMY_INCOHERENT: 'agent.remediation.autonomyIncoherent',
+  TOOL_REF_INVALID: 'agent.remediation.toolRefInvalid',
+  TOOL_PARAMS_MISMATCH: 'agent.remediation.toolParamsMismatch',
+  TOOL_EFFECT_UNGATED: 'agent.remediation.toolEffectUngated',
+  DELEGATE_CONTRACT_MISMATCH: 'agent.remediation.delegateContractMismatch',
+  DELEGATE_CYCLE: 'agent.remediation.delegateCycle',
+  AUTONOMY_CHAIN: 'agent.remediation.autonomyChain',
+  BUDGET_MISSING: 'agent.remediation.budgetMissing',
+  SCHEMA_UNSUPPORTED_KEYWORD: 'agent.remediation.schemaUnsupported',
+  PROMPT_VAR_UNUSED: 'agent.remediation.promptVarUnused',
+};
+
+function businessRemediation(
+  t: ReturnType<typeof useT>,
+  code: string,
+  headless: string | undefined,
+): string | undefined {
+  const key = PROBLEM_REMEDIATION_KEYS[code];
+  return key ? t(key) : headless; // localized, else the EN headless guidance
+}
+
+/**
+ * Problems Panel (Squad Lane SL-6) — validation issues in BUSINESS language with
+ * the stable code beside each. "Locate" selects the node (no scrollIntoView);
+ * a safe/undoable quick-fix appears only for codes that cannot change the I/O
+ * contract (cerca §2 / prototype 04).
+ */
+function ProblemsPanel({
+  t,
+  issues,
+  onLocate,
+  onQuickFix,
+}: {
+  t: ReturnType<typeof useT>;
+  issues: ValidationIssue[];
+  onLocate: (nodeId: string) => void;
+  onQuickFix: (issue: ValidationIssue) => void;
+}) {
+  return (
+    <div style={{ marginTop: 12 }} data-agent-problems>
+      <div style={eyebrow}>{t('agent.problems.title')}</div>
+      {issues.length === 0 ? (
+        <div style={{ fontSize: 11, color: 'var(--bpmnr-selected, #1a6a54)' }}>✓ {t('agent.problems.empty')}</div>
+      ) : (
+        issues.map((issue, i) => (
+          <div key={`${issue.code}-${issue.nodeId ?? ''}-${i}`} style={problemRow} data-problem-code={issue.code}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ color: issue.severity === 'error' ? 'var(--bpmnr-error, #b3261e)' : '#7a611e' }}>
+                {issue.severity === 'error' ? '✗' : '⚠'}
+              </span>
+              <strong style={{ fontSize: 11.5 }}>{businessTitle(t, issue.code)}</strong>
+              <code style={problemCode}>{issue.code}</code>
+            </div>
+            {businessRemediation(t, issue.code, issue.remediation) && (
+              <p style={{ fontSize: 10, color: 'var(--bpmnr-text-muted)', margin: '2px 0 0' }}>
+                {businessRemediation(t, issue.code, issue.remediation)}
+              </p>
+            )}
+            <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
+              {issue.nodeId && (
+                <button type="button" style={miniBtn} data-locate={issue.nodeId} onClick={() => onLocate(issue.nodeId!)}>
+                  {t('agent.problems.locate')}
+                </button>
+              )}
+              {hasQuickFix(issue.code) && (
+                <button type="button" style={miniBtn} data-quick-fix={issue.code} onClick={() => onQuickFix(issue)}>
+                  {t('agent.problems.fix')}
+                </button>
+              )}
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 }
@@ -715,5 +923,8 @@ const agentTabBtn = (active: boolean): React.CSSProperties => ({
 });
 const idRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11 };
 const idKey: React.CSSProperties = { color: 'var(--bpmnr-text-muted)' };
+const problemRow: React.CSSProperties = { borderTop: '1px solid var(--bpmnr-border, #e2ddd3)', padding: '6px 0' };
+const problemCode: React.CSSProperties = { fontFamily: 'ui-monospace, monospace', fontSize: 9, color: 'var(--bpmnr-text-muted)', marginLeft: 'auto' };
+const miniBtn: React.CSSProperties = { minHeight: 26, border: '1px solid var(--bpmnr-border, #e2ddd3)', background: 'transparent', borderRadius: 6, padding: '2px 8px', cursor: 'pointer', fontSize: 10.5 };
 const toolMeta: React.CSSProperties = { fontSize: 10, color: 'var(--bpmnr-agent-tool, #33567e)', lineHeight: 1.4 };
 const toolUnresolved: React.CSSProperties = { fontSize: 10, color: '#7a611e', background: '#fdfaf1', border: '1px solid #e8d9ae', borderRadius: 7, padding: '4px 7px', lineHeight: 1.4 };
