@@ -187,6 +187,10 @@ importers:
       react:
         specifier: '>=18'
         version: 18.3.1
+    devDependencies:
+      '@buildtovalue/lint':
+        specifier: workspace:*
+        version: link:../lint
 
   packages/example:
     dependencies:
