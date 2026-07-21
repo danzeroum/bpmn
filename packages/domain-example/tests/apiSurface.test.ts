@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as api from '../src/index.js';
+import * as fixtures from '../src/fixtures.js';
 
 /**
  * Contract test: freezes the runtime public API surface of
@@ -40,5 +41,28 @@ describe('@buildtovalue/domain-example public API surface', () => {
     );
     expect(Object.keys(api.domainExamplePlugin.shapes ?? {}).sort()).toEqual(types);
     expect((api.domainExamplePlugin.paletteItems ?? []).map((p) => p.nodeType).sort()).toEqual(types);
+  });
+});
+
+/**
+ * #152 — the `/fixtures` subpath entry is frozen the same way: the four
+ * compensation seeds, nothing else. Adding an export = update + MINOR.
+ */
+const EXPECTED_FIXTURE_EXPORTS = [
+  'buildCompensationEditorDiagram',
+  'buildCompensationNoHandlerDiagram',
+  'buildCompensationPackageDiagram',
+  'buildCompensationSimDiagram',
+].sort();
+
+describe('@buildtovalue/domain-example/fixtures public API surface', () => {
+  it('exports exactly the four compensation seed builders', () => {
+    expect(Object.keys(fixtures).sort()).toEqual(EXPECTED_FIXTURE_EXPORTS);
+  });
+
+  it('never exports undefined', () => {
+    for (const key of Object.keys(fixtures)) {
+      expect(fixtures[key as keyof typeof fixtures], `export "${key}" is undefined`).not.toBeUndefined();
+    }
   });
 });

@@ -13,6 +13,7 @@
     "packages/core/src/index.ts",
     "packages/dmn/src/index.ts",
     "packages/domain-example/src/index.ts",
+    "packages/domain-example/src/fixtures.ts",
     "packages/healthcare/src/index.ts",
     "packages/identity/src/index.ts",
     "packages/library-react/src/index.ts",

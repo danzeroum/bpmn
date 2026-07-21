@@ -1,7 +1,6 @@
 {
   "name": "@buildtovalue/domain-example",
   "version": "1.0.0",
-  "private": true,
   "description": "Example domain plugin for bpmn-react: squads, personas, gates, prompts, connectors and deliverables — a template for building your own domain vocabulary on top of the generic core.",
   "license": "Apache-2.0",
   "type": "module",
@@ -17,6 +16,11 @@
       "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
+    },
+    "./fixtures": {
+      "types": "./dist/esm/fixtures.d.ts",
+      "import": "./dist/esm/fixtures.js",
+      "require": "./dist/cjs/fixtures.js"
     }
   },
   "files": [
@@ -33,6 +37,9 @@
   "dependencies": {
     "@buildtovalue/core": "workspace:*",
     "@buildtovalue/react": "workspace:*"
+  },
+  "devDependencies": {
+    "@buildtovalue/lint": "workspace:*"
   },
   "repository": {
     "type": "git",

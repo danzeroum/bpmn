@@ -13,6 +13,7 @@
 - [copilot/src](copilot/src.md)
 - [core/src](core/src.md)
 - [dmn/src](dmn/src.md)
+- [domain-example/src/fixtures](domain-example/src/fixtures.md)
 - [domain-example/src](domain-example/src.md)
 - [healthcare/src](healthcare/src.md)
 - [identity/src](identity/src.md)

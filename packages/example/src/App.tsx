@@ -69,10 +69,6 @@ import {
   DEMO_DECISION_TABLE,
   buildErrorSimDiagram,
   buildEsubSimDiagram,
-  buildCompensationEditorDiagram,
-  buildCompensationNoHandlerDiagram,
-  buildCompensationPackageDiagram,
-  buildCompensationSimDiagram,
   buildEscalationBridgeDiagram,
   buildEscalationDiagram,
   buildEscalationNoCatchDiagram,
@@ -81,6 +77,14 @@ import {
   buildEventIoDiagram,
   buildTimerDiagram,
 } from './sampleDiagram.js';
+// #152: the compensation seeds are PUBLIC fixtures now — the example consumes
+// the same entry any host does (one source of truth, no ported copy).
+import {
+  buildCompensationEditorDiagram,
+  buildCompensationNoHandlerDiagram,
+  buildCompensationPackageDiagram,
+  buildCompensationSimDiagram,
+} from '@buildtovalue/domain-example/fixtures';
 import { LifecyclePanel } from './LifecyclePanel.js';
 import { AuditPanel } from './AuditPanel.js';
 import { LibrarySurface } from './LibrarySurface.js';
