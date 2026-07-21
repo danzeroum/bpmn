@@ -62,6 +62,37 @@ describe('validateSquad — structure (Squad Lane SL-8)', () => {
     );
     expect(issues.map((i) => i.code)).toContain('SQUAD_REF_INVALID');
   });
+
+  it('SQUAD_EDGE_ROLE_UNKNOWN for an edge to a role that is not declared', () => {
+    // an edge the diagram projection would silently DROP must be flagged here,
+    // so the omission is never mute (the Problems Panel explains why it vanished)
+    const issue = validateSquad(
+      manifest({ edges: [{ from: 'orch', to: 'fantasma', kind: 'delegar' }] }),
+    ).find((i) => i.code === 'SQUAD_EDGE_ROLE_UNKNOWN');
+    expect(issue?.severity).toBe('error');
+    expect(issue?.message).toMatch(/fantasma/);
+    expect(issue?.remediation).toMatch(/orch|humano|broadcast/);
+  });
+
+  it('accepts orch, declared roles, humano, and "*" as a broadcast source', () => {
+    const codes = validateSquad(
+      manifest({
+        edges: [
+          { from: 'orch', to: 'pesquisador', kind: 'delegar' },
+          { from: 'revisor', to: 'humano', kind: 'escalar' },
+          { from: '*', to: 'orch', kind: 'consolidar' },
+        ],
+      }),
+    ).map((i) => i.code);
+    expect(codes).not.toContain('SQUAD_EDGE_ROLE_UNKNOWN');
+  });
+
+  it('flags "*" used as a target (broadcast is a source-only token)', () => {
+    const codes = validateSquad(
+      manifest({ edges: [{ from: 'orch', to: '*', kind: 'delegar' }] }),
+    ).map((i) => i.code);
+    expect(codes).toContain('SQUAD_EDGE_ROLE_UNKNOWN');
+  });
 });
 
 describe('validateSquad — SQUAD_MEMBER_STALE (injected, degradable)', () => {

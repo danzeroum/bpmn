@@ -339,3 +339,26 @@ Abertos durante a SL-1 (revisão de arquitetura), **não bloqueiam** a entrega:
   abas exigiria um **resolver de agent-workflow injetado no EditorConfig**. Isso fica para a **ponte (SL-12)**,
   quando o deep-link `?load=<versionId>` e o resolver já existirem. A infra reutilizável já está pronta:
   `InspectorSection.tab` (opcional) + tab-registration genérica no `PropertiesPanel` (SL-5).
+- **Round-trip manifesto↔diagrama do Squad Studio (SL-9 → onda futura).** Na SL-9 o diagrama do Squad
+  Studio é a **projeção determinística** do `SquadManifest` (fonte da verdade, D5) e é **read-only por
+  doutrina**: aceitar um gesto de mutação (arrastar/conectar/apagar) num diagrama sem write-back perderia
+  a edição na próxima projeção — perda silenciosa. Trava-se em read-only agora (mutações bloqueadas na
+  origem por `useInteractions`), preservando toda a **inspeção** (toggle Estrutura↔Colaboração, legenda
+  navegável, foco de teclado rovingo sobre nós/arestas que alimenta o `aria-live`, aba de Governança). A
+  **edição do squad acontece via UI de manifesto**; o round-trip completo — arrastar/conectar mapeados de
+  volta para **comandos que atualizam o manifesto** (`CommandStack`, undo/redo, `toAuditEvent`) — é uma
+  onda própria (mais pesada), registrada aqui e fora do escopo da SL-9. Enquanto não existir, o read-only
+  é o contrato honesto (nada se perde em silêncio).
+- **Announce da aresta acompanha o schema da aresta (SL-9 — nota, sem ação).** O anúncio de foco lê o
+  conteúdo REAL que `SquadEdge{from,to,kind}` carrega — `tipo + origem → destino` — e **não inventa**
+  condição/contrato/criticidade que o schema não tem (honestidade E9). Se, numa onda futura, a aresta do
+  squad passar a carregar contrato/condição/criticidade, o `aria-live` deve **incluí-los** no anúncio (e a
+  legenda/painel, exibi-los). Fica registrado para não se perder; nenhuma ação agora — só quando o schema
+  da aresta crescer.
+- **`SQUAD_EDGE_ROLE_UNKNOWN` fecha o drop silencioso da projeção (SL-9).** A projeção
+  `buildSquadDiagram` **descarta** uma aresta cujo `from`/`to` não é um papel conhecido (`orch`, um papel
+  de membro declarado, `humano`, ou `*` como origem de broadcast) — em vez de inventar uma raia. Para que
+  esse descarte **nunca** seja uma omissão visual muda, o `validateSquad` (headless, SL-8+) passa a emitir
+  **`SQUAD_EDGE_ROLE_UNKNOWN`** (error) exatamente para o mesmo conjunto: o usuário vê no Painel de
+  Problemas **por que** a aresta sumiu. Projeção e validação compartilham a MESMA regra de papel conhecido
+  (documentado em ambos os arquivos); vetores positivo/negativo/remediação em `squad.test.ts`.

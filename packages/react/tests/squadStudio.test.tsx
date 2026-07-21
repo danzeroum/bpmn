@@ -69,19 +69,31 @@ describe('SquadStudio — a standard BPMN diagram over the existing editor (SL-9
     expect(container.querySelector('[data-node-id="revisor"]')).not.toBeNull();
   });
 
-  it('the perspective toggle swaps only the renderer and preserves selection', () => {
-    const { container, getByLabelText } = renderStudio();
-    // select a node first
+  it('is a READ-ONLY projection — mutation gestures do not select or mutate (no silent loss)', () => {
+    const { container } = renderStudio();
+    // a drag-start gesture on a node is a no-op: the projection has no write-back,
+    // so accepting it would lose the edit on the next projection (doctrine).
     const node = container.querySelector('[data-node-id="pesquisador"]')!;
     fireEvent.pointerDown(node, { button: 0 });
     fireEvent.pointerUp(node, { button: 0 });
-    expect(container.querySelector('[data-node-id="pesquisador"]')?.getAttribute('data-selected')).toBe('true');
+    expect(container.querySelector('[data-node-id="pesquisador"]')?.getAttribute('data-selected')).toBeNull();
+    // edges carry no roving tabindex either (they are navigated, not edited)
+    expect(container.querySelector('[data-edge-id="e0"]')?.getAttribute('tabindex')).toBeNull();
+  });
+
+  it('the perspective toggle swaps only the renderer and preserves keyboard-focus state', () => {
+    const { container, getByLabelText } = renderStudio();
+    // roving keyboard nav reaches a squad edge even read-only (drives the announce)
+    const edge = container.querySelector('[data-edge-id="e0"]')!;
+    fireEvent.focus(edge);
+    expect(container.querySelector('[data-edge-id="e0"]')?.getAttribute('data-focused')).toBe('true');
     // toggle to Colaboração
     const group = getByLabelText('Perspectiva do squad');
     fireEvent.click(within(group).getByRole('button', { name: 'Colaboração' }));
     expect(within(group).getByRole('button', { name: 'Colaboração' }).getAttribute('aria-pressed')).toBe('true');
-    // selection survives the toggle (it only touched viewMode)
-    expect(container.querySelector('[data-node-id="pesquisador"]')?.getAttribute('data-selected')).toBe('true');
+    // navigation focus survives the toggle (it only touched viewMode)
+    expect(container.querySelector('[data-edge-id="e0"]')?.getAttribute('data-focused')).toBe('true');
+    expect(container.querySelector('[data-squad-announce]')?.textContent).toMatch(/delegar/);
   });
 
   it('exposes a keyboard-navigable legend naming all six edge kinds (no color reliance)', () => {

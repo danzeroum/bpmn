@@ -17,10 +17,20 @@ import { createSquadPlugin, SQUAD_EDGE_GLYPH } from './squadPlugin.js';
 /**
  * Squad Studio (Squad Lane SL-9) — a SquadManifest rendered as a STANDARD BPMN
  * diagram by instantiating the existing editor with a squad plugin (never a new
- * canvas/fork; gestures/zoom/pan/selection/undo are reused). The manifest is the
- * source of truth; the diagram is its deterministic projection. Chrome (toggle,
- * legend, edge announce, manifest/ctx panel) mounts as a child, INSIDE the
- * editor's providers, so it reads the same store.
+ * canvas/fork; zoom/pan/keyboard navigation/inspection are reused). The manifest
+ * is the source of truth; the diagram is its DETERMINISTIC projection.
+ *
+ * The diagram is READ-ONLY on purpose (structural view). A projection with no
+ * write-back must not accept mutation gestures (drag/connect/delete), or an edit
+ * would vanish on the next projection — silent loss, which the doctrine forbids.
+ * Squad editing happens via the manifest UI; the full manifest↔diagram round-trip
+ * (edits mapped back to manifest commands) is a registered pendência, not SL-9.
+ * Read-only keeps every INSPECTION affordance alive: the perspective toggle, the
+ * keyboard-navigable legend, roving keyboard focus over nodes/edges (which drives
+ * the aria-live edge announce), selection-free navigation, and the governance tab.
+ *
+ * Chrome (toggle, legend, edge announce, manifest/ctx panel) mounts as a child,
+ * INSIDE the editor's providers, so it reads the same store.
  */
 export interface SquadStudioProps {
   manifest: SquadManifest;
@@ -39,7 +49,7 @@ export function SquadStudio({ manifest, contextContract, messages, staleMembers 
     [manifest, contextContract, governanceLabel],
   );
   return (
-    <BpmnDesigner diagram={diagram} plugins={plugins} messages={messages}>
+    <BpmnDesigner diagram={diagram} plugins={plugins} messages={messages} readOnly>
       <SquadChrome manifest={manifest} contextContract={contextContract} staleMembers={staleMembers} />
     </BpmnDesigner>
   );

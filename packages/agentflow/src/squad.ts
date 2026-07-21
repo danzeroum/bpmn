@@ -184,6 +184,12 @@ export function validateSquad(
     });
   }
 
+  // The legitimate role tokens: the orchestrator ("orch"), each declared member
+  // role, and the human escalation target ("humano"). "*" is a broadcast SOURCE
+  // only. This is the SAME set the react projection (`buildSquadDiagram`) treats
+  // as drawable, so an edge the diagram silently omits is exactly an edge this
+  // check flags — the omission is never mute (the user sees it in Problems).
+  const knownRoles = new Set(['orch', 'humano', ...manifest.members.map((m) => m.role)]);
   for (const edge of manifest.edges) {
     if (!SQUAD_EDGE_KINDS.includes(edge.kind)) {
       issues.push({
@@ -192,6 +198,22 @@ export function validateSquad(
         message: `Squad edge ${edge.from} → ${edge.to} has an unknown kind "${edge.kind}".`,
         remediation: `Use one of the six kinds: ${SQUAD_EDGE_KINDS.join(', ')}.`,
       });
+    }
+    for (const [endpoint, isSource] of [
+      [edge.from, true],
+      [edge.to, false],
+    ] as const) {
+      // "*" is valid only as the source (broadcast); as a target it is unknown.
+      if (isSource && endpoint === '*') continue;
+      if (!knownRoles.has(endpoint)) {
+        issues.push({
+          code: 'SQUAD_EDGE_ROLE_UNKNOWN',
+          severity: 'error',
+          message: `Squad edge ${edge.from} → ${edge.to} references an unknown role "${endpoint}".`,
+          remediation:
+            'Reference the orchestrator ("orch"), a declared member role, "humano", or "*" (broadcast source).',
+        });
+      }
     }
   }
 
