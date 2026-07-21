@@ -16,6 +16,8 @@ const EXPECTED_EXPORTS = [
   'DOCUMENT_REVIEW_AGENT',
   'END_ROUTE',
   'RESEARCH_AGENT',
+  'SQUAD_DYNAMICS',
+  'SQUAD_EDGE_KINDS',
   'SUPPORTED_SCHEMA_KEYWORDS',
   'TEMPLATES',
   'autonomyCoherence',
@@ -45,13 +47,17 @@ const EXPECTED_EXPORTS = [
   'parseRef',
   'promptCoverage',
   'promptVariables',
+  'readinessState',
   'requiredKeys',
   'requiresDownstreamGate',
   'runEvalSet',
   'simulate',
+  'squadAutonomy',
   'toRef',
   'unsupportedKeywords',
+  'validateContextContract',
   'validateGraph',
+  'validateSquad',
 ].sort();
 
 describe('@buildtovalue/agentflow public API surface', () => {

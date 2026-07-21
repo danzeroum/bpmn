@@ -44,6 +44,29 @@ export {
 } from './schema.js';
 export { promptVariables, promptCoverage } from './promptCoverage.js';
 export {
+  type SquadDynamic,
+  type SquadEdgeKind,
+  type ContextPurpose,
+  type ContextMerge,
+  type SquadMember,
+  type SquadEdge,
+  type SquadGate,
+  type SquadManifest,
+  type ContextKey,
+  type ContextContract,
+  type ValidateSquadOptions,
+  SQUAD_DYNAMICS,
+  SQUAD_EDGE_KINDS,
+  validateContextContract,
+  validateSquad,
+  squadAutonomy,
+} from './squad.js';
+export {
+  type ReadinessState,
+  type ReadinessContext,
+  readinessState,
+} from './readinessState.js';
+export {
   type GateRequirement,
   type AutonomyDefinition,
   AUTONOMY_SCALE,

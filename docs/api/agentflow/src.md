@@ -538,6 +538,72 @@ Declared notes for every agentflow construct with no LangGraph form.
 
 ***
 
+### ReadinessContext
+
+Everything readinessState needs, computed by the caller with its own
+injected resolvers (one source of validation, one source of state).
+
+#### Properties
+
+##### validation
+
+```ts
+validation: ValidationIssue[];
+```
+
+The result of `validateGraph`/`validateSquad` (with the host's resolvers).
+
+##### hasEvidence
+
+```ts
+hasEvidence: boolean;
+```
+
+A deterministic simulation with declared evidence exists.
+
+##### evalPassRate?
+
+```ts
+optional evalPassRate?: number;
+```
+
+Eval assertion pass-rate, when an eval set ran.
+
+##### threshold?
+
+```ts
+optional threshold?: number;
+```
+
+The eval promotion threshold.
+
+##### gateCovered?
+
+```ts
+optional gateCovered?: boolean;
+```
+
+A gate covers the external effect (core `reachableGateFrom`).
+
+##### signedActive?
+
+```ts
+optional signedActive?: boolean;
+```
+
+An active, signed version exists (identity).
+
+##### providerAvailable?
+
+```ts
+optional providerAvailable?: boolean;
+```
+
+A real execution provider is injected (host). Informational only —
+readiness never crosses into `executando` on its own.
+
+***
+
 ### AgentRef
 
 A parsed, normalized reference — always a full semantic version.
@@ -987,6 +1053,286 @@ optional costModel?: CostModel;
 ```
 
 The modeling projection to use (default [DEFAULT\_COST\_MODEL](#default_cost_model)).
+
+***
+
+### SquadMember
+
+One squad member: a versioned agent, its persona, and its role.
+
+#### Properties
+
+##### agentRef
+
+```ts
+agentRef: string;
+```
+
+##### personaRef
+
+```ts
+personaRef: string;
+```
+
+##### role
+
+```ts
+role: string;
+```
+
+***
+
+### SquadEdge
+
+One collaboration relation between roles (`orch`, a member role, `humano`, `*`).
+
+#### Properties
+
+##### from
+
+```ts
+from: string;
+```
+
+##### to
+
+```ts
+to: string;
+```
+
+##### kind
+
+```ts
+kind: SquadEdgeKind;
+```
+
+***
+
+### SquadGate
+
+A gate the squad passes through, and the scope of its approval.
+
+#### Properties
+
+##### gateId
+
+```ts
+gateId: string;
+```
+
+##### scope
+
+```ts
+scope: string;
+```
+
+***
+
+### SquadManifest
+
+The SQUAD artifact (`sqd-doc-review@1.0.0`).
+
+#### Properties
+
+##### kind
+
+```ts
+kind: "SquadManifest";
+```
+
+##### id
+
+```ts
+id: string;
+```
+
+##### version
+
+```ts
+version: string;
+```
+
+##### dynamic
+
+```ts
+dynamic: SquadDynamic;
+```
+
+##### orchestratorRef
+
+```ts
+orchestratorRef: string;
+```
+
+##### members
+
+```ts
+members: SquadMember[];
+```
+
+##### edges
+
+```ts
+edges: SquadEdge[];
+```
+
+##### contextContractRef
+
+```ts
+contextContractRef: string;
+```
+
+##### gates
+
+```ts
+gates: SquadGate[];
+```
+
+***
+
+### ContextKey
+
+One governed context key. A `forbidden` key grants no access.
+
+#### Properties
+
+##### key
+
+```ts
+key: string;
+```
+
+##### owner?
+
+```ts
+optional owner?: string;
+```
+
+##### readers?
+
+```ts
+optional readers?: string[];
+```
+
+##### writers?
+
+```ts
+optional writers?: string[];
+```
+
+##### purpose?
+
+```ts
+optional purpose?: ContextPurpose;
+```
+
+##### merge?
+
+```ts
+optional merge?: ContextMerge;
+```
+
+##### ttl?
+
+```ts
+optional ttl?: string;
+```
+
+##### sensitivity?
+
+```ts
+optional sensitivity?: string;
+```
+
+##### immutableAfterGate?
+
+```ts
+optional immutableAfterGate?: boolean;
+```
+
+##### forbidden?
+
+```ts
+optional forbidden?: boolean;
+```
+
+***
+
+### ContextContract
+
+The reusable context contract artifact (`ctx-contract:doc-review@1.0.0`).
+
+#### Properties
+
+##### kind
+
+```ts
+kind: "ContextContract";
+```
+
+##### id
+
+```ts
+id: string;
+```
+
+##### version
+
+```ts
+version: string;
+```
+
+##### keys
+
+```ts
+keys: ContextKey[];
+```
+
+***
+
+### ValidateSquadOptions
+
+Injected, degradable integrations for [validateSquad](#validatesquad).
+
+#### Properties
+
+##### resolveContextContract?
+
+```ts
+optional resolveContextContract?: (ref) => ContextContract | undefined;
+```
+
+Resolves `contextContractRef` to the contract so its keys can be checked.
+
+###### Parameters
+
+###### ref
+
+[`AgentRef`](#agentref)
+
+###### Returns
+
+[`ContextContract`](#contextcontract) \| `undefined`
+
+##### resolveMemberStatus?
+
+```ts
+optional resolveMemberStatus?: (ref) => boolean;
+```
+
+True when a member's agent version is candidate/obsolete (a registry
+concept, injected). Absent → no `SQUAD_MEMBER_STALE` warning (degradable,
+the `resolveDelegate`/`resolveTool` mold — agentflow never imports registry).
+
+###### Parameters
+
+###### ref
+
+[`AgentRef`](#agentref)
+
+###### Returns
+
+`boolean`
 
 ***
 
@@ -1834,6 +2180,20 @@ The three honest assertion kinds (cerca §5) — never code.
 
 ***
 
+### ReadinessState
+
+```ts
+type ReadinessState = 
+  | "rascunho"
+  | "validado"
+  | "simulado-com-evidencia"
+  | "apto-para-integracao";
+```
+
+The four derived readiness states — the frontend ceiling.
+
+***
+
 ### RefInput
 
 ```ts
@@ -1866,6 +2226,52 @@ type Fixtures = Record<string, NodeFixture>;
 ```
 
 Fixtures keyed by node id.
+
+***
+
+### SquadDynamic
+
+```ts
+type SquadDynamic = "hierarquico" | "sequencial" | "paralelo" | "blackboard";
+```
+
+How a squad coordinates (cerca §5).
+
+***
+
+### SquadEdgeKind
+
+```ts
+type SquadEdgeKind = 
+  | "delegar"
+  | "enviar-contexto"
+  | "solicitar-revisao"
+  | "escalar"
+  | "consolidar"
+  | "fallback";
+```
+
+The six squad edge kinds (E9) — the only collaboration relations.
+
+***
+
+### ContextPurpose
+
+```ts
+type ContextPurpose = "grounding" | "decision" | "operational-action";
+```
+
+Why a context key exists (governs its merge/immutability semantics).
+
+***
+
+### ContextMerge
+
+```ts
+type ContextMerge = "acrescentar" | "substituir" | "exigir-decisao";
+```
+
+How writes to a context key combine.
 
 ***
 
@@ -2052,6 +2458,26 @@ An OPT-IN convenience cost model (Squad Lane SL-3) — modeling values a host ma
 pass EXPLICITLY (`simulate(wf, { costModel: DEFAULT_COST_MODEL })`) to enable
 the cost/time budget dimensions. It is deliberately NOT the silent default: a
 run with no injected costModel projects/enforces only steps + tokens.
+
+***
+
+### SQUAD\_DYNAMICS
+
+```ts
+const SQUAD_DYNAMICS: readonly SquadDynamic[];
+```
+
+The valid squad dynamics.
+
+***
+
+### SQUAD\_EDGE\_KINDS
+
+```ts
+const SQUAD_EDGE_KINDS: readonly SquadEdgeKind[];
+```
+
+The six valid squad edge kinds.
 
 ***
 
@@ -2521,6 +2947,34 @@ that the prompt never references as `{{name}}`. `inputVars` is the caller's
 
 ***
 
+### readinessState()
+
+```ts
+function readinessState(wf, ctx): ReadinessState;
+```
+
+Derives the readiness state. Order: an empty or error-carrying workflow is a
+`rascunho`; a clean one with no evidence is `validado`; with evidence but not
+all promotion conditions met it is `simulado-com-evidencia`; only when eval ≥
+threshold AND a gate covers the effect AND a signed-active version exists does
+it reach `apto-para-integracao`. It never returns a host state.
+
+#### Parameters
+
+##### wf
+
+[`AgentWorkflow`](#agentworkflow)
+
+##### ctx
+
+[`ReadinessContext`](#readinesscontext)
+
+#### Returns
+
+[`ReadinessState`](#readinessstate)
+
+***
+
 ### parseRef()
 
 ```ts
@@ -2752,6 +3206,81 @@ trail-message parsing in ONE tested place so `runEvalSet` never re-parses.
 #### Returns
 
 `Record`\<`string`, `unknown`\> \| `undefined`
+
+***
+
+### validateContextContract()
+
+```ts
+function validateContextContract(contract): ValidationIssue[];
+```
+
+Validates a [ContextContract](#contextcontract) on its own (it is reusable, so it is
+validated once): `CTX_WRITE_FORBIDDEN` when a forbidden key still grants
+access, `CTX_PURPOSE_VIOLATION` when a key's merge/immutability contradicts
+its declared purpose.
+
+#### Parameters
+
+##### contract
+
+[`ContextContract`](#contextcontract)
+
+#### Returns
+
+[`ValidationIssue`](#validationissue)[]
+
+***
+
+### validateSquad()
+
+```ts
+function validateSquad(manifest, options?): ValidationIssue[];
+```
+
+Validates a [SquadManifest](#squadmanifest): structural validity (dynamic, the six edge
+kinds, versioned refs), the injected member-currency warning
+`SQUAD_MEMBER_STALE`, and — when the contract resolves — the `CTX_*` checks.
+
+#### Parameters
+
+##### manifest
+
+[`SquadManifest`](#squadmanifest)
+
+##### options?
+
+[`ValidateSquadOptions`](#validatesquadoptions) = `{}`
+
+#### Returns
+
+[`ValidationIssue`](#validationissue)[]
+
+***
+
+### squadAutonomy()
+
+```ts
+function squadAutonomy(manifest, resolveMember): AutonomyLevel | undefined;
+```
+
+The squad's composite autonomy — the MAX over its resolved members (the same
+"max of the chain" rule as SL-4's `AUTONOMY_CHAIN`, not a new one). Members
+are resolved through the injected resolver; `undefined` when none resolve.
+
+#### Parameters
+
+##### manifest
+
+[`SquadManifest`](#squadmanifest)
+
+##### resolveMember
+
+(`ref`) => [`AgentWorkflow`](#agentworkflow) \| `undefined`
+
+#### Returns
+
+[`AutonomyLevel`](#autonomylevel) \| `undefined`
 
 ***
 
