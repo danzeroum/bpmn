@@ -325,6 +325,13 @@ Abertos durante a SL-1 (revisão de arquitetura), **não bloqueiam** a entrega:
   do catálogo da Biblioteca para DENTRO de um nó `tool` é um **gesto novo** (spec visual no protótipo 01)
   e fica como polimento registrado, não escopo do MVP. O `ToolProvider` já nasce injetável (SL-2), então
   o drag só precisa escrever o mesmo `usesTool` que o seletor já escreve.
+- **`CTX_PURPOSE_VIOLATION` — regra de FLUXO (SL-8 estrutural → SL-10).** A SL-8 entrega a linha
+  ESTRUTURAL do `ctx-contract` (`immutableAfterGate` só em `operational-action`; `merge` coerente com o
+  `purpose`). A regra de FLUXO que o parecer E5 motivou — um contexto `purpose: grounding` não pode
+  alcançar uma tool de efeito `external-commitment` sem revisão — exige o GRAFO do squad + os efeitos das
+  tools dos membros RESOLVIDOS (injetados). Ela aterrissa onde grafo e efeitos são conhecidos: a
+  **simulação de squad (SL-10)** ou uma `validateSquad` com resolvers de membro/tool injetados — nunca
+  sumindo em silêncio (o código `CTX_PURPOSE_VIOLATION` já existe; a SL-10 acrescenta o gatilho de fluxo).
 - **Abas de Onda no nó `agentTask` do canvas principal (SL-5 → SL-12).** A Onda 1 (Identidade/Inteligência)
   vive no inspector do **AgentStudio**, onde `workflow` + `toolProvider` já são props (SL-2) — degradabilidade
   herdada, zero encanamento novo. O `agentTask` no canvas principal só carrega `agentWorkflowRef` +
