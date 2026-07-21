@@ -1,5 +1,6 @@
 import type { EventDefinitionKind } from '@buildtovalue/core';
 import {
+  POOL_TITLE_BAND,
   childrenOf,
   eventDefinitionOf,
   isEventSubprocess,
@@ -754,7 +755,7 @@ export function TextAnnotationShape({ node, selected }: ShapeProps) {
  * clicks fall through to the canvas; select/drag via its border or band.
  */
 export function PoolShape({ node, selected }: ShapeProps) {
-  return <SwimlaneContainer node={node} selected={selected} band={30} fontSize={13} />;
+  return <SwimlaneContainer node={node} selected={selected} band={POOL_TITLE_BAND} fontSize={13} />;
 }
 
 /** Lane — a subdivision of a pool. Thinner title band, muted styling. */

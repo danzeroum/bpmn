@@ -441,6 +441,24 @@ predicate, so lint and the Execução matrix agree by construction.
 
 ***
 
+### laneBodyTilingRule
+
+```ts
+const laneBodyTilingRule: ValidationRule;
+```
+
+LANE_BODY_TILING (#154): every lane of a pool is expected to PARTITION the
+pool body — x at `pool.x + POOL_TITLE_BAND`, the body's full width, and the
+lane heights contiguous from the pool's top to its bottom (no gap, no
+overlap, no remainder). Imported DI stays sovereign: this rule only POINTS
+at the gap the renderer (ours, Camunda's, bpmn.io's) will show — the
+quick-fix and the editor gesture are the mechanical remedies. Geometry
+predicates come from core (`poolBodyOf`/`lanesTileBody`) — the SAME source
+the react snap+tiling gesture uses, so lint and interaction agree by
+construction.
+
+***
+
 ### ETIQUETTE\_RULES
 
 ```ts

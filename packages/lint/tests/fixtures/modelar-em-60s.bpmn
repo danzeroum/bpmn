@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_modelar60s" targetNamespace="http://buildtovalue.dev/schema/bpmn">
+  <bpmn:collaboration id="Collaboration_modelar60s">
+    <bpmn:participant id="pool1" name="Atendimento" processRef="Process_modelar60s" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_modelar60s" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_modelar60s">
+      <bpmn:lane id="lane1" name="Atendente">
+        <bpmn:flowNodeRef>start1</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="start1" name="Início" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_modelar60s">
+    <bpmndi:BPMNPlane id="BPMNPlane_modelar60s" bpmnElement="Collaboration_modelar60s">
+      <bpmndi:BPMNShape id="pool1_di" bpmnElement="pool1" isHorizontal="true">
+        <dc:Bounds x="200" y="200" width="600" height="250" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="lane1_di" bpmnElement="lane1" isHorizontal="true">
+        <dc:Bounds x="240" y="200" width="550" height="120" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="start1_di" bpmnElement="start1">
+        <dc:Bounds x="280" y="242" width="36" height="36" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -4,6 +4,7 @@ import {
   buildCompensationPairInsert,
   buildEscalationBoundaryInsert,
   buildEventSubprocessInsert,
+  buildLaneInsert,
 } from './paletteInsert.js';
 
 /** Built-in palette sections: the standard set plus the F6 event sub-menu. */
@@ -30,7 +31,10 @@ export const BUILT_IN_PALETTE: PaletteItem[] = [
   { id: 'group', label: 'Group', nodeType: 'group', icon: CORE_PALETTE_ICONS.group, group: 'core' },
   { id: 'endEvent', label: 'End Event', nodeType: 'endEvent', icon: CORE_PALETTE_ICONS.endEvent, group: 'core' },
   { id: 'pool', label: 'Pool', nodeType: 'pool', icon: CORE_PALETTE_ICONS.pool, group: 'core' },
-  { id: 'lane', label: 'Lane', nodeType: 'lane', icon: CORE_PALETTE_ICONS.lane, group: 'core' },
+  // #154: a lane dropped in a pool snaps to the pool body and tiles it with
+  // its siblings — one composite (see buildLaneInsert); outside a pool the
+  // plain insert is unchanged.
+  { id: 'lane', label: 'Lane', nodeType: 'lane', icon: CORE_PALETTE_ICONS.lane, group: 'core', build: buildLaneInsert },
   { id: 'intermediateCatchEvent', label: 'Intermediate Catch', nodeType: 'intermediateCatchEvent', icon: CORE_PALETTE_ICONS.intermediateCatchEvent, group: 'events' },
   { id: 'intermediateThrowEvent', label: 'Intermediate Throw', nodeType: 'intermediateThrowEvent', icon: CORE_PALETTE_ICONS.intermediateThrowEvent, group: 'events' },
   { id: 'timerEvent', label: 'Timer Event', nodeType: 'intermediateCatchEvent', icon: CORE_PALETTE_ICONS.timerEvent, defaultProperties: { eventDefinition: 'timer' }, group: 'events' },

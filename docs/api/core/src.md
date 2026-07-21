@@ -3193,6 +3193,36 @@ seconds: number;
 
 ***
 
+### LaneRect
+
+#### Properties
+
+##### x
+
+```ts
+x: number;
+```
+
+##### y
+
+```ts
+y: number;
+```
+
+##### width
+
+```ts
+width: number;
+```
+
+##### height
+
+```ts
+height: number;
+```
+
+***
+
 ### NodeTypeDefinition
 
 #### Properties
@@ -3320,7 +3350,7 @@ x: number;
 
 ###### Inherited from
 
-[`Point`](#point-1).[`x`](#x-2)
+[`Point`](#point-1).[`x`](#x-3)
 
 ##### y
 
@@ -3330,7 +3360,7 @@ y: number;
 
 ###### Inherited from
 
-[`Point`](#point-1).[`y`](#y-2)
+[`Point`](#point-1).[`y`](#y-3)
 
 ##### width
 
@@ -3340,7 +3370,7 @@ width: number;
 
 ###### Inherited from
 
-[`Size`](#size).[`width`](#width-2)
+[`Size`](#size).[`width`](#width-3)
 
 ##### height
 
@@ -3350,7 +3380,7 @@ height: number;
 
 ###### Inherited from
 
-[`Size`](#size).[`height`](#height-2)
+[`Size`](#size).[`height`](#height-3)
 
 ***
 
@@ -4906,6 +4936,17 @@ const NON_FLOW_EDGE_TYPES: ReadonlySet<string>;
 ```
 
 Edge types that are not sequence flow (inter-pool / artifact / data links).
+
+***
+
+### POOL\_TITLE\_BAND
+
+```ts
+const POOL_TITLE_BAND: 30 = 30;
+```
+
+Width of the rotated title band on the left edge of a pool. The lane body
+(the area lanes are expected to partition) starts after it.
 
 ***
 
@@ -7062,6 +7103,127 @@ property stays in the ordinary `bpmnr:` soup.
 #### Returns
 
 [`TimerProperty`](#timerproperty) \| `undefined`
+
+***
+
+### poolBodyOf()
+
+```ts
+function poolBodyOf(pool): LaneRect;
+```
+
+The pool body: everything right of the title band, full pool height.
+
+#### Parameters
+
+##### pool
+
+[`LaneRect`](#lanerect)
+
+#### Returns
+
+[`LaneRect`](#lanerect)
+
+***
+
+### poolContainingRect()
+
+```ts
+function poolContainingRect(diagram, rect): BpmnNode | undefined;
+```
+
+Smallest active pool whose bounds contain the rect's center, if any.
+
+#### Parameters
+
+##### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+##### rect
+
+[`LaneRect`](#lanerect)
+
+#### Returns
+
+[`BpmnNode`](#bpmnnode) \| `undefined`
+
+***
+
+### lanesOfPool()
+
+```ts
+function lanesOfPool(diagram, pool): BpmnNode[];
+```
+
+Active lanes whose center falls inside the pool, in vertical order.
+
+#### Parameters
+
+##### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+##### pool
+
+[`LaneRect`](#lanerect)
+
+#### Returns
+
+[`BpmnNode`](#bpmnnode)[]
+
+***
+
+### tileLaneRects()
+
+```ts
+function tileLaneRects(body, heights): LaneRect[];
+```
+
+Tile `lanes` (already in vertical order) over the pool body: every lane
+spans the body's full width and the heights — proportional to the given
+`heights` weights — partition the body with no gap, no overlap and no
+remainder. Boundaries are rounded per-cut so the sum stays EXACT.
+
+#### Parameters
+
+##### body
+
+[`LaneRect`](#lanerect)
+
+##### heights
+
+`number`[]
+
+#### Returns
+
+[`LaneRect`](#lanerect)[]
+
+***
+
+### lanesTileBody()
+
+```ts
+function lanesTileBody(body, lanes): boolean;
+```
+
+True when the lanes exactly partition the pool body (the invariant the
+`LANE_BODY_TILING` lint checks and the editor gesture maintains). Lanes
+must be in vertical order — as returned by [lanesOfPool](#lanesofpool).
+
+#### Parameters
+
+##### body
+
+[`LaneRect`](#lanerect)
+
+##### lanes
+
+[`LaneRect`](#lanerect)[]
+
+#### Returns
+
+`boolean`
 
 ***
 

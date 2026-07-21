@@ -93,6 +93,8 @@ describe('CommandPalette (§2f)', () => {
       'global.export-json',
       'global.export-svg',
       'global.export-png',
+      // #154: a lane (composta — snap+tiling ao corpo do pool) entra também.
+      'palette.insert.lane',
       // Handoff 17 ES-2 (reforço 8): itens COMPOSTOS da paleta entram pelo
       // registro paletteInsertCommands — mesma fábrica do clique da paleta.
       'palette.insert.eventSubprocess',

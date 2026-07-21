@@ -32,6 +32,7 @@ import {
   type Point,
 } from '@buildtovalue/core';
 import { activeNodesCached } from './activeCache.js';
+import { laneResizeAdjust, poolResizeReflow } from './laneTiling.js';
 import { findBoundarySnapAt, findNodeAtPoint } from './hitTest.js';
 import { computeGuideSnap } from './smartGuides.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
@@ -669,7 +670,23 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
           current.width !== initial.width ||
           current.height !== initial.height
         ) {
-          const cmds: Command[] = [resizeNodeCommand(nodeId, initial, current)];
+          // #154 — design-time snap+tiling: a lane resize snaps to its pool
+          // body and re-tiles the sibling lanes; a pool resize reflows its
+          // lanes. All inside the SAME gesture → one composite, one undo.
+          // Import is never involved — this only runs on interactive resizes.
+          const resized = diagramRef.current.nodes[nodeId];
+          let target = current;
+          const laneCmds: Command[] = [];
+          if (resized?.type === 'lane') {
+            const adjust = laneResizeAdjust(diagramRef.current, nodeId, current);
+            if (adjust) {
+              target = adjust.snapped;
+              laneCmds.push(...adjust.commands);
+            }
+          } else if (resized?.type === 'pool') {
+            laneCmds.push(...poolResizeReflow(diagramRef.current, initial, current));
+          }
+          const cmds: Command[] = [resizeNodeCommand(nodeId, initial, target), ...laneCmds];
           // Handoff 11 N-1: attached boundary events REFLOW proportionally —
           // the parametric anchor (side + t, stored or derived from the
           // pre-resize geometry) is re-projected onto the new rect INSIDE the
@@ -678,7 +695,7 @@ export function useInteractions(svgRef: React.RefObject<SVGSVGElement | null>) {
             const boundary = diagramRef.current.nodes[boundaryId];
             if (!boundary) continue;
             const { side, t } = boundaryAnchorOf(initial, boundary);
-            const to = boundaryNodePosition(current, side, t, boundary);
+            const to = boundaryNodePosition(target, side, t, boundary);
             if (to.x !== boundary.x || to.y !== boundary.y) {
               cmds.push(moveNodeCommand(boundaryId, { x: boundary.x, y: boundary.y }, to));
             }

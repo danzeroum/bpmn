@@ -18,11 +18,17 @@ import {
   isEventType,
   isFlowEdge,
   isFlowNode,
+  lanesOfPool,
+  lanesTileBody,
   nextEventDefinitionId,
   nodeParentId,
   parseTimerExpression,
+  poolBodyOf,
+  poolContainingRect,
   removeEdgeCommand,
   removeNodeCommand,
+  resizeNodeCommand,
+  tileLaneRects,
   timerPropertyOf,
   updateNodeCommand,
   type BpmnDiagram,
@@ -618,6 +624,52 @@ export const compStartToplevelRule: ValidationRule = (diagram) =>
       nodeId: node.id,
     }));
 
+/**
+ * LANE_BODY_TILING (#154): every lane of a pool is expected to PARTITION the
+ * pool body — x at `pool.x + POOL_TITLE_BAND`, the body's full width, and the
+ * lane heights contiguous from the pool's top to its bottom (no gap, no
+ * overlap, no remainder). Imported DI stays sovereign: this rule only POINTS
+ * at the gap the renderer (ours, Camunda's, bpmn.io's) will show — the
+ * quick-fix and the editor gesture are the mechanical remedies. Geometry
+ * predicates come from core (`poolBodyOf`/`lanesTileBody`) — the SAME source
+ * the react snap+tiling gesture uses, so lint and interaction agree by
+ * construction.
+ */
+export const laneBodyTilingRule: ValidationRule = (diagram) => {
+  const issues: ValidationIssue[] = [];
+  for (const pool of activeNodes(diagram)) {
+    if (pool.type !== 'pool') continue;
+    const body = poolBodyOf(pool);
+    const lanes = lanesOfPool(diagram, pool);
+    if (lanes.length === 0) continue;
+    if (lanesTileBody(body, lanes)) continue;
+    const expectedX = body.x;
+    const expectedWidth = body.width;
+    let cursor = body.y;
+    for (const lane of lanes) {
+      const defects: string[] = [];
+      if (Math.abs(lane.x - expectedX) > 0.5 || Math.abs(lane.width - expectedWidth) > 0.5) {
+        defects.push(`width ${lane.width}@x=${lane.x} ≠ body ${expectedWidth}@x=${expectedX}`);
+      }
+      if (Math.abs(lane.y - cursor) > 0.5) {
+        defects.push(lane.y > cursor ? `vertical gap above (y=${lane.y}, expected ${cursor})` : `overlaps the lane above (y=${lane.y}, expected ${cursor})`);
+      }
+      cursor = lane.y + lane.height;
+      if (lane === lanes[lanes.length - 1] && Math.abs(cursor - (body.y + body.height)) > 0.5) {
+        defects.push(`leaves ${body.y + body.height - cursor}px of the body uncovered`);
+      }
+      if (defects.length === 0) continue;
+      issues.push({
+        code: 'LANE_BODY_TILING',
+        severity: 'warning',
+        message: `Lane "${lane.label || lane.id}" does not partition the pool body (${defects.join('; ')}) — the gap shows in every OMG renderer`,
+        nodeId: lane.id,
+      });
+    }
+  }
+  return issues;
+};
+
 export const ETIQUETTE_RULES: ValidationRule[] = [
   labelRequiredRule,
   superfluousGatewayRule,
@@ -638,6 +690,7 @@ export const ETIQUETTE_RULES: ValidationRule[] = [
   compRefNotCompensableRule,
   compCatchAttrsRule,
   compStartToplevelRule,
+  laneBodyTilingRule,
 ];
 
 // -------------------------------------------------------------- executability
@@ -941,12 +994,38 @@ function fixCompBoundaryNoHandler(ctx: LintFixContext): Command | null {
 }
 
 // E-5 (§3d) → 1.1.0; Handoff 17 ES-4 (§4d) → 1.2.0; Handoff 18 §5d → 1.3.0;
+/**
+ * LANE_BODY_TILING quick-fix (#154): MECHANICAL — re-tile ALL lanes of the
+ * offending lane's pool onto the pool body (x/width snapped, heights kept
+ * PROPORTIONAL, contiguous) in ONE composite → one undo, audit for free.
+ * The single-lane case collapses to "fill the whole body".
+ */
+function fixLaneBodyTiling(ctx: LintFixContext): Command | null {
+  const lane = ctx.issue.nodeId ? ctx.diagram.nodes[ctx.issue.nodeId] : undefined;
+  if (!lane || lane.type !== 'lane') return null;
+  const pool = poolContainingRect(ctx.diagram, lane);
+  if (!pool) return null;
+  const body = poolBodyOf(pool);
+  const lanes = lanesOfPool(ctx.diagram, pool);
+  const rects = tileLaneRects(body, lanes.map((l) => l.height));
+  const commands: Command[] = [];
+  for (let i = 0; i < lanes.length; i++) {
+    const from = { x: lanes[i].x, y: lanes[i].y, width: lanes[i].width, height: lanes[i].height };
+    const to = rects[i];
+    if (from.x === to.x && from.y === to.y && from.width === to.width && from.height === to.height) continue;
+    commands.push(resizeNodeCommand(lanes[i].id, from, to));
+  }
+  if (commands.length === 0) return null;
+  return compositeCommand('Ajustar lanes ao corpo do pool', commands);
+}
+
 // Handoff 19 §6c → 1.4.0: new rules = NEW promotable profile versions — the
 // panel header and the Biblioteca adapter reflect it from this one source.
+// #154 → 1.5.0: LANE_BODY_TILING joins etiquette.
 export const ETIQUETTE_PROFILE: LintProfile = {
   id: 'lint-etiquette',
   name: 'Etiqueta de modelagem',
-  version: '1.4.0',
+  version: '1.5.0',
   source: 'etiquette',
   rules: [
     { id: 'label-required', run: labelRequiredRule },
@@ -969,6 +1048,8 @@ export const ETIQUETTE_PROFILE: LintProfile = {
     { id: 'comp-ref-not-compensable', run: compRefNotCompensableRule },
     { id: 'comp-catch-attrs', run: compCatchAttrsRule },
     { id: 'comp-start-toplevel', run: compStartToplevelRule },
+    // #154 — lane geometry etiquette with the mechanical re-tile fix.
+    { id: 'lane-body-tiling', run: laneBodyTilingRule, fix: fixLaneBodyTiling },
   ],
 };
 
