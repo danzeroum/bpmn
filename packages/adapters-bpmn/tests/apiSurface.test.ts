@@ -45,6 +45,9 @@ const EXPECTED_EXPORTS = [
   // Handoff 14 §1d — lint profiles as promotable Biblioteca artifacts.
   'activeLintProfileVersion',
   'lintProfileAdapter',
+  // Handoff 22 SL-2 — TOOL contracts as Biblioteca artifacts + shared resolver.
+  'resolveToolContract',
+  'toolAdapter',
   // Handoff 15 §2c/§2d/§2e — review threads + request-changes → ledger glue.
   'reviewChangesRequestedEntry',
   'reviewCommentEntry',

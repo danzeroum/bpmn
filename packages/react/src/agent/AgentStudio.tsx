@@ -2,16 +2,19 @@ import { useEffect, useRef, useReducer, useState } from 'react';
 import {
   AUTONOMY_SCALE,
   DEFAULT_TEMPLATE_ID,
+  formatRef,
   minCoherentLevel,
   requiresDownstreamGate,
   simulate,
   TEMPLATES,
+  toRef,
   validateGraph,
   type AgentNode,
   type AgentWorkflow,
   type Fixtures,
   type NodeType,
   type SimulationState,
+  type ToolContract,
   type ValidationIssue,
 } from '@buildtovalue/agentflow';
 import { useDismissal } from '../gestures/useDismissal.js';
@@ -20,6 +23,7 @@ import { useDiagram } from '../contexts/DiagramContext.js';
 import { useT } from '../i18n/I18nContext.js';
 import { BlockedDecisionNotice } from '../simulation/DecisionInputCard.js';
 import { proposeErrorBoundaryCommand } from './agentBoundary.js';
+import type { ToolProvider } from './toolProvider.js';
 import {
   addNode,
   agentEditorReducer,
@@ -77,6 +81,13 @@ export interface AgentStudioProps {
   onRecordSimulation?: (record: AgentSimulationRecord) => void;
   author?: string;
   timestamp?: string;
+  /**
+   * Squad Lane SL-2 — resolves `tool:*@semver` bindings to their contracts and
+   * (optionally) lists the bindable catalog for the inspector selector. Absent
+   * → the tool binding degrades to a typed text field; the graph still
+   * validates, just without contract-aware checks (cerca §1.7/§2.4).
+   */
+  toolProvider?: ToolProvider;
 }
 
 const NODE_TYPES: { type: NodeType; labelKey: string; descKey: string; icon: string }[] = [
@@ -113,6 +124,7 @@ export function AgentStudio(props: AgentStudioProps) {
     onRecordSimulation,
     author,
     timestamp,
+    toolProvider,
   } = props;
   const t = useT();
   const { emitEditorEvent } = useEditorConfig();
@@ -220,7 +232,7 @@ export function AgentStudio(props: AgentStudioProps) {
   };
   const redo = (): void => dispatch({ type: 'redo' });
 
-  const issues: ValidationIssue[] = validateGraph(wf);
+  const issues: ValidationIssue[] = validateGraph(wf, { resolveTool: toolProvider?.resolve });
   const errors = issues.filter((i) => i.severity === 'error');
   const level = wf.autonomyLevel;
   const needsGate = requiresDownstreamGate(level);
@@ -416,7 +428,7 @@ export function AgentStudio(props: AgentStudioProps) {
               <>
                 <div style={eyebrow}>{t('agent.inspector.title')}</div>
                 {!selected && <div style={{ fontSize: 12, color: 'var(--bpmnr-text-muted)' }}>{t('agent.inspector.empty')}</div>}
-                {selected && <Inspector node={selected} t={t} onConfig={(patch) => apply(updateNodeConfig(wf, selected.id, patch))} onToggle={(d) => apply(toggleDecorator(wf, selected.id, d))} onRemove={() => { apply(removeNode(wf, selected.id)); setSelectedId(null); }} />}
+                {selected && <Inspector node={selected} t={t} toolProvider={toolProvider} onConfig={(patch) => apply(updateNodeConfig(wf, selected.id, patch))} onToggle={(d) => apply(toggleDecorator(wf, selected.id, d))} onRemove={() => { apply(removeNode(wf, selected.id)); setSelectedId(null); }} />}
               </>
             )}
           </aside>
@@ -464,12 +476,14 @@ function subtitleFor(node: AgentNode): string {
 function Inspector({
   node,
   t,
+  toolProvider,
   onConfig,
   onToggle,
   onRemove,
 }: {
   node: AgentNode;
   t: ReturnType<typeof useT>;
+  toolProvider?: ToolProvider;
   onConfig: (patch: Record<string, unknown>) => void;
   onToggle: (d: 'memory' | 'planner' | 'errorBoundary') => void;
   onRemove: () => void;
@@ -490,7 +504,7 @@ function Inspector({
       )}
       {node.type === 'tool' && (
         <>
-          <Field label={t('agent.inspector.tool')} value={node.config.usesTool} onChange={(v) => onConfig({ usesTool: v })} />
+          <ToolBinding t={t} value={node.config.usesTool} provider={toolProvider} onChange={(v) => onConfig({ usesTool: v })} />
           <Field label={t('agent.inspector.timeout')} value={String(node.config.timeoutMs ?? '')} onChange={(v) => onConfig({ timeoutMs: Number(v) || undefined })} />
         </>
       )}
@@ -570,6 +584,62 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
   );
 }
 
+/**
+ * Squad Lane SL-2 — binds a tool node to a `tool:*@semver` contract. With a
+ * ToolProvider that lists a catalog, it is a selector (impossible to type a
+ * loose string — cerca §2.2); the resolved contract's effect + capability show
+ * inline, and an unresolvable ref surfaces a declared warning (never silent).
+ * With no provider it degrades to a typed text field (the pre-SL-2 behavior).
+ */
+function ToolBinding({
+  t,
+  value,
+  provider,
+  onChange,
+}: {
+  t: ReturnType<typeof useT>;
+  value: string;
+  provider?: ToolProvider;
+  onChange: (v: string) => void;
+}) {
+  const catalog = provider?.list?.() ?? [];
+  if (!provider || catalog.length === 0) {
+    return <Field label={t('agent.inspector.tool')} value={value} onChange={onChange} />;
+  }
+  let resolved: ToolContract | undefined;
+  try {
+    resolved = value ? provider.resolve(toRef(value)) : undefined;
+  } catch {
+    resolved = undefined;
+  }
+  const inCatalog = catalog.some((c) => formatRef(c) === value);
+  return (
+    <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: 11 }}>
+      <span style={{ color: 'var(--bpmnr-text-muted)' }}>{t('agent.inspector.tool')}</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)} style={input} data-testid="agent-tool-select" aria-label={t('agent.inspector.tool')}>
+        {!inCatalog && <option value={value}>{value || t('agent.inspector.tool.placeholder')}</option>}
+        {catalog.map((c) => {
+          const ref = formatRef(c);
+          return (
+            <option key={ref} value={ref}>
+              {c.name} — {ref}
+            </option>
+          );
+        })}
+      </select>
+      {resolved ? (
+        <span style={toolMeta} data-testid="agent-tool-effect">
+          {t('agent.inspector.tool.effect', { effect: resolved.effect })} · {resolved.capability}
+        </span>
+      ) : (
+        <span style={toolUnresolved} data-testid="agent-tool-unresolved">
+          ⚠ {t('agent.inspector.tool.unresolved')}
+        </span>
+      )}
+    </label>
+  );
+}
+
 // ── inline styles (theme tokens; the notation gets no new AI color) ─────────
 const overlay: React.CSSProperties = { position: 'fixed', inset: 0, background: 'rgba(46,42,38,0.55)', display: 'flex', padding: 20, zIndex: 50 };
 const modal: React.CSSProperties = { position: 'relative', margin: 'auto', width: 'min(1340px, 100%)', height: '100%', background: 'var(--bpmnr-canvas-bg, #faf9f6)', borderRadius: 14, boxShadow: '0 24px 64px rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', overflow: 'hidden' };
@@ -590,3 +660,5 @@ const footer: React.CSSProperties = { height: 30, flexShrink: 0, background: 'va
 const checkRow: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, minHeight: 28 };
 const input: React.CSSProperties = { border: '1px solid var(--bpmnr-border, #e2ddd3)', borderRadius: 6, padding: '5px 7px', fontSize: 11, fontFamily: 'ui-monospace, monospace' };
 const notice: React.CSSProperties = { fontSize: 10, color: '#7a611e', background: '#fdfaf1', border: '1px solid #e8d9ae', borderRadius: 7, padding: '6px 8px', lineHeight: 1.5 };
+const toolMeta: React.CSSProperties = { fontSize: 10, color: 'var(--bpmnr-agent-tool, #33567e)', lineHeight: 1.4 };
+const toolUnresolved: React.CSSProperties = { fontSize: 10, color: '#7a611e', background: '#fdfaf1', border: '1px solid #e8d9ae', borderRadius: 7, padding: '4px 7px', lineHeight: 1.4 };

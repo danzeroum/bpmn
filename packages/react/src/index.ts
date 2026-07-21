@@ -40,6 +40,8 @@ export * from './canvas/routeEdge.js';
 // Agent Lane (Handoff 12) — Agent Studio
 export { AgentStudio, type AgentStudioProps, type AgentSimulationRecord } from './agent/AgentStudio.js';
 export { proposeErrorBoundaryCommand } from './agent/agentBoundary.js';
+// Squad Lane (Handoff 22) SL-2 — host-injected tool provider
+export { createToolProvider, type ToolProvider } from './agent/toolProvider.js';
 export * from './agent/agentEditor.js';
 
 // Simulation (Handoff 7A)

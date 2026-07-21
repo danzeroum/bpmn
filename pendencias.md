@@ -320,3 +320,8 @@ Abertos durante a SL-1 (revisão de arquitetura), **não bloqueiam** a entrega:
   um nó merece código próprio (ex.: **`TOOL_FORBIDDEN`**), não cair em `TOOL_EFFECT_UNGATED` nem passar
   em silêncio quando o efeito é `read`. Refinamento a implementar (candidato à SL-6, junto do Painel de
   Problemas), com vetor positivo/negativo/remediação.
+- **Drag-into-node do catálogo (SL-2, cortado do MVP).** O binding de ferramenta na SL-2 é por
+  **seletor/autocomplete** no inspector (impossível digitar string solta — cerca §2.2). Arrastar um card
+  do catálogo da Biblioteca para DENTRO de um nó `tool` é um **gesto novo** (spec visual no protótipo 01)
+  e fica como polimento registrado, não escopo do MVP. O `ToolProvider` já nasce injetável (SL-2), então
+  o drag só precisa escrever o mesmo `usesTool` que o seletor já escreve.

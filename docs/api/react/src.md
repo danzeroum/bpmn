@@ -13387,3 +13387,15 @@ Re-exports [AgentSimulationRecord](src/agent.md#agentsimulationrecord)
 ### proposeErrorBoundaryCommand
 
 Re-exports [proposeErrorBoundaryCommand](src/agent.md#proposeerrorboundarycommand)
+
+***
+
+### createToolProvider
+
+Re-exports [createToolProvider](src/agent.md#createtoolprovider)
+
+***
+
+### ToolProvider
+
+Re-exports [ToolProvider](src/agent.md#toolprovider-1)

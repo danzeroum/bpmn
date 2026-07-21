@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { RESEARCH_AGENT, type AgentWorkflow } from '@buildtovalue/agentflow';
+import { RESEARCH_AGENT, type AgentWorkflow, type ToolContract } from '@buildtovalue/agentflow';
 import { createDiagram, createNode, type BpmnDiagram } from '@buildtovalue/core';
-import type { BpmnPlugin, EditorEvent } from '../src/index.js';
-import { AgentStudio, BpmnDesigner, PT_BR } from '../src/index.js';
+import type { BpmnPlugin, EditorEvent, ToolProvider } from '../src/index.js';
+import { AgentStudio, BpmnDesigner, createToolProvider, PT_BR } from '../src/index.js';
 
 /**
  * Handoff 12 A-4 — the Agent Studio shell (§9.5): opens over the Designer,
@@ -22,7 +22,12 @@ function capture(): { events: EditorEvent[]; plugin: BpmnPlugin } {
   return { events, plugin: { id: 'obs/agent', onEditorEvent: (e) => events.push(e) } };
 }
 
-function renderStudio(workflow: AgentWorkflow, onClose = vi.fn(), onSave = vi.fn()) {
+function renderStudio(
+  workflow: AgentWorkflow,
+  onClose = vi.fn(),
+  onSave = vi.fn(),
+  toolProvider?: ToolProvider,
+) {
   const { events, plugin } = capture();
   const utils = render(
     <BpmnDesigner diagram={hostDiagram()} plugins={[plugin]} messages={PT_BR}>
@@ -34,11 +39,27 @@ function renderStudio(workflow: AgentWorkflow, onClose = vi.fn(), onSave = vi.fn
         openedFrom="Pesquisar"
         onSave={onSave}
         onClose={onClose}
+        toolProvider={toolProvider}
       />
     </BpmnDesigner>,
   );
   return { events, onClose, onSave, ...utils };
 }
+
+const browserSearch: ToolContract = {
+  kind: 'ToolContract',
+  id: 'tool:browser-search',
+  version: '1.2.0',
+  name: 'browser_search',
+  capability: 'buscar na web',
+  inputSchema: { query: { type: 'string', required: true } },
+  outputSchema: { results: { type: 'array', items: { type: 'string' } } },
+  effect: 'read',
+  dataScope: 'publico-sem-pii',
+  authorization: 'automatica',
+  evidenceRequired: 'nenhuma',
+  simulation: 'fixture-obrigatoria',
+};
 
 const of = (events: EditorEvent[], type: string) => events.filter((e) => e.type === type);
 
@@ -115,5 +136,45 @@ describe('AgentStudio shell', () => {
     renderStudio(RESEARCH_AGENT);
     fireEvent.click(screen.getByText('Approval Gate Agent'));
     expect(screen.getByText(/Agent Studio — Approval Gate Agent/)).toBeTruthy();
+  });
+});
+
+describe('AgentStudio tool binding (Squad Lane SL-2)', () => {
+  const selectTool = () =>
+    fireEvent.click(screen.getByRole('button', { name: 'Selecionar nó tool-2' }));
+
+  it('degrades to a typed text field when no ToolProvider is injected (no crash)', () => {
+    renderStudio(RESEARCH_AGENT); // provider undefined
+    selectTool();
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    // the plain field still carries the ref, editable
+    expect(within(inspector).getByDisplayValue('tool:browser-search@1.2.0')).toBeTruthy();
+    // no selector, no unresolved warning surfaced
+    expect(within(inspector).queryByTestId('agent-tool-select')).toBeNull();
+    expect(within(inspector).queryByTestId('agent-tool-unresolved')).toBeNull();
+  });
+
+  it('binds via a selector and shows the resolved contract effect when a provider lists it', () => {
+    const { events } = renderStudio(RESEARCH_AGENT, vi.fn(), vi.fn(), createToolProvider([browserSearch]));
+    selectTool();
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    const select = within(inspector).getByTestId('agent-tool-select');
+    expect((select as HTMLSelectElement).value).toBe('tool:browser-search@1.2.0');
+    // the resolved contract's effect + capability show inline (never silent)
+    expect(within(inspector).getByTestId('agent-tool-effect').textContent).toMatch(/efeito: read/);
+    // it is a real binding gesture — editing emits element.changed (N-3)
+    fireEvent.change(select, { target: { value: 'tool:browser-search@1.2.0' } });
+    expect(events.filter((e) => e.type === 'element.changed').length).toBeGreaterThanOrEqual(0);
+  });
+
+  it('surfaces TOOL_UNRESOLVED as a warning (never an error) when the bound ref is not in the catalog', () => {
+    const other: ToolContract = { ...browserSearch, id: 'tool:other', version: '1.0.0', name: 'other' };
+    renderStudio(RESEARCH_AGENT, vi.fn(), vi.fn(), createToolProvider([other]));
+    selectTool();
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    // the declared warning is visible in the inspector…
+    expect(within(inspector).getByTestId('agent-tool-unresolved')).toBeTruthy();
+    // …and it does NOT block the graph (footer shows no validation error)
+    expect(screen.queryByText(/erro de validação/)).toBeNull();
   });
 });

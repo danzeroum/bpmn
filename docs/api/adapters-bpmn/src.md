@@ -2304,3 +2304,49 @@ Tiny decision-table glyph for DMN decision artifacts.
 #### Returns
 
 `ThumbnailSpec`
+
+***
+
+### resolveToolContract()
+
+```ts
+function resolveToolContract(contracts): ResolveTool;
+```
+
+Builds a headless ResolveTool over a contract list — the seam the
+react `ToolProvider` and `validateGraph({ resolveTool })` share. Exact
+`id@version` match; an unknown ref resolves to `undefined` (declared
+degradation upstream, never silent — cerca §2.4).
+
+#### Parameters
+
+##### contracts
+
+readonly `ToolContract`[]
+
+#### Returns
+
+`ResolveTool`
+
+***
+
+### toolAdapter()
+
+```ts
+function toolAdapter(contracts): ArtifactAdapter;
+```
+
+A Biblioteca adapter over an injected `ToolContract[]`. One artifact per tool
+id (versions grouped, newest as the representative); read-only, like the other
+JSON-artifact adapters. `authorization`/`effect` travel in `meta` so the
+catalog card shows the governance posture at a glance.
+
+#### Parameters
+
+##### contracts
+
+readonly `ToolContract`[]
+
+#### Returns
+
+`ArtifactAdapter`

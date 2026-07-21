@@ -183,6 +183,17 @@ optional author?: string;
 optional timestamp?: string;
 ```
 
+##### toolProvider?
+
+```ts
+optional toolProvider?: ToolProvider;
+```
+
+Squad Lane SL-2 — resolves `tool:*@semver` bindings to their contracts and
+(optionally) lists the bindable catalog for the inspector selector. Absent
+→ the tool binding degrades to a typed text field; the graph still
+validates, just without contract-aware checks (cerca §1.7/§2.4).
+
 ***
 
 ### EditEffect
@@ -308,6 +319,42 @@ width: number;
 ```ts
 height: number;
 ```
+
+***
+
+### ToolProvider
+
+Squad Lane SL-2 (Handoff 22) — the host-injected tool provider. It IMPLEMENTS
+the headless `ResolveTool` seam defined in `@buildtovalue/agentflow` (types
+flow down react → agentflow) and adds an optional `list()` that powers the
+inspector's selector/autocomplete. Injected as a prop on `AgentStudio`
+(the `AIProvider`/H9 mold): absent → the binding degrades to a typed text
+field, present-but-unresolvable → a declared `TOOL_UNRESOLVED` warning, never
+silence (cerca §2.4).
+
+#### Properties
+
+##### resolve
+
+```ts
+resolve: ResolveTool;
+```
+
+Resolve a `tool:*@semver` ref to its contract (or `undefined`).
+
+#### Methods
+
+##### list()?
+
+```ts
+optional list(): readonly ToolContract[];
+```
+
+The bindable catalog, for the inspector selector. Omit → free-text only.
+
+###### Returns
+
+readonly `ToolContract`[]
 
 ## Type Aliases
 
@@ -622,3 +669,25 @@ graph), so the Studio derives them — same input → same layout.
 #### Returns
 
 [`NodeLayout`](#nodelayout)[]
+
+***
+
+### createToolProvider()
+
+```ts
+function createToolProvider(contracts): ToolProvider;
+```
+
+Builds a [ToolProvider](#toolprovider-1) over a contract list (exact `id@version` match).
+The host wires the SAME list into the Biblioteca via `toolAdapter` so the
+catalog and the binding never disagree (one registry, not two).
+
+#### Parameters
+
+##### contracts
+
+readonly `ToolContract`[]
+
+#### Returns
+
+[`ToolProvider`](#toolprovider-1)
