@@ -55,12 +55,26 @@ export {
   type ContextKey,
   type ContextContract,
   type ValidateSquadOptions,
+  type SquadFlowOptions,
   SQUAD_DYNAMICS,
   SQUAD_EDGE_KINDS,
   validateContextContract,
   validateSquad,
+  validateSquadFlow,
   squadAutonomy,
 } from './squad.js';
+export { type AgentRunner, defaultAgentRunner } from './agentRunner.js';
+export {
+  type FactSource,
+  type FactKind,
+  type MaskingPolicy,
+  type SquadFact,
+  type SquadBlock,
+  type SquadSimOptions,
+  type SquadSimResult,
+  MASKED_VALUE,
+  simulateSquad,
+} from './squadSim.js';
 export {
   type ReadinessState,
   type ReadinessContext,

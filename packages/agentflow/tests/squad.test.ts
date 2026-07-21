@@ -4,10 +4,12 @@ import {
   squadAutonomy,
   validateContextContract,
   validateSquad,
+  validateSquadFlow,
   type AgentRef,
   type AgentWorkflow,
   type ContextContract,
   type SquadManifest,
+  type ToolContract,
 } from '../src/index.js';
 
 const manifest = (over: Partial<SquadManifest> = {}): SquadManifest => ({
@@ -160,5 +162,78 @@ describe('squadAutonomy — max of the chain (reusing SL-4, Squad Lane SL-8)', (
 
   it('is undefined when no member resolves (degradable)', () => {
     expect(squadAutonomy(manifest(), () => undefined)).toBeUndefined();
+  });
+});
+
+describe('validateSquadFlow — CTX_PURPOSE_VIOLATION flow rule (Squad Lane SL-10)', () => {
+  // A member whose workflow reaches a committing tool.
+  const committer: AgentWorkflow = {
+    kind: 'AgentWorkflow',
+    id: 'agnt-rsch',
+    version: '2.1.0',
+    autonomyLevel: 3,
+    entry: 'send',
+    inputSchema: {},
+    outputSchema: {},
+    nodes: [{ id: 'send', type: 'tool', config: { usesTool: 'tool:send-email@1.0.0' } }],
+    edges: [{ from: 'send', to: 'end', edgeType: 'sequence' }],
+  };
+  const resolveWorkflow = (ref: AgentRef): AgentWorkflow | undefined =>
+    ref.id === 'agnt-rsch' ? committer : undefined;
+  const commitTool: ToolContract = {
+    kind: 'ToolContract',
+    id: 'tool:send-email',
+    version: '1.0.0',
+    name: 'send_email',
+    capability: 'send an email',
+    inputSchema: {},
+    outputSchema: {},
+    effect: 'external-commitment',
+    dataScope: 'publico-sem-pii',
+    authorization: 'gate',
+    evidenceRequired: 'assinatura',
+    simulation: 'fixture-obrigatoria',
+  };
+  const resolveTool = (ref: AgentRef) => (ref.id === 'tool:send-email' ? commitTool : undefined);
+
+  const grounding = (): ContextContract =>
+    contract({
+      keys: [{ key: 'doc.fontes', owner: 'pesquisador', writers: ['pesquisador'], readers: ['pesquisador'], purpose: 'grounding' }],
+    });
+
+  it('flags grounding reaching a gate-requiring tool when the squad has no gate', () => {
+    const found = validateSquadFlow(manifest({ gates: [] }), grounding(), { resolveWorkflow, resolveTool }).find(
+      (i) => i.code === 'CTX_PURPOSE_VIOLATION',
+    );
+    expect(found?.severity).toBe('error');
+    expect(found?.message).toMatch(/grounding|tool:send-email/i);
+    expect(found?.remediation).toMatch(/gate/i);
+  });
+
+  it('defers to SL-12 when the squad declares a gate (no flow error here)', () => {
+    const codes = validateSquadFlow(manifest({ gates: [{ gateId: 'g', scope: 'por-execucao' }] }), grounding(), {
+      resolveWorkflow,
+      resolveTool,
+    }).map((i) => i.code);
+    expect(codes).not.toContain('CTX_PURPOSE_VIOLATION');
+  });
+
+  it('does not flag a read-only tool (effect that needs no gate)', () => {
+    const readTool: ToolContract = { ...commitTool, id: 'tool:send-email', effect: 'read', authorization: 'automatica' };
+    const codes = validateSquadFlow(manifest({ gates: [] }), grounding(), {
+      resolveWorkflow,
+      resolveTool: (ref) => (ref.id === 'tool:send-email' ? readTool : undefined),
+    }).map((i) => i.code);
+    expect(codes).not.toContain('CTX_PURPOSE_VIOLATION');
+  });
+
+  it('does not flag a non-grounding key reaching the same tool', () => {
+    const operational = contract({
+      keys: [{ key: 'veredito', owner: 'pesquisador', writers: ['pesquisador'], readers: ['pesquisador'], purpose: 'operational-action' }],
+    });
+    const codes = validateSquadFlow(manifest({ gates: [] }), operational, { resolveWorkflow, resolveTool }).map(
+      (i) => i.code,
+    );
+    expect(codes).not.toContain('CTX_PURPOSE_VIOLATION');
   });
 });

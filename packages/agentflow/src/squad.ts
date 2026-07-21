@@ -12,6 +12,7 @@
 
 import type { AgentWorkflow, AutonomyLevel } from './types.js';
 import { parseRef, type AgentRef } from './ref.js';
+import { effectRequiresGate, type ResolveTool } from './toolContract.js';
 import type { ValidationIssue } from './validate.js';
 
 /** How a squad coordinates (cerca §5). */
@@ -292,4 +293,93 @@ export function squadAutonomy(
     if (wf) max = max === undefined ? wf.autonomyLevel : (Math.max(max, wf.autonomyLevel) as AutonomyLevel);
   }
   return max;
+}
+
+/** Injected, degradable integrations for {@link validateSquadFlow}. */
+export interface SquadFlowOptions {
+  /** Resolves a member `agentRef` to its workflow — needed to see the tools it
+   * reaches (injected; agentflow never imports a registry). */
+  resolveWorkflow: (ref: AgentRef) => AgentWorkflow | undefined;
+  /** Resolves a `tool:*@semver` ref to its contract — needed for the effect. */
+  resolveTool: ResolveTool;
+}
+
+/**
+ * The FLOW half of `CTX_PURPOSE_VIOLATION` (Squad Lane SL-10, insight E5). The
+ * STRUCTURAL half ({@link validateContextContract}) checks a key against itself;
+ * this checks the key against the SQUAD GRAPH + the members' resolved tool
+ * effects — information that only exists once the squad is assembled.
+ *
+ * The rule: `grounding` context is knowledge meant to INFORM, not to commit. If a
+ * role that READS a grounding key reaches, in its workflow, a tool whose effect
+ * requires a gate (`external-commitment` / `write-irreversible`) and the squad
+ * declares NO gate at all, then grounding is flowing into an unreviewed
+ * commitment — a violation. (A squad WITH gates defers the precise per-path
+ * "does a gate cover THIS action" coverage to SL-12's `GATE_NOT_COVERING` over
+ * `reachableGateFrom`; documented, not silently skipped.)
+ *
+ * Fully degradable: both resolvers must be injected, or the flow rule does not
+ * run (the structural CTX checks still do). Returns issues to MERGE with
+ * {@link validateSquad}'s — never mutates, never throws on an unresolved ref.
+ */
+export function validateSquadFlow(
+  manifest: SquadManifest,
+  contract: ContextContract,
+  options: SquadFlowOptions,
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  // Only a squad with no review whatsoever can let grounding reach a commitment
+  // unreviewed; a gated squad is SL-12's finer question.
+  if (manifest.gates.length > 0) return issues;
+
+  const refByRole = new Map<string, string>([['orch', manifest.orchestratorRef]]);
+  for (const m of manifest.members) refByRole.set(m.role, m.agentRef);
+
+  /** The gate-requiring tool a role reaches, or undefined. */
+  const committingTool = (role: string): string | undefined => {
+    const agentRef = refByRole.get(role);
+    if (agentRef === undefined) return undefined;
+    let ref: AgentRef;
+    try {
+      ref = parseRef(agentRef).ref;
+    } catch {
+      return undefined;
+    }
+    const wf = options.resolveWorkflow(ref);
+    if (!wf) return undefined;
+    for (const node of wf.nodes) {
+      if (node.type !== 'tool') continue;
+      let toolRef: AgentRef;
+      try {
+        toolRef = parseRef(node.config.usesTool).ref;
+      } catch {
+        continue;
+      }
+      const tool = options.resolveTool(toolRef);
+      if (tool && effectRequiresGate(tool.effect)) return node.config.usesTool;
+    }
+    return undefined;
+  };
+
+  for (const key of contract.keys) {
+    if (key.forbidden === true || key.purpose !== 'grounding') continue;
+    const readers = key.readers ?? [];
+    const readerRoles = readers.includes('*')
+      ? ['orch', ...manifest.members.map((m) => m.role)]
+      : readers;
+    for (const role of readerRoles) {
+      const tool = committingTool(role);
+      if (tool !== undefined) {
+        issues.push({
+          code: 'CTX_PURPOSE_VIOLATION',
+          severity: 'error',
+          message: `Grounding key "${key.key}" is read by "${role}", whose workflow reaches the gate-requiring tool "${tool}" with no gate in the squad.`,
+          remediation:
+            'Grounding must not drive an unreviewed external commitment — add a gate (scope covering the committing member), or narrow the reader/tool.',
+          nodeId: role,
+        });
+      }
+    }
+  }
+  return issues;
 }

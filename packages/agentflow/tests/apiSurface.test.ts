@@ -15,6 +15,7 @@ const EXPECTED_EXPORTS = [
   'DEFAULT_TEMPLATE_ID',
   'DOCUMENT_REVIEW_AGENT',
   'END_ROUTE',
+  'MASKED_VALUE',
   'RESEARCH_AGENT',
   'SQUAD_DYNAMICS',
   'SQUAD_EDGE_KINDS',
@@ -23,6 +24,7 @@ const EXPECTED_EXPORTS = [
   'autonomyCoherence',
   'canReach',
   'decisionRoutes',
+  'defaultAgentRunner',
   'effectRequiresGate',
   'exportLangGraph',
   'finalOutput',
@@ -52,12 +54,14 @@ const EXPECTED_EXPORTS = [
   'requiresDownstreamGate',
   'runEvalSet',
   'simulate',
+  'simulateSquad',
   'squadAutonomy',
   'toRef',
   'unsupportedKeywords',
   'validateContextContract',
   'validateGraph',
   'validateSquad',
+  'validateSquadFlow',
 ].sort();
 
 describe('@buildtovalue/agentflow public API surface', () => {
