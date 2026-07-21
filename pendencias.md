@@ -325,3 +325,10 @@ Abertos durante a SL-1 (revisão de arquitetura), **não bloqueiam** a entrega:
   do catálogo da Biblioteca para DENTRO de um nó `tool` é um **gesto novo** (spec visual no protótipo 01)
   e fica como polimento registrado, não escopo do MVP. O `ToolProvider` já nasce injetável (SL-2), então
   o drag só precisa escrever o mesmo `usesTool` que o seletor já escreve.
+- **Abas de Onda no nó `agentTask` do canvas principal (SL-5 → SL-12).** A Onda 1 (Identidade/Inteligência)
+  vive no inspector do **AgentStudio**, onde `workflow` + `toolProvider` já são props (SL-2) — degradabilidade
+  herdada, zero encanamento novo. O `agentTask` no canvas principal só carrega `agentWorkflowRef` +
+  `autonomyLevel` (o `AgentWorkflow` não é embutido no nó, snapshot é leitura degradada), então dar-lhe as
+  abas exigiria um **resolver de agent-workflow injetado no EditorConfig**. Isso fica para a **ponte (SL-12)**,
+  quando o deep-link `?load=<versionId>` e o resolver já existirem. A infra reutilizável já está pronta:
+  `InspectorSection.tab` (opcional) + tab-registration genérica no `PropertiesPanel` (SL-5).

@@ -42,6 +42,7 @@ export {
   unsupportedKeywords,
   requiredKeys,
 } from './schema.js';
+export { promptVariables, promptCoverage } from './promptCoverage.js';
 export {
   type GateRequirement,
   type AutonomyDefinition,

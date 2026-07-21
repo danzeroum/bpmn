@@ -39,7 +39,7 @@ export function PropertiesPanel() {
   const selectedIds = useCanvasState((s) => s.selectedIds);
   const readOnly = useCanvasState((s) => s.readOnly);
   const t = useT();
-  const [tab, setTab] = useState<'general' | 'execution'>('general');
+  const [tab, setTab] = useState<string>('general');
   const selectedId = selectedIds.length === 1 ? selectedIds[0] : null;
   // Selecting another element always lands on the general tab.
   useEffect(() => setTab('general'), [selectedId]);
@@ -63,34 +63,46 @@ export function PropertiesPanel() {
   // SAME gate — no engine plugin, no tabs, panel byte-identical to before.
   const eventMode = node !== undefined ? eventExecutionModeOf(diagram, node) : null;
   const executable = node !== undefined && (isExecutableActivity(node) || eventMode !== null);
-  const showTabs = engine !== null && executable;
-  const activeTab = showTabs ? tab : 'general';
+  // Squad Lane SL-5 — a plugin section may register as its OWN tab; the rest stay
+  // inline in the General tab (byte-identical to before). The tab strip is the
+  // built-in General/Execution pair plus any registered plugin tabs.
+  const applicable = node ? inspectorSections.filter((section) => section.appliesTo(node)) : [];
+  const tabSections = applicable.filter((section) => section.tab);
+  const inlineSections = applicable.filter((section) => !section.tab);
+  const tabs: { id: string; label: string }[] = [{ id: 'general', label: t('properties.tab.general') }];
+  if (engine !== null && executable) {
+    tabs.push({ id: 'execution', label: t('properties.tab.execution') });
+  }
+  for (const section of tabSections) {
+    if (section.tab && !tabs.some((entry) => entry.id === section.tab!.id)) {
+      tabs.push({ id: section.tab.id, label: section.tab.label });
+    }
+  }
+  const showTabs = tabs.length > 1;
+  const activeTab = showTabs && tabs.some((entry) => entry.id === tab) ? tab : 'general';
+  const activeTabSections = tabSections.filter((section) => section.tab!.id === activeTab);
   return (
     <aside className="bpmnr-inspector" aria-label={t('properties.title')}>
       {showTabs && (
         <div className="bpmnr-inspector-tabs" role="tablist" aria-label={t('properties.tabsAria')}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'general'}
-            data-inspector-tab="general"
-            onClick={() => setTab('general')}
-          >
-            {t('properties.tab.general')}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'execution'}
-            data-inspector-tab="execution"
-            onClick={() => setTab('execution')}
-          >
-            {t('properties.tab.execution')}
-          </button>
+          {tabs.map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === entry.id}
+              data-inspector-tab={entry.id}
+              onClick={() => setTab(entry.id)}
+            >
+              {entry.label}
+            </button>
+          ))}
         </div>
       )}
       {activeTab === 'execution' && showTabs && engine && node ? (
         <ExecutionInspector node={node} engine={engine} readOnly={readOnly} eventMode={eventMode} />
+      ) : activeTab !== 'general' ? (
+        <>{node && activeTabSections.map((section) => <section.component key={section.id} node={node} />)}</>
       ) : (
         <>
           {node && <NodeInspector node={node} readOnly={readOnly} />}
@@ -110,11 +122,10 @@ export function PropertiesPanel() {
           {node && hasInterruptingToggle(diagram, node) && (
             <InterruptingToggle node={node} readOnly={readOnly} />
           )}
-          {/* Plugin sections (Handoff 5, wireframe 2d) — e.g. DMN "Decisão". */}
+          {/* Inline plugin sections (Handoff 5, wireframe 2d) — e.g. DMN "Decisão".
+              Sections that declare a `tab` render as their own tab instead (SL-5). */}
           {node &&
-            inspectorSections
-              .filter((section) => section.appliesTo(node))
-              .map((section) => <section.component key={section.id} node={node} />)}
+            inlineSections.map((section) => <section.component key={section.id} node={node} />)}
           {edge && <EdgeInspector edge={edge} readOnly={readOnly} />}
           {!node && !edge && (
             <p className="bpmnr-inspector-empty">{t('properties.elementNotFound')}</p>

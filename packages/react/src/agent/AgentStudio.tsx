@@ -489,27 +489,68 @@ function Inspector({
   onRemove: () => void;
 }) {
   const has = (d: string) => (node.decorators ?? []).some((x) => x.type === d);
+  // Squad Lane SL-5 — Wave 1 (O1) organizes the node inspector into Identity +
+  // Intelligence tabs. Decorators + remove stay BELOW the tabs (always visible):
+  // memory/governance are Waves 2/3, and keeping them out avoids pre-empting them
+  // and preserves the errorBoundary proposal flow.
+  const [tab, setTab] = useState<'identity' | 'intelligence'>('identity');
+  useEffect(() => setTab('identity'), [node.id]);
+  const provider = node.type === 'llm' ? (node.config.provider ?? t('agent.inspector.providerDefault')) : '';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ fontSize: 13, fontWeight: 600 }}>{iconFor(node.type)} {node.id}</div>
-      {node.type === 'llm' && (
-        <>
-          <Field label={t('agent.inspector.model')} value={node.config.model} onChange={(v) => onConfig({ model: v })} />
-          <Field label={t('agent.inspector.prompt')} value={node.config.promptRef} onChange={(v) => onConfig({ promptRef: v })} />
-          <label style={checkRow}>
-            <input type="checkbox" checked={node.config.structuredOutput === true} onChange={(e) => onConfig({ structuredOutput: e.target.checked })} />
-            {t('agent.inspector.structured')}
-          </label>
-        </>
-      )}
-      {node.type === 'tool' && (
-        <>
-          <ToolBinding t={t} value={node.config.usesTool} provider={toolProvider} onChange={(v) => onConfig({ usesTool: v })} />
-          <Field label={t('agent.inspector.timeout')} value={String(node.config.timeoutMs ?? '')} onChange={(v) => onConfig({ timeoutMs: Number(v) || undefined })} />
-        </>
-      )}
-      {node.type === 'decision' && (
-        <Field label={t('agent.inspector.condition')} value={node.config.condition} onChange={(v) => onConfig({ condition: v })} />
+      <div className="bpmnr-agent-inspector-tabs" role="tablist" aria-label={t('agent.inspector.tabsAria')} style={agentTabStrip}>
+        {(['identity', 'intelligence'] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            data-agent-tab={id}
+            onClick={() => setTab(id)}
+            style={agentTabBtn(tab === id)}
+          >
+            {t(`agent.inspector.tab.${id}`)}
+          </button>
+        ))}
+      </div>
+      {tab === 'identity' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }} data-agent-tabpanel="identity">
+          <div style={idRow}>
+            <span style={idKey}>{t('agent.inspector.nodeType')}</span>
+            <span>{t(`agent.node.${node.type}`)}</span>
+          </div>
+          <div style={idRow}>
+            <span style={idKey}>{t('agent.inspector.nodeId')}</span>
+            <code style={{ fontFamily: 'ui-monospace, monospace' }}>{node.id}</code>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }} data-agent-tabpanel="intelligence">
+          {node.type === 'llm' && (
+            <>
+              <Field label={t('agent.inspector.model')} value={node.config.model} onChange={(v) => onConfig({ model: v })} />
+              <Field label={t('agent.inspector.prompt')} value={node.config.promptRef} onChange={(v) => onConfig({ promptRef: v })} />
+              <div style={idRow}>
+                <span style={idKey}>{t('agent.inspector.provider')}</span>
+                <span>{provider}</span>
+              </div>
+              <label style={checkRow}>
+                <input type="checkbox" checked={node.config.structuredOutput === true} onChange={(e) => onConfig({ structuredOutput: e.target.checked })} />
+                {t('agent.inspector.structured')}
+              </label>
+            </>
+          )}
+          {node.type === 'tool' && (
+            <>
+              <ToolBinding t={t} value={node.config.usesTool} provider={toolProvider} onChange={(v) => onConfig({ usesTool: v })} />
+              <Field label={t('agent.inspector.timeout')} value={String(node.config.timeoutMs ?? '')} onChange={(v) => onConfig({ timeoutMs: Number(v) || undefined })} />
+            </>
+          )}
+          {node.type === 'decision' && (
+            <Field label={t('agent.inspector.condition')} value={node.config.condition} onChange={(v) => onConfig({ condition: v })} />
+          )}
+        </div>
       )}
       <div style={eyebrow}>{t('agent.inspector.decorators')}</div>
       {(['memory', 'planner', 'errorBoundary'] as const).map((d) => (
@@ -660,5 +701,19 @@ const footer: React.CSSProperties = { height: 30, flexShrink: 0, background: 'va
 const checkRow: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, minHeight: 28 };
 const input: React.CSSProperties = { border: '1px solid var(--bpmnr-border, #e2ddd3)', borderRadius: 6, padding: '5px 7px', fontSize: 11, fontFamily: 'ui-monospace, monospace' };
 const notice: React.CSSProperties = { fontSize: 10, color: '#7a611e', background: '#fdfaf1', border: '1px solid #e8d9ae', borderRadius: 7, padding: '6px 8px', lineHeight: 1.5 };
+const agentTabStrip: React.CSSProperties = { display: 'flex', gap: 4, borderBottom: '1px solid var(--bpmnr-border, #e2ddd3)' };
+const agentTabBtn = (active: boolean): React.CSSProperties => ({
+  minHeight: 30,
+  border: 'none',
+  borderBottom: active ? '2px solid var(--bpmnr-btv-gold, #9a7b1e)' : '2px solid transparent',
+  background: 'transparent',
+  cursor: 'pointer',
+  fontSize: 11.5,
+  fontWeight: active ? 600 : 400,
+  color: active ? 'var(--bpmnr-text, #2e2a26)' : 'var(--bpmnr-text-muted, #6f675a)',
+  padding: '4px 8px',
+});
+const idRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11 };
+const idKey: React.CSSProperties = { color: 'var(--bpmnr-text-muted)' };
 const toolMeta: React.CSSProperties = { fontSize: 10, color: 'var(--bpmnr-agent-tool, #33567e)', lineHeight: 1.4 };
 const toolUnresolved: React.CSSProperties = { fontSize: 10, color: '#7a611e', background: '#fdfaf1', border: '1px solid #e8d9ae', borderRadius: 7, padding: '4px 7px', lineHeight: 1.4 };

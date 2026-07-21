@@ -42,6 +42,8 @@ const EXPECTED_EXPORTS = [
   'normalizeSchema',
   'normalizeSchemaField',
   'parseRef',
+  'promptCoverage',
+  'promptVariables',
   'requiredKeys',
   'requiresDownstreamGate',
   'simulate',

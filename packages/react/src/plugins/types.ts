@@ -30,6 +30,13 @@ export interface InspectorSection {
   id: string;
   appliesTo: (node: BpmnNode) => boolean;
   component: ComponentType<{ node: BpmnNode }>;
+  /**
+   * Squad Lane SL-5 — when present, the section renders as its OWN REGISTERED
+   * TAB (a tab button + panel) instead of inline in the General tab. `label` is
+   * display text the plugin localizes. Sections without `tab` keep rendering
+   * inline exactly as before (additive, MINOR).
+   */
+  tab?: { id: string; label: string };
 }
 
 /**

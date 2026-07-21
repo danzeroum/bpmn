@@ -125,4 +125,31 @@ describe('plugin inspectorSections (wireframe 2d plumbing)', () => {
     fireEvent.pointerDown(container.querySelector('[data-node-id="sub"]')!, { button: 0 });
     expect(container.querySelector('[data-test-section]')).toBeNull();
   });
+
+  it('SL-5: a section that declares a `tab` renders as a registered tab, not inline', () => {
+    const section = {
+      id: 'contracts-section',
+      appliesTo: (node: BpmnNode) => node.type === 'task',
+      component: ({ node }: { node: BpmnNode }) => <p data-test-tab-section>contrato de {node.label}</p>,
+      tab: { id: 'contracts', label: 'Contratos' },
+    };
+    const { container } = render(
+      <BpmnDesigner
+        diagram={twoTasksDiagram()}
+        plugins={[{ id: 'test/tab', inspectorSections: [section] }]}
+      >
+        <PropertiesPanel />
+      </BpmnDesigner>,
+    );
+    fireEvent.pointerDown(container.querySelector('[data-node-id="inner"]')!, { button: 0 });
+    // a tab strip appears (General + the registered plugin tab); the section is NOT inline
+    expect(container.querySelector('[data-inspector-tab="general"]')).not.toBeNull();
+    expect(container.querySelector('[data-inspector-tab="contracts"]')).not.toBeNull();
+    expect(container.querySelector('[data-test-tab-section]')).toBeNull();
+    // activating the tab renders the section; returning to General hides it again
+    fireEvent.click(container.querySelector('[data-inspector-tab="contracts"]')!);
+    expect(container.querySelector('[data-test-tab-section]')?.textContent).toBe('contrato de Inner');
+    fireEvent.click(container.querySelector('[data-inspector-tab="general"]')!);
+    expect(container.querySelector('[data-test-tab-section]')).toBeNull();
+  });
 });

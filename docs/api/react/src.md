@@ -2418,6 +2418,29 @@ component: ComponentType<{
 }>;
 ```
 
+##### tab?
+
+```ts
+optional tab?: object;
+```
+
+Squad Lane SL-5 — when present, the section renders as its OWN REGISTERED
+TAB (a tab button + panel) instead of inline in the General tab. `label` is
+display text the plugin localizes. Sections without `tab` keep rendering
+inline exactly as before (additive, MINOR).
+
+###### id
+
+```ts
+id: string;
+```
+
+###### label
+
+```ts
+label: string;
+```
+
 ***
 
 ### PaletteBuildContext

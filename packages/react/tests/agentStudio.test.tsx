@@ -119,6 +119,8 @@ describe('AgentStudio shell', () => {
     const { events } = renderStudio(RESEARCH_AGENT);
     fireEvent.click(screen.getByRole('button', { name: 'Selecionar nó llm-1' }));
     const inspector = screen.getByLabelText('Inspector do nó do agente');
+    // Wave 1 (SL-5): the model lives under the Intelligence tab
+    fireEvent.click(within(inspector).getByRole('tab', { name: 'Inteligência' }));
     const model = within(inspector).getByDisplayValue('gpt-4o');
     fireEvent.change(model, { target: { value: 'gpt-5' } });
     expect(of(events, 'element.changed').length).toBeGreaterThan(0);
@@ -140,8 +142,12 @@ describe('AgentStudio shell', () => {
 });
 
 describe('AgentStudio tool binding (Squad Lane SL-2)', () => {
-  const selectTool = () =>
+  // Wave 1 (SL-5): the tool binding lives under the Intelligence tab.
+  const selectTool = () => {
     fireEvent.click(screen.getByRole('button', { name: 'Selecionar nó tool-2' }));
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    fireEvent.click(within(inspector).getByRole('tab', { name: 'Inteligência' }));
+  };
 
   it('degrades to a typed text field when no ToolProvider is injected (no crash)', () => {
     renderStudio(RESEARCH_AGENT); // provider undefined
@@ -176,5 +182,30 @@ describe('AgentStudio tool binding (Squad Lane SL-2)', () => {
     expect(within(inspector).getByTestId('agent-tool-unresolved')).toBeTruthy();
     // …and it does NOT block the graph (footer shows no validation error)
     expect(screen.queryByText(/erro de validação/)).toBeNull();
+  });
+});
+
+describe('AgentStudio Wave-1 tabs (Squad Lane SL-5)', () => {
+  it('organizes the node inspector into Identity + Intelligence tabs (Identity default)', () => {
+    renderStudio(RESEARCH_AGENT);
+    fireEvent.click(screen.getByRole('button', { name: 'Selecionar nó llm-1' }));
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    expect(within(inspector).getByRole('tab', { name: 'Identidade' })).toBeTruthy();
+    expect(within(inspector).getByRole('tab', { name: 'Inteligência' })).toBeTruthy();
+    // Identity is the default panel; the model is not shown until Intelligence is active
+    expect(within(inspector).getByText('Tipo')).toBeTruthy();
+    expect(within(inspector).queryByDisplayValue('gpt-4o')).toBeNull();
+    fireEvent.click(within(inspector).getByRole('tab', { name: 'Inteligência' }));
+    expect(within(inspector).getByDisplayValue('gpt-4o')).toBeTruthy();
+    // provider shown as a host-injected label (never a key field)
+    expect(within(inspector).getByText('host-injetado')).toBeTruthy();
+  });
+
+  it('keeps decorators available below the tabs (not gated behind Wave 1)', () => {
+    renderStudio(RESEARCH_AGENT);
+    fireEvent.click(screen.getByRole('button', { name: 'Selecionar nó tool-2' }));
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    // Identity tab active, yet the ErrorBoundary decorator toggle is still present
+    expect(within(inspector).getByLabelText('ErrorBoundary')).toBeTruthy();
   });
 });

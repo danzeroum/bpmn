@@ -2204,6 +2204,52 @@ LangGraph representation are omitted and DECLARED in `warnings`:
 
 ***
 
+### promptVariables()
+
+```ts
+function promptVariables(promptText): string[];
+```
+
+The distinct bare `{{name}}` variables referenced in a prompt, in first-seen order.
+
+#### Parameters
+
+##### promptText
+
+`string`
+
+#### Returns
+
+`string`[]
+
+***
+
+### promptCoverage()
+
+```ts
+function promptCoverage(inputVars, promptText): ValidationIssue[];
+```
+
+One `PROMPT_VAR_UNUSED` warning (never an error) per declared input variable
+that the prompt never references as `{{name}}`. `inputVars` is the caller's
+`Object.keys(wf.inputSchema)`. Deterministic: issue order follows `inputVars`.
+
+#### Parameters
+
+##### inputVars
+
+`string`[]
+
+##### promptText
+
+`string`
+
+#### Returns
+
+[`ValidationIssue`](#validationissue)[]
+
+***
+
 ### parseRef()
 
 ```ts
