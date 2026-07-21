@@ -72,10 +72,31 @@ function mount(provider: AIProvider | undefined, onChange?: (d: BpmnDiagram) => 
   );
 }
 
-async function generate(container: HTMLElement, text = 'processo de reembolso') {
+/** #150: a proposal now ARRIVES as a card — request it, without applying. */
+async function propose(container: HTMLElement, text = 'processo de reembolso') {
+  const button =
+    container.querySelector('[data-testid="copilot-generate"]') ??
+    container.querySelector('[data-testid="copilot-adjust"]')!;
   fireEvent.change(container.querySelector('textarea')!, { target: { value: text } });
-  fireEvent.click(container.querySelector('[data-testid="copilot-generate"]')!);
-  await waitFor(() => expect(container.querySelector('[data-testid="copilot-footer"]')).not.toBeNull());
+  fireEvent.click(button);
+  await waitFor(() =>
+    expect(container.querySelectorAll('[data-testid="copilot-proposal"]').length).toBeGreaterThan(0),
+  );
+}
+
+/** Apply the LAST proposal card and wait for its ledger footer. */
+async function applyLast(container: HTMLElement) {
+  const applies = container.querySelectorAll('[data-testid="copilot-apply"]');
+  const footersBefore = container.querySelectorAll('[data-testid="copilot-footer"]').length;
+  fireEvent.click(applies[applies.length - 1]);
+  await waitFor(() =>
+    expect(container.querySelectorAll('[data-testid="copilot-footer"]')).toHaveLength(footersBefore + 1),
+  );
+}
+
+async function generate(container: HTMLElement, text = 'processo de reembolso') {
+  await propose(container, text);
+  await applyLast(container);
 }
 
 describe('CopilotPanel (CP-2)', () => {
@@ -165,8 +186,9 @@ describe('CopilotPanel (CP-2)', () => {
 
     fireEvent.click(container.querySelector('[data-testid="copilot-fix"]')!);
     await waitFor(() =>
-      expect(container.querySelectorAll('[data-testid="copilot-footer"]')).toHaveLength(2),
+      expect(container.querySelectorAll('[data-testid="copilot-proposal"]')).toHaveLength(2),
     );
+    await applyLast(container);
     // The motivating error is REALLY gone — the list recomputed over the real
     // diagram disappears and the footer shows the local 0-error preview.
     expect(container.querySelector('[data-testid="copilot-snd-errors"]')).toBeNull();
@@ -185,8 +207,9 @@ describe('CopilotPanel (CP-2)', () => {
 
     fireEvent.click(container.querySelector('[data-testid="copilot-fix"]')!);
     await waitFor(() =>
-      expect(container.querySelectorAll('[data-testid="copilot-footer"]')).toHaveLength(2),
+      expect(container.querySelectorAll('[data-testid="copilot-proposal"]')).toHaveLength(2),
     );
+    await applyLast(container);
     const snd = container.querySelector('[data-testid="copilot-snd-errors"]')!;
     expect(snd.textContent).toContain('SND_DEADLOCK_JOIN'); // still there
     const footers = container.querySelectorAll('[data-testid="copilot-footer"]');
@@ -230,9 +253,108 @@ describe('CopilotPanel (CP-2)', () => {
 
     fireEvent.change(container.querySelector('textarea')!, { target: { value: 'renomeie a tarefa' } });
     fireEvent.click(container.querySelector('[data-testid="copilot-adjust"]')!);
-    await waitFor(() => {
-      const latest = onChange.mock.lastCall![0] as BpmnDiagram;
-      expect(latest.nodes.t.label).toBe('Analisar pedido');
-    });
+    await waitFor(() =>
+      expect(container.querySelectorAll('[data-testid="copilot-proposal"]')).toHaveLength(2),
+    );
+    await applyLast(container);
+    const latest = onChange.mock.lastCall![0] as BpmnDiagram;
+    expect(latest.nodes.t.label).toBe('Analisar pedido');
+  });
+});
+
+/**
+ * #150 (N-3) — aplicar ≠ aprovar VISIBLE on the surface: PROPOSTA →
+ * APLICADA · NÃO APROVADA → APROVADA (host lifecycle only). Applying never
+ * touches lifecycle status; undo reverts the ONE composite; the card never
+ * disappears on apply.
+ */
+describe('CopilotPanel — aplicar ≠ aprovar (#150)', () => {
+  it('a valid proposal arrives as a PROPOSTA card and applies NOTHING', async () => {
+    const onChange = vi.fn();
+    const { container } = mount(fakeProvider([DRAFT]), onChange);
+    await propose(container);
+    expect(onChange).not.toHaveBeenCalled();
+    const card = container.querySelector('[data-testid="copilot-proposal"]')!;
+    expect(card.getAttribute('data-status')).toBe('proposed');
+    expect(container.querySelector('[data-testid="copilot-proposal-pill"]')?.textContent).toBe('PROPOSTA');
+    // Copy never says "Aceitar/Aprovar" for the apply action.
+    expect(container.querySelector('[data-testid="copilot-apply"]')?.textContent).toBe('Aplicar no rascunho');
+    expect(card.textContent).not.toContain('Aceitar');
+    expect(card.textContent).not.toMatch(/Aprovar\b/);
+  });
+
+  it('[Descartar] applies nothing and declares the discard on the card', async () => {
+    const onChange = vi.fn();
+    const { container } = mount(fakeProvider([DRAFT]), onChange);
+    await propose(container);
+    fireEvent.click(container.querySelector('[data-testid="copilot-discard"]')!);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-testid="copilot-discarded"]')?.textContent).toContain(
+      'Descartada — nada foi aplicado.',
+    );
+  });
+
+  it('applying keeps the card visible as APLICADA · NÃO APROVADA with the banner — and never touches lifecycle', async () => {
+    const onChange = vi.fn();
+    const { container } = mount(fakeProvider([DRAFT]), onChange);
+    await generate(container);
+    const latest = onChange.mock.lastCall![0] as BpmnDiagram;
+    // Applying NEVER promotes: the draft status is untouched (the tested gate).
+    expect(latest.version.status).toBe('draft');
+    const card = container.querySelector('[data-testid="copilot-proposal"]')!;
+    expect(card.getAttribute('data-status')).toBe('applied');
+    expect(container.querySelector('[data-testid="copilot-applied-pill"]')?.textContent).toBe(
+      'APLICADA · NÃO APROVADA',
+    );
+    expect(container.querySelector('[data-testid="copilot-applied-banner"]')?.textContent).toContain(
+      'passou pela mesma validação de qualquer edição; aprovação é ação separada',
+    );
+    // No approval affordance without the host hook; never a green pill here.
+    expect(container.querySelector('[data-testid="copilot-submit-approval"]')).toBeNull();
+    expect(container.querySelector('[data-testid="copilot-approved-pill"]')).toBeNull();
+  });
+
+  it('[Ver diff] expands the proposed commands; [Desfazer] reverts the ONE composite and re-arms PROPOSTA', async () => {
+    const onChange = vi.fn();
+    const { container } = mount(fakeProvider([DRAFT]), onChange);
+    await generate(container);
+    fireEvent.click(container.querySelector('[data-testid="copilot-view-diff"]')!);
+    const diff = container.querySelector('[data-testid="copilot-proposal-diff"]')!;
+    expect(diff.textContent).toContain('addNode');
+    expect(diff.querySelectorAll('li')).toHaveLength(5);
+    fireEvent.click(container.querySelector('[data-testid="copilot-undo-proposal"]')!);
+    const latest = onChange.mock.lastCall![0] as BpmnDiagram;
+    expect(Object.keys(latest.nodes)).toHaveLength(0); // one undo, whole plan
+    expect(container.querySelector('[data-testid="copilot-proposal"]')!.getAttribute('data-status')).toBe(
+      'proposed',
+    );
+  });
+
+  it('[Enviar p/ aprovação] routes the intent to the host; APROVADA only paints from the host lifecycle signal', async () => {
+    const onSubmitForApproval = vi.fn();
+    const approved = new Set<string>();
+    const view = render(
+      <BpmnDesigner diagram={createDiagram({ name: 'C' })} messages={PT_BR}>
+        <CopilotPanel
+          provider={fakeProvider([DRAFT])}
+          author="ana.ruiz"
+          onSubmitForApproval={onSubmitForApproval}
+          suggestionStatus={(commandId) => (approved.has(commandId) ? 'approved' : undefined)}
+        />
+      </BpmnDesigner>,
+    );
+    const { container } = view;
+    await generate(container);
+    const submit = container.querySelector('[data-testid="copilot-submit-approval"]')!;
+    fireEvent.click(submit);
+    expect(onSubmitForApproval).toHaveBeenCalledWith({ commandId: expect.any(String) });
+    // Still NOT approved — submitting is not approving.
+    expect(container.querySelector('[data-testid="copilot-approved-pill"]')).toBeNull();
+    // The HOST lifecycle confirms (registry/RBAC) → only then the green pill.
+    approved.add(onSubmitForApproval.mock.calls[0][0].commandId);
+    fireEvent.click(container.querySelector('[data-testid="copilot-view-diff"]')!); // any re-render
+    await waitFor(() =>
+      expect(container.querySelector('[data-testid="copilot-approved-pill"]')?.textContent).toBe('APROVADA'),
+    );
   });
 });

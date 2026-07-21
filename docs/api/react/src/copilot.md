@@ -12,6 +12,14 @@ the LOCALLY computed soundness preview. "Desfazer tudo" reverts the whole
 plan in one undo. Without a provider the panel renders nothing and the
 editor is unchanged (§8.5).
 
+#150 (N-3) — aplicar ≠ aprovar made VISIBLE: a valid proposal arrives as a
+card in state PROPOSTA (nothing touches the diagram); `[Aplicar no
+rascunho]` executes the ONE composite through the normal CommandStack
+(RuleEngine/lint validate it like any edit) and the card — which never
+disappears — turns APLICADA · NÃO APROVADA (amber pill + banner).
+APROVADA (green) is only ever painted from the HOST's lifecycle signal
+(`suggestionStatus`), never by the act of applying.
+
 #### Properties
 
 ##### provider?
@@ -63,6 +71,49 @@ Omitted → header unchanged.
 ###### Returns
 
 `string` \| `undefined`
+
+##### onSubmitForApproval?
+
+```ts
+optional onSubmitForApproval?: (info) => void;
+```
+
+#150: host hook behind `[Enviar p/ aprovação]` on an APPLIED card — the
+panel only ROUTES the intent (the lifecycle/registry/RBAC live in the
+host). Omitted → the button is not rendered.
+
+###### Parameters
+
+###### info
+
+###### commandId
+
+`string`
+
+###### Returns
+
+`void`
+
+##### suggestionStatus?
+
+```ts
+optional suggestionStatus?: (commandId) => "approved" | undefined;
+```
+
+#150: the HOST's lifecycle verdict for an applied suggestion, by the
+applied command id — the ONLY source that ever paints the green
+APROVADA pill. Applying never changes lifecycle status; omitting this
+prop means no suggestion is ever shown as approved.
+
+###### Parameters
+
+###### commandId
+
+`string`
+
+###### Returns
+
+`"approved"` \| `undefined`
 
 ## Functions
 

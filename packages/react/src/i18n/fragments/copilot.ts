@@ -24,6 +24,23 @@ export const copilot: { en: Messages; ptBR: Messages } = {
     'copilot.placeholderProcess': 'Describe the process…',
     'copilot.placeholderAdjust': 'Describe the adjustment…',
     'copilot.undoAll': 'Undo all',
+    // #150 — aplicar ≠ aprovar made visible: the three card states. Copy for
+    // applying NEVER says "accept/approve"; the green pill belongs to the
+    // host's lifecycle alone.
+    'copilot.proposal.pill': 'PROPOSAL',
+    'copilot.proposal.summary_one': '{count} proposed edit',
+    'copilot.proposal.summary_other': '{count} proposed edits',
+    'copilot.soundnessPreview': 'soundness: {errors} errors · {warnings} warnings',
+    'copilot.proposal.apply': 'Apply to draft',
+    'copilot.proposal.discard': 'Discard',
+    'copilot.proposal.discarded': 'Discarded — nothing was applied.',
+    'copilot.applied.pill': 'APPLIED · NOT APPROVED',
+    'copilot.applied.banner':
+      'Applied to the draft — it went through the same validation as any edit; approval is a separate action.',
+    'copilot.applied.undo': 'Undo',
+    'copilot.applied.viewDiff': 'View diff',
+    'copilot.applied.submitApproval': 'Send for approval',
+    'copilot.approved.pill': 'APPROVED',
   },
   ptBR: {
     'copilot.title': 'Copiloto',
@@ -41,5 +58,19 @@ export const copilot: { en: Messages; ptBR: Messages } = {
     'copilot.placeholderProcess': 'Descreva o processo…',
     'copilot.placeholderAdjust': 'Descreva o ajuste…',
     'copilot.undoAll': 'Desfazer tudo',
+    'copilot.proposal.pill': 'PROPOSTA',
+    'copilot.proposal.summary_one': '{count} edição proposta',
+    'copilot.proposal.summary_other': '{count} edições propostas',
+    'copilot.soundnessPreview': 'soundness: {errors} erros · {warnings} avisos',
+    'copilot.proposal.apply': 'Aplicar no rascunho',
+    'copilot.proposal.discard': 'Descartar',
+    'copilot.proposal.discarded': 'Descartada — nada foi aplicado.',
+    'copilot.applied.pill': 'APLICADA · NÃO APROVADA',
+    'copilot.applied.banner':
+      'Aplicada no rascunho — passou pela mesma validação de qualquer edição; aprovação é ação separada.',
+    'copilot.applied.undo': 'Desfazer',
+    'copilot.applied.viewDiff': 'Ver diff',
+    'copilot.applied.submitApproval': 'Enviar p/ aprovação',
+    'copilot.approved.pill': 'APROVADA',
   },
 };
