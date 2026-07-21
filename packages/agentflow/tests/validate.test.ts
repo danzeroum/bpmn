@@ -3,6 +3,7 @@ import {
   type AgentRef,
   type AgentWorkflow,
   type ToolContract,
+  APPROVAL_GATE_AGENT,
   isValid,
   RESEARCH_AGENT,
   validateGraph,
@@ -209,6 +210,27 @@ describe('validateGraph — Squad Lane SL-1 tool contracts (§6)', () => {
     expect(errorCodes(RESEARCH_AGENT, { resolveTool: () => gated })).not.toContain(
       'TOOL_EFFECT_UNGATED',
     );
+  });
+});
+
+describe('validateGraph — Squad Lane SL-3 budget (§6)', () => {
+  it('positive: the Research template (autonomy 2, with a budget) has no BUDGET_MISSING', () => {
+    expect(codes(RESEARCH_AGENT)).not.toContain('BUDGET_MISSING');
+  });
+
+  it('BUDGET_MISSING: autonomy ≥ 2 without a budget is a warning (never blocks)', () => {
+    const wf = fromResearch((w) => {
+      delete w.budget;
+    });
+    const found = validateGraph(wf).find((i) => i.code === 'BUDGET_MISSING');
+    expect(found?.severity).toBe('warning');
+    expect(found?.remediation).toMatch(/maxTokens/);
+    expect(errorCodes(wf)).not.toContain('BUDGET_MISSING'); // warning, not error
+  });
+
+  it('autonomy < 2 without a budget is silent (no BUDGET_MISSING)', () => {
+    // APPROVAL_GATE_AGENT is autonomy 1 and declares no budget — clean.
+    expect(codes(APPROVAL_GATE_AGENT)).not.toContain('BUDGET_MISSING');
   });
 });
 

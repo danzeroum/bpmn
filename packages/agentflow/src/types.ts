@@ -40,6 +40,30 @@ export interface LlmConfig {
   /** True → the model must emit structured JSON. Required when a structured
    * decision consumes this node (validation rule 3, §1.4). */
   structuredOutput?: boolean;
+  /**
+   * Squad Lane SL-3 (additive) — the provider is ALWAYS host-injected; this is a
+   * label ("host-injetado"), never an endpoint or key (cerca §2.7).
+   */
+  provider?: string;
+  /** Cheaper/secondary model tried on failure (a label, not a runtime). */
+  fallbackModel?: string;
+  /** Sampling temperature (modeling value). */
+  temperature?: number;
+  /** Projected output-token ceiling per call — feeds the budget projection. */
+  maxOutputTokens?: number;
+}
+
+/**
+ * Governed budget for an AgentWorkflow (Squad Lane SL-3). Autonomy ≥ 2 without a
+ * budget is a `BUDGET_MISSING` warning; the simulation stops honestly
+ * (`BUDGET_EXCEEDED`) when a projected dimension overflows. All optional so the
+ * field is purely additive (no existing artifact breaks — MINOR).
+ */
+export interface AgentBudget {
+  maxTokens?: number;
+  maxCostBRL?: number;
+  maxWallTimeMs?: number;
+  maxSteps?: number;
 }
 
 /** Tool (MCP) node config. */
@@ -174,4 +198,7 @@ export interface AgentWorkflow {
   outputSchema: SchemaShape;
   nodes: AgentNode[];
   edges: AgentEdge[];
+  /** Governed budget (Squad Lane SL-3). Autonomy ≥ 2 without one warns
+   * (`BUDGET_MISSING`); the simulation stops honestly on projected overflow. */
+  budget?: AgentBudget;
 }

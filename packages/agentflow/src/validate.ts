@@ -287,6 +287,23 @@ function checkToolContracts(
   }
 }
 
+/**
+ * Squad Lane SL-3 (§6): an autonomy ≥ 2 workflow (bounded loop or higher) must
+ * declare a governed budget. Missing it is a WARNING (never blocks) — the run
+ * still simulates, just without a projected ceiling.
+ */
+function checkBudget(wf: AgentWorkflow, issues: ValidationIssue[]): void {
+  if (wf.autonomyLevel >= 2 && wf.budget === undefined) {
+    issues.push({
+      code: 'BUDGET_MISSING',
+      severity: 'warning',
+      message: `Workflow "${wf.id}" is autonomy ${wf.autonomyLevel} but declares no budget.`,
+      remediation:
+        'Declare a budget { maxTokens, maxCostBRL, maxWallTimeMs, maxSteps } so the run has a governed ceiling (autonomy ≥ 2).',
+    });
+  }
+}
+
 /** Rule 5 (§3.5): non-empty input/output schemas + structural integrity. */
 function checkSchemasAndStructure(wf: AgentWorkflow, issues: ValidationIssue[]): void {
   if (Object.keys(wf.inputSchema).length === 0) {
@@ -348,6 +365,7 @@ export function validateGraph(wf: AgentWorkflow, options: ValidateOptions = {}):
   checkStructuredLlm(wf, issues);
   checkRefs(wf, options, issues);
   checkToolContracts(wf, options, issues);
+  checkBudget(wf, issues);
   issues.push(...autonomyCoherence(wf));
   return issues;
 }

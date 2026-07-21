@@ -682,6 +682,38 @@ optional fails?: number;
 
 ***
 
+### CostModel
+
+Squad Lane SL-3 — the host-injected projection that UNLOCKS the monetary and
+temporal budget dimensions. `brlPerKToken` and `msPerStep` are RATES the
+frontend does not honestly have, so cost/wall-time are projected only when the
+host supplies them (never from a silent default — anti "invented pricing",
+§2.7). `tokensPerLlmCall` is a fallback for llm nodes that declare no
+`maxOutputTokens` (token count, not a rate). Everything here is deterministic
+(no clock, no random).
+
+#### Properties
+
+##### tokensPerLlmCall
+
+```ts
+tokensPerLlmCall: number;
+```
+
+##### brlPerKToken
+
+```ts
+brlPerKToken: number;
+```
+
+##### msPerStep
+
+```ts
+msPerStep: number;
+```
+
+***
+
 ### SimulateOptions
 
 Options for [simulate](#simulate).
@@ -704,6 +736,24 @@ optional maxSteps?: number;
 
 Safety cap on micro-steps (default 10_000) — a malformed graph blocks
 honestly rather than looping forever.
+
+##### budget?
+
+```ts
+optional budget?: AgentBudget;
+```
+
+Squad Lane SL-3 — the governed budget to enforce (falls back to
+`wf.budget`). A projected overflow of tokens/cost/time/steps is an honest
+stop (`BlockedDecision`, `cell: 'budget'`) naming node + reason + count.
+
+##### costModel?
+
+```ts
+optional costModel?: CostModel;
+```
+
+The modeling projection to use (default [DEFAULT\_COST\_MODEL](#default_cost_model)).
 
 ***
 
@@ -913,6 +963,74 @@ optional structuredOutput?: boolean;
 
 True → the model must emit structured JSON. Required when a structured
 decision consumes this node (validation rule 3, §1.4).
+
+##### provider?
+
+```ts
+optional provider?: string;
+```
+
+Squad Lane SL-3 (additive) — the provider is ALWAYS host-injected; this is a
+label ("host-injetado"), never an endpoint or key (cerca §2.7).
+
+##### fallbackModel?
+
+```ts
+optional fallbackModel?: string;
+```
+
+Cheaper/secondary model tried on failure (a label, not a runtime).
+
+##### temperature?
+
+```ts
+optional temperature?: number;
+```
+
+Sampling temperature (modeling value).
+
+##### maxOutputTokens?
+
+```ts
+optional maxOutputTokens?: number;
+```
+
+Projected output-token ceiling per call — feeds the budget projection.
+
+***
+
+### AgentBudget
+
+Governed budget for an AgentWorkflow (Squad Lane SL-3). Autonomy ≥ 2 without a
+budget is a `BUDGET_MISSING` warning; the simulation stops honestly
+(`BUDGET_EXCEEDED`) when a projected dimension overflows. All optional so the
+field is purely additive (no existing artifact breaks — MINOR).
+
+#### Properties
+
+##### maxTokens?
+
+```ts
+optional maxTokens?: number;
+```
+
+##### maxCostBRL?
+
+```ts
+optional maxCostBRL?: number;
+```
+
+##### maxWallTimeMs?
+
+```ts
+optional maxWallTimeMs?: number;
+```
+
+##### maxSteps?
+
+```ts
+optional maxSteps?: number;
+```
 
 ***
 
@@ -1324,6 +1442,15 @@ nodes: AgentNode[];
 edges: AgentEdge[];
 ```
 
+##### budget?
+
+```ts
+optional budget?: AgentBudget;
+```
+
+Governed budget (Squad Lane SL-3). Autonomy ≥ 2 without one warns
+(`BUDGET_MISSING`); the simulation stops honestly on projected overflow.
+
 ***
 
 ### ValidationIssue
@@ -1603,6 +1730,19 @@ const AUTONOMY_SCALE: readonly AutonomyDefinition[];
 ```
 
 The full scale, index === level.
+
+***
+
+### DEFAULT\_COST\_MODEL
+
+```ts
+const DEFAULT_COST_MODEL: CostModel;
+```
+
+An OPT-IN convenience cost model (Squad Lane SL-3) — modeling values a host may
+pass EXPLICITLY (`simulate(wf, { costModel: DEFAULT_COST_MODEL })`) to enable
+the cost/time budget dimensions. It is deliberately NOT the silent default: a
+run with no injected costModel projects/enforces only steps + tokens.
 
 ***
 

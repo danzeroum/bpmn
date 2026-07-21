@@ -72,6 +72,8 @@ export {
   type NodeFixture,
   type Fixtures,
   type SimulateOptions,
+  type CostModel,
+  DEFAULT_COST_MODEL,
 } from './simTypes.js';
 export { simulate } from './simulate.js';
 export {
