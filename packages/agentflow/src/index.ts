@@ -23,6 +23,18 @@ export {
   isValid,
 } from './validate.js';
 export {
+  type ToolEffect,
+  type ToolAuthorization,
+  type ToolSchemaField,
+  type ToolSchema,
+  type ToolContract,
+  type ToolParamsMismatch,
+  type ResolveTool,
+  effectRequiresGate,
+  isToolRef,
+  matchToolParams,
+} from './toolContract.js';
+export {
   type GateRequirement,
   type AutonomyDefinition,
   AUTONOMY_SCALE,

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  type AgentRef,
   type AgentWorkflow,
+  type ToolContract,
   isValid,
   RESEARCH_AGENT,
   validateGraph,
@@ -109,6 +111,104 @@ describe('validateGraph — §3 rules', () => {
       if (dec.type === 'decision') dec.config.onTrue.next = 'ghost';
     });
     expect(errorCodes(danglingRoute)).toContain('DECISION_ROUTE_MISSING');
+  });
+});
+
+describe('validateGraph — Squad Lane SL-1 tool contracts (§6)', () => {
+  // The contract RESEARCH_AGENT's tool-2 (tool:browser-search@1.2.0) binds to.
+  const browserSearch: ToolContract = {
+    kind: 'ToolContract',
+    id: 'tool:browser-search',
+    version: '1.2.0',
+    name: 'browser_search',
+    capability: 'buscar na web',
+    inputSchema: { query: { type: 'string', required: true } },
+    outputSchema: { results: { type: 'array', items: { type: 'string' } } },
+    effect: 'read',
+    dataScope: 'publico-sem-pii',
+    authorization: 'automatica',
+    evidenceRequired: 'nenhuma',
+    simulation: 'fixture-obrigatoria',
+  };
+  const resolveBrowser = (ref: AgentRef): ToolContract | undefined =>
+    ref.id === 'tool:browser-search' ? browserSearch : undefined;
+
+  it('positive: a well-formed tool ref resolves clean with the injected provider', () => {
+    const issues = validateGraph(RESEARCH_AGENT, { resolveTool: resolveBrowser });
+    expect(issues.filter((i) => i.severity === 'error')).toEqual([]);
+    expect(issues.find((i) => i.code === 'TOOL_UNRESOLVED')).toBeUndefined();
+  });
+
+  it('TOOL_REF_INVALID: a bare capability name is not a tool ref', () => {
+    const wf = fromResearch((w) => {
+      const tool = w.nodes.find((n) => n.id === 'tool-2')!;
+      if (tool.type === 'tool') tool.config.usesTool = 'browser_search';
+    });
+    const found = validateGraph(wf).find((i) => i.code === 'TOOL_REF_INVALID');
+    expect(found?.severity).toBe('error');
+    expect(found?.remediation).toMatch(/tool:id@major\.minor\.patch/);
+  });
+
+  it('TOOL_REF_INVALID: a valid ref without the tool: prefix is rejected', () => {
+    const wf = fromResearch((w) => {
+      const tool = w.nodes.find((n) => n.id === 'tool-2')!;
+      if (tool.type === 'tool') tool.config.usesTool = 'browser-search@1.2.0';
+    });
+    expect(errorCodes(wf)).toContain('TOOL_REF_INVALID');
+  });
+
+  it('TOOL_REF_ABBREVIATED: an abbreviated tool version warns (never accepted silently)', () => {
+    const wf = fromResearch((w) => {
+      const tool = w.nodes.find((n) => n.id === 'tool-2')!;
+      if (tool.type === 'tool') tool.config.usesTool = 'tool:browser-search@1';
+    });
+    const issues = validateGraph(wf);
+    expect(issues.filter((i) => i.severity === 'error')).toEqual([]);
+    expect(issues.find((i) => i.code === 'TOOL_REF_ABBREVIATED')?.severity).toBe('warning');
+  });
+
+  it('TOOL_UNRESOLVED: a provider that cannot resolve warns, and is silent with no provider', () => {
+    // provider present but returns undefined → declared warning, no error
+    const withProvider = validateGraph(RESEARCH_AGENT, { resolveTool: () => undefined });
+    expect(withProvider.filter((i) => i.severity === 'error')).toEqual([]);
+    expect(withProvider.find((i) => i.code === 'TOOL_UNRESOLVED')?.severity).toBe('warning');
+    // no provider injected → structural check only, no warning
+    expect(codes(RESEARCH_AGENT)).not.toContain('TOOL_UNRESOLVED');
+  });
+
+  it('TOOL_PARAMS_MISMATCH: node params must satisfy the contract inputSchema', () => {
+    const missing = fromResearch((w) => {
+      const tool = w.nodes.find((n) => n.id === 'tool-2')!;
+      if (tool.type === 'tool') tool.config.params = {}; // required "query" missing
+    });
+    const found = validateGraph(missing, { resolveTool: resolveBrowser }).find(
+      (i) => i.code === 'TOOL_PARAMS_MISMATCH',
+    );
+    expect(found?.severity).toBe('error');
+    expect(found?.message).toMatch(/query/);
+    expect(found?.remediation).toMatch(/inputSchema/);
+
+    const unknown = fromResearch((w) => {
+      const tool = w.nodes.find((n) => n.id === 'tool-2')!;
+      if (tool.type === 'tool') tool.config.params = { query: '{{x}}', bogus: 1 };
+    });
+    expect(errorCodes(unknown, { resolveTool: resolveBrowser })).toContain('TOOL_PARAMS_MISMATCH');
+  });
+
+  it('TOOL_EFFECT_UNGATED: a gated-effect contract must declare authorization "gate"', () => {
+    // headless, acid-safe: reads only the injected contract, never the process.
+    // The process-level EFFECT_NEEDS_GATE / GATE_NOT_COVERING land in core (SL-12).
+    const committing: ToolContract = { ...browserSearch, effect: 'external-commitment' };
+    const ungated = validateGraph(RESEARCH_AGENT, { resolveTool: () => committing }).find(
+      (i) => i.code === 'TOOL_EFFECT_UNGATED',
+    );
+    expect(ungated?.severity).toBe('error');
+    expect(ungated?.remediation).toMatch(/gate/);
+    // the same effect with authorization "gate" clears the contract-level check
+    const gated: ToolContract = { ...committing, authorization: 'gate' };
+    expect(errorCodes(RESEARCH_AGENT, { resolveTool: () => gated })).not.toContain(
+      'TOOL_EFFECT_UNGATED',
+    );
   });
 });
 

@@ -707,6 +707,182 @@ honestly rather than looping forever.
 
 ***
 
+### ToolSchemaField
+
+One field of a tool's input/output shape — the honest JSON-Schema subset
+(`type`, `required`, `enum`, `items`, `properties`; anything else is out of
+scope until SL-4's `SchemaNode`). Deliberately minimal and self-contained.
+
+#### Properties
+
+##### type
+
+```ts
+type: string;
+```
+
+##### required?
+
+```ts
+optional required?: boolean;
+```
+
+##### enum?
+
+```ts
+optional enum?: unknown[];
+```
+
+##### items?
+
+```ts
+optional items?: ToolSchemaField;
+```
+
+##### properties?
+
+```ts
+optional properties?: ToolSchema;
+```
+
+***
+
+### ToolContract
+
+The TOOL artifact of the Library (cerca §2.1 — a decorator/artifact, never a
+fourth node type). Stored by versioned ref; the BPMN keeps the ref + local
+config, the snapshot is read-only degraded.
+
+#### Properties
+
+##### kind
+
+```ts
+kind: "ToolContract";
+```
+
+##### id
+
+```ts
+id: string;
+```
+
+Bare id, e.g. "tool:browser-search" (the `tool:` prefix is part of the id).
+
+##### version
+
+```ts
+version: string;
+```
+
+Full `major.minor.patch`.
+
+##### name
+
+```ts
+name: string;
+```
+
+Machine name, e.g. "browser_search" (AgentO `usesTool`).
+
+##### capability
+
+```ts
+capability: string;
+```
+
+One-line capability, in business language, e.g. "buscar na web".
+
+##### inputSchema
+
+```ts
+inputSchema: ToolSchema;
+```
+
+##### outputSchema
+
+```ts
+outputSchema: ToolSchema;
+```
+
+##### effect
+
+```ts
+effect: ToolEffect;
+```
+
+##### dataScope
+
+```ts
+dataScope: string;
+```
+
+Data classification of the payload, e.g. "publico-sem-pii".
+
+##### authorization
+
+```ts
+authorization: ToolAuthorization;
+```
+
+##### evidenceRequired
+
+```ts
+evidenceRequired: string;
+```
+
+Evidence the tool must attach, e.g. "nenhuma" (free-form; backend-owned).
+
+##### simulation
+
+```ts
+simulation: string;
+```
+
+Simulation contract, e.g. "fixture-obrigatoria".
+
+##### errors?
+
+```ts
+optional errors?: string[];
+```
+
+Declared error classes, e.g. ["timeout", "validation", "rate-limit"].
+
+##### defaultFixture?
+
+```ts
+optional defaultFixture?: Record<string, unknown>;
+```
+
+Deterministic fixture used when no scenario fixture is supplied.
+
+***
+
+### ToolParamsMismatch
+
+How a node's params diverge from a tool contract's `inputSchema`.
+
+#### Properties
+
+##### missingRequired
+
+```ts
+missingRequired: string[];
+```
+
+Required input keys the node did not supply.
+
+##### unknownParams
+
+```ts
+unknownParams: string[];
+```
+
+Node param keys the contract does not declare.
+
+***
+
 ### LlmConfig
 
 LLM node config. `structuredOutput` forces JSON mode (§1.4).
@@ -752,7 +928,10 @@ Tool (MCP) node config.
 usesTool: string;
 ```
 
-The tool/capability invoked, e.g. "browser_search" (AgentO `usesTool`).
+The versioned tool contract invoked (AgentO `usesTool`), a `tool:*@semver`
+ref such as "tool:browser-search@1.2.0" (Squad Lane SL-1, cerca §2.1/§2.2).
+Validated by `validateGraph` (`TOOL_REF_INVALID`) and resolved to a
+[ToolContract](#toolcontract) through the injected ToolProvider.
 
 ##### params?
 
@@ -1219,6 +1398,17 @@ not an error (§3.4).
 
 `boolean`
 
+##### resolveTool?
+
+```ts
+optional resolveTool?: ResolveTool;
+```
+
+Resolves a `tool:*@semver` ref to its [ToolContract](#toolcontract) — the injected
+`ToolProvider` (Squad Lane SL-2). Absent → tool-contract checks degrade to
+the structural ref check only; present but returning `undefined` → a
+declared `TOOL_UNRESOLVED` warning (cerca §2.4, never silent).
+
 ## Type Aliases
 
 ### GateRequirement
@@ -1263,6 +1453,68 @@ type Fixtures = Record<string, NodeFixture>;
 ```
 
 Fixtures keyed by node id.
+
+***
+
+### ToolEffect
+
+```ts
+type ToolEffect = 
+  | "read"
+  | "propose"
+  | "notify"
+  | "write-reversible"
+  | "write-irreversible"
+  | "external-commitment";
+```
+
+What a tool DOES when invoked (cerca §2.8). Risk classifies, permission
+decides, effect explains — the effect never grants authorization on its own.
+
+***
+
+### ToolAuthorization
+
+```ts
+type ToolAuthorization = "automatica" | "gate" | "proibida";
+```
+
+The governance decision for a tool (cerca §2.8) — a field of its OWN, never
+inferred from the effect. `gate` means a human gate must cover the call
+before the effect; `proibida` bans the tool outright.
+
+***
+
+### ToolSchema
+
+```ts
+type ToolSchema = Record<string, ToolSchemaField>;
+```
+
+A tool input/output shape: property name → field descriptor.
+
+***
+
+### ResolveTool
+
+```ts
+type ResolveTool = (ref) => ToolContract | undefined;
+```
+
+Resolves a versioned tool ref to its contract — INJECTED by the host (SL-2's
+`ToolProvider` implements it). Absent → tool-contract checks degrade to the
+structural ref check only (never an error); present but returning `undefined`
+→ a declared `TOOL_UNRESOLVED` warning (cerca §2.4, never silent).
+
+#### Parameters
+
+##### ref
+
+[`AgentRef`](#agentref)
+
+#### Returns
+
+[`ToolContract`](#toolcontract) \| `undefined`
 
 ***
 
@@ -1851,6 +2103,85 @@ an honest stop lands in `blockedDecision`, a clean finish sets `complete`.
 #### Returns
 
 [`SimulationState`](#simulationstate)
+
+***
+
+### effectRequiresGate()
+
+```ts
+function effectRequiresGate(effect): boolean;
+```
+
+Pure predicate (the `requiresDownstreamGate` mold): true when a tool with this
+effect may only run behind a human gate — a `write-irreversible` or
+`external-commitment` effect cannot run `automatica` (cerca §2.9).
+
+This is a CLASSIFIER only. Whether a covering gate is actually on the path
+before the effect (`EFFECT_NEEDS_GATE` / `GATE_NOT_COVERING`) is a decision of
+the surrounding BPMN process — it lives in `@buildtovalue/core` over
+`reachableGateFrom` (Squad Lane SL-12), which consumes this predicate the same
+way the autonomy→gate rule consumes `gateRequirement`. The headless agentflow
+cannot see the process and must not emit that rule (it would fire always or
+never — the acidity fence, cerca §2.3).
+
+#### Parameters
+
+##### effect
+
+[`ToolEffect`](#tooleffect)
+
+#### Returns
+
+`boolean`
+
+***
+
+### isToolRef()
+
+```ts
+function isToolRef(input): boolean;
+```
+
+True when `input` is a well-formed versioned TOOL reference — a parseable
+`id@semver` whose id carries the `tool:` prefix (cerca §2.1/§2.2). A bare
+capability name like "browser_search" is NOT a tool ref.
+
+#### Parameters
+
+##### input
+
+[`RefInput`](#refinput)
+
+#### Returns
+
+`boolean`
+
+***
+
+### matchToolParams()
+
+```ts
+function matchToolParams(params, inputSchema): ToolParamsMismatch;
+```
+
+Compares a tool node's call params against a contract `inputSchema` (SL-1).
+Keys only — values are template references (`{{node.output.x}}`), so a value
+type-check would be dishonest. Every REQUIRED input must be present, and every
+supplied param must be declared by the contract.
+
+#### Parameters
+
+##### params
+
+`Record`\<`string`, `unknown`\>
+
+##### inputSchema
+
+[`ToolSchema`](#toolschema)
+
+#### Returns
+
+[`ToolParamsMismatch`](#toolparamsmismatch)
 
 ***
 
