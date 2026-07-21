@@ -1,6 +1,7 @@
 import { cubicBezierConnection, type BpmnDiagram } from '@buildtovalue/core';
 import { deriveAstarRoutes } from '../canvas/routeEdge.js';
 import { resolveRouter } from '../canvas/routers.js';
+import { squadSimJob } from '../squad/squadSimJob.js';
 import type { ComputeJob, JobRegistry } from './executor.js';
 
 /**
@@ -24,4 +25,6 @@ export const routeJob: ComputeJob<RouteJobInput, BpmnDiagram> = ({ diagram, rout
 /** The default registry the worker entry ships with. Extend with your own. */
 export const DEFAULT_JOBS: JobRegistry = {
   route: routeJob as ComputeJob,
+  // Squad Lane SL-10 — the deterministic squad run, off the main thread.
+  'squad-sim': squadSimJob as ComputeJob,
 };

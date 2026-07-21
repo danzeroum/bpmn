@@ -5261,6 +5261,87 @@ coordinated-promotion warning; absent → no warning (degradable).
 
 ***
 
+### SquadTrailProps
+
+Squad Lane SL-10 — the squad fact trail (D1). Renders a SquadSimResult
+as an ordered `intencao → acao → io → decisao → evidencia` list, each fact
+labeled with its provenance (`fixture` vs `evidencia-declarada`, E6) and its
+masked I/O. It is:
+
+  · VIRTUALIZED with its OWN windowing (E8 — no react-window): a fixed row
+    height + a scroll spacer means only the visible slice (+ overscan) mounts,
+    so a 10k-fact trail scrolls smoothly with a bounded DOM.
+  · FILTERABLE by agent / kind / error (the fact fields are flat).
+  · STEP-ABLE (D8): step mode walks the filtered facts one at a time and shows
+    the shared-context snapshot AT that step (`fact.contextAfter`, already masked).
+
+It renders the honest artifact and never invents: masking, provenance and the
+context snapshot all come straight from the headless `simulateSquad`.
+
+#### Properties
+
+##### result
+
+```ts
+result: SquadSimResult;
+```
+
+##### height?
+
+```ts
+optional height?: number;
+```
+
+Scroll viewport height in px (default 320).
+
+***
+
+### SquadSimJobInput
+
+Squad Lane SL-10 — the squad run as an F7 compute job, so it executes with the
+SAME agentflow engine off the main thread (or in-thread via the SyncExecutor —
+byte-identical, cerca N-8). A `resolveWorkflow` FUNCTION cannot cross a worker
+boundary (like the router in `routeJob`), so the host passes a SERIALIZABLE map
+of member workflows keyed by `id@version`; the job rebuilds the resolver inside
+the worker. Masking uses the conservative redaction (a policy function cannot
+cross the boundary either) — sensitive keys are never leaked.
+
+#### Properties
+
+##### manifest
+
+```ts
+manifest: SquadManifest;
+```
+
+##### workflows
+
+```ts
+workflows: Record<string, AgentWorkflow>;
+```
+
+Member workflows keyed by `id@version` (e.g. `"agnt-rsch@2.1.0"`).
+
+##### fixturesByRole?
+
+```ts
+optional fixturesByRole?: Record<string, Fixtures>;
+```
+
+##### contract?
+
+```ts
+optional contract?: ContextContract;
+```
+
+##### declaredEvidenceRoles?
+
+```ts
+optional declaredEvidenceRoles?: readonly string[];
+```
+
+***
+
 ### AutosavePayload
 
 Autosave payload (Handoff 4 §D2). The diagram is stored as its JSON model —
@@ -8160,6 +8241,16 @@ const SQUAD_EDGE_GLYPH: Record<SquadEdgeKind, string>;
 
 A decorative marker glyph per kind for the legend (aria-hidden — the button's
 accessible name is the localized kind, never the glyph).
+
+***
+
+### squadSimJob
+
+```ts
+const squadSimJob: ComputeJob<SquadSimJobInput, SquadSimResult>;
+```
+
+Runs `simulateSquad` from serializable inputs (the resolver is rebuilt here).
 
 ***
 
@@ -12003,6 +12094,24 @@ function SquadStudio(__namedParameters): Element;
 ##### \_\_namedParameters
 
 [`SquadStudioProps`](#squadstudioprops)
+
+#### Returns
+
+`Element`
+
+***
+
+### SquadTrail()
+
+```ts
+function SquadTrail(__namedParameters): Element;
+```
+
+#### Parameters
+
+##### \_\_namedParameters
+
+[`SquadTrailProps`](#squadtrailprops)
 
 #### Returns
 

@@ -48,6 +48,9 @@ export { createPromptProvider, type PromptProvider } from './agent/promptProvide
 export { SquadStudio, type SquadStudioProps } from './squad/SquadStudio.js';
 export { buildSquadDiagram } from './squad/squadDiagram.js';
 export { createSquadPlugin, SQUAD_EDGE_STYLES, SQUAD_EDGE_GLYPH } from './squad/squadPlugin.js';
+// Squad Lane (Handoff 22) SL-10 — squad fact trail + off-thread squad run
+export { SquadTrail, type SquadTrailProps } from './squad/SquadTrail.js';
+export { squadSimJob, type SquadSimJobInput } from './squad/squadSimJob.js';
 export * from './agent/agentEditor.js';
 
 // Simulation (Handoff 7A)

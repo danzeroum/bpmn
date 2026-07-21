@@ -96,6 +96,61 @@ readonly input: RefInput;
 
 ## Interfaces
 
+### AgentRunner
+
+How one agent workflow is executed for a squad run.
+
+#### Methods
+
+##### simulate()
+
+```ts
+simulate(wf, options?): SimulationState;
+```
+
+Deterministic mock simulation — the always-present path.
+
+###### Parameters
+
+###### wf
+
+[`AgentWorkflow`](#agentworkflow)
+
+###### options?
+
+[`SimulateOptions`](#simulateoptions)
+
+###### Returns
+
+[`SimulationState`](#simulationstate)
+
+##### run()?
+
+```ts
+optional run(wf, options?): Promise<SimulationState>;
+```
+
+Real execution against a host backend — OPTIONAL. Absent in this delivery;
+a host that injects it makes the squad run's facts real declared evidence
+rather than fixtures. Never called by `simulateSquad` (which is, by name,
+simulation); it exists so the seam is honest about what a backend would add.
+
+###### Parameters
+
+###### wf
+
+[`AgentWorkflow`](#agentworkflow)
+
+###### options?
+
+[`SimulateOptions`](#simulateoptions)
+
+###### Returns
+
+`Promise`\<[`SimulationState`](#simulationstate)\>
+
+***
+
 ### AutonomyDefinition
 
 One row of the normative scale (§4).
@@ -1015,7 +1070,7 @@ msPerStep: number;
 
 ### SimulateOptions
 
-Options for [simulate](#simulate).
+Options for [simulate](#simulate-1).
 
 #### Properties
 
@@ -1333,6 +1388,325 @@ the `resolveDelegate`/`resolveTool` mold — agentflow never imports registry).
 ###### Returns
 
 `boolean`
+
+***
+
+### SquadFlowOptions
+
+Injected, degradable integrations for [validateSquadFlow](#validatesquadflow).
+
+#### Properties
+
+##### resolveWorkflow
+
+```ts
+resolveWorkflow: (ref) => AgentWorkflow | undefined;
+```
+
+Resolves a member `agentRef` to its workflow — needed to see the tools it
+reaches (injected; agentflow never imports a registry).
+
+###### Parameters
+
+###### ref
+
+[`AgentRef`](#agentref)
+
+###### Returns
+
+[`AgentWorkflow`](#agentworkflow) \| `undefined`
+
+##### resolveTool
+
+```ts
+resolveTool: ResolveTool;
+```
+
+Resolves a `tool:*@semver` ref to its contract — needed for the effect.
+
+***
+
+### MaskingPolicy
+
+A host-injected masking policy (resolved from a `maskingPolicyRef`). Given a
+field name + value, it returns the masked replacement. Absent → a conservative
+default redacts every sensitive key (never leaks).
+
+#### Methods
+
+##### mask()
+
+```ts
+mask(fieldName, value): unknown;
+```
+
+###### Parameters
+
+###### fieldName
+
+`string`
+
+###### value
+
+`unknown`
+
+###### Returns
+
+`unknown`
+
+***
+
+### SquadFact
+
+One fact in the squad trail. Flat by design so a UI filters by
+`agent` / `kind` / `error` without walking a tree.
+
+#### Properties
+
+##### step
+
+```ts
+step: number;
+```
+
+Monotonic step across the WHOLE squad run.
+
+##### agent
+
+```ts
+agent: string;
+```
+
+The member role this fact belongs to (`orch` for the orchestrator).
+
+##### agentRef
+
+```ts
+agentRef: string;
+```
+
+The member's versioned agent ref.
+
+##### kind
+
+```ts
+kind: FactKind;
+```
+
+##### source
+
+```ts
+source: FactSource;
+```
+
+##### message
+
+```ts
+message: string;
+```
+
+English headless description (the react layer localizes its own chrome).
+
+##### nodeId?
+
+```ts
+optional nodeId?: string;
+```
+
+##### io?
+
+```ts
+optional io?: object;
+```
+
+Masked call input/output (sensitive keys redacted).
+
+###### input?
+
+```ts
+optional input?: Record<string, unknown>;
+```
+
+###### output?
+
+```ts
+optional output?: Record<string, unknown>;
+```
+
+##### error?
+
+```ts
+optional error?: boolean;
+```
+
+True for a blocked/failed fact — lets the UI filter to errors.
+
+##### contextAfter?
+
+```ts
+optional contextAfter?: Record<string, unknown>;
+```
+
+Masked shared-context snapshot AFTER this fact (step mode, D8).
+
+***
+
+### SquadBlock
+
+A single honest cross-agent stop.
+
+#### Properties
+
+##### agent
+
+```ts
+agent: string;
+```
+
+##### agentRef
+
+```ts
+agentRef: string;
+```
+
+##### nodeId
+
+```ts
+nodeId: string;
+```
+
+##### reason
+
+```ts
+reason: string;
+```
+
+***
+
+### SquadSimOptions
+
+Injected, degradable integrations for [simulateSquad](#simulatesquad).
+
+#### Properties
+
+##### resolveWorkflow
+
+```ts
+resolveWorkflow: (ref) => AgentWorkflow | undefined;
+```
+
+Resolves a member's `agentRef` to its workflow (injected — agentflow never
+imports a registry). A member that does not resolve is a declared stop, not
+a silent skip.
+
+###### Parameters
+
+###### ref
+
+[`AgentRef`](#agentref)
+
+###### Returns
+
+[`AgentWorkflow`](#agentworkflow) \| `undefined`
+
+##### fixturesByRole?
+
+```ts
+optional fixturesByRole?: Record<string, Fixtures>;
+```
+
+Per-member mock fixtures keyed by ROLE.
+
+##### runner?
+
+```ts
+optional runner?: AgentRunner;
+```
+
+The runner (default [defaultAgentRunner](#defaultagentrunner) — deterministic mock).
+
+##### contract?
+
+```ts
+optional contract?: ContextContract;
+```
+
+The resolved context contract — drives masking (sensitive/forbidden keys)
+and the shared-context key ownership.
+
+##### maskingPolicy?
+
+```ts
+optional maskingPolicy?: MaskingPolicy;
+```
+
+The masking policy (from `maskingPolicyRef`); absent → conservative redaction.
+
+##### declaredEvidenceRoles?
+
+```ts
+optional declaredEvidenceRoles?: readonly string[];
+```
+
+Roles whose fixtures the host DECLARES as captured real evidence (E6). Their
+facts are labeled `evidencia-declarada`; every other role is `fixture`.
+
+##### maxHops?
+
+```ts
+optional maxHops?: number;
+```
+
+Safety cap on delegation hops (default 64) — a malformed graph stops
+honestly rather than looping.
+
+***
+
+### SquadSimResult
+
+The whole squad run — the shared render contract for the react trail.
+
+#### Properties
+
+##### facts
+
+```ts
+facts: SquadFact[];
+```
+
+The ordered fact trail (D1).
+
+##### perAgent
+
+```ts
+perAgent: Record<string, SimulationState>;
+```
+
+Each member's own [SimulationState](#simulationstate), keyed by role.
+
+##### order
+
+```ts
+order: string[];
+```
+
+The roles in execution order.
+
+##### complete
+
+```ts
+complete: boolean;
+```
+
+True when the whole squad reached its end with no honest stop.
+
+##### blocked
+
+```ts
+blocked: SquadBlock | null;
+```
+
+The first honest cross-agent stop, or null.
 
 ***
 
@@ -2275,6 +2649,26 @@ How writes to a context key combine.
 
 ***
 
+### FactSource
+
+```ts
+type FactSource = "fixture" | "evidencia-declarada";
+```
+
+Provenance of a fact (E6): a mock fixture, or host-declared real evidence.
+
+***
+
+### FactKind
+
+```ts
+type FactKind = "intencao" | "acao" | "io" | "decisao" | "evidencia" | "parada";
+```
+
+The kind of a fact — the filterable "type" (D1 fact chain).
+
+***
+
 ### ToolEffect
 
 ```ts
@@ -2428,6 +2822,17 @@ The normative autonomy scale (§4); see autonomy.ts for the definitions.
 
 ## Variables
 
+### defaultAgentRunner
+
+```ts
+const defaultAgentRunner: AgentRunner;
+```
+
+The default runner: the deterministic mock and nothing else. `run` is
+deliberately absent — there is no backend in this frontend-only delivery.
+
+***
+
 ### AUTONOMY\_SCALE
 
 ```ts
@@ -2478,6 +2883,16 @@ const SQUAD_EDGE_KINDS: readonly SquadEdgeKind[];
 ```
 
 The six valid squad edge kinds.
+
+***
+
+### MASKED\_VALUE
+
+```ts
+const MASKED_VALUE: "···" = '···';
+```
+
+The redaction token a conservative mask writes when no policy is injected.
 
 ***
 
@@ -3281,6 +3696,78 @@ are resolved through the injected resolver; `undefined` when none resolve.
 #### Returns
 
 [`AutonomyLevel`](#autonomylevel) \| `undefined`
+
+***
+
+### validateSquadFlow()
+
+```ts
+function validateSquadFlow(
+   manifest, 
+   contract, 
+   options): ValidationIssue[];
+```
+
+The FLOW half of `CTX_PURPOSE_VIOLATION` (Squad Lane SL-10, insight E5). The
+STRUCTURAL half ([validateContextContract](#validatecontextcontract)) checks a key against itself;
+this checks the key against the SQUAD GRAPH + the members' resolved tool
+effects — information that only exists once the squad is assembled.
+
+The rule: `grounding` context is knowledge meant to INFORM, not to commit. If a
+role that READS a grounding key reaches, in its workflow, a tool whose effect
+requires a gate (`external-commitment` / `write-irreversible`) and the squad
+declares NO gate at all, then grounding is flowing into an unreviewed
+commitment — a violation. (A squad WITH gates defers the precise per-path
+"does a gate cover THIS action" coverage to SL-12's `GATE_NOT_COVERING` over
+`reachableGateFrom`; documented, not silently skipped.)
+
+Fully degradable: both resolvers must be injected, or the flow rule does not
+run (the structural CTX checks still do). Returns issues to MERGE with
+[validateSquad](#validatesquad)'s — never mutates, never throws on an unresolved ref.
+
+#### Parameters
+
+##### manifest
+
+[`SquadManifest`](#squadmanifest)
+
+##### contract
+
+[`ContextContract`](#contextcontract)
+
+##### options
+
+[`SquadFlowOptions`](#squadflowoptions)
+
+#### Returns
+
+[`ValidationIssue`](#validationissue)[]
+
+***
+
+### simulateSquad()
+
+```ts
+function simulateSquad(manifest, options): SquadSimResult;
+```
+
+Runs a squad deterministically and returns its fact trail. Traverses `delegar`
+edges from the orchestrator in manifest order; each member runs through the
+injected runner's `simulate`. Honest cross-agent stop on the first block.
+
+#### Parameters
+
+##### manifest
+
+[`SquadManifest`](#squadmanifest)
+
+##### options
+
+[`SquadSimOptions`](#squadsimoptions)
+
+#### Returns
+
+[`SquadSimResult`](#squadsimresult)
 
 ***
 

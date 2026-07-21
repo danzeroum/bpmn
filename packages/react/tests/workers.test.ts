@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { createDiagram, createEdge, createNode, type BpmnDiagram } from '@buildtovalue/core';
+import { RESEARCH_AGENT, type AgentWorkflow, type SquadManifest, type SquadSimResult } from '@buildtovalue/agentflow';
 import {
   DEFAULT_JOBS,
   createSyncExecutor,
   createWorkerExecutor,
   createWorkerHandler,
   routeJob,
+  squadSimJob,
   type RouteJobInput,
+  type SquadSimJobInput,
 } from '../src/index.js';
 
 /**
@@ -54,6 +57,34 @@ describe('compute jobs — worker ≡ sync (N-8)', () => {
     const viaExecutor = await createSyncExecutor(DEFAULT_JOBS).run('route', input);
     const direct = routeJob(input);
     expect(JSON.stringify(viaExecutor)).toBe(JSON.stringify(direct));
+  });
+
+  it('squad-sim: the F7 worker path is byte-identical to synchronous (SL-10)', async () => {
+    const manifest: SquadManifest = {
+      kind: 'SquadManifest',
+      id: 'sqd-doc-review',
+      version: '1.0.0',
+      dynamic: 'hierarquico',
+      orchestratorRef: 'agnt-rsch@2.1.0',
+      members: [{ agentRef: 'agnt-rsch@2.1.0', personaRef: 'prs:a@1.0.0', role: 'pesquisador' }],
+      edges: [{ from: 'orch', to: 'pesquisador', kind: 'delegar' }],
+      contextContractRef: 'ctx-contract:doc-review@1.0.0',
+      gates: [],
+    };
+    const input: SquadSimJobInput = {
+      manifest,
+      workflows: { 'agnt-rsch@2.1.0': RESEARCH_AGENT as AgentWorkflow },
+      fixturesByRole: {
+        orch: { 'llm-1': { outputs: [{ is_complete: true }] }, 'tool-2': { outputs: [{ results: [] }] } },
+        pesquisador: { 'llm-1': { outputs: [{ is_complete: true }] }, 'tool-2': { outputs: [{ results: [] }] } },
+      },
+    };
+    const sync = await createSyncExecutor(DEFAULT_JOBS).run('squad-sim', input);
+    const worker = throughWorker('squad-sim', input);
+    expect(JSON.stringify(worker)).toBe(JSON.stringify(sync));
+    // determinism: same job direct call is identical too
+    expect(JSON.stringify(squadSimJob(input))).toBe(JSON.stringify(sync));
+    expect((sync as SquadSimResult).order).toContain('pesquisador');
   });
 
   it('an unknown job rejects on both executors', async () => {
