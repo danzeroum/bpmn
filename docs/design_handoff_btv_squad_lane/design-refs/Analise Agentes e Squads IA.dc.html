@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f3f1ea}a{color:#1a6a54;text-decoration:none}a:hover{color:#9a7b1e;text-decoration:underline}</style>
+</helmet>
+<div style="min-height:100vh;background:#f3f1ea;padding:48px 24px;font-family:'Source Serif 4',Georgia,serif;color:#262220;display:flex;justify-content:center">
+<div style="width:1240px;max-width:100%;display:flex;flex-direction:column;gap:20px">
+
+<header style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap" data-screen-label="Cabeçalho">
+  <div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2.5px;color:#9a7b1e;margin-bottom:8px">BUILDTOVALUE · ANÁLISE DE LACUNAS</div>
+    <h1 style="margin:0;font-size:38px;font-weight:600;letter-spacing:-0.5px;line-height:1.1">Agentes e squads de IA — <span style="color:#1a6a54">o que falta</span> para a modelagem ser funcional</h1>
+  </div>
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6f675a;text-align:right;line-height:1.8">repo danzeroum/bpmn @main<br>fontes: agentflow · core · react · adapters<br>handoffs 12/18 · pendencias · DECISIONS · jul 2026</div>
+</header>
+
+<section style="background:#ffffff;border:1px solid #e2ddd3;border-radius:14px;padding:26px 30px" data-screen-label="01 Sumário executivo">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2.5px;color:#9a7b1e;margin-bottom:6px">01 · SUMÁRIO EXECUTIVO</div>
+  <p style="margin:0 0 10px;font-size:15px;line-height:1.7;max-width:980px">A Agent Lane (Handoff 12, A-1..A-7) está <strong>entregue e é referência de mercado no que se propôs</strong>: agente como artefato versionado com lifecycle e promoção assinada, escala normativa de autonomia 0–5 com regra autonomia→gate que bloqueia promoção, critério de parada honesto validado no grafo, simulação mock determinística registrável no ledger e ponte formal agente→humano por escalação (H18). Nenhum runtime mainstream (LangGraph, CrewAI, AutoGen) tem essa camada de governança.</p>
+  <p style="margin:0 0 14px;font-size:15px;line-height:1.7;max-width:980px">A lacuna é a camada oposta: <strong>o desenho ainda não carrega informação suficiente para virar um agente real</strong>. Ferramentas são strings livres sem contrato, o modelo é só um nome, budgets não existem como propriedade, schemas são planos, a aresta <code style="font-family:'IBM Plex Mono',monospace;font-size:12px">delegate</code> não tem contrato de I/O nem simulação — e <strong>squad hoje é vocabulário de desenho num plugin de exemplo privado</strong>, não uma topologia executável. Modelar agentes é funcional; modelar <em>squads</em> ainda não é.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+    <div style="border:1px solid #dff0e6;background:#f4faf6;border-radius:10px;padding:14px 16px"><div style="font-weight:600;font-size:13px;color:#1a6a54;margin-bottom:4px">Fundação pronta (única no mercado)</div><div style="font-size:13px;color:#44403a;line-height:1.6">Governança: versionamento id@semver, ledger, assinatura, autonomia→gate, paradas honestas, escalação governada. É o que os runtimes não têm.</div></div>
+    <div style="border:1px solid #f6edd4;background:#fdfaf1;border-radius:10px;padding:14px 16px"><div style="font-weight:600;font-size:13px;color:#9a7b1e;margin-bottom:4px">Agente individual — 60% do caminho</div><div style="font-size:13px;color:#44403a;line-height:1.6">Estrutura e controle ✓; faltam contratos (tools, schemas, modelo, budget), evals como evidência e qualquer ponte de execução real.</div></div>
+    <div style="border:1px solid #f7e3e1;background:#fdf7f6;border-radius:10px;padding:14px 16px"><div style="font-weight:600;font-size:13px;color:#b3372f;margin-bottom:4px">Squad — o gap estrutural</div><div style="font-size:13px;color:#44403a;line-height:1.6">Sem artefato de squad, sem vínculo persona↔agente, sem topologia de orquestração, sem contrato entre agentes, sem simulação multi-agente.</div></div>
+  </div>
+</section>
+
+<section style="background:#ffffff;border:1px solid #e2ddd3;border-radius:14px;padding:26px 30px" data-screen-label="02 O que já existe">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2.5px;color:#9a7b1e;margin-bottom:6px">02 · O QUE JÁ EXISTE (INVENTÁRIO VERIFICADO NO CÓDIGO)</div>
+  <h2 style="margin:0 0 16px;font-size:20px;font-weight:600">A Agent Lane entregue — 7 PRs + ponte de escalação</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:12px;font-size:13px;line-height:1.65;color:#44403a">
+    <div style="border-left:3px solid #1a6a54;background:#f4faf6;border-radius:0 10px 10px 0;padding:12px 16px"><div style="font-weight:600;color:#262220;margin-bottom:4px">Schema do agente (A-1)</div>Exatamente 3 nós (<code style="font-family:'IBM Plex Mono',monospace;font-size:11.5px">llm / tool / decision</code>) + decoradores (memory, planner, errorBoundary — propriedades, nunca nós). Refs <code style="font-family:'IBM Plex Mono',monospace;font-size:11.5px">id@semver</code>. Naming AgentO sem claim JSON-LD. Zero imports do ecossistema, pinado por teste de acidez.<div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6f675a;margin-top:6px;display:{{evDisplay}}">agentflow/src/types.ts · ref.ts · acidez.test.ts</div></div>
+    <div style="border-left:3px solid #1a6a54;background:#f4faf6;border-radius:0 10px 10px 0;padding:12px 16px"><div style="font-weight:600;color:#262220;margin-bottom:4px">Validação + autonomia normativa (A-1)</div>5 regras de grafo (retry sem maxRetries, ciclo sem parada, LLM sem JSON mode, refs, schemas vazios) + proibição de métrica implícita (<code style="font-family:'IBM Plex Mono',monospace;font-size:11.5px">confidence</code> = erro) + coerência: nível declarado ≥ nível que o grafo justifica. Erro bloqueia promoção com remediação exata.<div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6f675a;margin-top:6px;display:{{evDisplay}}">agentflow/src/validate.ts · autonomy.ts</div></div>
+    <div style="border-left:3px solid #1a6a54;background:#f4faf6;border-radius:0 10px 10px 0;padding:12px 16px"><div style="font-weight:600;color:#262220;margin-bottom:4px">Simulação mock (A-2)</div>Motor próprio determinístico: fixtures por nó, data-mapping <code style="font-family:'IBM Plex Mono',monospace;font-size:11.5px">{{simMapEx1}}</code>, retries com backoff lógico, paradas honestas (BlockedDecision). Shape de resultado idêntico ao do simulador BPMN — mesma UI de trilha.<div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6f675a;margin-top:6px;display:{{evDisplay}}">agentflow/src/simulate.ts · simTypes.ts</div></div>
+    <div style="border-left:3px solid #1a6a54;background:#f4faf6;border-radius:0 10px 10px 0;padding:12px 16px"><div style="font-weight:600;color:#262220;margin-bottom:4px">agentTask no BPMN (A-3)</div>Node type via <code style="font-family:'IBM Plex Mono',monospace;font-size:11.5px">bpmnr:meta</code> — exporta como <code style="font-family:'IBM Plex Mono',monospace;font-size:11.5px">bpmn:task</code> (degradação graciosa em editor externo), round-trip byte-estável. Regra autonomia ≤3 sem btv:gate a jusante = erro de promoção. Snapshot embutido só como leitura degradada; fonte de verdade é o registry.<div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6f675a;margin-top:6px;display:{{evDisplay}}">core/src/engine/agentTask.ts · CONFORMANCE.md</div></div>
+    <div style="border-left:3px solid #1a6a54;background:#f4faf6;border-radius:0 10px 10px 0;padding:12px 16px"><div style="font-weight:600;color:#262220;margin-bottom:4px">Agent Studio (A-4/A-5)</div>Modal sobre o Designer: paleta 3 nós + decoradores + 3 templates, canvas dataflow, inspector, simulação com trilha compartilhada, proposta undoável de boundary event ao salvar com errorBoundary, i18n, eventos N-3.<div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6f675a;margin-top:6px;display:{{evDisplay}}">react/src/agent/AgentStudio.tsx · AgentTaskShape</div></div>
+    <div style="border-left:3px solid #1a6a54;background:#f4faf6;border-radius:0 10px 10px 0;padding:12px 16px"><div style="font-weight:600;color:#262220;margin-bottom:4px">Biblioteca + governança (A-6)</div>Agente é artefato tipo AGENTE na Biblioteca: galeria, selos, lifecycle, promoção assinada, warning de vigência ao referenciar agente candidata/obsoleta (regra reusada do callActivity). Sessões de simulação entram no ledger como evidência.<div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6f675a;margin-top:6px;display:{{evDisplay}}">adapters-bpmn (agentWorkflowAdapter) · registry</div></div>
+    <div style="border-left:3px solid #1a6a54;background:#f4faf6;border-radius:0 10px 10px 0;padding:12px 16px"><div style="font-weight:600;color:#262220;margin-bottom:4px">Interop LangGraph (A-7)</div>Import/export de um subconjunto documentado campo a campo (≥0.2). Tudo fora do subset é declarado em warnings, nunca convertido em silêncio; tipo de nó desconhecido falha alto.<div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6f675a;margin-top:6px;display:{{evDisplay}}">agentflow/src/langgraph.ts</div></div>
+    <div style="border-left:3px solid #1a6a54;background:#f4faf6;border-radius:0 10px 10px 0;padding:12px 16px"><div style="font-weight:600;color:#262220;margin-bottom:4px">Ponte agente→humano (H18 EC-3/EC-5)</div>Boundary de escalação em agentTask como mecanismo <em>formal</em> do autonomia→gate; <code style="font-family:'IBM Plex Mono',monospace;font-size:11.5px">escalationRaisedEntry</code> no ledger com ator IA (selo ✦); matching com destino predito sem disparar.<div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6f675a;margin-top:6px;display:{{evDisplay}}">simulation (throwEscalation) · adapters-bpmn</div></div>
+    <div style="border-left:3px solid #1a6a54;background:#f4faf6;border-radius:0 10px 10px 0;padding:12px 16px"><div style="font-weight:600;color:#262220;margin-bottom:4px">Copiloto governado (H9)</div><code style="font-family:'IBM Plex Mono',monospace;font-size:11.5px">AIProvider</code> injetado, whitelist de comandos, IA nunca promove/aprova/assina, citabilidade contra hashes reais. É a infraestrutura natural do futuro Live Mode do agente.<div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6f675a;margin-top:6px;display:{{evDisplay}}">copilot/src/types.ts · whitelist.ts · plan.ts</div></div>
+  </div>
+  <p style="margin:14px 0 0;font-size:12.5px;color:#6f675a;line-height:1.6">Vocabulário macro de squads: <span style="font-family:'IBM Plex Mono',monospace;font-size:11px">btv:squad / persona / gate / prompt / connector / deliverable</span> com shapes, estilos de aresta (handoff/approval/feedback/escalation) e 3 regras de validação — mas vive em <span style="font-family:'IBM Plex Mono',monospace;font-size:11px">domain-example</span>, um plugin de <em>exemplo</em>, privado e fora do release (pendencias §1).</p>
+</section>
+
+<section style="background:#ffffff;border:1px solid #e2ddd3;border-radius:14px;padding:26px 30px" data-screen-label="03 Matriz de capacidades">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2.5px;color:#9a7b1e;margin-bottom:6px">03 · ANATOMIA DE UM AGENTE PROFISSIONAL — MATRIZ DE COBERTURA</div>
+  <h2 style="margin:0 0 6px;font-size:20px;font-weight:600">14 capacidades que um agente de produção exige · o que a biblioteca cobre</h2>
+  <p style="margin:0 0 16px;font-size:13px;color:#6f675a;line-height:1.6">Referência: práticas consolidadas de engenharia de agentes em 2026 (LangGraph, OpenAI Agents SDK, A2A/MCP, OTel GenAI) cruzadas com o código real do repo. Placar: <strong style="color:#1a6a54">4 atende</strong> · <strong style="color:#9a7b1e">6 parcial</strong> · <strong style="color:#b3372f">4 falta</strong>.</p>
+  <div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1.5px;color:#6f675a;border-bottom:2px solid #e2ddd3">
+    <div>CAPACIDADE</div><div>O QUE UM AGENTE PROFISSIONAL EXIGE</div><div>NA BIBLIOTECA HOJE</div><div style="text-align:right">STATUS</div>
+  </div>
+
+  <div style="display:{{dispAtende}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">Prompt versionado</div>
+    <div>System prompt como artefato com versão, diff, aprovação e rollback — nunca string solta no código.</div>
+    <div><code style="font-family:'IBM Plex Mono',monospace;font-size:11px">promptRef: "prm:research@2.0.0"</code> aponta para btv:prompt da Biblioteca, com lifecycle e promoção assinada.</div>
+    <div style="text-align:right"><span style="background:#dff0e6;color:#1a6a54;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">ATENDE</span></div>
+  </div></div>
+  <div style="display:{{dispAtende}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">Controle de fluxo interno</div>
+    <div>Loop de raciocínio limitado, roteamento por critério verificável, retry com teto, sem loops infinitos.</div>
+    <div>3 nós + retry com <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">maxRetries</code> obrigatório, ciclo sem parada = erro, stop só sobre output estruturado (<code style="font-family:'IBM Plex Mono',monospace;font-size:11px">confidence</code> proibido). Limitação: decision é binária (onTrue/onFalse), sem roteamento N-way num nó só.</div>
+    <div style="text-align:right"><span style="background:#dff0e6;color:#1a6a54;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">ATENDE</span></div>
+  </div></div>
+  <div style="display:{{dispAtende}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">HITL &amp; escalação</div>
+    <div>Ponto humano obrigatório proporcional à autonomia; caminho formal de "agente pede ajuda".</div>
+    <div>Autonomia ≤3 exige btv:gate a jusante (erro de promoção com remediação); boundary de escalação no agentTask + <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">escalationRaisedEntry</code> assinável no ledger (H18).</div>
+    <div style="text-align:right"><span style="background:#dff0e6;color:#1a6a54;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">ATENDE</span></div>
+  </div></div>
+  <div style="display:{{dispAtende}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">Versionamento &amp; auditoria</div>
+    <div>Quem mudou o quê, quando; pin de versão em execução; trilha imutável.</div>
+    <div>Registry com canais/vigência/bindRun, ledger SHA-256 encadeado, assinatura Ed25519, XES para mining. Referência de mercado — nenhum framework de agentes tem isso.</div>
+    <div style="text-align:right"><span style="background:#dff0e6;color:#1a6a54;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">ATENDE</span></div>
+  </div></div>
+
+  <div style="display:{{dispParcial}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">Identidade &amp; papel</div>
+    <div>Persona com missão, tom, limites de atuação — vinculada formalmente ao agente que a executa.</div>
+    <div>btv:persona existe como desenho (plugin de exemplo); <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">AgentWorkflow</code> tem só id/name. <strong>Não há vínculo persona ↔ agnt-*</strong> — a persona "Agente SDR" do canvas e o workflow são mundos separados.</div>
+    <div style="text-align:right"><span style="background:#f6edd4;color:#9a7b1e;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">PARCIAL</span></div>
+  </div></div>
+  <div style="display:{{dispParcial}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">Contratos de dados</div>
+    <div>Schemas tipados de entrada/saída (aninhamento, required, enums) validáveis contra o processo e entre agentes.</div>
+    <div><code style="font-family:'IBM Plex Mono',monospace;font-size:11px">SchemaShape = Record&lt;string,string&gt;</code> — plano, tokens de tipo ("string", "boolean"). Mapping do agentTask checa <em>existência</em> de chaves, não compatibilidade de tipo com as variáveis do processo.</div>
+    <div style="text-align:right"><span style="background:#f6edd4;color:#9a7b1e;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">PARCIAL</span></div>
+  </div></div>
+  <div style="display:{{dispParcial}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">Memória &amp; conhecimento</div>
+    <div>Memória de conversa + bases de conhecimento (RAG) referenciáveis, com escopo, retenção e governança do conteúdo.</div>
+    <div>Decorator <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">memory {scope: short|long, expiry}</code> — declara que existe, não o quê. Sem artefato "knowledge base" na Biblioteca, sem refs versionadas de conteúdo, sem memória compartilhada entre agentes.</div>
+    <div style="text-align:right"><span style="background:#f6edd4;color:#9a7b1e;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">PARCIAL</span></div>
+  </div></div>
+  <div style="display:{{dispParcial}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">Guardrails &amp; políticas</div>
+    <div>Filtros declarativos de entrada/saída (PII, injeção, conteúdo), budgets como regra, política como artefato aprovável.</div>
+    <div>Autonomia→gate e paradas honestas cobrem o <em>controle</em>; falta o <em>conteúdo</em>: nenhum guardrail de I/O, node type "política" segue pendência aberta (§1.1), budget aparece só como selo decidido não pintar (DECISIONS) — não é propriedade validável.</div>
+    <div style="text-align:right"><span style="background:#f6edd4;color:#9a7b1e;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">PARCIAL</span></div>
+  </div></div>
+  <div style="display:{{dispParcial}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">Testes &amp; evals</div>
+    <div>Golden sets versionados, threshold de aprovação como gate de promoção, regressão automática, LLM-as-judge.</div>
+    <div>Simulação mock determinística (fixture 10× = trilha idêntica) + sessão como evidência no ledger — excelente base. Mas fixtures são ad-hoc do Studio: não há <em>eval set</em> como artefato, nem "X% de casos passam" como critério de promoção.</div>
+    <div style="text-align:right"><span style="background:#f6edd4;color:#9a7b1e;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">PARCIAL</span></div>
+  </div></div>
+  <div style="display:{{dispParcial}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">Observabilidade de execução</div>
+    <div>Traces por run (passos, tokens, custo, latência), comparáveis ao desenho aprovado.</div>
+    <div>Ledger + XES cobrem o <em>design-time</em> (o processo de desenhar). Não há modelo de telemetria de <em>runs reais</em> do agente (OTel GenAI → trilha), nem replay de execução real contra o grafo aprovado — o pacote replay faz isso para BPMN/XES, não para agentes.</div>
+    <div style="text-align:right"><span style="background:#f6edd4;color:#9a7b1e;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">PARCIAL</span></div>
+  </div></div>
+
+  <div style="display:{{dispFalta}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">Ferramentas &amp; permissões</div>
+    <div>Catálogo de tools com schema de I/O, escopos de permissão, taxonomia de erro, alinhamento MCP — a tool é metade do agente.</div>
+    <div><code style="font-family:'IBM Plex Mono',monospace;font-size:11px">usesTool: "browser_search"</code> é string livre + params + timeout. btv:connector é só desenho no plugin de exemplo. Sem catálogo versionado, sem contrato, sem permissões, sem MCP. <strong>O gap mais crítico do agente individual.</strong></div>
+    <div style="text-align:right"><span style="background:#f7e3e1;color:#b3372f;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">FALTA</span></div>
+  </div></div>
+  <div style="display:{{dispFalta}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">Config de modelo &amp; runtime</div>
+    <div>Parâmetros (temperature, max tokens), provider/fallback, budget de custo/tokens/tempo/passos como propriedades governadas.</div>
+    <div><code style="font-family:'IBM Plex Mono',monospace;font-size:11px">LlmConfig = {model, promptRef, structuredOutput?}</code> — o modelo é um nome. Nada de params, fallback, custo estimado, teto de gasto. Um budget estourado hoje não é modelável, logo não é validável nem simulável.</div>
+    <div style="text-align:right"><span style="background:#f7e3e1;color:#b3372f;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">FALTA</span></div>
+  </div></div>
+  <div style="display:{{dispFalta}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;border-bottom:1px solid #eeeae2;align-items:start">
+    <div style="font-weight:600;color:#262220">Execução real &amp; deploy</div>
+    <div>Rodar o que se desenhou: live/shadow mode, checkpoints/retomada, interrupts, deploy para engine ou runtime.</div>
+    <div>Nada por decisão de v1: Live/Shadow ficou fora (H12 §7); <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">interrupts/checkpoints</code> do LangGraph são ignorados-e-declarados no import; deploy Camunda 8/Flowable segue pendência (§2.1). O AIProvider do copilot é a porta pronta e não usada.</div>
+    <div style="text-align:right"><span style="background:#f7e3e1;color:#b3372f;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">FALTA</span></div>
+  </div></div>
+  <div style="display:{{dispFalta}}"><div style="display:grid;grid-template-columns:200px 1fr 1fr 96px;gap:0 14px;padding:12px;font-size:12.5px;line-height:1.55;color:#44403a;align-items:start">
+    <div style="font-weight:600;color:#262220">Multi-agente (squad)</div>
+    <div>Topologias de orquestração, contratos entre agentes, contexto compartilhado, simulação do conjunto.</div>
+    <div><code style="font-family:'IBM Plex Mono',monospace;font-size:11px">delegate</code> é uma ref com semântica a2a:1.0 e nada mais: resolver injetado devolve <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">boolean</code>, a simulação não atravessa a fronteira, o export LangGraph a descarta. Detalhe na seção 05.</div>
+    <div style="text-align:right"><span style="background:#f7e3e1;color:#b3372f;border-radius:999px;padding:3px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">FALTA</span></div>
+  </div></div>
+</section>
+
+<section style="background:#ffffff;border:1px solid #e2ddd3;border-radius:14px;padding:26px 30px" data-screen-label="04 Gaps do agente individual">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2.5px;color:#9a7b1e;margin-bottom:6px">04 · AGENTE INDIVIDUAL — OS 5 GAPS QUE IMPEDEM "DESENHO → AGENTE REAL"</div>
+  <div style="display:flex;flex-direction:column;gap:12px;font-size:13px;line-height:1.65;color:#44403a">
+    <div style="border:1px solid #e2ddd3;border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:#b3372f;font-weight:500">G1</div>
+      <div><div style="font-weight:600;color:#262220;margin-bottom:4px">Tool sem contrato — o desenho não sabe o que a ferramenta aceita nem devolve</div>Sem schema de I/O da tool, a validação não pode checar se <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">params</code> batem com a assinatura real, a simulação depende de fixture inventada e o data-mapping <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">{{simMapEx2}}</code> só quebra em runtime. A correção natural respeita as cercas do repo: <strong>tool como artefato versionado da Biblioteca</strong> (promover o btv:connector de exemplo a produto, com inputSchema/outputSchema/escopos/erros), referenciado por <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">usesTool: "tool:browser-search@1.2.0"</code> — mesmo padrão do promptRef, resolução injetada e degradável.<span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6f675a;display:{{evDisplay}}"><br>evidência: ToolConfig em agentflow/src/types.ts (usesTool: string livre) · pendencias §1.1</span></div>
+    </div>
+    <div style="border:1px solid #e2ddd3;border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:#b3372f;font-weight:500">G2</div>
+      <div><div style="font-weight:600;color:#262220;margin-bottom:4px">Modelo e budget não são propriedades governadas</div>Governar autonomia sem governar <em>gasto</em> é meio guardrail: um agente nível 2 pode custar R$ 0,01 ou R$ 10.000 e o modelo não distingue. Falta <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">LlmConfig</code> completo (params, provider, fallback) e um bloco <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">budget {maxTokens, maxCost, maxWallTime, maxSteps}</code> no AgentWorkflow — validável (budget ausente em autonomia ≥2 = warning), simulável (estouro = parada honesta, mesmo padrão do retry) e visível na ponte de escalação, que hoje cita "budget estourou" como gatilho sem que budget exista.</div>
+    </div>
+    <div style="border:1px solid #e2ddd3;border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:#b3372f;font-weight:500">G3</div>
+      <div><div style="font-weight:600;color:#262220;margin-bottom:4px">Schemas planos limitam contratos e mapeamentos</div><code style="font-family:'IBM Plex Mono',monospace;font-size:11px">Record&lt;string,string&gt;</code> não expressa objeto aninhado, required, enum ou default — exatamente o que APIs de structured output usam. Sem isso não há validação de compatibilidade agentTask ↔ variáveis do processo, nem delegante ↔ delegado. Um subconjunto honesto de JSON Schema (types + required + enum, declarando o que fica fora, padrão S-FEEL) resolve sem violar a cerca anti-JSON-LD.</div>
+    </div>
+    <div style="border:1px solid #e2ddd3;border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:#9a7b1e;font-weight:500">G4</div>
+      <div><div style="font-weight:600;color:#262220;margin-bottom:4px">Evals não são evidência de promoção</div>A infraestrutura já existe (simulação determinística + sessão no ledger + evaluateGates); falta o artefato: <strong>eval set versionado</strong> (N casos: input + fixtures + asserções sobre o output) e a regra "promover para ativa exige eval set X @versão com 100% dos casos passando" — evidência SACM no mesmo molde da cobertura de caminhos do simulador BPMN. É o passo que transforma a simulação de demo em garantia.</div>
+    </div>
+    <div style="border:1px solid #e2ddd3;border-radius:10px;padding:14px 18px;display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:15px;color:#9a7b1e;font-weight:500">G5</div>
+      <div><div style="font-weight:600;color:#262220;margin-bottom:4px">Nenhuma ponte de execução — nem live, nem export completo</div>Decisão consciente da v1, mas é o teto de utilidade: o Studio simula com fixtures e para aí. Dois caminhos complementares, ambos preparados pelo código atual: <strong>(a) Live/Shadow Mode via AIProvider</strong> (H9) — rodar o grafo com chamadas reais, gated por autonomia + gate, trilha real vs. mock lado a lado; <strong>(b) export executável</strong> — completar o subset LangGraph (interrupts ⇄ gate/escalação; checkpoints ⇄ sessão) e mapear <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">zeebe:taskDefinition</code> no agentTask para deploy Camunda 8 (o passthrough de extensões estrangeiras já foi entregue).</div>
+    </div>
+  </div>
+</section>
+
+<section style="background:#ffffff;border:1px solid #e2ddd3;border-radius:14px;padding:26px 30px" data-screen-label="05 Squads">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2.5px;color:#9a7b1e;margin-bottom:6px">05 · SQUADS — DO VOCABULÁRIO DE DESENHO AO SQUAD EXECUTÁVEL</div>
+  <p style="margin:0 0 14px;font-size:14px;line-height:1.7;max-width:980px">Hoje "squad" existe em duas metades que não se tocam: o <strong>desenho macro</strong> (btv:squad/persona em plugin de exemplo, privado) e o <strong>micro-comportamento</strong> (AgentWorkflow com aresta delegate). Entre elas não há artefato, contrato nem semântica. Seis lacunas, em ordem de dependência:</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:12px;font-size:13px;line-height:1.62;color:#44403a">
+    <div style="border:1px solid #f7e3e1;background:#fdf7f6;border-radius:10px;padding:14px 16px"><div style="font-weight:600;color:#b3372f;margin-bottom:4px">S1 · Squad não é artefato</div>Não existe "SQUAD" na Biblioteca: nada agrega refs de agentes, versões compatíveis e papel de cada um. Sem manifesto, não há promoção coordenada — promover o squad deveria verificar a vigência de <em>todos</em> os membros (a regra de warning por agente já existe; a agregação não).</div>
+    <div style="border:1px solid #f7e3e1;background:#fdf7f6;border-radius:10px;padding:14px 16px"><div style="font-weight:600;color:#b3372f;margin-bottom:4px">S2 · Persona ↔ agente sem vínculo</div>btv:persona carrega papel/nome no desenho; AgentWorkflow carrega o comportamento. Falta <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">personaRef</code> no workflow (ou agentWorkflowRef na persona) — o mesmo padrão id@semver de promptRef. Sem isso o organograma e a execução contam histórias diferentes.</div>
+    <div style="border:1px solid #f7e3e1;background:#fdf7f6;border-radius:10px;padding:14px 16px"><div style="font-weight:600;color:#b3372f;margin-bottom:4px">S3 · delegate sem contrato</div><code style="font-family:'IBM Plex Mono',monospace;font-size:11px">resolveDelegate?: (ref) =&gt; boolean</code> só responde "existe?". Deveria devolver o workflow para validar: outputSchema do chamador cobre o inputSchema do delegado? Há ciclo A→B→A entre agentes? Qual o autonomia efetivo do conjunto (delegar para um nível 5 contamina o chamador?). Tudo isso é validação headless barata — e hoje impossível.</div>
+    <div style="border:1px solid #f7e3e1;background:#fdf7f6;border-radius:10px;padding:14px 16px"><div style="font-weight:600;color:#b3372f;margin-bottom:4px">S4 · Sem topologia de orquestração</div>Supervisor/hierárquico, sequencial (pipeline), paralelo com agregação, handoff — os 4 padrões que todo runtime mainstream de 2026 executa. O corte de voting/debate ("sem runtime mainstream", H12 §0) envelheceu: LangGraph supervisor/swarm e AutoGen são mainstream. A topologia pode ser um campo do manifesto de squad + validação, sem 4º tipo de nó — a cerca §1.3 sobrevive.</div>
+    <div style="border:1px solid #f7e3e1;background:#fdf7f6;border-radius:10px;padding:14px 16px"><div style="font-weight:600;color:#b3372f;margin-bottom:4px">S5 · Simulação não atravessa agentes</div><code style="font-family:'IBM Plex Mono',monospace;font-size:11px">internalSuccessors</code> descarta arestas delegate: a trilha para na fronteira do agente. Simulação de squad = seguir o delegate com o workflow resolvido injetado + fixtures por agente, paradas honestas cross-agente ("delegado bloqueou em X"), determinismo preservado. Sem isso, squad não é testável antes de existir.</div>
+    <div style="border:1px solid #f7e3e1;background:#fdf7f6;border-radius:10px;padding:14px 16px"><div style="font-weight:600;color:#b3372f;margin-bottom:4px">S6 · Sem contexto compartilhado</div>Cada agente tem memory decorator próprio; um squad precisa declarar o que é compartilhado (blackboard/estado comum) e o que é privado — inclusive para a LGPD do conteúdo. Declaração no manifesto (refs de knowledge + escopo), não implementação de store: modelagem honesta, execução injetada.</div>
+  </div>
+  <p style="margin:14px 0 0;font-size:12.5px;color:#6f675a;line-height:1.6">No BPM macro, o squad também carece de semântica: a lane "Agentes IA" dos protótipos é convenção visual (sem mapeamento formal squad↔lane/pool), e multi-instância sobre agentTask (N agentes paralelos sobre uma coleção) herda <span style="font-family:'IBM Plex Mono',monospace;font-size:11px">loopCharacteristics</span> genérico sem regra própria de autonomia/gate agregado.</p>
+</section>
+
+<section style="background:#ffffff;border:1px solid #e2ddd3;border-radius:14px;padding:26px 30px" data-screen-label="06 BPM vs independente">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2.5px;color:#9a7b1e;margin-bottom:6px">06 · DOIS MODOS DE VIDA — NO FLUXO BPM E INDEPENDENTE</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px;font-size:13px;line-height:1.65;color:#44403a">
+    <div style="border:1px solid #e2ddd3;border-radius:10px;padding:16px 18px">
+      <div style="font-weight:600;font-size:15px;color:#262220;margin-bottom:8px">Agente embutido no processo BPM</div>
+      <div style="margin-bottom:8px"><span style="background:#dff0e6;color:#1a6a54;border-radius:999px;padding:2px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">COBERTO</span></div>
+      <div style="margin-bottom:10px">agentTask com input/outputMapping · boundary de erro proposto (undoável) · boundary de escalação governada · regra autonomia→gate na promoção · warning de vigência · lint · round-trip com degradação graciosa em editor externo.</div>
+      <div style="margin-bottom:8px"><span style="background:#f7e3e1;color:#b3372f;border-radius:999px;padding:2px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">FALTA</span></div>
+      <div>Tipagem das variáveis do processo (o mapping não valida tipos — G3) · deploy para engine (Camunda 8 via <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">zeebe:taskDefinition</code>, pendência §2.1) · semântica de multi-instância para agentes · correlação de mensagens para agente de longa duração (checkpoints).</div>
+    </div>
+    <div style="border:1px solid #e2ddd3;border-radius:10px;padding:16px 18px">
+      <div style="font-weight:600;font-size:15px;color:#262220;margin-bottom:8px">Agente independente (fora do BPM)</div>
+      <div style="margin-bottom:8px"><span style="background:#dff0e6;color:#1a6a54;border-radius:999px;padding:2px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">COBERTO</span></div>
+      <div>Agente é artefato de primeira classe da Biblioteca (lifecycle completo sem nenhum BPMN em volta) · Studio degrada para JSON local sem registry · export LangGraph do subconjunto.</div>
+      <div style="margin-bottom:8px;margin-top:10px"><span style="background:#f7e3e1;color:#b3372f;border-radius:999px;padding:2px 10px;font-family:'IBM Plex Mono',monospace;font-size:10px">FALTA</span></div>
+      <div>Gatilho de entrada modelado (schedule/webhook/evento — hoje o agente só "existe", não "começa") · manifesto de publicação (agent card A2A: capacidades, schemas, endpoint) · export executável completo (interrupts/checkpoints) · superfície de serviço (o agente como API consumível por outros sistemas).</div>
+    </div>
+  </div>
+</section>
+
+<section style="background:#ffffff;border:1px solid #e2ddd3;border-radius:14px;padding:26px 30px" data-screen-label="07 Roadmap priorizado">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2.5px;color:#9a7b1e;margin-bottom:6px">07 · ROADMAP PROPOSTO — "HANDOFF 22: SQUAD LANE" (P0→P2)</div>
+  <p style="margin:0 0 14px;font-size:13px;color:#6f675a;line-height:1.6">Mesma disciplina dos handoffs anteriores: headless primeiro, integração por injeção, tudo degradável, nenhuma capacidade nova como 4º tipo de nó (decoradores, propriedades e artefatos preservam a cerca §1.3). Esforço: P ≤ ½ dia · M 1–3 dias · G &gt; 3 dias.</p>
+  <div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%;font-size:12.5px;line-height:1.55;color:#44403a">
+    <thead><tr style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;color:#6f675a;text-align:left">
+      <th style="padding:7px 10px;border-bottom:2px solid #e2ddd3">#</th><th style="padding:7px 10px;border-bottom:2px solid #e2ddd3">ENTREGA</th><th style="padding:7px 10px;border-bottom:2px solid #e2ddd3">PACOTES</th><th style="padding:7px 10px;border-bottom:2px solid #e2ddd3">SEV</th><th style="padding:7px 10px;border-bottom:2px solid #e2ddd3">ESF</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-1</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2"><strong>Tool como artefato versionado</strong> — schema de I/O + escopos de permissão + taxonomia de erro; <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">usesTool</code> aceita ref <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">tool:*@semver</code>; validação params↔schema; adapter TOOL na Biblioteca. Naming alinhado a MCP sem claim de protocolo (mesmo padrão AgentO).</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">agentflow · adapters · library</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;color:#b3372f;font-weight:600">P0</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2">M</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-2</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2"><strong>LlmConfig completo + budget governado</strong> — params/provider/fallback; <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">budget{tokens,custo,tempo,passos}</code> com validação (autonomia ≥2 sem budget = warning) e estouro simulado como parada honesta; budget visível no inspector e na ponte de escalação.</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">agentflow · react</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;color:#b3372f;font-weight:600">P0</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2">M</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-3</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2"><strong>Schemas com subconjunto honesto de JSON Schema</strong> (aninhamento/required/enum, exclusões declaradas) + validação de compatibilidade agentTask↔processo e delegante↔delegado.</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">agentflow · core</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;color:#b3372f;font-weight:600">P0</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2">M</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-4</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2"><strong>resolveDelegate devolve o workflow</strong> (não boolean): contrato de I/O entre agentes, detecção de ciclo A→B→A, autonomia efetiva do conjunto (máx da cadeia) com regra própria.</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">agentflow</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;color:#b3372f;font-weight:600">P0</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2">P</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-5</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2"><strong>Squad como artefato (manifesto)</strong> — membros (refs versionadas + personaRef), topologia (supervisor/sequencial/paralelo/handoff), contexto compartilhado declarado; adapter SQUAD; promoção coordenada (vigência de todos os membros); promover btv:squad/persona de exemplo a vocabulário de produto.</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">agentflow · adapters · registry</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;color:#b3372f;font-weight:600">P0</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2">G</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-6</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2"><strong>Simulação multi-agente</strong> — delegate atravessado com workflows resolvidos injetados, fixtures por agente, paradas honestas cross-agente, trilha unificada; sessão de squad no ledger.</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">agentflow · react</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;color:#9a7b1e;font-weight:600">P1</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2">G</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-7</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2"><strong>Eval sets como evidência de promoção</strong> — artefato EVAL (casos: input + fixtures + asserções), threshold configurável em evaluateGates, resultado como entrada SACM no ledger.</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">agentflow · adapters · audit</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;color:#9a7b1e;font-weight:600">P1</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2">M</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-8</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2"><strong>Live/Shadow Mode via AIProvider</strong> — execução real gated (exige gate a jusante + confirmação humana), trilha real vs. mock lado a lado, custo/tokens medidos alimentando o budget; sem autonomia de escrita fora da whitelist (cerca do copilot preservada).</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">agentflow · copilot · react</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;color:#9a7b1e;font-weight:600">P1</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2">G</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-9</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2"><strong>Export executável</strong> — subset LangGraph completado (interrupts ⇄ gate/escalação, checkpoints ⇄ sessão) + <code style="font-family:'IBM Plex Mono',monospace;font-size:11px">zeebe:taskDefinition</code> no agentTask (deploy Camunda 8 sobre o passthrough já entregue).</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">agentflow · core</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;color:#9a7b1e;font-weight:600">P1</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2">M</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-10</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2"><strong>Guardrails declarativos + política</strong> — node type "política" (fecha pendência §1.1) e guardrails de I/O como propriedades referenciáveis (PII/injeção/conteúdo), verificados na promoção.</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">domínio · lint</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;color:#9a7b1e;font-weight:600">P1</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2">M</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-11</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2"><strong>Telemetria de runs reais</strong> — modelo de trace (OTel GenAI) → trilha/XES: comparar comportamento executado vs. grafo aprovado (process mining do agente, extensão natural do replay).</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">audit · replay</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;color:#6f675a;font-weight:600">P2</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2">G</td></tr>
+      <tr><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-12</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2"><strong>Protocolos e conhecimento</strong> — agent card A2A (manifesto de publicação), binding MCP real das tools, artefato knowledge base (RAG refs), padrões debate/voting no manifesto de squad (premissa do corte reavaliada).</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;font-family:'IBM Plex Mono',monospace;font-size:11px">agentflow · adapters</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2;color:#6f675a;font-weight:600">P2</td><td style="padding:8px 10px;border-bottom:1px solid #eeeae2">G</td></tr>
+      <tr><td style="padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:11px">SQ-13</td><td style="padding:8px 10px"><strong>Gatilho de agente independente</strong> — entrada modelada (schedule/webhook/evento) para o agente fora do BPM, com validação própria (agente independente sem gatilho = warning).</td><td style="padding:8px 10px;font-family:'IBM Plex Mono',monospace;font-size:11px">agentflow</td><td style="padding:8px 10px;color:#6f675a;font-weight:600">P2</td><td style="padding:8px 10px">P</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section style="background:#262220;border-radius:14px;padding:26px 30px;color:#ece8e1" data-screen-label="08 Veredito">
+  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:2.5px;color:#c9a94e;margin-bottom:10px">08 · VEREDITO</div>
+  <p style="margin:0 0 12px;font-size:15px;line-height:1.75;max-width:980px">A biblioteca resolveu o problema que ninguém mais resolveu — <strong style="color:#fff">governar agentes</strong> (quem aprovou, que versão roda, quanto pode decidir sozinho, quando um humano assina) — e deixou intacto o problema que todos os outros resolvem: <strong style="color:#fff">fazer o desenho virar comportamento</strong>. O caminho não é virar runtime, e sim fechar os contratos que tornam o desenho <em>suficiente</em>: tools com schema (SQ-1), budget governado (SQ-2), schemas compatíveis (SQ-3), delegate com contrato (SQ-4) e o squad como artefato com topologia (SQ-5). Com esses cinco, um export executável e um eval set deixam de ser features e viram consequência.</p>
+  <p style="margin:0;font-size:13.5px;line-height:1.7;color:#b8b2a6;max-width:980px">Tudo acima respeita as cercas vigentes: 3 nós para sempre, capacidades novas como decoradores/propriedades/artefatos, integração por injeção degradável, honestidade declarada ("o que não mapeia é dito, nunca convertido em silêncio"). O placar honesto: <span style="color:#7fc79e">agente individual modelável e governável hoje</span> · <span style="color:#c9a94e">funcional de ponta a ponta após P0</span> · <span style="color:#d98a82">squads exigem o Handoff 22 inteiro</span>.</p>
+</section>
+
+<footer style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6f675a;line-height:1.8;padding:0 4px 24px" data-screen-label="Rodapé">
+  Evidências: packages/agentflow/src (types · validate · autonomy · simulate · langgraph · templates) · core/engine/agentTask.ts · react/agent/AgentStudio.tsx · adapters-bpmn · domain-example · CONFORMANCE.md · pendencias.md §1.1/§2.1 · DECISIONS.md (A-3/A-4, budget não pintado) · handoffs 12 e 18. Referências externas: LangGraph ≥0.2 · A2A 1.0 · MCP · OTel GenAI · AgentO/AIAO.
+</footer>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;mostrarEvidencias&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Exibição&quot;},&quot;filtroMatriz&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;todos&quot;,&quot;options&quot;:[&quot;todos&quot;,&quot;atende&quot;,&quot;parcial&quot;,&quot;falta&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Exibição&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const ev = this.props.mostrarEvidencias ?? true;
+    const f = this.props.filtroMatriz ?? 'todos';
+    const show = (k) => (f === 'todos' || f === k) ? '' : 'none';
+    return {
+      simMapEx1: '{{node.output.x}}',
+      simMapEx2: '{{llm-1.output.query}}',
+      evDisplay: ev ? '' : 'none',
+      dispAtende: show('atende'),
+      dispParcial: show('parcial'),
+      dispFalta: show('falta'),
+    };
+  }
+}
+</script>
+</body>
+</html>
