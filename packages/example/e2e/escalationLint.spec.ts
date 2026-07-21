@@ -18,7 +18,7 @@ test('throw sem catch → ESC_NO_CATCH (warning) no dock → restaurar o catch �
 
   await page.getByTestId('lint-toggle').click();
   const panel = page.getByTestId('lint-panel');
-  await expect(page.getByTestId('lint-policy')).toContainText('lint-etiquette@1.4.0');
+  await expect(page.getByTestId('lint-policy')).toContainText('lint-etiquette@1.5.0');
   const group = panel.locator('[data-lint-group="esc-no-catch"]');
 
   // Em repouso: o boundary de escalação captura o throw → sem ESC_NO_CATCH.
