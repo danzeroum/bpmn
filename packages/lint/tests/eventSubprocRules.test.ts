@@ -249,7 +249,7 @@ describe('guardas e ramos do builder', () => {
 
 describe('política 1.2.0 (critério 5)', () => {
   it('perfis em 1.2.0 com as regras novas registradas na MESMA fonte', () => {
-    expect(ETIQUETTE_PROFILE.version).toBe('1.4.0');
+    expect(ETIQUETTE_PROFILE.version).toBe('1.5.0');
     expect(EXECUTABILITY_PROFILE.version).toBe('1.4.0');
     const ids = ETIQUETTE_PROFILE.rules.map((rule) => rule.id);
     expect(ids).toContain('evt-subproc-flow');

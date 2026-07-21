@@ -142,6 +142,13 @@ const EXPECTED_EXPORTS = [
   'isEventSubprocess',
   'startIsInterrupting',
   'laneFlowNodeRefs',
+  // #154 — lane/pool body geometry, shared by the react gesture and the lint rule.
+  'POOL_TITLE_BAND',
+  'poolBodyOf',
+  'poolContainingRect',
+  'lanesOfPool',
+  'tileLaneRects',
+  'lanesTileBody',
   'localName',
   'missingStartEventRule',
   'moveNodeCommand',

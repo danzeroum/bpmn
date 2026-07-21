@@ -13,6 +13,7 @@ import {
 } from '@buildtovalue/core';
 import { compensationHandlerCommands, typedMessageStartCommands } from '@buildtovalue/lint';
 import { findNodeAtPoint } from '../canvas/hitTest.js';
+import { laneInsertPlan } from '../canvas/laneTiling.js';
 import { SUBPROCESS_TITLE_HEIGHT } from '../shapes/shapes.js';
 import type { CanvasStore } from '../state/canvasStore.js';
 import type { PaletteBuildContext, PaletteInsertResult, PaletteItem } from '../plugins/types.js';
@@ -100,6 +101,36 @@ export function paletteInsertCommand(
     ctx.registry,
   );
   return { command: addNodeCommand(node), selectId: node.id };
+}
+
+/**
+ * «Lane» (#154): a lane dropped inside a pool snaps to the pool body and the
+ * body is re-tiled over the existing lanes plus the new one — ONE composite,
+ * one undo. Outside a pool the insert stays the plain default-size addNode.
+ * Design-time only: import never re-seats existing DI.
+ */
+export function buildLaneInsert(ctx: PaletteBuildContext): PaletteInsertResult {
+  const { diagram, registry, x, y, t } = ctx;
+  const size = registry.get('lane').defaultSize;
+  const plan = laneInsertPlan(diagram, { x, y, width: size.width, height: size.height });
+  const lane = createNode(
+    {
+      type: 'lane',
+      x: plan?.laneRect.x ?? x,
+      y: plan?.laneRect.y ?? y,
+      ...(plan ? { width: plan.laneRect.width, height: plan.laneRect.height } : {}),
+      properties: {},
+      versionId: diagram.version.id,
+    },
+    registry,
+  );
+  if (!plan || plan.commands.length === 0) {
+    return { command: addNodeCommand(lane), selectId: lane.id };
+  }
+  return {
+    command: compositeCommand(t('palette.compose.lane'), [addNodeCommand(lane), ...plan.commands]),
+    selectId: lane.id,
+  };
 }
 
 /**

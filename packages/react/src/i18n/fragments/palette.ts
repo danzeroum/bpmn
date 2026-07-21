@@ -13,6 +13,7 @@ export const palette: { en: Messages; ptBR: Messages } = {
     'palette.itemAria': 'Add {label}',
     'palette.item.eventSubprocess': 'Event Subprocess',
     'palette.compose.eventSubprocess': 'Insert event subprocess',
+    'palette.compose.lane': 'Insert lane',
     'minimap.aria': 'Diagram overview',
   },
   ptBR: {
@@ -20,6 +21,7 @@ export const palette: { en: Messages; ptBR: Messages } = {
     'palette.itemAria': 'Adicionar {label}',
     'palette.item.eventSubprocess': 'Subprocesso de evento',
     'palette.compose.eventSubprocess': 'Inserir subprocesso de evento',
+    'palette.compose.lane': 'Inserir lane',
     'minimap.aria': 'Visão geral do diagrama',
   },
 };

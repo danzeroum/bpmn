@@ -156,7 +156,7 @@ describe('TIMER_MALFORMED via o parser (critério 5)', () => {
 
 describe('política versionada (critério 7)', () => {
   it('regras novas = versão nova dos perfis (1.1.0), refletida na MESMA fonte', () => {
-    expect(ETIQUETTE_PROFILE.version).toBe('1.4.0'); // Handoff 18 §5d (escalation)
+    expect(ETIQUETTE_PROFILE.version).toBe('1.5.0'); // #154 (LANE_BODY_TILING)
     expect(EXECUTABILITY_PROFILE.version).toBe('1.4.0');
     expect(ETIQUETTE_PROFILE.rules.map((rule) => rule.id)).toContain('evt-start-throw');
     expect(EXECUTABILITY_PROFILE.rules.map((rule) => rule.id)).toContain('timer-malformed');

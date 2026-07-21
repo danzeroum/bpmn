@@ -20,7 +20,7 @@ test('import sujo → 3 findings → quick-fix do 0-starts → dock limpa → 1 
   // Dock: política 1.2.0 e os 3 findings do import.
   await page.getByTestId('lint-toggle').click();
   const panel = page.getByTestId('lint-panel');
-  await expect(page.getByTestId('lint-policy')).toContainText('lint-etiquette@1.4.0');
+  await expect(page.getByTestId('lint-policy')).toContainText('lint-etiquette@1.5.0');
   const flow = panel.locator('[data-lint-group="evt-subproc-flow"]');
   await expect(flow).toContainText('EVT_SUBPROC_FLOW');
   await expect(flow).toContainText('"Sem start"');

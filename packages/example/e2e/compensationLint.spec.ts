@@ -13,7 +13,7 @@ test('boundary ⟲ sem handler → COMP_BOUNDARY_NO_HANDLER → corrigir cria o 
 
   await page.getByTestId('lint-toggle').click();
   const panel = page.getByTestId('lint-panel');
-  await expect(page.getByTestId('lint-policy')).toContainText('lint-etiquette@1.4.0');
+  await expect(page.getByTestId('lint-policy')).toContainText('lint-etiquette@1.5.0');
   const group = panel.locator('[data-lint-group="comp-boundary-no-handler"]');
 
   // Nasce sem handler → o dock acusa o erro.

@@ -4,6 +4,8 @@ export * from './model/eventDefinitions.js';
 // ISO 8601 timer expressions (Handoff 16 E-5, §3d) — headless parser.
 export * from './model/iso8601.js';
 export * from './model/flow.js';
+// Lane/pool body geometry (#154) — shared by the react gesture and the lint rule.
+export * from './model/lanes.js';
 export * from './model/errors.js';
 export * from './model/registry.js';
 export * from './model/factory.js';

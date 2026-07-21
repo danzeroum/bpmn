@@ -41,6 +41,8 @@ const EXPECTED_EXPORTS = [
   'compRefNotCompensableRule',
   'compCatchAttrsRule',
   'compStartToplevelRule',
+  // #154 — lane geometry etiquette (LANE_BODY_TILING).
+  'laneBodyTilingRule',
   'compensationHandlerCommands',
 ].sort();
 
