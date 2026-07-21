@@ -69,7 +69,11 @@ export const RESEARCH_AGENT: AgentWorkflow = {
     {
       id: 'tool-2',
       type: 'tool',
-      config: { usesTool: 'browser_search', params: { query: '{{llm-1.output.query}}' }, timeoutMs: 30000 },
+      config: {
+        usesTool: 'tool:browser-search@1.2.0',
+        params: { query: '{{llm-1.output.query}}' },
+        timeoutMs: 30000,
+      },
     },
     {
       id: 'dec-3',

@@ -301,3 +301,22 @@ primeira classe e adaptação responsiva das superfícies — é uma **onda de p
 defeito da entrega atual. Fica registrado aqui para não se perder; entra quando for priorizado
 (depende de decisão de produto sobre quais superfícies ganham suporte mobile primeiro). A limitação
 de toque em `limitations.md` continua sendo o contrato honesto até lá (nada falha em silêncio).
+
+---
+
+## 11. Squad Lane (Handoff 22) — refinamentos registrados
+
+Abertos durante a SL-1 (revisão de arquitetura), **não bloqueiam** a entrega:
+
+- **Fronteira efeito↔gate (SL-1 headless × SL-12 core).** A SL-1 emite, no `agentflow`, o código
+  headless **`TOOL_EFFECT_UNGATED`** (error): uma tool de efeito `write-irreversible`/
+  `external-commitment` cujo **próprio contrato** declara `authorization !== 'gate'` — lê SÓ o
+  `ToolContract` injetado, nunca o processo (acidez preservada, §2.3). As regras de **processo** que o
+  handoff §6 lista — `EFFECT_NEEDS_GATE` e `GATE_NOT_COVERING` ("gate que cubra a ação" sobre
+  `reachableGateFrom`) — precisam do diagrama em volta e nascem no **core na SL-12**, reusando o
+  predicado puro `effectRequiresGate(effect)`. Os nomes foram mantidos distintos de propósito para o
+  revisor/host não lerem como duplicata; a SL-12 deve documentar a fronteira no PR.
+- **`authorization: 'proibida'` em uso.** Uma tool marcada como proibida e ainda assim referenciada por
+  um nó merece código próprio (ex.: **`TOOL_FORBIDDEN`**), não cair em `TOOL_EFFECT_UNGATED` nem passar
+  em silêncio quando o efeito é `read`. Refinamento a implementar (candidato à SL-6, junto do Painel de
+  Problemas), com vetor positivo/negativo/remediação.

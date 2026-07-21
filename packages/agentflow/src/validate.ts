@@ -11,7 +11,8 @@
 import { END_ROUTE, type AgentWorkflow } from './types.js';
 import { autonomyCoherence } from './autonomy.js';
 import { canReach, decisionRoutes, loopComponents, nodeIndex } from './graph.js';
-import { parseRef, type AgentRef } from './ref.js';
+import { formatRef, parseRef, type AgentRef } from './ref.js';
+import { effectRequiresGate, matchToolParams, type ResolveTool } from './toolContract.js';
 
 /** A single validation finding. */
 export interface ValidationIssue {
@@ -34,6 +35,13 @@ export interface ValidateOptions {
    * not an error (§3.4).
    */
   resolveDelegate?: (ref: AgentRef) => boolean;
+  /**
+   * Resolves a `tool:*@semver` ref to its {@link ToolContract} — the injected
+   * `ToolProvider` (Squad Lane SL-2). Absent → tool-contract checks degrade to
+   * the structural ref check only; present but returning `undefined` → a
+   * declared `TOOL_UNRESOLVED` warning (cerca §2.4, never silent).
+   */
+  resolveTool?: ResolveTool;
 }
 
 /** True when a decision condition inspects structured output (honest stop,
@@ -179,6 +187,106 @@ function checkRefs(wf: AgentWorkflow, options: ValidateOptions, issues: Validati
   }
 }
 
+/**
+ * Squad Lane SL-1 (§6): every `tool` node binds to a versioned `tool:*@semver`
+ * contract. The structural ref check always runs; contract-aware checks (params
+ * ↔ inputSchema, effect ↔ gate) run only when the injected `resolveTool`
+ * returns a contract, and degrade honestly otherwise.
+ */
+function checkToolContracts(
+  wf: AgentWorkflow,
+  options: ValidateOptions,
+  issues: ValidationIssue[],
+): void {
+  for (const node of wf.nodes) {
+    if (node.type !== 'tool') continue;
+    const raw = node.config.usesTool;
+
+    // Structural: `usesTool` must be a versioned TOOL ref (cerca §2.1/§2.2).
+    let ref: AgentRef;
+    try {
+      const parsed = parseRef(raw);
+      ref = parsed.ref;
+      if (!ref.id.startsWith('tool:')) {
+        issues.push({
+          code: 'TOOL_REF_INVALID',
+          severity: 'error',
+          nodeId: node.id,
+          message: `Tool node "${node.id}" references "${raw}", which is not a tool contract.`,
+          remediation: 'Bind the node to a versioned tool contract of the form "tool:id@major.minor.patch".',
+        });
+        continue;
+      }
+      for (const w of parsed.warnings) {
+        issues.push({ code: 'TOOL_REF_ABBREVIATED', severity: 'warning', nodeId: node.id, message: w });
+      }
+    } catch (err) {
+      issues.push({
+        code: 'TOOL_REF_INVALID',
+        severity: 'error',
+        nodeId: node.id,
+        message: `Tool node "${node.id}" uses an invalid tool ref "${raw}": ${(err as Error).message}`,
+        remediation: 'Bind the node to a versioned tool contract of the form "tool:id@major.minor.patch".',
+      });
+      continue;
+    }
+
+    // Degradable resolution (§1.7): no ToolProvider injected → structural check
+    // only. A provider that cannot resolve the ref → declared warning (§2.4).
+    if (!options.resolveTool) continue;
+    const contract = options.resolveTool(ref);
+    if (!contract) {
+      issues.push({
+        code: 'TOOL_UNRESOLVED',
+        severity: 'warning',
+        nodeId: node.id,
+        message: `Tool contract "${raw}" could not be resolved by the injected ToolProvider.`,
+      });
+      continue;
+    }
+
+    // params ↔ inputSchema (§6).
+    const mismatch = matchToolParams(node.config.params ?? {}, contract.inputSchema);
+    if (mismatch.missingRequired.length > 0 || mismatch.unknownParams.length > 0) {
+      const parts: string[] = [];
+      if (mismatch.missingRequired.length > 0) {
+        parts.push(`missing required ${mismatch.missingRequired.join(', ')}`);
+      }
+      if (mismatch.unknownParams.length > 0) {
+        parts.push(`unknown ${mismatch.unknownParams.join(', ')}`);
+      }
+      issues.push({
+        code: 'TOOL_PARAMS_MISMATCH',
+        severity: 'error',
+        nodeId: node.id,
+        message: `Tool node "${node.id}" params do not match ${formatRef(ref)} inputSchema: ${parts.join('; ')}.`,
+        remediation:
+          'Align the node params with the tool contract inputSchema: supply every required input and remove params the contract does not declare.',
+      });
+    }
+
+    // effect ↔ authorization (headless, acid-safe): a gated-effect tool whose
+    // OWN contract authorization is not "gate" is ungated at the source. This
+    // reads only the injected ToolContract — never the BPMN process. The
+    // PROCESS-level rules the handoff §6 lists (EFFECT_NEEDS_GATE / GATE_NOT_COVERING,
+    // "a gate covering the action" over reachableGateFrom) need the surrounding
+    // diagram and are born in @buildtovalue/core at SL-12; keeping this code
+    // distinct (TOOL_EFFECT_UNGATED) avoids conflating the two (§2.3/§2.9).
+    // Refinement (pendência): authorization "proibida" in use deserves its own
+    // TOOL_FORBIDDEN code rather than folding into this one.
+    if (effectRequiresGate(contract.effect) && contract.authorization !== 'gate') {
+      issues.push({
+        code: 'TOOL_EFFECT_UNGATED',
+        severity: 'error',
+        nodeId: node.id,
+        message: `Tool node "${node.id}" invokes ${formatRef(ref)} with a "${contract.effect}" effect but its contract authorization is "${contract.authorization}", not gated.`,
+        remediation:
+          'A write-irreversible or external-commitment tool must declare authorization "gate"; the process must then route a btv:gate before the effect (checked in core).',
+      });
+    }
+  }
+}
+
 /** Rule 5 (§3.5): non-empty input/output schemas + structural integrity. */
 function checkSchemasAndStructure(wf: AgentWorkflow, issues: ValidationIssue[]): void {
   if (Object.keys(wf.inputSchema).length === 0) {
@@ -239,6 +347,7 @@ export function validateGraph(wf: AgentWorkflow, options: ValidateOptions = {}):
   checkCycleStop(wf, issues);
   checkStructuredLlm(wf, issues);
   checkRefs(wf, options, issues);
+  checkToolContracts(wf, options, issues);
   issues.push(...autonomyCoherence(wf));
   return issues;
 }

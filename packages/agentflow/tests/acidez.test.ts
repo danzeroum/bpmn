@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type AgentRef,
   type AgentWorkflow,
+  type ToolContract,
   hasRetryLoop,
   isBranchingDecision,
   minCoherentLevel,
@@ -28,7 +29,11 @@ const sandwichAgent: AgentWorkflow = {
   outputSchema: { plate: 'string', is_complete: 'boolean' },
   nodes: [
     { id: 'plan', type: 'llm', config: { model: 'sous-chef-1', promptRef: 'prm:plate@1.0.0', structuredOutput: true } },
-    { id: 'grill', type: 'tool', config: { usesTool: 'panini_press', timeoutMs: 90_000 } },
+    {
+      id: 'grill',
+      type: 'tool',
+      config: { usesTool: 'tool:panini-press@1.0.0', params: { heat: 'high' }, timeoutMs: 90_000 },
+    },
     {
       id: 'taste',
       type: 'decision',
@@ -67,5 +72,43 @@ describe('agentflow over a fabricated graph with injected resolution', () => {
     expect(issues.filter((i) => i.severity === 'error')).toEqual([]);
     const unresolved = issues.find((i) => i.code === 'DELEGATE_UNRESOLVED');
     expect(unresolved?.severity).toBe('warning');
+  });
+
+  // Squad Lane SL-1: a tool binds to a versioned contract resolved through an
+  // INJECTED provider — no library, no registry (cerca §2.3 acidity).
+  const paniniContract: ToolContract = {
+    kind: 'ToolContract',
+    id: 'tool:panini-press',
+    version: '1.0.0',
+    name: 'panini_press',
+    capability: 'grelhar um sanduíche',
+    inputSchema: { heat: { type: 'string', required: true } },
+    outputSchema: { plate: { type: 'string' } },
+    effect: 'write-reversible',
+    dataScope: 'interno',
+    authorization: 'automatica',
+    evidenceRequired: 'nenhuma',
+    simulation: 'fixture-obrigatoria',
+  };
+
+  it('validates the tool clean when the injected provider knows the contract', () => {
+    const resolveTool = (ref: AgentRef): ToolContract | undefined =>
+      ref.id === 'tool:panini-press' ? paniniContract : undefined;
+    const issues = validateGraph(sandwichAgent, { resolveTool });
+    expect(issues.filter((i) => i.severity === 'error')).toEqual([]);
+    expect(issues.find((i) => i.code === 'TOOL_UNRESOLVED')).toBeUndefined();
+  });
+
+  it('degrades an unknown tool to a warning (never an error) with an injected provider', () => {
+    const resolveTool = (): ToolContract | undefined => undefined; // provider present, cannot resolve
+    const issues = validateGraph(sandwichAgent, { resolveTool });
+    expect(issues.filter((i) => i.severity === 'error')).toEqual([]);
+    const unresolved = issues.find((i) => i.code === 'TOOL_UNRESOLVED');
+    expect(unresolved?.severity).toBe('warning');
+  });
+
+  it('stays silent about tool contracts when no provider is injected (structural check only)', () => {
+    const issues = validateGraph(sandwichAgent);
+    expect(issues.find((i) => i.code === 'TOOL_UNRESOLVED')).toBeUndefined();
   });
 });

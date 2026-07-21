@@ -44,7 +44,12 @@ export interface LlmConfig {
 
 /** Tool (MCP) node config. */
 export interface ToolConfig {
-  /** The tool/capability invoked, e.g. "browser_search" (AgentO `usesTool`). */
+  /**
+   * The versioned tool contract invoked (AgentO `usesTool`), a `tool:*@semver`
+   * ref such as "tool:browser-search@1.2.0" (Squad Lane SL-1, cerca §2.1/§2.2).
+   * Validated by `validateGraph` (`TOOL_REF_INVALID`) and resolved to a
+   * {@link ToolContract} through the injected ToolProvider.
+   */
   usesTool: string;
   /** Call parameters; values may reference upstream outputs (`{{node.output.x}}`). */
   params?: Record<string, unknown>;
