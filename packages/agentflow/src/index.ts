@@ -84,7 +84,17 @@ export {
   type CostModel,
   DEFAULT_COST_MODEL,
 } from './simTypes.js';
-export { simulate } from './simulate.js';
+export { simulate, finalOutput } from './simulate.js';
+export {
+  type AssertionKind,
+  type Assertion,
+  type EvalCase,
+  type EvalSet,
+  type AssertionResult,
+  type EvalCaseResult,
+  type EvalReport,
+  runEvalSet,
+} from './evalSet.js';
 export {
   type LangGraphNode,
   type LangGraphEdge,

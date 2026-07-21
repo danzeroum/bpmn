@@ -1492,6 +1492,42 @@ RuleVerdict so it drops into the same governance path as
 
 ***
 
+### evalPromotionGate()
+
+```ts
+function evalPromotionGate(
+   workflow, 
+   evalSet, 
+   locale?): RuleVerdict;
+```
+
+Squad Lane SL-7 — the EvalSet promotion gate. Running the target's eval set
+below its `promotionThreshold` blocks promotion to active, expressed through
+the SAME RuleVerdict shape as `agentPromotionGate` (reusing the
+evaluateGates/PromotionRule path, not a new mechanism). `EVAL_BELOW_THRESHOLD`
+is the stable token in the reason (the codes-in-reason convention). An eval
+with no assertions never blocks (honest degradation — nothing to fail).
+
+#### Parameters
+
+##### workflow
+
+`AgentWorkflow`
+
+##### evalSet
+
+`EvalSet`
+
+##### locale?
+
+`"en"` \| `"pt"`
+
+#### Returns
+
+`RuleVerdict`
+
+***
+
 ### agentReferenceCurrencyWarnings()
 
 ```ts
@@ -1763,6 +1799,26 @@ Maps a raised escalation (actor, code, target) to a ledger append input.
 #### Returns
 
 `AuditEntryInput`
+
+***
+
+### evalSetAdapter()
+
+```ts
+function evalSetAdapter(evalSets): ArtifactAdapter;
+```
+
+A Biblioteca adapter over an injected `EvalSet[]`.
+
+#### Parameters
+
+##### evalSets
+
+readonly `EvalSet`[]
+
+#### Returns
+
+`ArtifactAdapter`
 
 ***
 

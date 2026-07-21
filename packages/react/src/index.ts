@@ -42,6 +42,8 @@ export { AgentStudio, type AgentStudioProps, type AgentSimulationRecord } from '
 export { proposeErrorBoundaryCommand } from './agent/agentBoundary.js';
 // Squad Lane (Handoff 22) SL-2 — host-injected tool provider
 export { createToolProvider, type ToolProvider } from './agent/toolProvider.js';
+// Squad Lane (Handoff 22) SL-7 — host-injected prompt provider
+export { createPromptProvider, type PromptProvider } from './agent/promptProvider.js';
 export * from './agent/agentEditor.js';
 
 // Simulation (Handoff 7A)

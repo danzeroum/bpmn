@@ -27,6 +27,7 @@ export type { RecipeAdapter } from './recipeAdapter.js';
 export { activeCopilotPromptVersion, copilotPromptAdapter } from './copilotPromptAdapter.js';
 export { activeLintProfileVersion, lintProfileAdapter } from './lintProfileAdapter.js';
 export { resolveToolContract, toolAdapter } from './toolContractAdapter.js';
+export { evalSetAdapter } from './evalSetAdapter.js';
 export { eventDefinitionCatalogAdapter } from './eventDefinitionCatalogAdapter.js';
 export type { GovernedEventDefinitionRecord } from './eventDefinitionCatalogAdapter.js';
 export { eventBindingChangedEntry, EVENT_BINDING_CHANGED_TYPE } from './eventBindingLedger.js';
@@ -67,6 +68,6 @@ export type {
   AgentArtifactVersion,
   AgentWorkflowAdapterOptions,
 } from './agentWorkflowAdapter.js';
-export { agentPromotionGate, agentReferenceCurrencyWarnings } from './agentGovernance.js';
+export { agentPromotionGate, evalPromotionGate, agentReferenceCurrencyWarnings } from './agentGovernance.js';
 export type { AgentReferenceWarning } from './agentGovernance.js';
 export { AdapterError } from './errors.js';

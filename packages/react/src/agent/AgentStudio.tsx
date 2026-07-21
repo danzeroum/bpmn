@@ -5,6 +5,7 @@ import {
   formatRef,
   minCoherentLevel,
   normalizeSchema,
+  promptVariables,
   requiresDownstreamGate,
   simulate,
   TEMPLATES,
@@ -26,6 +27,7 @@ import { useT } from '../i18n/I18nContext.js';
 import { BlockedDecisionNotice } from '../simulation/DecisionInputCard.js';
 import { proposeErrorBoundaryCommand } from './agentBoundary.js';
 import type { ToolProvider } from './toolProvider.js';
+import type { PromptProvider } from './promptProvider.js';
 import { hasQuickFix, quickFixFor } from './quickFix.js';
 import {
   addNode,
@@ -91,6 +93,13 @@ export interface AgentStudioProps {
    * validates, just without contract-aware checks (cerca §1.7/§2.4).
    */
   toolProvider?: ToolProvider;
+  /**
+   * Squad Lane SL-7 — resolves an llm node's `promptRef` to its body text (from
+   * the Library btv:prompt artifact) for the coverage validator, and persists
+   * edits back to the artifact via `save`. Absent → no coverage validator;
+   * present without `save` → read-only (never the AgentWorkflow — cerca §2.4).
+   */
+  promptProvider?: PromptProvider;
 }
 
 const NODE_TYPES: { type: NodeType; labelKey: string; descKey: string; icon: string }[] = [
@@ -128,6 +137,7 @@ export function AgentStudio(props: AgentStudioProps) {
     author,
     timestamp,
     toolProvider,
+    promptProvider,
   } = props;
   const t = useT();
   const { emitEditorEvent } = useEditorConfig();
@@ -431,7 +441,7 @@ export function AgentStudio(props: AgentStudioProps) {
               <>
                 <div style={eyebrow}>{t('agent.inspector.title')}</div>
                 {!selected && <div style={{ fontSize: 12, color: 'var(--bpmnr-text-muted)' }}>{t('agent.inspector.empty')}</div>}
-                {selected && <Inspector node={selected} wf={wf} t={t} toolProvider={toolProvider} onConfig={(patch) => apply(updateNodeConfig(wf, selected.id, patch))} onToggle={(d) => apply(toggleDecorator(wf, selected.id, d))} onRemove={() => { apply(removeNode(wf, selected.id)); setSelectedId(null); }} />}
+                {selected && <Inspector node={selected} wf={wf} t={t} toolProvider={toolProvider} promptProvider={promptProvider} onConfig={(patch) => apply(updateNodeConfig(wf, selected.id, patch))} onToggle={(d) => apply(toggleDecorator(wf, selected.id, d))} onRemove={() => { apply(removeNode(wf, selected.id)); setSelectedId(null); }} />}
                 <ProblemsPanel
                   t={t}
                   issues={issues}
@@ -490,6 +500,7 @@ function Inspector({
   wf,
   t,
   toolProvider,
+  promptProvider,
   onConfig,
   onToggle,
   onRemove,
@@ -498,6 +509,7 @@ function Inspector({
   wf: AgentWorkflow;
   t: ReturnType<typeof useT>;
   toolProvider?: ToolProvider;
+  promptProvider?: PromptProvider;
   onConfig: (patch: Record<string, unknown>) => void;
   onToggle: (d: 'memory' | 'planner' | 'errorBoundary') => void;
   onRemove: () => void;
@@ -554,6 +566,9 @@ function Inspector({
                 <input type="checkbox" checked={node.config.structuredOutput === true} onChange={(e) => onConfig({ structuredOutput: e.target.checked })} />
                 {t('agent.inspector.structured')}
               </label>
+              {promptProvider && (
+                <PromptCoverageValidator t={t} wf={wf} promptRef={node.config.promptRef} provider={promptProvider} />
+              )}
             </>
           )}
           {node.type === 'tool' && (
@@ -638,6 +653,95 @@ function ToolContractView({
       <div style={idRow}><span style={idKey}>{t('agent.contracts.authorization')}</span><span>{contract.authorization}</span></div>
     </div>
   );
+}
+
+/**
+ * Prompt coverage validator (Squad Lane SL-7, prototype 05). A transparent
+ * textarea over a highlight backdrop paints each `{{var}}` — green when it is a
+ * declared input, amber when it is unknown — plus a coverage bar. The prompt
+ * TEXT is resolved through the injected provider (the body lives in the Library
+ * btv:prompt artifact), and edits persist via `save` (never the AgentWorkflow);
+ * without `save` the textarea is read-only. Resolve → undefined warns honestly.
+ */
+function PromptCoverageValidator({
+  t,
+  wf,
+  promptRef,
+  provider,
+}: {
+  t: ReturnType<typeof useT>;
+  wf: AgentWorkflow;
+  promptRef: string;
+  provider: PromptProvider;
+}) {
+  const resolved = provider.resolve(promptRef);
+  const [text, setText] = useState(resolved ?? '');
+  useEffect(() => setText(provider.resolve(promptRef) ?? ''), [promptRef, provider]);
+  const backdrop = useRef<HTMLDivElement | null>(null);
+  if (resolved === undefined) {
+    return <div style={toolUnresolved} data-testid="agent-coverage-unresolved">⚠ {t('agent.coverage.unresolved')}</div>;
+  }
+  const inputVars = Object.keys(wf.inputSchema);
+  const used = new Set(promptVariables(text));
+  const coveredCount = inputVars.filter((v) => used.has(v)).length;
+  const readOnly = provider.save === undefined;
+  const onChange = (value: string): void => {
+    setText(value);
+    provider.save?.(promptRef, value);
+  };
+  const percent = inputVars.length === 0 ? 0 : Math.round((coveredCount / inputVars.length) * 100);
+  return (
+    <div data-agent-coverage>
+      <div style={eyebrow}>{t('agent.coverage.title')}</div>
+      <div style={coverageWrap}>
+        <div ref={backdrop} aria-hidden style={coverageBackdrop}>
+          {highlightSegments(text, inputVars)}
+        </div>
+        <textarea
+          value={text}
+          readOnly={readOnly}
+          onChange={(e) => onChange(e.target.value)}
+          onScroll={(e) => {
+            if (backdrop.current) {
+              backdrop.current.scrollTop = e.currentTarget.scrollTop;
+              backdrop.current.scrollLeft = e.currentTarget.scrollLeft;
+            }
+          }}
+          aria-label={t('agent.coverage.title')}
+          data-testid="agent-coverage-textarea"
+          style={coverageTextarea}
+        />
+      </div>
+      <div style={coverageTrack} role="progressbar" aria-valuenow={coveredCount} aria-valuemin={0} aria-valuemax={inputVars.length}>
+        <div style={{ width: `${percent}%`, height: '100%', background: 'var(--bpmnr-selected, #1a6a54)', transition: prefersReducedMotion() ? 'none' : 'width 160ms ease' }} />
+      </div>
+      <div style={{ fontSize: 10, color: 'var(--bpmnr-text-muted)' }} data-testid="agent-coverage-bar">
+        {t('agent.coverage.bar', { used: coveredCount, total: inputVars.length })}
+      </div>
+      {readOnly && <div style={{ fontSize: 10, color: '#7a611e' }}>{t('agent.coverage.readOnly')}</div>}
+    </div>
+  );
+}
+
+/** Splits prompt text into plain runs + highlighted `{{var}}` spans (SL-7). */
+function highlightSegments(text: string, inputVars: string[]): React.ReactNode[] {
+  const declared = new Set(inputVars);
+  const pattern = /\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g;
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  let key = 0;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > last) out.push(text.slice(last, match.index));
+    out.push(
+      <mark key={key++} style={declared.has(match[1]) ? markCovered : markUnknown}>
+        {match[0]}
+      </mark>,
+    );
+    last = match.index + match[0].length;
+  }
+  out.push(text.slice(last));
+  return out;
 }
 
 /**
@@ -923,6 +1027,13 @@ const agentTabBtn = (active: boolean): React.CSSProperties => ({
 });
 const idRow: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11 };
 const idKey: React.CSSProperties = { color: 'var(--bpmnr-text-muted)' };
+const coverageWrap: React.CSSProperties = { position: 'relative', border: '1px solid var(--bpmnr-border, #e2ddd3)', borderRadius: 6, minHeight: 76 };
+const coverageShared: React.CSSProperties = { margin: 0, padding: '6px 7px', fontSize: 11, fontFamily: 'ui-monospace, monospace', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word', boxSizing: 'border-box', minHeight: 76 };
+const coverageBackdrop: React.CSSProperties = { ...coverageShared, position: 'absolute', inset: 0, color: 'var(--bpmnr-text, #2e2a26)', pointerEvents: 'none', overflow: 'auto' };
+const coverageTextarea: React.CSSProperties = { ...coverageShared, position: 'relative', display: 'block', width: '100%', background: 'transparent', color: 'transparent', caretColor: 'var(--bpmnr-text, #2e2a26)', border: 'none', outline: 'none', resize: 'vertical' };
+const coverageTrack: React.CSSProperties = { height: 6, background: 'var(--bpmnr-border, #e2ddd3)', borderRadius: 3, overflow: 'hidden', marginTop: 6 };
+const markCovered: React.CSSProperties = { background: 'rgba(26,106,84,0.20)', color: 'inherit', borderRadius: 3 };
+const markUnknown: React.CSSProperties = { background: 'rgba(122,97,30,0.20)', color: 'inherit', borderRadius: 3 };
 const problemRow: React.CSSProperties = { borderTop: '1px solid var(--bpmnr-border, #e2ddd3)', padding: '6px 0' };
 const problemCode: React.CSSProperties = { fontFamily: 'ui-monospace, monospace', fontSize: 9, color: 'var(--bpmnr-text-muted)', marginLeft: 'auto' };
 const miniBtn: React.CSSProperties = { minHeight: 26, border: '1px solid var(--bpmnr-border, #e2ddd3)', background: 'transparent', borderRadius: 6, padding: '2px 8px', cursor: 'pointer', fontSize: 10.5 };

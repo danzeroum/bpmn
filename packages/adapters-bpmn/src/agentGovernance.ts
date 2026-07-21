@@ -1,5 +1,5 @@
 import type { BpmnDiagram, RuleVerdict } from '@buildtovalue/core';
-import { toRef, validateGraph, type AgentWorkflow } from '@buildtovalue/agentflow';
+import { runEvalSet, toRef, validateGraph, type AgentWorkflow, type EvalSet } from '@buildtovalue/agentflow';
 import type { LifecycleStatus } from '@buildtovalue/library';
 import type { AgentArtifactSource } from './agentWorkflowAdapter.js';
 
@@ -28,6 +28,32 @@ export function agentPromotionGate(workflow: AgentWorkflow, locale: 'en' | 'pt' 
       locale === 'pt'
         ? `Validação do grafo: ${errors.length} erro(s) §3 bloqueiam a promoção — ${codes}`
         : `Graph validation: ${errors.length} §3 error(s) block promotion — ${codes}`,
+  };
+}
+
+/**
+ * Squad Lane SL-7 — the EvalSet promotion gate. Running the target's eval set
+ * below its `promotionThreshold` blocks promotion to active, expressed through
+ * the SAME {@link RuleVerdict} shape as `agentPromotionGate` (reusing the
+ * evaluateGates/PromotionRule path, not a new mechanism). `EVAL_BELOW_THRESHOLD`
+ * is the stable token in the reason (the codes-in-reason convention). An eval
+ * with no assertions never blocks (honest degradation — nothing to fail).
+ */
+export function evalPromotionGate(
+  workflow: AgentWorkflow,
+  evalSet: EvalSet,
+  locale: 'en' | 'pt' = 'en',
+): RuleVerdict {
+  const report = runEvalSet(evalSet, workflow);
+  if (report.total === 0 || report.meetsThreshold) return { allowed: true };
+  const pct = Math.round(report.passRate * 100);
+  const threshold = Math.round(report.threshold * 100);
+  return {
+    allowed: false,
+    reason:
+      locale === 'pt'
+        ? `EVAL_BELOW_THRESHOLD: avaliação passou ${report.passed}/${report.total} (${pct}%), abaixo do limiar ${threshold}%`
+        : `EVAL_BELOW_THRESHOLD: eval passed ${report.passed}/${report.total} (${pct}%), below threshold ${threshold}%`,
   };
 }
 

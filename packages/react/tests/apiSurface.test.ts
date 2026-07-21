@@ -135,6 +135,7 @@ const EXPECTED_EXPORTS = [
   'addEdge',
   'addNode',
   'agentEditorReducer',
+  'createPromptProvider',
   'createToolProvider',
   'initEditorState',
   'layoutWorkflow',

@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { RESEARCH_AGENT, type AgentWorkflow, type ToolContract } from '@buildtovalue/agentflow';
 import { createDiagram, createNode, type BpmnDiagram } from '@buildtovalue/core';
-import type { BpmnPlugin, EditorEvent, ToolProvider } from '../src/index.js';
-import { AgentStudio, BpmnDesigner, createToolProvider, PT_BR } from '../src/index.js';
+import type { BpmnPlugin, EditorEvent, PromptProvider, ToolProvider } from '../src/index.js';
+import { AgentStudio, BpmnDesigner, createPromptProvider, createToolProvider, PT_BR } from '../src/index.js';
 
 /**
  * Handoff 12 A-4 — the Agent Studio shell (§9.5): opens over the Designer,
@@ -27,6 +27,7 @@ function renderStudio(
   onClose = vi.fn(),
   onSave = vi.fn(),
   toolProvider?: ToolProvider,
+  promptProvider?: PromptProvider,
 ) {
   const { events, plugin } = capture();
   const utils = render(
@@ -40,6 +41,7 @@ function renderStudio(
         onSave={onSave}
         onClose={onClose}
         toolProvider={toolProvider}
+        promptProvider={promptProvider}
       />
     </BpmnDesigner>,
   );
@@ -277,5 +279,57 @@ describe('AgentStudio Problems Panel (Squad Lane SL-6)', () => {
     const inspector = screen.getByLabelText('Inspector do nó do agente');
     // the node inspector header now shows the selected node
     expect(within(inspector).getByText('◆ dec-3')).toBeTruthy();
+  });
+});
+
+describe('AgentStudio prompt coverage validator (Squad Lane SL-7)', () => {
+  const selectLlm = () => fireEvent.click(screen.getByRole('button', { name: 'Selecionar nó llm-1' }));
+
+  it('is absent without a PromptProvider', () => {
+    renderStudio(RESEARCH_AGENT);
+    selectLlm();
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    expect(inspector.querySelector('[data-agent-coverage]')).toBeNull();
+  });
+
+  it('resolves the prompt body and coverage reflects the inputSchema', () => {
+    const provider = createPromptProvider({ 'prm:research@2.0.0': 'Answer {{query}} concisely.' });
+    renderStudio(RESEARCH_AGENT, vi.fn(), vi.fn(), undefined, provider);
+    selectLlm();
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    const ta = within(inspector).getByTestId('agent-coverage-textarea') as HTMLTextAreaElement;
+    expect(ta.value).toBe('Answer {{query}} concisely.');
+    expect(within(inspector).getByTestId('agent-coverage-bar').textContent).toContain('1/1');
+  });
+
+  it('editing persists to the prompt artifact via save, NOT the agent workflow', () => {
+    const saved: Array<[string, string]> = [];
+    const provider = createPromptProvider({ 'prm:research@2.0.0': 'no vars here' }, (ref, text) =>
+      saved.push([ref, text]),
+    );
+    const onSave = vi.fn();
+    renderStudio(RESEARCH_AGENT, vi.fn(), onSave, undefined, provider);
+    selectLlm();
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    const ta = within(inspector).getByTestId('agent-coverage-textarea') as HTMLTextAreaElement;
+    fireEvent.change(ta, { target: { value: 'Use {{query}} now.' } });
+    expect(saved.at(-1)).toEqual(['prm:research@2.0.0', 'Use {{query}} now.']);
+    expect(onSave).not.toHaveBeenCalled(); // the agent workflow is never touched by a prompt edit
+  });
+
+  it('warns when the provider cannot resolve the ref (never silent)', () => {
+    renderStudio(RESEARCH_AGENT, vi.fn(), vi.fn(), undefined, createPromptProvider({}));
+    selectLlm();
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    expect(within(inspector).getByTestId('agent-coverage-unresolved')).toBeTruthy();
+  });
+
+  it('is read-only without a save callback', () => {
+    const provider = createPromptProvider({ 'prm:research@2.0.0': 'text' });
+    renderStudio(RESEARCH_AGENT, vi.fn(), vi.fn(), undefined, provider);
+    selectLlm();
+    const inspector = screen.getByLabelText('Inspector do nó do agente');
+    const ta = within(inspector).getByTestId('agent-coverage-textarea') as HTMLTextAreaElement;
+    expect(ta.readOnly).toBe(true);
   });
 });

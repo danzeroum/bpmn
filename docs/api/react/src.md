@@ -13422,3 +13422,15 @@ Re-exports [createToolProvider](src/agent.md#createtoolprovider)
 ### ToolProvider
 
 Re-exports [ToolProvider](src/agent.md#toolprovider-1)
+
+***
+
+### createPromptProvider
+
+Re-exports [createPromptProvider](src/agent.md#createpromptprovider)
+
+***
+
+### PromptProvider
+
+Re-exports [PromptProvider](src/agent.md#promptprovider-1)

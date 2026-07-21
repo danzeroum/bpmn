@@ -134,6 +134,239 @@ Downstream-gate obligation.
 
 ***
 
+### Assertion
+
+One assertion over the agent's final output.
+
+#### Properties
+
+##### kind
+
+```ts
+kind: AssertionKind;
+```
+
+##### path?
+
+```ts
+optional path?: string;
+```
+
+Dotted path into the output (`answer`, `sources.0.url`); omitted → whole output.
+
+##### value?
+
+```ts
+optional value?: string;
+```
+
+For `contains`: the substring the value must include.
+
+##### pattern?
+
+```ts
+optional pattern?: string;
+```
+
+For `regex`: the pattern the value (stringified) must match.
+
+***
+
+### EvalCase
+
+One eval case: a scenario input, its per-node fixtures, and its assertions.
+
+#### Properties
+
+##### name
+
+```ts
+name: string;
+```
+
+##### input?
+
+```ts
+optional input?: Record<string, unknown>;
+```
+
+The scenario input this case represents (contextual; the run is fixture-driven).
+
+##### fixtures?
+
+```ts
+optional fixtures?: Fixtures;
+```
+
+Per-node mock outputs that make the run deterministic.
+
+##### assertions
+
+```ts
+assertions: Assertion[];
+```
+
+***
+
+### EvalSet
+
+The EVAL artifact (`eval:rsch-base@1.0.0`). `promotionThreshold` is the
+assertion pass-rate required to promote the target to active.
+
+#### Properties
+
+##### kind
+
+```ts
+kind: "EvalSet";
+```
+
+##### id
+
+```ts
+id: string;
+```
+
+##### version
+
+```ts
+version: string;
+```
+
+##### targetRef
+
+```ts
+targetRef: string;
+```
+
+The agent this eval targets, e.g. `agnt-rsch@2.1.0`.
+
+##### promotionThreshold
+
+```ts
+promotionThreshold: number;
+```
+
+##### cases
+
+```ts
+cases: EvalCase[];
+```
+
+***
+
+### AssertionResult
+
+The verdict for a single assertion.
+
+#### Properties
+
+##### kind
+
+```ts
+kind: AssertionKind;
+```
+
+##### path?
+
+```ts
+optional path?: string;
+```
+
+##### passed
+
+```ts
+passed: boolean;
+```
+
+***
+
+### EvalCaseResult
+
+The verdict for a single case.
+
+#### Properties
+
+##### name
+
+```ts
+name: string;
+```
+
+##### completed
+
+```ts
+completed: boolean;
+```
+
+True when the run reached an end (a blocked run cannot satisfy assertions).
+
+##### assertions
+
+```ts
+assertions: AssertionResult[];
+```
+
+##### passed
+
+```ts
+passed: boolean;
+```
+
+***
+
+### EvalReport
+
+The whole eval report — the promotion scoreboard.
+
+#### Properties
+
+##### targetRef
+
+```ts
+targetRef: string;
+```
+
+##### passed
+
+```ts
+passed: number;
+```
+
+Assertions that passed / total assertions across all cases.
+
+##### total
+
+```ts
+total: number;
+```
+
+##### passRate
+
+```ts
+passRate: number;
+```
+
+##### threshold
+
+```ts
+threshold: number;
+```
+
+##### meetsThreshold
+
+```ts
+meetsThreshold: boolean;
+```
+
+##### cases
+
+```ts
+cases: EvalCaseResult[];
+```
+
+***
+
 ### LangGraphNode
 
 One node of the LangGraph JSON subset.
@@ -1591,6 +1824,16 @@ Whether a downstream btv:gate is required at this level.
 
 ***
 
+### AssertionKind
+
+```ts
+type AssertionKind = "contains" | "regex" | "schema";
+```
+
+The three honest assertion kinds (cerca §5) — never code.
+
+***
+
 ### RefInput
 
 ```ts
@@ -1956,6 +2199,34 @@ Declaring a higher level is allowed — it is a more conservative claim.
 #### Returns
 
 [`ValidationIssue`](#validationissue)[]
+
+***
+
+### runEvalSet()
+
+```ts
+function runEvalSet(evalSet, wf): EvalReport;
+```
+
+Runs every case of an [EvalSet](#evalset) against `wf` via the deterministic
+simulate engine and returns the [EvalReport](#evalreport). A blocked run (no `end`)
+fails every assertion of that case. Assertion pass-rate ≥ `promotionThreshold`
+→ `meetsThreshold`. No fixtures/assertions → `total === 0`, `passRate === 1`
+(honest: nothing to fail).
+
+#### Parameters
+
+##### evalSet
+
+[`EvalSet`](#evalset)
+
+##### wf
+
+[`AgentWorkflow`](#agentworkflow)
+
+#### Returns
+
+[`EvalReport`](#evalreport)
 
 ***
 
@@ -2458,6 +2729,29 @@ an honest stop lands in `blockedDecision`, a clean finish sets `complete`.
 #### Returns
 
 [`SimulationState`](#simulationstate)
+
+***
+
+### finalOutput()
+
+```ts
+function finalOutput(state): Record<string, unknown> | undefined;
+```
+
+The agent's final merged output (Squad Lane SL-7), recovered from the last
+`end` trail entry, or `undefined` when the run BLOCKED (no `end` record) —
+an honest signal the run did not complete. Encapsulates the fragile
+trail-message parsing in ONE tested place so `runEvalSet` never re-parses.
+
+#### Parameters
+
+##### state
+
+[`SimulationState`](#simulationstate)
+
+#### Returns
+
+`Record`\<`string`, `unknown`\> \| `undefined`
 
 ***
 

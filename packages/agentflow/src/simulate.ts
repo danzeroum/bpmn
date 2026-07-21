@@ -358,3 +358,27 @@ export function simulate(wf: AgentWorkflow, options: SimulateOptions = {}): Simu
   // Ran out of the step budget — an honest structural block, never a hang.
   return block(current, 'budget', `step budget ${maxSteps} exhausted`);
 }
+
+/** The `✓ end · <json>` trail-message prefix — the sole exposure of the run's
+ * accumulated output (SimulationState is parity-pinned, so it carries no output
+ * field). Kept beside the two emission sites so the format has one owner. */
+const END_MESSAGE_MARK = '{';
+
+/**
+ * The agent's final merged output (Squad Lane SL-7), recovered from the last
+ * `end` trail entry, or `undefined` when the run BLOCKED (no `end` record) —
+ * an honest signal the run did not complete. Encapsulates the fragile
+ * trail-message parsing in ONE tested place so `runEvalSet` never re-parses.
+ */
+export function finalOutput(state: SimulationState): Record<string, unknown> | undefined {
+  const last = state.trail.at(-1);
+  if (!last || last.type !== 'end') return undefined;
+  const start = last.message.indexOf(END_MESSAGE_MARK);
+  if (start < 0) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(last.message.slice(start));
+    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : undefined;
+  } catch {
+    return undefined;
+  }
+}

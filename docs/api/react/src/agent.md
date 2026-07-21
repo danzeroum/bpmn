@@ -194,6 +194,17 @@ Squad Lane SL-2 — resolves `tool:*@semver` bindings to their contracts and
 → the tool binding degrades to a typed text field; the graph still
 validates, just without contract-aware checks (cerca §1.7/§2.4).
 
+##### promptProvider?
+
+```ts
+optional promptProvider?: PromptProvider;
+```
+
+Squad Lane SL-7 — resolves an llm node's `promptRef` to its body text (from
+the Library btv:prompt artifact) for the coverage validator, and persists
+edits back to the artifact via `save`. Absent → no coverage validator;
+present without `save` → read-only (never the AgentWorkflow — cerca §2.4).
+
 ***
 
 ### EditEffect
@@ -319,6 +330,63 @@ width: number;
 ```ts
 height: number;
 ```
+
+***
+
+### PromptProvider
+
+Squad Lane SL-7 — the host-injected prompt provider. An agent node holds only
+a `promptRef`; the prompt BODY lives in the Library btv:prompt artifact, never
+on the `AgentWorkflow` (a body field there would be the "loose string" the
+model avoids). The coverage validator resolves the text through this provider,
+runs the headless `promptCoverage` against the workflow inputSchema, and
+persists edits back to the ARTIFACT via `save` — not the agent node.
+
+Injected as an `AgentStudio` prop (the `ToolProvider`/`AIProvider` mold):
+absent → no coverage validator; present but `resolve` returns undefined →
+declared warning; no `save` → read-only textarea. Never silent.
+
+#### Methods
+
+##### resolve()
+
+```ts
+resolve(promptRef): string | undefined;
+```
+
+Resolve a `promptRef` (`prm:research@2.0.0`) to its body text, or undefined.
+
+###### Parameters
+
+###### promptRef
+
+`string`
+
+###### Returns
+
+`string` \| `undefined`
+
+##### save()?
+
+```ts
+optional save(promptRef, text): void;
+```
+
+Persist an edited prompt body to the Library artifact. Omit → read-only.
+
+###### Parameters
+
+###### promptRef
+
+`string`
+
+###### text
+
+`string`
+
+###### Returns
+
+`void`
 
 ***
 
@@ -669,6 +737,32 @@ graph), so the Studio derives them — same input → same layout.
 #### Returns
 
 [`NodeLayout`](#nodelayout)[]
+
+***
+
+### createPromptProvider()
+
+```ts
+function createPromptProvider(bodies, onSave?): PromptProvider;
+```
+
+Builds a [PromptProvider](#promptprovider-1) over an in-memory map of `promptRef → body`.
+A host wires the real Library artifact behind the same interface; the optional
+`onSave` receives every edit (and updates the map) so the demo/test round-trips.
+
+#### Parameters
+
+##### bodies
+
+`Record`\<`string`, `string`\>
+
+##### onSave?
+
+(`promptRef`, `text`) => `void`
+
+#### Returns
+
+[`PromptProvider`](#promptprovider-1)
 
 ***
 
