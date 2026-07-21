@@ -325,13 +325,23 @@ Abertos durante a SL-1 (revisão de arquitetura), **não bloqueiam** a entrega:
   do catálogo da Biblioteca para DENTRO de um nó `tool` é um **gesto novo** (spec visual no protótipo 01)
   e fica como polimento registrado, não escopo do MVP. O `ToolProvider` já nasce injetável (SL-2), então
   o drag só precisa escrever o mesmo `usesTool` que o seletor já escreve.
-- **`CTX_PURPOSE_VIOLATION` — regra de FLUXO (SL-8 estrutural → SL-10).** A SL-8 entrega a linha
-  ESTRUTURAL do `ctx-contract` (`immutableAfterGate` só em `operational-action`; `merge` coerente com o
-  `purpose`). A regra de FLUXO que o parecer E5 motivou — um contexto `purpose: grounding` não pode
-  alcançar uma tool de efeito `external-commitment` sem revisão — exige o GRAFO do squad + os efeitos das
-  tools dos membros RESOLVIDOS (injetados). Ela aterrissa onde grafo e efeitos são conhecidos: a
-  **simulação de squad (SL-10)** ou uma `validateSquad` com resolvers de membro/tool injetados — nunca
-  sumindo em silêncio (o código `CTX_PURPOSE_VIOLATION` já existe; a SL-10 acrescenta o gatilho de fluxo).
+- **`CTX_PURPOSE_VIOLATION` — regra de FLUXO (SL-8 estrutural → SL-10 ✔ aterrissou; cobertura fina → SL-12).**
+  A SL-8 entregou a linha ESTRUTURAL do `ctx-contract` (`immutableAfterGate` só em `operational-action`;
+  `merge` coerente com o `purpose`). A regra de FLUXO que o parecer E5 motivou — um contexto
+  `purpose: grounding` não pode alcançar uma tool de efeito `external-commitment` sem revisão — **aterrissou
+  na SL-10** como `validateSquadFlow(manifest, contract, { resolveWorkflow, resolveTool })`: um papel LEITOR
+  de chave grounding cujo workflow resolvido alcança uma tool com efeito que exige gate, e o squad **não tem
+  gate nenhum**, dispara `CTX_PURPOSE_VIOLATION` (degradável — ambos resolvers exigidos; reusa
+  `effectRequiresGate` da SL-1). O que **fica para a SL-12**: um squad QUE JÁ TEM gate defere a pergunta fina
+  "existe um gate que cobre ESTA ação no caminho" ao `GATE_NOT_COVERING` sobre `reachableGateFrom` — a SL-10
+  hoje só sabe dizer "há review no squad ou não". Documentado no JSDoc de `validateSquadFlow`, nunca silencioso.
+- **Masking através da fronteira do worker (SL-10 — limitação honesta).** O `simulateSquad` aceita uma
+  `MaskingPolicy` INJETADA (função `mask(campo, valor)`), mas uma função não cruza `postMessage`. No caminho
+  do worker (`squad-sim` job) a política não viaja, então o job cai no **redação conservadora** (chaves
+  `sensitivity`/`forbidden` → `MASKED_VALUE`) — nunca vaza PII, apenas mascara mais grosseiramente do que uma
+  política custom faria. O caminho SÍNCRONO (in-thread) usa a política injetada normalmente. Se um host
+  precisar de masking custom OFF-thread, a política teria de virar um descritor serializável (ex.: lista de
+  campos + estratégia nomeada), resolvido dentro do worker — registrado, fora do escopo da SL-10.
 - **Abas de Onda no nó `agentTask` do canvas principal (SL-5 → SL-12).** A Onda 1 (Identidade/Inteligência)
   vive no inspector do **AgentStudio**, onde `workflow` + `toolProvider` já são props (SL-2) — degradabilidade
   herdada, zero encanamento novo. O `agentTask` no canvas principal só carrega `agentWorkflowRef` +
