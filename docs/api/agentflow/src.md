@@ -1375,6 +1375,47 @@ optional when?: string;
 
 ***
 
+### SchemaNode
+
+An honest subset of JSON Schema (Squad Lane SL-4) — a field descriptor with
+only `type`, `required`, `enum`, `items`, `properties`. ANYTHING outside this
+set is declared in a warning (`SCHEMA_UNSUPPORTED_KEYWORD`), never silently
+honored — we do not claim to support JSON Schema we cannot evaluate.
+
+#### Properties
+
+##### type
+
+```ts
+type: string;
+```
+
+##### required?
+
+```ts
+optional required?: boolean;
+```
+
+##### enum?
+
+```ts
+optional enum?: unknown[];
+```
+
+##### items?
+
+```ts
+optional items?: SchemaNode;
+```
+
+##### properties?
+
+```ts
+optional properties?: Record<string, SchemaNode>;
+```
+
+***
+
 ### AgentWorkflow
 
 The AgentWorkflow — the versioned artifact whose source of truth is the
@@ -1508,12 +1549,14 @@ Injected, degradable integrations (cerca §1.7).
 ##### resolveDelegate?
 
 ```ts
-optional resolveDelegate?: (ref) => boolean;
+optional resolveDelegate?: (ref) => boolean | AgentWorkflow | undefined;
 ```
 
 Resolves a delegate reference to another AgentWorkflow. Injected by the
-host (registry). Absent or returning false → the delegate is a warning,
-not an error (§3.4).
+host (registry). Absent, or returning `false`/`undefined` → the delegate is
+a warning, not an error (§3.4). Squad Lane SL-4 widens the return ADDITIVELY:
+a resolver may return the delegate's `AgentWorkflow` (a boolean still works)
+— only then can the cross-workflow contract/cycle/chain checks run.
 
 ###### Parameters
 
@@ -1523,7 +1566,7 @@ not an error (§3.4).
 
 ###### Returns
 
-`boolean`
+`boolean` \| [`AgentWorkflow`](#agentworkflow) \| `undefined`
 
 ##### resolveTool?
 
@@ -1701,15 +1744,28 @@ type AgentNode =
 
 ***
 
+### SchemaField
+
+```ts
+type SchemaField = string | SchemaNode;
+```
+
+One field of a [SchemaShape](#schemashape): the legacy plain type token (`"string"`,
+`"string[]"`, `"boolean"`) OR a [SchemaNode](#schemanode). The union is purely
+ADDITIVE (SL-4, MINOR) — every existing string-token schema stays valid and
+byte-stable; readers normalize a string to `{ type }` via `normalizeSchema`.
+
+***
+
 ### SchemaShape
 
 ```ts
-type SchemaShape = Record<string, string>;
+type SchemaShape = Record<string, SchemaField>;
 ```
 
-A minimal input/output shape: property name → type token
-(`"string"`, `"string[]"`, `"boolean"`). Deliberately plain — no JSON
-Schema, no `@type` (§1.6). Must be non-empty (validation rule 5).
+A minimal input/output shape: property name → [SchemaField](#schemafield). Must be
+non-empty (validation rule 5). The plain-string form is the Handoff 12
+baseline; the [SchemaNode](#schemanode) form is the SL-4 honest JSON-Schema subset.
 
 ***
 
@@ -1730,6 +1786,16 @@ const AUTONOMY_SCALE: readonly AutonomyDefinition[];
 ```
 
 The full scale, index === level.
+
+***
+
+### SUPPORTED\_SCHEMA\_KEYWORDS
+
+```ts
+const SUPPORTED_SCHEMA_KEYWORDS: readonly ["type", "required", "enum", "items", "properties"];
+```
+
+The only keywords the honest subset supports (cerca §5 / SL-4).
 
 ***
 
@@ -2217,6 +2283,109 @@ True when `input` parses as a valid reference (no throw).
 #### Returns
 
 `boolean`
+
+***
+
+### isSchemaNode()
+
+```ts
+function isSchemaNode(field): field is SchemaNode;
+```
+
+True when a field is already the [SchemaNode](#schemanode) object form.
+
+#### Parameters
+
+##### field
+
+[`SchemaField`](#schemafield)
+
+#### Returns
+
+`field is SchemaNode`
+
+***
+
+### normalizeSchemaField()
+
+```ts
+function normalizeSchemaField(field): SchemaNode;
+```
+
+Lifts a field to a [SchemaNode](#schemanode); a legacy string becomes `{ type }`.
+
+#### Parameters
+
+##### field
+
+[`SchemaField`](#schemafield)
+
+#### Returns
+
+[`SchemaNode`](#schemanode)
+
+***
+
+### normalizeSchema()
+
+```ts
+function normalizeSchema(shape): Record<string, SchemaNode>;
+```
+
+Normalizes every field of a shape to [SchemaNode](#schemanode) form.
+
+#### Parameters
+
+##### shape
+
+[`SchemaShape`](#schemashape)
+
+#### Returns
+
+`Record`\<`string`, [`SchemaNode`](#schemanode)\>
+
+***
+
+### unsupportedKeywords()
+
+```ts
+function unsupportedKeywords(node): string[];
+```
+
+The keywords present on a [SchemaNode](#schemanode) that fall OUTSIDE the honest
+subset (recursing into `items`/`properties`). A non-empty result is declared
+as a `SCHEMA_UNSUPPORTED_KEYWORD` warning — never silently honored.
+
+#### Parameters
+
+##### node
+
+[`SchemaNode`](#schemanode)
+
+#### Returns
+
+`string`[]
+
+***
+
+### requiredKeys()
+
+```ts
+function requiredKeys(shape): string[];
+```
+
+The required-field keys of a shape (a field is required only in SchemaNode
+form with `required: true`; a legacy string field is never required).
+
+#### Parameters
+
+##### shape
+
+[`SchemaShape`](#schemashape)
+
+#### Returns
+
+`string`[]
 
 ***
 

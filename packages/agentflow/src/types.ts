@@ -171,11 +171,33 @@ export interface AgentEdge {
 }
 
 /**
- * A minimal input/output shape: property name → type token
- * (`"string"`, `"string[]"`, `"boolean"`). Deliberately plain — no JSON
- * Schema, no `@type` (§1.6). Must be non-empty (validation rule 5).
+ * An honest subset of JSON Schema (Squad Lane SL-4) — a field descriptor with
+ * only `type`, `required`, `enum`, `items`, `properties`. ANYTHING outside this
+ * set is declared in a warning (`SCHEMA_UNSUPPORTED_KEYWORD`), never silently
+ * honored — we do not claim to support JSON Schema we cannot evaluate.
  */
-export type SchemaShape = Record<string, string>;
+export interface SchemaNode {
+  type: string;
+  required?: boolean;
+  enum?: unknown[];
+  items?: SchemaNode;
+  properties?: Record<string, SchemaNode>;
+}
+
+/**
+ * One field of a {@link SchemaShape}: the legacy plain type token (`"string"`,
+ * `"string[]"`, `"boolean"`) OR a {@link SchemaNode}. The union is purely
+ * ADDITIVE (SL-4, MINOR) — every existing string-token schema stays valid and
+ * byte-stable; readers normalize a string to `{ type }` via `normalizeSchema`.
+ */
+export type SchemaField = string | SchemaNode;
+
+/**
+ * A minimal input/output shape: property name → {@link SchemaField}. Must be
+ * non-empty (validation rule 5). The plain-string form is the Handoff 12
+ * baseline; the {@link SchemaNode} form is the SL-4 honest JSON-Schema subset.
+ */
+export type SchemaShape = Record<string, SchemaField>;
 
 /** The normative autonomy scale (§4); see autonomy.ts for the definitions. */
 export type AutonomyLevel = 0 | 1 | 2 | 3 | 4 | 5;

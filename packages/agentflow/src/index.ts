@@ -35,6 +35,14 @@ export {
   matchToolParams,
 } from './toolContract.js';
 export {
+  SUPPORTED_SCHEMA_KEYWORDS,
+  isSchemaNode,
+  normalizeSchemaField,
+  normalizeSchema,
+  unsupportedKeywords,
+  requiredKeys,
+} from './schema.js';
+export {
   type GateRequirement,
   type AutonomyDefinition,
   AUTONOMY_SCALE,
