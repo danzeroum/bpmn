@@ -8,9 +8,11 @@ import {
   COPILOT_DRAFT_PROMPT,
   COPILOT_FIX_PROMPT,
   type AIProvider,
+  type CopilotPlan,
   type CopilotPromptTemplate,
   type Msg,
   type PromptTemplateRef,
+  type ProposedCommand,
   type SoundnessPreview,
 } from '@buildtovalue/copilot';
 import { generateId, type BpmnDiagram } from '@buildtovalue/core';
@@ -25,6 +27,14 @@ import { useT } from '../i18n/I18nContext.js';
  * the LOCALLY computed soundness preview. "Desfazer tudo" reverts the whole
  * plan in one undo. Without a provider the panel renders nothing and the
  * editor is unchanged (§8.5).
+ *
+ * #150 (N-3) — aplicar ≠ aprovar made VISIBLE: a valid proposal arrives as a
+ * card in state PROPOSTA (nothing touches the diagram); `[Aplicar no
+ * rascunho]` executes the ONE composite through the normal CommandStack
+ * (RuleEngine/lint validate it like any edit) and the card — which never
+ * disappears — turns APLICADA · NÃO APROVADA (amber pill + banner).
+ * APROVADA (green) is only ever painted from the HOST's lifecycle signal
+ * (`suggestionStatus`), never by the act of applying.
  */
 export interface CopilotPanelProps {
   /** HOST-injected transport (§1.4). Absent → the panel does not render. */
@@ -43,6 +53,31 @@ export interface CopilotPanelProps {
    * Omitted → header unchanged.
    */
   promptStatus?: (template: PromptTemplateRef) => string | undefined;
+  /**
+   * #150: host hook behind `[Enviar p/ aprovação]` on an APPLIED card — the
+   * panel only ROUTES the intent (the lifecycle/registry/RBAC live in the
+   * host). Omitted → the button is not rendered.
+   */
+  onSubmitForApproval?: (info: { commandId: string }) => void;
+  /**
+   * #150: the HOST's lifecycle verdict for an applied suggestion, by the
+   * applied command id — the ONLY source that ever paints the green
+   * APROVADA pill. Applying never changes lifecycle status; omitting this
+   * prop means no suggestion is ever shown as approved.
+   */
+  suggestionStatus?: (commandId: string) => 'approved' | undefined;
+}
+
+/** #150 — the three visible states of a suggestion card. */
+type ProposalStatus = 'proposed' | 'applied' | 'discarded';
+
+interface ProposalState {
+  plan: CopilotPlan;
+  commands: ProposedCommand[];
+  status: ProposalStatus;
+  showDiff: boolean;
+  /** Declared veto reason when the CommandStack/RuleEngine refused the apply. */
+  vetoReason?: string;
 }
 
 interface ChatEntry {
@@ -50,6 +85,7 @@ interface ChatEntry {
   text: string;
   footer?: { author: string; commandId: string; ledgerHash?: string; soundness: SoundnessPreview };
   error?: boolean;
+  proposal?: ProposalState;
 }
 
 export function CopilotPanel({
@@ -57,6 +93,8 @@ export function CopilotPanel({
   resolveLedgerHash,
   author = 'anônimo',
   promptStatus,
+  onSubmitForApproval,
+  suggestionStatus,
 }: CopilotPanelProps) {
   const { diagram, execute, undo, stack } = useDiagram();
   const t = useT();
@@ -76,6 +114,12 @@ export function CopilotPanel({
   const sndErrors = useMemo(() => soundnessErrors(diagram), [diagram]);
 
   const push = (entry: ChatEntry) => setMessages((m) => [...m, entry]);
+  const patchProposal = (index: number, patch: Partial<ProposalState>) =>
+    setMessages((m) =>
+      m.map((entry, i) =>
+        i === index && entry.proposal ? { ...entry, proposal: { ...entry.proposal, ...patch } } : entry,
+      ),
+    );
 
   const ask = useCallback(
     async (text: string, promptTemplate?: CopilotPromptTemplate) => {
@@ -116,25 +160,57 @@ export function CopilotPanel({
           providerId: provider.id,
           conversationId: conversationId.current,
         });
-        execute(plan.command);
-        appliedState.current = stack.current;
-        setApplied(true);
-        const ledgerHash = await resolveLedgerHash?.();
+        // #150: NOTHING executes here. The proposal lands as a card the human
+        // applies (or discards) explicitly — state PROPOSTA.
         push({
           role: 'assistant',
           text: parsed.proposal.rationale,
-          footer: {
-            author: `ia.copilot@${provider.id} + ${author}`,
-            commandId: plan.command.id,
-            ledgerHash,
-            soundness: plan.soundnessPreview,
+          proposal: {
+            plan,
+            commands: parsed.proposal.commands,
+            status: 'proposed',
+            showDiff: false,
           },
         });
       } finally {
         setBusy(false);
       }
     },
-    [author, busy, diagram, execute, provider, resolveLedgerHash, stack, template],
+    [busy, diagram, provider, template],
+  );
+
+  const applyProposal = useCallback(
+    (index: number, proposal: ProposalState) => {
+      // The plan rides the NORMAL CommandStack pipeline — RuleEngine/lint
+      // validate it like any edit; a veto is declared on the card, never mute.
+      const verdict = execute(proposal.plan.command);
+      if (!verdict.allowed) {
+        patchProposal(index, { vetoReason: verdict.reason ?? 'vetoed' });
+        return;
+      }
+      appliedState.current = stack.current;
+      setApplied(true);
+      patchProposal(index, { status: 'applied', vetoReason: undefined });
+      void (async () => {
+        const ledgerHash = await resolveLedgerHash?.();
+        setMessages((m) =>
+          m.map((entry, i) =>
+            i === index
+              ? {
+                  ...entry,
+                  footer: {
+                    author: `ia.copilot@${provider?.id ?? '?'} + ${author}`,
+                    commandId: proposal.plan.command.id,
+                    ledgerHash,
+                    soundness: proposal.plan.soundnessPreview,
+                  },
+                }
+              : entry,
+          ),
+        );
+      })();
+    },
+    [author, execute, provider, resolveLedgerHash, stack],
   );
 
   if (!provider) return null;
@@ -147,6 +223,109 @@ export function CopilotPanel({
     appliedState.current = null;
   };
   const undoAllEnabled = applied && appliedState.current === stack.current;
+
+  /** #150: per-card undo — reverts the ONE composite and re-arms PROPOSTA. */
+  const undoProposal = (index: number) => {
+    if (!undoAllEnabled) return;
+    undo();
+    setApplied(false);
+    appliedState.current = null;
+    setMessages((m) =>
+      m.map((entry, i) =>
+        i === index && entry.proposal
+          ? { ...entry, footer: undefined, proposal: { ...entry.proposal, status: 'proposed' } }
+          : entry,
+      ),
+    );
+  };
+
+  const proposalCard = (entry: ChatEntry, index: number) => {
+    const proposal = entry.proposal!;
+    const { plan, commands, status } = proposal;
+    const approved = status === 'applied' && suggestionStatus?.(plan.command.id) === 'approved';
+    return (
+      <div className="bpmnr-copilot-proposal" data-testid="copilot-proposal" data-status={approved ? 'approved' : status}>
+        {status === 'proposed' && (
+          <span className="bpmnr-copilot-proposal-pill" data-testid="copilot-proposal-pill">
+            {t('copilot.proposal.pill')}
+          </span>
+        )}
+        {status === 'applied' && !approved && (
+          <span className="bpmnr-copilot-applied-pill" data-testid="copilot-applied-pill">
+            {t('copilot.applied.pill')}
+          </span>
+        )}
+        {approved && (
+          <span className="bpmnr-copilot-approved-pill" data-testid="copilot-approved-pill">
+            {t('copilot.approved.pill')}
+          </span>
+        )}
+        <span className="bpmnr-copilot-proposal-summary">
+          {t('copilot.proposal.summary', { count: commands.length })} ·{' '}
+          {t('copilot.soundnessPreview', {
+            errors: plan.soundnessPreview.errors,
+            warnings: plan.soundnessPreview.warnings,
+          })}
+        </span>
+        {status === 'applied' && !approved && (
+          <p className="bpmnr-copilot-applied-banner" data-testid="copilot-applied-banner">
+            {t('copilot.applied.banner')}
+          </p>
+        )}
+        {proposal.vetoReason && (
+          <p className="bpmnr-copilot-proposal-veto" data-testid="copilot-proposal-veto">
+            🔒 {proposal.vetoReason}
+          </p>
+        )}
+        {proposal.showDiff && (
+          <ul className="bpmnr-copilot-proposal-diff" data-testid="copilot-proposal-diff">
+            {commands.map((command, i) => (
+              <li key={i}>
+                <code>{command.type}</code> {JSON.stringify(command.params)}
+              </li>
+            ))}
+          </ul>
+        )}
+        {status === 'proposed' && (
+          <div className="bpmnr-copilot-proposal-actions">
+            <button type="button" data-testid="copilot-apply" onClick={() => applyProposal(index, proposal)}>
+              {t('copilot.proposal.apply')}
+            </button>
+            <button type="button" data-testid="copilot-discard" onClick={() => patchProposal(index, { status: 'discarded' })}>
+              {t('copilot.proposal.discard')}
+            </button>
+            <button type="button" data-testid="copilot-view-diff" onClick={() => patchProposal(index, { showDiff: !proposal.showDiff })}>
+              {t('copilot.applied.viewDiff')}
+            </button>
+          </div>
+        )}
+        {status === 'applied' && (
+          <div className="bpmnr-copilot-proposal-actions">
+            <button type="button" data-testid="copilot-undo-proposal" disabled={!undoAllEnabled} onClick={() => undoProposal(index)}>
+              {t('copilot.applied.undo')}
+            </button>
+            <button type="button" data-testid="copilot-view-diff" onClick={() => patchProposal(index, { showDiff: !proposal.showDiff })}>
+              {t('copilot.applied.viewDiff')}
+            </button>
+            {onSubmitForApproval && !approved && (
+              <button
+                type="button"
+                data-testid="copilot-submit-approval"
+                onClick={() => onSubmitForApproval({ commandId: plan.command.id })}
+              >
+                {t('copilot.applied.submitApproval')}
+              </button>
+            )}
+          </div>
+        )}
+        {status === 'discarded' && (
+          <p className="bpmnr-copilot-proposal-discarded" data-testid="copilot-discarded">
+            {t('copilot.proposal.discarded')}
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <aside className="bpmnr-copilot" data-testid="copilot-panel" style={{ width: 372 }}>
@@ -206,6 +385,7 @@ export function CopilotPanel({
         {messages.map((entry, index) => (
           <div key={index} data-role={entry.role} data-error={entry.error || undefined}>
             <p style={{ whiteSpace: 'pre-wrap' }}>{entry.text}</p>
+            {entry.proposal && proposalCard(entry, index)}
             {entry.footer && (
               <pre className="bpmnr-copilot-footer" data-testid="copilot-footer">
                 {`autoria: ${entry.footer.author}\n` +

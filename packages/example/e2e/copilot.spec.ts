@@ -25,6 +25,15 @@ test('C1: draft → applied diagram + mixed authorship + local soundness footer'
   await panel.locator('textarea').fill('processo de reembolso com aprovação');
   await page.getByTestId('copilot-generate').click();
 
+  // #150: the proposal ARRIVES as a card — nothing on the canvas yet.
+  await expect(page.getByTestId('copilot-proposal-pill')).toHaveText('PROPOSTA');
+  await expect(page.locator('[data-node-id]')).toHaveCount(0);
+  await page.getByTestId('copilot-apply').click();
+
+  // Applied → the card stays, amber-pilled NOT approved, with the banner.
+  await expect(page.getByTestId('copilot-applied-pill')).toHaveText('APLICADA · NÃO APROVADA');
+  await expect(page.getByTestId('copilot-applied-banner')).toContainText('aprovação é ação separada');
+
   // The draft landed on the canvas (7 nodes) and the footer carries the
   // authorship, the ledger hash and the LOCALLY computed soundness.
   await expect(page.locator('[data-node-id]')).toHaveCount(7);
@@ -40,11 +49,13 @@ test('C2 adjust applies incrementally; "Desfazer tudo" reverts the whole plan', 
   const panel = page.getByTestId('copilot-panel');
   await panel.locator('textarea').fill('processo de reembolso');
   await page.getByTestId('copilot-generate').click();
+  await page.getByTestId('copilot-apply').click();
   await expect(page.locator('[data-node-id]')).toHaveCount(7);
 
-  // C2: incremental adjust renames the analysis task.
+  // C2: incremental adjust renames the analysis task (its own apply).
   await panel.locator('textarea').fill('explicite o SLA de 48h na análise');
   await page.getByTestId('copilot-adjust').click();
+  await page.getByTestId('copilot-apply').last().click();
   await expect(page.locator('[data-node-id="analisar"]')).toContainText('SLA 48h');
 
   // "Desfazer tudo" of the LAST plan (the adjust) is one click/undo.
@@ -84,6 +95,7 @@ test('C5: erro SND_* listado → "sugerir correção" aplicada REMOVE o erro de 
   await expect(snd).toContainText('prompt: copilot-fix v1.0.0');
 
   await page.getByTestId('copilot-fix').click();
+  await page.getByTestId('copilot-apply').last().click();
   // The fix rides the C2 pipeline: applied, authored, locally re-analyzed.
   const footer = page.getByTestId('copilot-footer');
   await expect(footer).toContainText('soundness: 0 erros');
