@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { computeDiagramHash, createDiagram, type BpmnNode } from '@buildtovalue/core';
+import { PT_BR } from '@buildtovalue/react';
 import { VersionRegistry } from '@buildtovalue/registry';
 import {
   bpmnDiagramAdapter,
@@ -147,6 +148,9 @@ export function LibrarySurface() {
         onAction={onAction}
         initialQuery={initialQuery}
         onQueryChange={queryToUrl}
+        // #151: the pt-BR demo injects the dictionary — the exact host story
+        // the issue asked for (the default without it is English, per key).
+        messages={PT_BR}
       />
     </div>
   );
