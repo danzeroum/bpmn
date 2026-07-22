@@ -918,7 +918,8 @@ type LedgerCategory =
   | "command"
   | "verification"
   | "simulation"
-  | "replay";
+  | "replay"
+  | "evidence";
 ```
 
 Event categorization for the Ledger Explorer filter chips (Handoff 6 §6/§8

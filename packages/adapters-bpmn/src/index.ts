@@ -70,4 +70,15 @@ export type {
 } from './agentWorkflowAdapter.js';
 export { agentPromotionGate, evalPromotionGate, agentReferenceCurrencyWarnings } from './agentGovernance.js';
 export type { AgentReferenceWarning } from './agentGovernance.js';
+// Squad Lane (Handoff 22) SL-11 — EvidenceBundle as a canonical audit entry + ExecutionStore.
+export {
+  EVIDENCE_BUNDLE_TYPE,
+  buildEvidenceBundle,
+  canonicalEvidenceBundle,
+  hashEvidenceBundle,
+  evidenceBundleEntry,
+  evidenceBundleOf,
+  createInMemoryExecutionStore,
+} from './evidenceBundleLedger.js';
+export type { EvidenceBundle, EvidenceBundleMeta, ExecutionStore } from './evidenceBundleLedger.js';
 export { AdapterError } from './errors.js';

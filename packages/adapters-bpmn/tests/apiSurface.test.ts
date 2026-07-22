@@ -69,6 +69,14 @@ const EXPECTED_EXPORTS = [
   'ESCALATION_RAISED_TYPE',
   'compensationTriggeredEntry',
   'COMPENSATION_TRIGGERED_TYPE',
+  // Handoff 22 SL-11 — EvidenceBundle as a canonical audit entry + ExecutionStore.
+  'EVIDENCE_BUNDLE_TYPE',
+  'buildEvidenceBundle',
+  'canonicalEvidenceBundle',
+  'hashEvidenceBundle',
+  'evidenceBundleEntry',
+  'evidenceBundleOf',
+  'createInMemoryExecutionStore',
 ].sort();
 
 describe('@buildtovalue/adapters-bpmn public API surface', () => {

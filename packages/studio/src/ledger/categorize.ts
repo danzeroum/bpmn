@@ -12,7 +12,8 @@ export type LedgerCategory =
   | 'command'
   | 'verification'
   | 'simulation'
-  | 'replay';
+  | 'replay'
+  | 'evidence';
 
 export const LEDGER_CATEGORIES: ReadonlyArray<{ id: LedgerCategory; label: string }> = [
   { id: 'promotion', label: 'Promoções' },
@@ -21,6 +22,8 @@ export const LEDGER_CATEGORIES: ReadonlyArray<{ id: LedgerCategory; label: strin
   { id: 'verification', label: 'Verificações' },
   { id: 'simulation', label: 'Simulações' },
   { id: 'replay', label: 'Replay' },
+  // Squad Lane (Handoff 22) SL-11 — recorded squad evidence bundles.
+  { id: 'evidence', label: 'Evidências' },
 ];
 
 const PROMOTION_TYPES = new Set([
@@ -38,6 +41,8 @@ const APPROVAL_TYPES = new Set(['APPROVAL_RECORDED', 'PROMOTION_REJECTED']);
 const SIMULATION_TYPES = new Set(['SIMULATION_SESSION', 'AGENT_SIMULATION_SESSION']);
 // Replay analyses attached to a promotion (Handoff 7B-3).
 const REPLAY_TYPES = new Set(['REPLAY_ANALYSIS_ATTACHED']);
+// Recorded squad evidence bundles (Handoff 22 SL-11).
+const EVIDENCE_TYPES = new Set(['EVIDENCE_BUNDLE']);
 
 export function categorizeEntry(entry: Pick<AuditEntry, 'type'>): LedgerCategory {
   const base = entry.type.replace(/_(UNDONE|REDONE)$/, '');
@@ -45,6 +50,7 @@ export function categorizeEntry(entry: Pick<AuditEntry, 'type'>): LedgerCategory
   if (APPROVAL_TYPES.has(base)) return 'approval';
   if (SIMULATION_TYPES.has(base)) return 'simulation';
   if (REPLAY_TYPES.has(base)) return 'replay';
+  if (EVIDENCE_TYPES.has(base)) return 'evidence';
   // The anchoring act is a first-class verification entry (Handoff 11 N-4).
   if (base === 'ANCHOR_RECORDED') return 'verification';
   if (base.startsWith('VERIFICATION') || base.startsWith('CHAIN_')) return 'verification';
@@ -81,7 +87,7 @@ export interface FilteredLedger {
 
 /** Pure filter used by the trail AND by the XES export (§6/§10.5). */
 export function filterEntries(entries: readonly AuditEntry[], filter: LedgerFilter = {}): FilteredLedger {
-  const counts = { promotion: 0, approval: 0, command: 0, verification: 0, simulation: 0, replay: 0, total: 0 };
+  const counts = { promotion: 0, approval: 0, command: 0, verification: 0, simulation: 0, replay: 0, evidence: 0, total: 0 };
   const inContext = entries.filter((entry) => matchesContext(entry, filter));
   for (const entry of inContext) {
     counts[categorizeEntry(entry)] += 1;

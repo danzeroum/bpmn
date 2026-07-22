@@ -452,6 +452,183 @@ optional escalationCode?: string;
 
 ***
 
+### EvidenceBundle
+
+A canonical, serializable evidence record for one squad run. The three
+governance refs are REQUIRED — there is no bundle without them.
+
+#### Properties
+
+##### kind
+
+```ts
+kind: "EvidenceBundle";
+```
+
+##### squadRef
+
+```ts
+squadRef: string;
+```
+
+The squad this evidence belongs to (`sqd-*@semver`).
+
+##### versionId
+
+```ts
+versionId: string;
+```
+
+The governed version the run evidences.
+
+##### policyRefs
+
+```ts
+policyRefs: string[];
+```
+
+MANDATORY — the policy refs that governed the run (may be empty, never absent).
+
+##### decisionRuleRefs
+
+```ts
+decisionRuleRefs: string[];
+```
+
+MANDATORY — the decision-rule refs consulted.
+
+##### maskingPolicyRef
+
+```ts
+maskingPolicyRef: string;
+```
+
+MANDATORY — the masking policy the trail's PII was masked under. Non-empty:
+a masked trail with no named policy is not attributable evidence.
+
+##### complete
+
+```ts
+complete: boolean;
+```
+
+Whether the squad run reached its end.
+
+##### blocked
+
+```ts
+blocked: SquadBlock | null;
+```
+
+The first honest cross-agent stop, or null.
+
+##### order
+
+```ts
+order: string[];
+```
+
+The agents in execution order.
+
+##### facts
+
+```ts
+facts: SquadFact[];
+```
+
+The masked fact trail (`fixture` × `evidencia-declarada` preserved).
+
+***
+
+### EvidenceBundleMeta
+
+The governance metadata a bundle MUST declare.
+
+#### Properties
+
+##### squadRef
+
+```ts
+squadRef: string;
+```
+
+##### versionId
+
+```ts
+versionId: string;
+```
+
+##### policyRefs
+
+```ts
+policyRefs: string[];
+```
+
+##### decisionRuleRefs
+
+```ts
+decisionRuleRefs: string[];
+```
+
+##### maskingPolicyRef
+
+```ts
+maskingPolicyRef: string;
+```
+
+***
+
+### ExecutionStore
+
+The ExecutionStore seam (Squad Lane SL-11) — where a host persists squad
+evidence bundles. INJECTED and DEGRADABLE: a consumer given `undefined`
+simply does not persist (the run still produces its bundle). The default
+[createInMemoryExecutionStore](#createinmemoryexecutionstore) keeps the bundles in memory (tests, demos);
+a real host swaps in durable storage WITHOUT this package importing one.
+
+#### Methods
+
+##### record()
+
+```ts
+record(bundle): void | Promise<void>;
+```
+
+Persist a bundle (idempotent by the host's choice of key).
+
+###### Parameters
+
+###### bundle
+
+[`EvidenceBundle`](#evidencebundle)
+
+###### Returns
+
+`void` \| `Promise`\<`void`\>
+
+##### list()?
+
+```ts
+optional list(squadRef): 
+  | EvidenceBundle[]
+| Promise<EvidenceBundle[]>;
+```
+
+All bundles recorded for a squad, newest first (optional).
+
+###### Parameters
+
+###### squadRef
+
+`string`
+
+###### Returns
+
+  \| [`EvidenceBundle`](#evidencebundle)[]
+  \| `Promise`\<[`EvidenceBundle`](#evidencebundle)[]\>
+
+***
+
 ### RecipeAdapter
 
 #### Extends
@@ -1287,6 +1464,16 @@ An explicit change of a governed event-definition binding on the chain.
 
 ***
 
+### EVIDENCE\_BUNDLE\_TYPE
+
+```ts
+const EVIDENCE_BUNDLE_TYPE: "EVIDENCE_BUNDLE" = 'EVIDENCE_BUNDLE';
+```
+
+The ledger entry type for a recorded squad evidence bundle.
+
+***
+
 ### REPLAY\_ANALYSIS\_TYPE
 
 ```ts
@@ -1887,6 +2074,138 @@ readonly [`GovernedEventDefinitionRecord`](#governedeventdefinitionrecord)[]
 #### Returns
 
 `ArtifactAdapter`
+
+***
+
+### buildEvidenceBundle()
+
+```ts
+function buildEvidenceBundle(result, meta): EvidenceBundle;
+```
+
+Builds an [EvidenceBundle](#evidencebundle) from a squad run + its mandatory governance
+refs. Throws when `maskingPolicyRef` is empty — evidence whose PII was masked
+must name HOW, or it is not attributable (never a silent unattributed bundle).
+
+#### Parameters
+
+##### result
+
+`SquadSimResult`
+
+##### meta
+
+[`EvidenceBundleMeta`](#evidencebundlemeta)
+
+#### Returns
+
+[`EvidenceBundle`](#evidencebundle)
+
+***
+
+### canonicalEvidenceBundle()
+
+```ts
+function canonicalEvidenceBundle(bundle): string;
+```
+
+The bundle's canonical JSON export (acceptance §10.4 — deterministic, keys
+sorted, numbers exact). Two runs of the same squad export byte-identically.
+
+#### Parameters
+
+##### bundle
+
+[`EvidenceBundle`](#evidencebundle)
+
+#### Returns
+
+`string`
+
+***
+
+### hashEvidenceBundle()
+
+```ts
+function hashEvidenceBundle(bundle): Promise<string>;
+```
+
+The bundle's content hash — SHA-256 over its canonical JSON (core primitive,
+no bespoke format). Deterministic: same bundle 2× → identical hash.
+
+#### Parameters
+
+##### bundle
+
+[`EvidenceBundle`](#evidencebundle)
+
+#### Returns
+
+`Promise`\<`string`\>
+
+***
+
+### evidenceBundleEntry()
+
+```ts
+function evidenceBundleEntry(bundle, actor?): AuditEntryInput;
+```
+
+Maps a bundle to an audit-ledger append input. `details.artifactId` is the
+squad ref (so the Explorer's artifact filter works); `details.author` carries
+the actor (so the ✦ AI seal renders when a copilot recorded it). The full
+masked trail + the mandatory refs live in `details`, so the appended entry —
+hashed whole by core's v2 `computeEntryHash` — is self-verifying.
+
+#### Parameters
+
+##### bundle
+
+[`EvidenceBundle`](#evidencebundle)
+
+##### actor?
+
+`Pick`\<`UserContext`, `"id"`\>
+
+#### Returns
+
+`AuditEntryInput`
+
+***
+
+### evidenceBundleOf()
+
+```ts
+function evidenceBundleOf(entry): EvidenceBundle | undefined;
+```
+
+Reconstructs the [EvidenceBundle](#evidencebundle) stored in an `EVIDENCE_BUNDLE` entry —
+no side store, the chain IS the store. Returns `undefined` for a non-evidence
+entry (so a reader degrades gracefully).
+
+#### Parameters
+
+##### entry
+
+`Pick`\<`AuditEntry`, `"type"` \| `"versionId"` \| `"details"`\>
+
+#### Returns
+
+[`EvidenceBundle`](#evidencebundle) \| `undefined`
+
+***
+
+### createInMemoryExecutionStore()
+
+```ts
+function createInMemoryExecutionStore(): ExecutionStore;
+```
+
+A minimal in-memory [ExecutionStore](#executionstore) for tests/demos (no durability).
+
+#### Returns
+
+[`ExecutionStore`](#executionstore)
 
 ***
 

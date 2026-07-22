@@ -80,6 +80,32 @@ function attestationOf(entry: AuditEntry): Record<string, unknown> | undefined {
   return undefined;
 }
 
+/** The squad EvidenceBundle carried by an `EVIDENCE_BUNDLE` entry (SL-11). Reads
+ * the mandatory governance refs + the masked fact count for the dedicated panel;
+ * `undefined` for any other entry (so the section only renders for evidence). */
+interface EvidenceView {
+  maskingPolicyRef: string;
+  policyRefs: string[];
+  decisionRuleRefs: string[];
+  factCount: number;
+  complete: boolean;
+  blocked: boolean;
+}
+function evidenceOf(entry: AuditEntry): EvidenceView | undefined {
+  if (entry.type !== 'EVIDENCE_BUNDLE') return undefined;
+  const d = entry.details;
+  const maskingPolicyRef = typeof d['maskingPolicyRef'] === 'string' ? (d['maskingPolicyRef'] as string) : '';
+  if (maskingPolicyRef === '') return undefined; // never render evidence with no named masking policy
+  return {
+    maskingPolicyRef,
+    policyRefs: Array.isArray(d['policyRefs']) ? (d['policyRefs'] as string[]) : [],
+    decisionRuleRefs: Array.isArray(d['decisionRuleRefs']) ? (d['decisionRuleRefs'] as string[]) : [],
+    factCount: Array.isArray(d['facts']) ? (d['facts'] as unknown[]).length : 0,
+    complete: d['complete'] === true,
+    blocked: d['blocked'] != null,
+  };
+}
+
 function formatWhen(iso: string): string {
   return iso.replace('T', ' ').slice(0, 16);
 }
@@ -184,6 +210,7 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
 
   const dotClass = (category: LedgerCategory) => `btv-studio-ledger-dot btv-studio-ledger-dot-${category}`;
   const attestation = selected ? attestationOf(selected) : undefined;
+  const evidence = selected ? evidenceOf(selected) : undefined;
 
   return (
     <div className="btv-studio-ledger" data-testid="ledger-explorer">
@@ -477,6 +504,40 @@ export function LedgerExplorer({ ledger, registry, onAction, onDownload, initial
                   }
                 >
                   {t('ledger.download.attestation')}
+                </button>
+              </section>
+            )}
+            {evidence && (
+              <section className="btv-studio-ledger-evidence" data-evidence-bundle>
+                <span className="btv-studio-kicker">{t('ledger.detail.evidence')}</span>
+                {/* The three governance refs are the point — a bundle that hid its
+                    masking policy would not have rendered (evidenceOf returns undefined). */}
+                <p className="btv-studio-box-line btv-studio-mono" data-evidence-masking>
+                  {t('ledger.detail.evidence.masking', { ref: evidence.maskingPolicyRef })}
+                </p>
+                <p className="btv-studio-box-line">
+                  {t('ledger.detail.evidence.policies', { list: evidence.policyRefs.join(', ') || '—' })}
+                </p>
+                <p className="btv-studio-box-line">
+                  {t('ledger.detail.evidence.decisionRules', { list: evidence.decisionRuleRefs.join(', ') || '—' })}
+                </p>
+                <p className="btv-studio-box-line">
+                  {t('ledger.detail.evidence.facts', { count: evidence.factCount })}
+                  {' · '}
+                  {evidence.blocked
+                    ? t('ledger.detail.evidence.blocked')
+                    : evidence.complete
+                      ? t('ledger.detail.evidence.complete')
+                      : t('ledger.detail.evidence.incomplete')}
+                </p>
+                <button
+                  type="button"
+                  className="btv-studio-link"
+                  onClick={() =>
+                    download('evidence-bundle.json', JSON.stringify(selected.details, null, 2), 'application/json')
+                  }
+                >
+                  {t('ledger.download.evidence')}
                 </button>
               </section>
             )}

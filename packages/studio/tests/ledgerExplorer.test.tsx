@@ -110,6 +110,42 @@ describe('LedgerExplorer — TELA 3 (§6)', () => {
     expect(screen.getByTestId('entry-trust')).toHaveTextContent('não verificada');
   });
 
+  it('Squad Lane SL-11: EVIDENCE_BUNDLE gets its own chip + governance-refs detail', async () => {
+    const onDownload = vi.fn();
+    const ledger = new AuditLedger();
+    await ledger.append({
+      type: 'EVIDENCE_BUNDLE',
+      userId: 'ia.copilot@claude-4',
+      versionId: 'sqd-doc-review@1.0.0',
+      details: {
+        artifactId: 'sqd-doc-review@1.0.0',
+        author: 'ia.copilot@claude-4',
+        maskingPolicyRef: 'msk:pii-redact@1.0.0',
+        policyRefs: ['pol:lgpd@1.0.0'],
+        decisionRuleRefs: ['dmn:approval@1.0.0'],
+        complete: true,
+        blocked: null,
+        order: ['orch', 'pesquisador'],
+        facts: [{ step: 0, agent: 'orch', kind: 'intencao', source: 'fixture' }],
+      },
+    });
+    // categorization is pure and testable on its own
+    expect(categorizeEntry({ type: 'EVIDENCE_BUNDLE' })).toBe('evidence');
+
+    render(<LedgerExplorer ledger={ledger} onDownload={onDownload} />);
+    // the dedicated chip with a live count
+    expect(screen.getByRole('button', { name: 'Evidências 1' })).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('option')[0]);
+    // the three MANDATORY governance refs render in the dedicated section
+    expect(screen.getByText('PACOTE DE EVIDÊNCIA')).toBeInTheDocument();
+    expect(screen.getByText('política de máscara: msk:pii-redact@1.0.0')).toBeInTheDocument();
+    expect(screen.getByText('políticas: pol:lgpd@1.0.0')).toBeInTheDocument();
+    expect(screen.getByText('regras de decisão: dmn:approval@1.0.0')).toBeInTheDocument();
+    // and the canonical evidence export button routes to the host
+    fireEvent.click(screen.getByRole('button', { name: 'baixar evidence-bundle.json' }));
+    expect(onDownload.mock.calls[0][0]).toBe('evidence-bundle.json');
+  });
+
   it('actions route to the host; artifact context chip is removable', async () => {
     const onAction = vi.fn();
     render(<LedgerExplorer ledger={await seededLedger()} onAction={onAction} />);
