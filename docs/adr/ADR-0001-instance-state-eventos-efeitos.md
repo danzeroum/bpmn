@@ -1,7 +1,7 @@
 # ADR-0001 — `InstanceState`, eventos e efeitos do `@buildtovalue/engine`
 
-> **Status:** PROPOSTO — aguardando aprovação do dono (gate da F0b.1; nenhum código do
-> engine antes disso).
+> **Status:** APROVADO pelo dono em 2026-07-22 — Alternativa A, com as quatro condições
+> da seção "Condições de aprovação" incorporadas. Gate da F0b.2 liberado.
 > **Base:** Anexo A do PLANO-buildtovalue-platform-v1.2 (rascunho v2, já corrigido),
 > adotado integralmente como Alternativa A e ajustado por UM achado do spike D18
 > (`joinArrivals` — ver §Contexto). Alternativas B e C apresentadas com trade-offs,
@@ -54,8 +54,10 @@ interface InstanceState {
   definitionRef: { registryRef: string; bpmnVersion: string };
   tokens: Token[];               // SEMPRE por elementId (D14)
   waits: Wait[];
-  /** AND-joins parcialmente sincronizados: joinId → edgeIds já entregues.
-   *  Achado do spike D18; espelha o joinArrivals do simulation. */
+  /** AND-joins parcialmente sincronizados. Chave COMPOSTA `${joinElementId}@${scopeId}`
+   *  (condição (a) da aprovação) → edgeIds já entregues, SEMPRE em ordem lexicográfica
+   *  (condição (c): a invariante 2 — byte-identidade sob canonicalJsonExact — vale
+   *  para este campo). Achado do spike D18; espelha o joinArrivals do simulation. */
   joinArrivals: Record<string, string[]>;
   sequence: number;
   status: 'active'|'completed'|'cancelled'|'incident';
@@ -105,7 +107,27 @@ são entidades nomeadas, apenas contagens em arestas/nós.
 - **-ilities:** performance/armazenamento ligeiramente melhores; auditabilidade,
   testabilidade de equivalência e migrabilidade sensivelmente piores.
 
-## Decisão proposta
+## Condições de aprovação (dono, 2026-07-22 — vinculantes antes do 1º commit do engine)
+
+(a) **`joinArrivals` chaveado por `(joinElementId, scopeId)`** — chave composta
+`${joinElementId}@${scopeId}`, nunca só o elementId: o mesmo join pode existir em escopos
+distintos e as sincronizações não podem se misturar.
+
+(b) **Cancelamento e boundary interruptivo LIMPAM as entradas do escopo afetado** — ao
+cancelar a instância ou interromper um escopo, toda entrada de `joinArrivals` daquele
+escopo é removida no MESMO avanço que emite os `Close/Cancel` das esperas (nunca sobra
+chegada órfã de escopo morto).
+
+(c) **Serialização canonicamente ordenada do campo** — chaves do record em ordem
+lexicográfica e cada lista de edgeIds ordenada; a invariante 2 (mesmos `(state, event)` ⇒
+bytes idênticos sob `canonicalJsonExact`) vale para `joinArrivals` como para o resto.
+
+(d) **Fixtures obrigatórias no corpus de replay** (falha em CI se ausentes):
+  1. parada com join incompleto → persistir → recarregar → retomar (a chegada sobrevive);
+  2. loop com dupla chegada pelo MESMO fluxo (a segunda chegada não infla o set);
+  3. join em escopo cancelado (as entradas somem junto com o cancelamento — condição b).
+
+## Decisão
 
 **Alternativa A.** É a única que preserva simultaneamente: extração literal do `simulation`
 (D10), identidade de token exigida pela migração futura (D14) e legibilidade auditável do

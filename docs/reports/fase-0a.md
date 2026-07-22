@@ -42,20 +42,18 @@ então o gate do workflow foi executado **localmente na `main`**, passo a passo 
   pacote publicado teria delta**; o único que o publish soltaria é `domain-example@1.0.0`
   (ver pendência abaixo). Privados pulados automaticamente.
 
-## Pendências para o dono
+## Pendências — RESOLVIDAS pelo dono em 2026-07-22
 
-1. **`domain-example`: privado ou público?** `pendencias.md` §1 diz que ele permaneceria
-   privado; o commit `7258bb7` ("public @buildtovalue/domain-example/fixtures entry…") o
-   deixou `public` no `package.json`, mas ele **não foi publicado** no npm. Seguindo a regra
-   da F0a ("publicar somente pacotes efetivamente liberados; em dúvida, fica de fora"),
-   **não publiquei**. Decida: (a) publicar 1.0.0 (basta rodar o release), ou (b) restaurar
-   `"private": true` e atualizar pendências §1.
-2. **`NPM_TOKEN` no Actions:** não é verificável por API (secrets exigem admin) e o publish
-   manual provou que você tem acesso ao npm — mas releases futuros via `release.yml`
-   continuam dependendo do secret. Se ainda não foi criado, adicione-o antes do próximo
-   release (ex.: `engine@1.1.0-next.N` da F0b, que o walking skeleton da F1 consumirá).
-3. **Permissão de Actions para a integração** (opcional): conceder `actions: write` ao app
-   permitiria disparar o dry-run do workflow diretamente nas próximas fases.
+1. **`domain-example`: DECIDIDO — permanece privado.** `pendencias.md` §1 dizia privado; o
+   commit `7258bb7` o deixara `public` no `package.json` (sem publicar). Decisão do dono:
+   "publicar depois é fácil; despublicar não é" — `"private": true` **restaurado** neste
+   branch. O entry de fixtures continua disponível via workspace para o corpus interno.
+2. **`NPM_TOKEN` no Actions: ADICIONADO pelo dono.** Requisito firmado: antes do prerelease
+   do engine (`1.1.0-next.N`, F0b.7), rodar o `release.yml` em dry-run **pelo Actions** (não
+   só local) e anexar o link da execução aqui como evidência de pipeline reproduzível.
+3. **Permissão de Actions para a integração:** o disparo via API segue negado (403) para
+   esta integração — o dry-run do item 2 precisa ser disparado pelo dono na UI do Actions,
+   ou conceder `actions: write` ao app para as próximas fases.
 
 ## Aceite da fase
 
