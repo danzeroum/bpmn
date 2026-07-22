@@ -29,6 +29,15 @@ type EventInput = EngineEvent extends infer E
 const FIXTURES_DIR = join(dirname(fileURLToPath(import.meta.url)), 'replay-fixtures');
 const UPDATE = process.env.UPDATE_REPLAY_FIXTURES === '1';
 
+// Regenerar fixture de replay é decisão LOCAL e deliberada (major, D6). Um
+// pipeline mal configurado com a variável setada FALHA aqui em vez de
+// regenerar silenciosamente — o CI nunca reescreve o contrato.
+if (UPDATE && process.env.CI) {
+  throw new Error(
+    'UPDATE_REPLAY_FIXTURES é proibido em CI — regeneração de replay só local e deliberada (D6)',
+  );
+}
+
 const vars = Object.freeze({});
 
 interface ReplayScenario {

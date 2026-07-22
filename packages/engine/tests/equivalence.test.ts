@@ -1,3 +1,13 @@
+import {
+  andParallel,
+  eventBased,
+  linear,
+  nonInterruptingBoundary,
+  orRegion,
+  threePaths,
+  trap,
+  xorSplit,
+} from '../../simulation/tests/fixtures.js';
 import { SimulationEngine, type Decision, type SimulationState } from '@buildtovalue/simulation';
 import type { BpmnDiagram } from '@buildtovalue/core';
 import { describe, expect, it } from 'vitest';
@@ -12,20 +22,34 @@ import { DEF_REF, flow, NOW } from './fixtures.js';
 
 /**
  * EQUIVALÊNCIA simulation×engine (F0b.4, D10) — subconjunto v1, 100%
- * automatizada. Os dois modelos diferem por DESIGN no ponto de parada
- * (o simulador anda por atividades; o engine ESPERA em user/service/timer),
- * então a equivalência é projetada sobre o que ambos afirmam:
+ * automatizada, consumindo o CORPUS EXISTENTE do simulador
+ * (`packages/simulation/tests/fixtures.ts`, 8 fixtures) além de cenários
+ * autorados para as esperas que o corpus não exercita.
+ *
+ * Os dois modelos diferem por DESIGN no ponto de parada: o simulador é
+ * small-step (o token REPOUSA em cada nó e `advance()` o move — estados
+ * transientes), o engine roda até a quiescência e só para em ESPERA
+ * (user/service/timer). A equivalência compara o que ambos afirmam:
  *
  *  1. TERMINAL: complete↔completed; deadlocked↔incident(deadlock).
- *  2. ROTAS de gateway: a aresta escolhida no engine (EmitHistory flowRouted)
- *     é a MESMA da decisão equivalente do cenário do simulador.
- *  3. POSIÇÕES de espera: todo elemento onde o engine abriu espera foi
- *     visitado por token no simulador (mesma caminhada).
- *  4. SINCRONIZAÇÃO: joinArrivals residual equivalente (vazio ao completar;
- *     não-vazio nos dois em deadlock).
+ *  2. ROTAS de gateway: aresta escolhida idêntica nos dois motores.
+ *  3. PONTOS DE PAUSA — IGUALDADE DE CONJUNTO (não subconjunto): o conjunto
+ *     de elementos onde o engine abriu espera de pausa == o conjunto de
+ *     elementos de TIPO-espera visitados pelo simulador. Omissão de espera
+ *     num ramo paralelo agora falha, mesmo com terminal idêntico.
+ *  4. BOUNDARIES ARMADOS: timers de boundary agendados pelo engine == timers
+ *     de boundary anexados a hosts de pausa visitados pelo simulador.
+ *  5. SINCRONIZAÇÃO: joinArrivals residual equivalente.
  *
- * Fixtures fora do subset v1 ficam com skip explícito `todo:F5` (reativação
- * na F5) — a lista está no fim do arquivo.
+ * A perna "mesma sequência de efeitos" do D10 é coberta pelo CORPUS DE
+ * REPLAY (replay.test.ts): efeitos canônicos byte-a-byte após CADA evento.
+ *
+ * DIVERGÊNCIA DECLARADA (relatório f0b-equivalencia.md): boundary sobre task
+ * GENÉRICA (fixtures threePaths/nonInterruptingBoundary do corpus) não arma
+ * no engine — task genérica é travessia, não espera; o deploy lint v1
+ * restringirá boundary a atividades de espera. O caminho feliz dessas
+ * fixtures é verificado; o caminho do boundary é coberto pelos cenários
+ * autorados com host userTask/serviceTask.
  */
 
 type EventInput = EngineEvent extends infer E
@@ -34,35 +58,7 @@ type EventInput = EngineEvent extends infer E
     : never
   : never;
 
-function runSim(diagram: BpmnDiagram, decisions: Decision[]): SimulationState {
-  const sim = new SimulationEngine(diagram);
-  const queue = [...decisions];
-  let guard = 0;
-  while (guard++ < 10_000) {
-    if (sim.pendingChoice) {
-      const next = queue.shift();
-      if (!next) break;
-      sim.choose(next);
-      continue;
-    }
-    const next = queue[0];
-    if (
-      next &&
-      next.kind === 'boundary' &&
-      sim.state.tokens.some((t) => t.nodeId === next.host)
-    ) {
-      sim.fireBoundary(next.boundary);
-      queue.shift();
-      continue;
-    }
-    if (sim.canAdvance) {
-      sim.advance();
-      continue;
-    }
-    break;
-  }
-  return sim.state;
-}
+// ---------------------------------------------------------------- drivers
 
 interface EngineRun {
   state: InstanceState;
@@ -86,12 +82,126 @@ function runEngine(
   return { state, effects };
 }
 
-function waitElements(run: EngineRun): string[] {
-  return run.effects
-    .filter((e): e is Extract<Effect, { elementId: string }> =>
-      e.type === 'OpenUserTask' || e.type === 'CreateJob' || e.type === 'ScheduleTimer',
+/**
+ * Piloto automático do engine para o corpus: inicia e resolve TODA espera de
+ * pausa em ordem determinística (userTask/job primeiro, depois timers
+ * intermediários) até terminar. Timers de BOUNDARY não são disparados
+ * (caminho feliz — eles morrem com o host via CancelTimer).
+ */
+function autoRunEngine(diagram: BpmnDiagram): EngineRun {
+  const engine = createEngine(diagram);
+  let state = engine.initialState(DEF_REF);
+  const effects: Effect[] = [];
+  const apply = (event: EngineEvent): void => {
+    const result = engine.advance(state, event);
+    if (!result.ok) throw new Error(`auto-run rejeitado: ${result.rejection.message}`);
+    state = result.state;
+    effects.push(...result.effects);
+  };
+  apply({ type: 'StartInstance', now: NOW, instanceId: 'i1', variables: {} });
+  let guard = 0;
+  while (state.status === 'active' && guard++ < 1000) {
+    const waits = [...state.waits].sort((a, b) => a.waitKey.localeCompare(b.waitKey));
+    const task = waits.find((w) => w.kind === 'userTask' || w.kind === 'job');
+    if (task) {
+      apply(
+        task.kind === 'userTask'
+          ? { type: 'UserTaskCompleted', now: NOW, waitKey: task.waitKey, variables: {}, submission: {} }
+          : { type: 'JobCompleted', now: NOW, waitKey: task.waitKey, variables: {} },
+      );
+      continue;
+    }
+    const timer = waits.find(
+      (w) => w.kind === 'timer' && !isBoundary(diagram, w.elementId),
+    );
+    if (timer) {
+      apply({ type: 'TimerFired', now: NOW, waitKey: timer.waitKey, variables: {} });
+      continue;
+    }
+    break; // só restam boundaries armados — nada a resolver no caminho feliz
+  }
+  return { state, effects };
+}
+
+/** Roda o simulador seguindo `decisions` nos pontos de escolha. */
+function runSim(diagram: BpmnDiagram, decisions: Decision[]): SimulationState {
+  const sim = new SimulationEngine(diagram);
+  const queue = [...decisions];
+  let guard = 0;
+  while (guard++ < 10_000) {
+    if (sim.pendingChoice) {
+      const next = queue.shift();
+      if (!next) break;
+      sim.choose(next);
+      continue;
+    }
+    const next = queue[0];
+    if (next && next.kind === 'boundary' && sim.state.tokens.some((t) => t.nodeId === next.host)) {
+      sim.fireBoundary(next.boundary);
+      queue.shift();
+      continue;
+    }
+    if (sim.canAdvance) {
+      sim.advance();
+      continue;
+    }
+    break;
+  }
+  return sim.state;
+}
+
+// ------------------------------------------------------------- projeções
+
+function isBoundary(diagram: BpmnDiagram, nodeId: string): boolean {
+  return typeof diagram.nodes[nodeId]?.properties.attachedToRef === 'string';
+}
+
+/** Elemento de TIPO-espera do subset v1 (a régua da igualdade de pausa). */
+function isPauseType(diagram: BpmnDiagram, nodeId: string): boolean {
+  const node = diagram.nodes[nodeId];
+  if (!node || isBoundary(diagram, nodeId)) return false;
+  if (node.type === 'userTask' || node.type === 'serviceTask') return true;
+  return node.type === 'intermediateCatchEvent' && node.properties.eventDefinition === 'timer';
+}
+
+/** Esperas de PAUSA abertas pelo engine (exclui boundaries armados). */
+function enginePauseSet(diagram: BpmnDiagram, run: EngineRun): Set<string> {
+  const ids = run.effects
+    .filter(
+      (e): e is Extract<Effect, { elementId: string }> =>
+        e.type === 'OpenUserTask' || e.type === 'CreateJob' || e.type === 'ScheduleTimer',
     )
-    .map((e) => e.elementId);
+    .map((e) => e.elementId)
+    .filter((id) => !isBoundary(diagram, id));
+  return new Set(ids);
+}
+
+/** Boundaries de timer ARMADOS pelo engine (ScheduleTimer em boundary). */
+function engineArmedBoundaries(diagram: BpmnDiagram, run: EngineRun): Set<string> {
+  return new Set(
+    run.effects
+      .filter((e): e is Extract<Effect, { type: 'ScheduleTimer' }> => e.type === 'ScheduleTimer')
+      .map((e) => e.elementId)
+      .filter((id) => isBoundary(diagram, id)),
+  );
+}
+
+/** Boundaries de timer anexados aos hosts DE PAUSA visitados pelo simulador. */
+function simExpectedArmed(diagram: BpmnDiagram, sim: SimulationState): Set<string> {
+  const visited = new Set(sim.visitedNodes);
+  const armed = new Set<string>();
+  for (const node of Object.values(diagram.nodes)) {
+    const host = node.properties.attachedToRef;
+    if (
+      typeof host === 'string' &&
+      visited.has(host) &&
+      isPauseType(diagram, host) &&
+      node.properties.eventDefinition === 'timer'
+    ) {
+      armed.add(node.id);
+    }
+  }
+  return armed;
 }
 
 function routedEdges(run: EngineRun): string[] {
@@ -100,7 +210,8 @@ function routedEdges(run: EngineRun): string[] {
     .map((e) => ((e as Extract<Effect, { type: 'EmitHistory' }>).payload as { edgeId: string }).edgeId);
 }
 
-function expectEquivalentTerminal(sim: SimulationState, run: EngineRun): void {
+function expectEquivalent(diagram: BpmnDiagram, sim: SimulationState, run: EngineRun): void {
+  // 1. terminal
   if (sim.complete) {
     expect(run.state.status).toBe('completed');
     expect(run.state.joinArrivals).toEqual({});
@@ -112,39 +223,117 @@ function expectEquivalentTerminal(sim: SimulationState, run: EngineRun): void {
   } else {
     throw new Error('cenário do simulador não terminou — fixture mal construída');
   }
-}
-
-function expectWaitsVisited(sim: SimulationState, run: EngineRun): void {
-  for (const elementId of waitElements(run)) {
-    expect(sim.visitedNodes, `elemento ${elementId} esperado na caminhada do simulador`).toContain(
-      elementId,
-    );
-  }
+  // 3. IGUALDADE de conjuntos nos pontos de pausa (nunca subconjunto)
+  const simPause = new Set(sim.visitedNodes.filter((id) => isPauseType(diagram, id)));
+  expect(enginePauseSet(diagram, run)).toEqual(simPause);
+  // 4. boundaries armados
+  expect(engineArmedBoundaries(diagram, run)).toEqual(simExpectedArmed(diagram, sim));
 }
 
 const vars = Object.freeze({});
 const startEvent = (variables: Readonly<Record<string, unknown>> = vars) =>
   ({ type: 'StartInstance', instanceId: 'i1', variables }) as const;
 
-describe('equivalência simulation×engine (subset v1)', () => {
-  it('linear com task genérica: ambos completam sem paradas', () => {
-    const diagram = () => flow(['s:startEvent', 'a:task', 'e:endEvent'], ['s->a', 'a->e']);
-    const sim = runSim(diagram(), []);
-    const run = runEngine(diagram(), [startEvent()]);
-    expectEquivalentTerminal(sim, run);
-    expect(waitElements(run)).toEqual([]);
-  });
+// ============================== CORPUS DO SIMULATION ==============================
 
-  it('linear com user task: espera do engine ⊆ caminhada do simulador', () => {
+/**
+ * Fixtures herdadas de packages/simulation/tests/fixtures.ts (todas as 8
+ * contabilizadas). Piloto: o ENGINE roda primeiro (rotas determinísticas:
+ * default implícito nos XOR sem condição); o simulador segue as MESMAS
+ * arestas como decisões — depois as projeções são comparadas.
+ */
+const CORPUS_V1: Array<{ name: string; diagram: () => BpmnDiagram; note?: string }> = [
+  { name: 'linear', diagram: linear },
+  { name: 'xorSplit', diagram: xorSplit },
+  { name: 'andParallel', diagram: andParallel },
+  { name: 'trap (deadlock XOR→AND)', diagram: trap },
+  {
+    name: 'threePaths (caminho feliz)',
+    diagram: threePaths,
+    note: 'boundary sobre task genérica não arma no engine — divergência declarada',
+  },
+  {
+    name: 'nonInterruptingBoundary (caminho feliz)',
+    diagram: nonInterruptingBoundary,
+    note: 'boundary sobre task genérica não arma no engine — divergência declarada',
+  },
+];
+
+describe('equivalência — corpus herdado do simulation (D10)', () => {
+  for (const fixture of CORPUS_V1) {
+    it(fixture.name, () => {
+      const run = autoRunEngine(fixture.diagram());
+      // o simulador segue as rotas que o engine tomou
+      const decisions: Decision[] = [];
+      const simProbe = new SimulationEngine(fixture.diagram());
+      const routed = [...routedEdges(run)];
+      let guard = 0;
+      while (guard++ < 10_000) {
+        if (simProbe.pendingChoice) {
+          const choice = simProbe.pendingChoice;
+          const edge = routed.shift();
+          if (edge === undefined) break;
+          const kind = choice.kind === 'inclusive' ? 'exclusive' : choice.kind;
+          decisions.push({ kind: kind as 'exclusive', gateway: choice.nodeId, edge });
+          simProbe.choose({ kind: kind as 'exclusive', gateway: choice.nodeId, edge });
+          continue;
+        }
+        if (simProbe.canAdvance) {
+          simProbe.advance();
+          continue;
+        }
+        break;
+      }
+      const sim = runSim(fixture.diagram(), decisions);
+      expectEquivalent(fixture.diagram(), sim, run);
+    });
+  }
+
+  // Fora do subset v1 — skip explícito com nome da fixture herdada (D19).
+  it.todo('todo:F5 — corpus `orRegion` (OR split/join por dominadores)');
+  it.todo('todo:F5 — corpus `eventBased` (corrida de catch events)');
+  void orRegion;
+  void eventBased;
+});
+
+// ============================== CENÁRIOS DE ESPERA (autorados) ==============================
+
+describe('equivalência — esperas que o corpus não exercita', () => {
+  it('user task: pausa idêntica nos dois motores', () => {
     const diagram = () => flow(['s:startEvent', 'u:userTask', 'e:endEvent'], ['s->u', 'u->e']);
     const sim = runSim(diagram(), []);
     const run = runEngine(diagram(), [
       startEvent(),
       { type: 'UserTaskCompleted', waitKey: 'u:i1', variables: vars, submission: vars },
     ]);
-    expectEquivalentTerminal(sim, run);
-    expectWaitsVisited(sim, run);
-    expect(waitElements(run)).toEqual(['u']);
+    expectEquivalent(diagram(), sim, run);
+  });
+
+  it('service task/job: pausa idêntica nos dois motores', () => {
+    const diagram = () =>
+      flow(['s:startEvent', 'j:serviceTask', 'e:endEvent'], ['s->j', 'j->e'], (d) => {
+        d.nodes.j.properties.jobType = 'http-call';
+      });
+    const sim = runSim(diagram(), []);
+    const run = runEngine(diagram(), [
+      startEvent(),
+      { type: 'JobCompleted', waitKey: 'j:i1', variables: vars },
+    ]);
+    expectEquivalent(diagram(), sim, run);
+  });
+
+  it('timer intermediário (não-boundary): pausa idêntica nos dois motores', () => {
+    const diagram = () =>
+      flow(['s:startEvent', 't:intermediateCatchEvent', 'e:endEvent'], ['s->t', 't->e'], (d) => {
+        d.nodes.t.properties.eventDefinition = 'timer';
+        d.nodes.t.properties.timer = { kind: 'duration', expression: 'PT15M' };
+      });
+    const sim = runSim(diagram(), []);
+    const run = runEngine(diagram(), [
+      startEvent(),
+      { type: 'TimerFired', waitKey: 't:i1', variables: vars },
+    ]);
+    expectEquivalent(diagram(), sim, run);
   });
 
   const xorDiagram = () =>
@@ -159,21 +348,21 @@ describe('equivalência simulation×engine (subset v1)', () => {
     evaluate: (expr, v) => ({ value: expr === 'valor > 100' && Number(v.valor) > 100 }),
   };
 
-  it('XOR rota "aprova": mesma aresta nos dois motores', () => {
+  it('XOR condicionado, rota "aprova": mesma aresta', () => {
     const sim = runSim(xorDiagram(), [{ kind: 'exclusive', gateway: 'x', edge: 'e1' }]);
     const run = runEngine(xorDiagram(), [startEvent({ valor: 200 })], evaluator);
-    expectEquivalentTerminal(sim, run);
+    expectEquivalent(xorDiagram(), sim, run);
     expect(routedEdges(run)).toEqual(['e1']);
   });
 
-  it('XOR rota "rejeita" (default): mesma aresta nos dois motores', () => {
+  it('XOR condicionado, rota default: mesma aresta', () => {
     const sim = runSim(xorDiagram(), [{ kind: 'exclusive', gateway: 'x', edge: 'e2' }]);
     const run = runEngine(xorDiagram(), [startEvent({ valor: 10 })], evaluator);
-    expectEquivalentTerminal(sim, run);
+    expectEquivalent(xorDiagram(), sim, run);
     expect(routedEdges(run)).toEqual(['e2']);
   });
 
-  it('AND fork/join com user tasks: sincronização equivalente', () => {
+  it('AND fork/join com user tasks: pausa {a,b} idêntica + sincronização', () => {
     const diagram = () =>
       flow(
         ['s:startEvent', 'f:parallelGateway', 'a:userTask', 'b:userTask', 'j:parallelGateway', 'e:endEvent'],
@@ -185,26 +374,10 @@ describe('equivalência simulation×engine (subset v1)', () => {
       { type: 'UserTaskCompleted', waitKey: 'a:i1/e1', variables: vars, submission: vars },
       { type: 'UserTaskCompleted', waitKey: 'b:i1/e2', variables: vars, submission: vars },
     ]);
-    expectEquivalentTerminal(sim, run);
-    expectWaitsVisited(sim, run);
-    expect(waitElements(run).sort()).toEqual(['a', 'b']);
+    expectEquivalent(diagram(), sim, run);
   });
 
-  it('trap XOR→AND-join: deadlock declarado nos dois motores', () => {
-    const diagram = () =>
-      flow(
-        ['s:startEvent', 'x:exclusiveGateway', 'a:task', 'b:task', 'j:parallelGateway', 'e:endEvent'],
-        ['s->x', 'x->a', 'x->b', 'a->j', 'b->j', 'j->e'],
-        (d) => {
-          d.edges.e1.properties.condition = 'valor > 100';
-        },
-      );
-    const sim = runSim(diagram(), [{ kind: 'exclusive', gateway: 'x', edge: 'e1' }]);
-    const run = runEngine(diagram(), [startEvent({ valor: 200 })], evaluator);
-    expectEquivalentTerminal(sim, run); // deadlocked ↔ incident(deadlock)
-  });
-
-  it('boundary timer interruptivo sobre user task: mesmo desvio', () => {
+  it('boundary timer interruptivo sobre USER task: mesmo desvio + armamento', () => {
     const diagram = () =>
       flow(
         ['s:startEvent', 'u:userTask', 'bt:boundaryEvent', 'esc:task', 'e1:endEvent', 'e2:endEvent'],
@@ -220,15 +393,12 @@ describe('equivalência simulation×engine (subset v1)', () => {
       startEvent(),
       { type: 'TimerFired', waitKey: 'bt:i1', variables: vars },
     ]);
-    expectEquivalentTerminal(sim, run);
+    expectEquivalent(diagram(), sim, run);
     expect(sim.visitedNodes).toContain('bt');
     expect(run.effects).toContainEqual({ type: 'CloseUserTask', waitKey: 'u:i1' });
   });
-});
 
-describe('fora do subset v1 — skip explícito, reativar na F5 (D19)', () => {
-  it.todo('todo:F5 — OR (inclusiveGateway) split/join por dominadores');
-  it.todo('todo:F5 — eventBasedGateway (corrida de catch events)');
+  // Fora do subset v1 — semânticas do simulador sem contraparte no engine v1.
   it.todo('todo:F5 — signal broadcast / message single-delivery por definição nomeada');
   it.todo('todo:F5 — error/escalation matching em 4 tiers');
   it.todo('todo:F5 — event subprocess (interrupting e não)');
