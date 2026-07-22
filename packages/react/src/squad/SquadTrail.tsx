@@ -65,8 +65,12 @@ export function SquadTrail({ result, height = 320 }: SquadTrailProps) {
   const goStep = (next: number): void => {
     const clamped = Math.max(0, Math.min(total - 1, next));
     setStepIndex(clamped);
-    // scroll the stepped row into the window (no scrollIntoView — set scrollTop)
-    viewportRef.current?.scrollTo({ top: Math.max(0, clamped * ROW_H - height / 2) });
+    // scroll the stepped row into the window (no scrollIntoView — set scrollTop).
+    // `scrollTo` is optional-called: it is absent under jsdom, so guard the method
+    // itself (not just the ref) to stay a no-op there while working in a browser.
+    const viewport = viewportRef.current;
+    if (viewport?.scrollTo) viewport.scrollTo({ top: Math.max(0, clamped * ROW_H - height / 2) });
+    else if (viewport) viewport.scrollTop = Math.max(0, clamped * ROW_H - height / 2);
   };
 
   return (
