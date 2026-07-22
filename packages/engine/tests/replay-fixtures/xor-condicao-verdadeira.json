@@ -1,0 +1,14 @@
+[
+  {
+    "event": {
+      "type": "StartInstance",
+      "instanceId": "i1",
+      "variables": {
+        "valor": 200
+      },
+      "now": "2026-07-22T12:00:00.000Z"
+    },
+    "state": "{\"definitionRef\":{\"bpmnVersion\":\"1.0.0\",\"registryRef\":\"reg:test@1\"},\"engineVersion\":\"1.1.0-next.0\",\"joinArrivals\":{},\"sequence\":4,\"stateSchemaVersion\":1,\"status\":\"completed\",\"tokens\":[],\"waits\":[]}",
+    "effects": "[{\"kind\":\"instanceStarted\",\"payload\":{\"instanceId\":\"i1\"},\"type\":\"EmitHistory\"},{\"kind\":\"flowRouted\",\"payload\":{\"edgeId\":\"e1\",\"gatewayId\":\"x\"},\"type\":\"EmitHistory\"},{\"type\":\"CompleteInstance\"},{\"kind\":\"instanceCompleted\",\"payload\":{},\"type\":\"EmitHistory\"}]"
+  }
+]

@@ -1,0 +1,51 @@
+{
+  "name": "@buildtovalue/engine",
+  "version": "1.1.0-next.0",
+  "description": "Deterministic BPMN execution kernel for the BuildToValue platform: pure advance(state, event) -> {state, effects}. Extracted from @buildtovalue/simulation (ADR-0001). v1 semantic subset: sequence flow, XOR with S-FEEL conditions, AND fork/join, user task, service task (jobs), intermediate + boundary timers, cancellation. Consumes only @buildtovalue/core. Zero runtime dependencies.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@buildtovalue/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@buildtovalue/simulation": "workspace:*"
+  },
+  "keywords": [
+    "bpmn",
+    "engine",
+    "workflow",
+    "deterministic",
+    "state-machine"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/engine"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
+  }
+}
