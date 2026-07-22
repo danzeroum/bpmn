@@ -52,6 +52,21 @@ export default defineWorkspace([
   },
   {
     test: {
+      name: 'forms-react',
+      include: ['packages/forms-react/tests/**/*.test.{ts,tsx}'],
+      environment: 'jsdom',
+      setupFiles: ['packages/forms-react/tests/setup.ts'],
+    },
+  },
+  {
+    test: {
+      name: 'forms',
+      include: ['packages/forms/tests/**/*.test.ts'],
+      environment: 'node',
+    },
+  },
+  {
+    test: {
       name: 'engine',
       include: ['packages/engine/tests/**/*.test.ts'],
       environment: 'node',

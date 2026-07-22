@@ -266,6 +266,17 @@ importers:
         specifier: ^6.0.3
         version: 6.4.3(@types/node@22.20.0)(yaml@2.9.0)
 
+  packages/forms: {}
+
+  packages/forms-react:
+    dependencies:
+      '@buildtovalue/forms':
+        specifier: workspace:*
+        version: link:../forms
+      react:
+        specifier: '>=18'
+        version: 18.3.1
+
   packages/healthcare:
     dependencies:
       '@buildtovalue/core':
