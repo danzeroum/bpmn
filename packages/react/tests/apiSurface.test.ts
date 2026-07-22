@@ -142,6 +142,7 @@ const EXPECTED_EXPORTS = [
   'addNode',
   'SQUAD_EDGE_GLYPH',
   'SQUAD_EDGE_STYLES',
+  'ReadinessBadge',
   'SquadStudio',
   'SquadTrail',
   'agentEditorReducer',

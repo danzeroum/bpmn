@@ -66,6 +66,7 @@ const MIGRATED = [
   'packages/react/src/squad/SquadStudio.tsx',
   'packages/react/src/squad/squadPlugin.tsx',
   'packages/react/src/squad/SquadTrail.tsx',
+  'packages/react/src/agent/ReadinessBadge.tsx',
   'packages/react/src/simulation/SimulationPanel.tsx',
   'packages/react/src/simulation/GatewayChoiceCard.tsx',
   'packages/react/src/simulation/DecisionInputCard.tsx',

@@ -428,6 +428,33 @@ optional hideMiniMap?: boolean;
 
 ***
 
+### ReadinessBadgeProps
+
+#### Properties
+
+##### workflow
+
+```ts
+workflow: AgentWorkflow;
+```
+
+##### context
+
+```ts
+context: ReadinessContext;
+```
+
+##### hostStatus?
+
+```ts
+optional hostStatus?: HostRuntimeStatus;
+```
+
+OPTIONAL host-informed runtime status. Present → shown (host authority);
+absent → the derived `readinessState` (the badge never invents a host state).
+
+***
+
 ### DeepLinkTarget
 
 A resolved deep-link: the requested version and its diagram.
@@ -7731,6 +7758,26 @@ Named router: 'astar' | 'orthogonal' | 'bezier' | 'straight'. Default 'astar'.
 
 ## Type Aliases
 
+### HostRuntimeStatus
+
+```ts
+type HostRuntimeStatus = "executando" | "erro-de-integracao";
+```
+
+Squad Lane SL-13 — the readiness badge. It is the ONE way any surface paints
+an agent's/squad's readiness, and it derives the state SOLELY from the pure
+`readinessState()` (cerca §2.11 — painting a state in the UI is prohibited;
+card, badge and tooltip all read the same function). A component that computed
+its own state would diverge from this badge — the guard test compares the two
+across every state, so a home-grown derivation breaks the build.
+
+The four DERIVED states are the frontend ceiling. The host states `executando`
+/ `erro-de-integracao` are NEVER derived here — they show only when the host
+INFORMS them via `hostStatus` (a real provider running the spec). Without it,
+`apto-para-integracao` never becomes `executando` (acceptance §10.7).
+
+***
+
 ### VersionResolver
 
 ```ts
@@ -8595,6 +8642,24 @@ Import `@buildtovalue/react/styles.css` for the default styling.
 ##### \_\_namedParameters
 
 [`BpmnEditorProps`](#bpmneditorprops)
+
+#### Returns
+
+`Element`
+
+***
+
+### ReadinessBadge()
+
+```ts
+function ReadinessBadge(__namedParameters): Element;
+```
+
+#### Parameters
+
+##### \_\_namedParameters
+
+[`ReadinessBadgeProps`](#readinessbadgeprops)
 
 #### Returns
 

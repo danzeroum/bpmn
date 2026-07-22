@@ -26,6 +26,7 @@ import { useDiagram } from '../contexts/DiagramContext.js';
 import { useT } from '../i18n/I18nContext.js';
 import { BlockedDecisionNotice } from '../simulation/DecisionInputCard.js';
 import { proposeErrorBoundaryCommand } from './agentBoundary.js';
+import { ReadinessBadge } from './ReadinessBadge.js';
 import type { ToolProvider } from './toolProvider.js';
 import type { PromptProvider } from './promptProvider.js';
 import { hasQuickFix, quickFixFor } from './quickFix.js';
@@ -282,6 +283,9 @@ export function AgentStudio(props: AgentStudioProps) {
             </div>
           </div>
           {lifecycleStatus && <span style={seal}>● {lifecycleStatus}</span>}
+          {/* SL-13 — readiness derived ONLY from readinessState() (single source):
+              the studio's own validation + whether a completed simulation exists. */}
+          <ReadinessBadge workflow={wf} context={{ validation: issues, hasEvidence: sim?.complete === true }} />
           <span style={autonomyPill} title={t('agent.autonomy.needsGate')}>
             <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 10 }}>{t('agent.autonomy.label')}</span>
             <strong style={{ color: 'var(--bpmnr-agent-tool, #33567e)' }}>
