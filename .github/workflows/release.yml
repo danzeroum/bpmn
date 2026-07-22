@@ -26,6 +26,19 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+
+      # Fail-fast: um release REAL sem NPM_TOKEN morreria só no último passo
+      # (ENEEDAUTH após ~4min de gate — visto no Release #2). Falha aqui, em
+      # segundos, nomeando a causa. Dry-run não precisa do secret.
+      - name: Fail fast when NPM_TOKEN is missing (real release only)
+        if: ${{ !inputs.dry_run }}
+        env:
+          HAS_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
+        run: |
+          if [ "$HAS_TOKEN" != "true" ]; then
+            echo "::error::Secret NPM_TOKEN ausente/vazio (Settings → Secrets and variables → Actions → Repository secrets). O publish falharia com ENEEDAUTH. Use um token de AUTOMAÇÃO do npm com permissão de publish na org @buildtovalue."
+            exit 1
+          fi
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
