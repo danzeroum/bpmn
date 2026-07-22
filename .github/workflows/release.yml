@@ -39,7 +39,7 @@ jobs:
             echo "::error::Secret NPM_TOKEN ausente/vazio (Settings → Secrets and variables → Actions → Repository secrets). O publish falharia com ENEEDAUTH. Use um token de AUTOMAÇÃO do npm com permissão de publish na org @buildtovalue."
             exit 1
           fi
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
