@@ -73,6 +73,9 @@ export interface EdgeDragState {
 
 export type ResizeCorner = 'nw' | 'ne' | 'sw' | 'se';
 
+/** Squad Lane SL-9 — the Squad Studio perspective (Estrutura ↔ Colaboração). */
+export type ViewMode = 'estrutura' | 'colaboracao';
+
 export interface ResizeState {
   nodeId: string;
   corner: ResizeCorner;
@@ -140,6 +143,14 @@ export interface CanvasState {
   gridSize: number;
   snapEnabled: boolean;
   readOnly: boolean;
+  /**
+   * Squad Lane SL-9 — the Squad Studio perspective. 'estrutura' emphasizes the
+   * lane structure; 'colaboracao' swaps in the collaboration edge styles (the
+   * toggle patches THIS one key, so selection/focus and the command-stack undo
+   * are untouched). Diagrams that declare no collaboration edge styles render
+   * identically in both. Default 'estrutura'.
+   */
+  viewMode: ViewMode;
   /** Node created by the last palette insert — plays the enter animation once. */
   lastCreatedNodeId: string | null;
   /** True when commands ran since the last explicit export (beforeunload guard). */
@@ -269,6 +280,7 @@ export function createCanvasStore(partial: Partial<CanvasState> = {}): CanvasSto
     gridSize: 20,
     snapEnabled: true,
     readOnly: false,
+    viewMode: 'estrutura',
     lastCreatedNodeId: null,
     dirtySinceExport: false,
     drillId: null,

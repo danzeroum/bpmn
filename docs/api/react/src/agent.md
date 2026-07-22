@@ -183,6 +183,28 @@ optional author?: string;
 optional timestamp?: string;
 ```
 
+##### toolProvider?
+
+```ts
+optional toolProvider?: ToolProvider;
+```
+
+Squad Lane SL-2 — resolves `tool:*@semver` bindings to their contracts and
+(optionally) lists the bindable catalog for the inspector selector. Absent
+→ the tool binding degrades to a typed text field; the graph still
+validates, just without contract-aware checks (cerca §1.7/§2.4).
+
+##### promptProvider?
+
+```ts
+optional promptProvider?: PromptProvider;
+```
+
+Squad Lane SL-7 — resolves an llm node's `promptRef` to its body text (from
+the Library btv:prompt artifact) for the coverage validator, and persists
+edits back to the artifact via `save`. Absent → no coverage validator;
+present without `save` → read-only (never the AgentWorkflow — cerca §2.4).
+
 ***
 
 ### EditEffect
@@ -308,6 +330,99 @@ width: number;
 ```ts
 height: number;
 ```
+
+***
+
+### PromptProvider
+
+Squad Lane SL-7 — the host-injected prompt provider. An agent node holds only
+a `promptRef`; the prompt BODY lives in the Library btv:prompt artifact, never
+on the `AgentWorkflow` (a body field there would be the "loose string" the
+model avoids). The coverage validator resolves the text through this provider,
+runs the headless `promptCoverage` against the workflow inputSchema, and
+persists edits back to the ARTIFACT via `save` — not the agent node.
+
+Injected as an `AgentStudio` prop (the `ToolProvider`/`AIProvider` mold):
+absent → no coverage validator; present but `resolve` returns undefined →
+declared warning; no `save` → read-only textarea. Never silent.
+
+#### Methods
+
+##### resolve()
+
+```ts
+resolve(promptRef): string | undefined;
+```
+
+Resolve a `promptRef` (`prm:research@2.0.0`) to its body text, or undefined.
+
+###### Parameters
+
+###### promptRef
+
+`string`
+
+###### Returns
+
+`string` \| `undefined`
+
+##### save()?
+
+```ts
+optional save(promptRef, text): void;
+```
+
+Persist an edited prompt body to the Library artifact. Omit → read-only.
+
+###### Parameters
+
+###### promptRef
+
+`string`
+
+###### text
+
+`string`
+
+###### Returns
+
+`void`
+
+***
+
+### ToolProvider
+
+Squad Lane SL-2 (Handoff 22) — the host-injected tool provider. It IMPLEMENTS
+the headless `ResolveTool` seam defined in `@buildtovalue/agentflow` (types
+flow down react → agentflow) and adds an optional `list()` that powers the
+inspector's selector/autocomplete. Injected as a prop on `AgentStudio`
+(the `AIProvider`/H9 mold): absent → the binding degrades to a typed text
+field, present-but-unresolvable → a declared `TOOL_UNRESOLVED` warning, never
+silence (cerca §2.4).
+
+#### Properties
+
+##### resolve
+
+```ts
+resolve: ResolveTool;
+```
+
+Resolve a `tool:*@semver` ref to its contract (or `undefined`).
+
+#### Methods
+
+##### list()?
+
+```ts
+optional list(): readonly ToolContract[];
+```
+
+The bindable catalog, for the inspector selector. Omit → free-text only.
+
+###### Returns
+
+readonly `ToolContract`[]
 
 ## Type Aliases
 
@@ -622,3 +737,51 @@ graph), so the Studio derives them — same input → same layout.
 #### Returns
 
 [`NodeLayout`](#nodelayout)[]
+
+***
+
+### createPromptProvider()
+
+```ts
+function createPromptProvider(bodies, onSave?): PromptProvider;
+```
+
+Builds a [PromptProvider](#promptprovider-1) over an in-memory map of `promptRef → body`.
+A host wires the real Library artifact behind the same interface; the optional
+`onSave` receives every edit (and updates the map) so the demo/test round-trips.
+
+#### Parameters
+
+##### bodies
+
+`Record`\<`string`, `string`\>
+
+##### onSave?
+
+(`promptRef`, `text`) => `void`
+
+#### Returns
+
+[`PromptProvider`](#promptprovider-1)
+
+***
+
+### createToolProvider()
+
+```ts
+function createToolProvider(contracts): ToolProvider;
+```
+
+Builds a [ToolProvider](#toolprovider-1) over a contract list (exact `id@version` match).
+The host wires the SAME list into the Biblioteca via `toolAdapter` so the
+catalog and the binding never disagree (one registry, not two).
+
+#### Parameters
+
+##### contracts
+
+readonly `ToolContract`[]
+
+#### Returns
+
+[`ToolProvider`](#toolprovider-1)

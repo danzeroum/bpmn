@@ -13,7 +13,7 @@
  * reason and the count — the run never guesses a route (S-FEEL discipline).
  */
 
-import { END_ROUTE, type AgentNode, type AgentWorkflow } from './types.js';
+import { END_ROUTE, type AgentBudget, type AgentNode, type AgentWorkflow } from './types.js';
 import { canReach, internalSuccessors, nodeIndex } from './graph.js';
 import type {
   Fixtures,
@@ -138,6 +138,36 @@ function backoffDelay(attempt: number, kind: 'fixed' | 'exponential' | undefined
   return kind === 'exponential' ? 2 ** (attempt - 1) : 1;
 }
 
+/**
+ * Squad Lane SL-3 — the honest budget check. Returns the overflow reason naming
+ * the DIMENSION + projected count + declared limit (the count the honest stop
+ * carries), or null when the run is still within budget. Dimension order is
+ * fixed (steps → tokens → cost → time) so the reason is deterministic.
+ *
+ * Steps + tokens derive from declared fields and are always checked; cost + time
+ * are checked ONLY when `costEnforced` (a host costModel was injected) — without
+ * a real rate the frontend never invents a monetary/temporal number (§2.7).
+ */
+function budgetOverflow(
+  budget: AgentBudget,
+  proj: { tokens: number; brl: number; ms: number; steps: number },
+  costEnforced: boolean,
+): string | null {
+  if (budget.maxSteps !== undefined && proj.steps > budget.maxSteps) {
+    return `projected steps ${proj.steps} exceed budget maxSteps ${budget.maxSteps}`;
+  }
+  if (budget.maxTokens !== undefined && proj.tokens > budget.maxTokens) {
+    return `projected tokens ${proj.tokens} exceed budget maxTokens ${budget.maxTokens}`;
+  }
+  if (costEnforced && budget.maxCostBRL !== undefined && proj.brl > budget.maxCostBRL) {
+    return `projected cost BRL ${proj.brl.toFixed(2)} exceeds budget maxCostBRL ${budget.maxCostBRL}`;
+  }
+  if (costEnforced && budget.maxWallTimeMs !== undefined && proj.ms > budget.maxWallTimeMs) {
+    return `projected time ${proj.ms}ms exceeds budget maxWallTimeMs ${budget.maxWallTimeMs}`;
+  }
+  return null;
+}
+
 /** The entry node: the first node with no forward (non-loop) predecessor. */
 function entryNode(wf: AgentWorkflow, index: Map<string, AgentNode>): string | undefined {
   const hasForwardPredecessor = (id: string): boolean => {
@@ -162,6 +192,12 @@ function entryNode(wf: AgentWorkflow, index: Map<string, AgentNode>): string | u
 export function simulate(wf: AgentWorkflow, options: SimulateOptions = {}): SimulationState {
   const fixtures = options.fixtures ?? {};
   const maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
+  const budget = options.budget ?? wf.budget; // governed budget (Squad Lane SL-3)
+  // costModel is OPT-IN: steps + tokens derive from declared fields and are
+  // always enforced; cost + wall-time need a rate the frontend does not honestly
+  // have, so they are projected/enforced ONLY when the host injects one — never
+  // from a silent default (anti "invented pricing", cerca §2.7).
+  const costModel = options.costModel;
   const index = nodeIndex(wf);
   const state = emptyState();
 
@@ -172,6 +208,10 @@ export function simulate(wf: AgentWorkflow, options: SimulateOptions = {}): Simu
   const retryCount = new Map<string, number>(); // decisionId → loop-backs taken
   let clock = 0; // logical time (backoff), never wall-clock
   let step = 0;
+  // Squad Lane SL-3 — deterministic budget projection (modeling values, §2.7).
+  let projTokens = 0;
+  let projMs = 0;
+  let agentSteps = 0;
 
   const record = (entry: Omit<TransitionRecord, 'step'>): void => {
     state.trail.push({ step: step++, ...entry });
@@ -284,6 +324,25 @@ export function simulate(wf: AgentWorkflow, options: SimulateOptions = {}): Simu
       });
     }
 
+    // Squad Lane SL-3 — accumulate the deterministic projection and stop
+    // honestly the moment a budgeted dimension overflows (never a guessed
+    // continuation; cerca §2.6). Steps + tokens come from declared fields; cost +
+    // wall-time only when the host injected a costModel (no invented rate, §2.7).
+    agentSteps += 1;
+    if (costModel) projMs += costModel.msPerStep;
+    if (node.type === 'llm') {
+      projTokens += node.config.maxOutputTokens ?? costModel?.tokensPerLlmCall ?? 0;
+    }
+    if (budget) {
+      const projBrl = costModel ? (projTokens / 1000) * costModel.brlPerKToken : 0;
+      const overflow = budgetOverflow(
+        budget,
+        { tokens: projTokens, brl: projBrl, ms: projMs, steps: agentSteps },
+        costModel !== undefined,
+      );
+      if (overflow) return block(node.id, 'budget', overflow);
+    }
+
     // planner static (§4): successors are followed in declared order.
     const next = internalSuccessors(wf, node.id, index)[0];
     if (next === undefined) {
@@ -298,4 +357,28 @@ export function simulate(wf: AgentWorkflow, options: SimulateOptions = {}): Simu
 
   // Ran out of the step budget — an honest structural block, never a hang.
   return block(current, 'budget', `step budget ${maxSteps} exhausted`);
+}
+
+/** The `✓ end · <json>` trail-message prefix — the sole exposure of the run's
+ * accumulated output (SimulationState is parity-pinned, so it carries no output
+ * field). Kept beside the two emission sites so the format has one owner. */
+const END_MESSAGE_MARK = '{';
+
+/**
+ * The agent's final merged output (Squad Lane SL-7), recovered from the last
+ * `end` trail entry, or `undefined` when the run BLOCKED (no `end` record) —
+ * an honest signal the run did not complete. Encapsulates the fragile
+ * trail-message parsing in ONE tested place so `runEvalSet` never re-parses.
+ */
+export function finalOutput(state: SimulationState): Record<string, unknown> | undefined {
+  const last = state.trail.at(-1);
+  if (!last || last.type !== 'end') return undefined;
+  const start = last.message.indexOf(END_MESSAGE_MARK);
+  if (start < 0) return undefined;
+  try {
+    const parsed: unknown = JSON.parse(last.message.slice(start));
+    return typeof parsed === 'object' && parsed !== null ? (parsed as Record<string, unknown>) : undefined;
+  } catch {
+    return undefined;
+  }
 }

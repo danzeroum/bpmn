@@ -56,7 +56,7 @@ describe('filterEntries — o MESMO filtro alimenta trilha e export XES (§10.5)
     const ledger = await seeded();
     const { entries, counts } = filterEntries(ledger.getEntries(), { categories: ['approval'] });
     expect(entries.map((e) => e.type)).toEqual(['APPROVAL_RECORDED']);
-    expect(counts).toEqual({ promotion: 2, approval: 1, command: 2, verification: 0, simulation: 0, replay: 0, total: 5 });
+    expect(counts).toEqual({ promotion: 2, approval: 1, command: 2, verification: 0, simulation: 0, replay: 0, evidence: 0, total: 5 });
   });
 
   it('filters by artifact (versionId OU details.artifactId) and by period', async () => {

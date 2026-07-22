@@ -20,6 +20,8 @@
  * same components work unchanged.
  */
 
+import type { AgentBudget } from './types.js';
+
 /** A token currently resting at a node — the render cursor. */
 export interface Token {
   id: string;
@@ -127,6 +129,33 @@ export interface NodeFixture {
 /** Fixtures keyed by node id. */
 export type Fixtures = Record<string, NodeFixture>;
 
+/**
+ * Squad Lane SL-3 — the host-injected projection that UNLOCKS the monetary and
+ * temporal budget dimensions. `brlPerKToken` and `msPerStep` are RATES the
+ * frontend does not honestly have, so cost/wall-time are projected only when the
+ * host supplies them (never from a silent default — anti "invented pricing",
+ * §2.7). `tokensPerLlmCall` is a fallback for llm nodes that declare no
+ * `maxOutputTokens` (token count, not a rate). Everything here is deterministic
+ * (no clock, no random).
+ */
+export interface CostModel {
+  tokensPerLlmCall: number;
+  brlPerKToken: number;
+  msPerStep: number;
+}
+
+/**
+ * An OPT-IN convenience cost model (Squad Lane SL-3) — modeling values a host may
+ * pass EXPLICITLY (`simulate(wf, { costModel: DEFAULT_COST_MODEL })`) to enable
+ * the cost/time budget dimensions. It is deliberately NOT the silent default: a
+ * run with no injected costModel projects/enforces only steps + tokens.
+ */
+export const DEFAULT_COST_MODEL: CostModel = {
+  tokensPerLlmCall: 1000,
+  brlPerKToken: 0.05,
+  msPerStep: 800,
+};
+
 /** Options for {@link simulate}. */
 export interface SimulateOptions {
   /** Per-node mock outputs; a node with none produces an empty output. */
@@ -134,4 +163,12 @@ export interface SimulateOptions {
   /** Safety cap on micro-steps (default 10_000) — a malformed graph blocks
    * honestly rather than looping forever. */
   maxSteps?: number;
+  /**
+   * Squad Lane SL-3 — the governed budget to enforce (falls back to
+   * `wf.budget`). A projected overflow of tokens/cost/time/steps is an honest
+   * stop (`BlockedDecision`, `cell: 'budget'`) naming node + reason + count.
+   */
+  budget?: AgentBudget;
+  /** The modeling projection to use (default {@link DEFAULT_COST_MODEL}). */
+  costModel?: CostModel;
 }

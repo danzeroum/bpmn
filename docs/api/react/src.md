@@ -2418,6 +2418,29 @@ component: ComponentType<{
 }>;
 ```
 
+##### tab?
+
+```ts
+optional tab?: object;
+```
+
+Squad Lane SL-5 — when present, the section renders as its OWN REGISTERED
+TAB (a tab button + panel) instead of inline in the General tab. `label` is
+display text the plugin localizes. Sections without `tab` keep rendering
+inline exactly as before (additive, MINOR).
+
+###### id
+
+```ts
+id: string;
+```
+
+###### label
+
+```ts
+label: string;
+```
+
 ***
 
 ### PaletteBuildContext
@@ -3300,6 +3323,17 @@ optional midDecoration?: "purpose-chip" | "check-disc";
 ```
 
 Optional decoration drawn at the edge midpoint.
+
+##### collaboration?
+
+```ts
+optional collaboration?: Partial<Omit<EdgeStyle, "collaboration">>;
+```
+
+Squad Lane SL-9 — style overrides merged only in the `colaboracao`
+`viewMode` (the Estrutura↔Colaboração toggle swaps just the renderer, same
+state). A style without this renders identically in both views, so no other
+domain (DMN, escalation, …) is affected. Additive/MINOR.
 
 ***
 
@@ -5177,6 +5211,137 @@ Access the live engine (for scenario capture / ledger — Handoff 7A-3).
 
 ***
 
+### SquadStudioProps
+
+Squad Studio (Squad Lane SL-9) — a SquadManifest rendered as a STANDARD BPMN
+diagram by instantiating the existing editor with a squad plugin (never a new
+canvas/fork; zoom/pan/keyboard navigation/inspection are reused). The manifest
+is the source of truth; the diagram is its DETERMINISTIC projection.
+
+The diagram is READ-ONLY on purpose (structural view). A projection with no
+write-back must not accept mutation gestures (drag/connect/delete), or an edit
+would vanish on the next projection — silent loss, which the doctrine forbids.
+Squad editing happens via the manifest UI; the full manifest↔diagram round-trip
+(edits mapped back to manifest commands) is a registered pendência, not SL-9.
+Read-only keeps every INSPECTION affordance alive: the perspective toggle, the
+keyboard-navigable legend, roving keyboard focus over nodes/edges (which drives
+the aria-live edge announce), selection-free navigation, and the governance tab.
+
+Chrome (toggle, legend, edge announce, manifest/ctx panel) mounts as a child,
+INSIDE the editor's providers, so it reads the same store.
+
+#### Properties
+
+##### manifest
+
+```ts
+manifest: SquadManifest;
+```
+
+##### contextContract?
+
+```ts
+optional contextContract?: ContextContract;
+```
+
+##### messages?
+
+```ts
+optional messages?: Messages;
+```
+
+##### staleMembers?
+
+```ts
+optional staleMembers?: readonly string[];
+```
+
+Optional host-injected member currency (candidata/obsoleta) — powers the
+coordinated-promotion warning; absent → no warning (degradable).
+
+***
+
+### SquadTrailProps
+
+Squad Lane SL-10 — the squad fact trail (D1). Renders a SquadSimResult
+as an ordered `intencao → acao → io → decisao → evidencia` list, each fact
+labeled with its provenance (`fixture` vs `evidencia-declarada`, E6) and its
+masked I/O. It is:
+
+  · VIRTUALIZED with its OWN windowing (E8 — no react-window): a fixed row
+    height + a scroll spacer means only the visible slice (+ overscan) mounts,
+    so a 10k-fact trail scrolls smoothly with a bounded DOM.
+  · FILTERABLE by agent / kind / error (the fact fields are flat).
+  · STEP-ABLE (D8): step mode walks the filtered facts one at a time and shows
+    the shared-context snapshot AT that step (`fact.contextAfter`, already masked).
+
+It renders the honest artifact and never invents: masking, provenance and the
+context snapshot all come straight from the headless `simulateSquad`.
+
+#### Properties
+
+##### result
+
+```ts
+result: SquadSimResult;
+```
+
+##### height?
+
+```ts
+optional height?: number;
+```
+
+Scroll viewport height in px (default 320).
+
+***
+
+### SquadSimJobInput
+
+Squad Lane SL-10 — the squad run as an F7 compute job, so it executes with the
+SAME agentflow engine off the main thread (or in-thread via the SyncExecutor —
+byte-identical, cerca N-8). A `resolveWorkflow` FUNCTION cannot cross a worker
+boundary (like the router in `routeJob`), so the host passes a SERIALIZABLE map
+of member workflows keyed by `id@version`; the job rebuilds the resolver inside
+the worker. Masking uses the conservative redaction (a policy function cannot
+cross the boundary either) — sensitive keys are never leaked.
+
+#### Properties
+
+##### manifest
+
+```ts
+manifest: SquadManifest;
+```
+
+##### workflows
+
+```ts
+workflows: Record<string, AgentWorkflow>;
+```
+
+Member workflows keyed by `id@version` (e.g. `"agnt-rsch@2.1.0"`).
+
+##### fixturesByRole?
+
+```ts
+optional fixturesByRole?: Record<string, Fixtures>;
+```
+
+##### contract?
+
+```ts
+optional contract?: ContextContract;
+```
+
+##### declaredEvidenceRoles?
+
+```ts
+optional declaredEvidenceRoles?: readonly string[];
+```
+
+***
+
 ### AutosavePayload
 
 Autosave payload (Handoff 4 §D2). The diagram is stored as its JSON model —
@@ -5701,6 +5866,18 @@ snapEnabled: boolean;
 ```ts
 readOnly: boolean;
 ```
+
+##### viewMode
+
+```ts
+viewMode: ViewMode;
+```
+
+Squad Lane SL-9 — the Squad Studio perspective. 'estrutura' emphasizes the
+lane structure; 'colaboracao' swaps in the collaboration edge styles (the
+toggle patches THIS one key, so selection/focus and the command-stack undo
+are untouched). Diagrams that declare no collaboration edge styles render
+identically in both. Default 'estrutura'.
 
 ##### lastCreatedNodeId
 
@@ -7576,6 +7753,16 @@ type ResizeCorner = "nw" | "ne" | "sw" | "se";
 
 ***
 
+### ViewMode
+
+```ts
+type ViewMode = "estrutura" | "colaboracao";
+```
+
+Squad Lane SL-9 — the Squad Studio perspective (Estrutura ↔ Colaboração).
+
+***
+
 ### CanvasStore
 
 ```ts
@@ -8032,6 +8219,38 @@ const SUBPROCESS_TITLE_HEIGHT: 30 = 30;
 
 Height of the expanded sub-process title strip (Handoff 5 §3.3) — the
 double-click drill target (rename stays on the body/inspector).
+
+***
+
+### SQUAD\_EDGE\_STYLES
+
+```ts
+const SQUAD_EDGE_STYLES: Record<SquadEdgeKind, EdgeStyle>;
+```
+
+The six squad edge styles, keyed by `edge.type` = the kind. Each is distinct
+by marker + dash alone (no color); the toggle thickens them (Colaboração).
+
+***
+
+### SQUAD\_EDGE\_GLYPH
+
+```ts
+const SQUAD_EDGE_GLYPH: Record<SquadEdgeKind, string>;
+```
+
+A decorative marker glyph per kind for the legend (aria-hidden — the button's
+accessible name is the localized kind, never the glyph).
+
+***
+
+### squadSimJob
+
+```ts
+const squadSimJob: ComputeJob<SquadSimJobInput, SquadSimResult>;
+```
+
+Runs `simulateSquad` from serializable inputs (the resolver is rebuilt here).
 
 ***
 
@@ -11864,6 +12083,94 @@ orchestration only.
 
 ***
 
+### SquadStudio()
+
+```ts
+function SquadStudio(__namedParameters): Element;
+```
+
+#### Parameters
+
+##### \_\_namedParameters
+
+[`SquadStudioProps`](#squadstudioprops)
+
+#### Returns
+
+`Element`
+
+***
+
+### SquadTrail()
+
+```ts
+function SquadTrail(__namedParameters): Element;
+```
+
+#### Parameters
+
+##### \_\_namedParameters
+
+[`SquadTrailProps`](#squadtrailprops)
+
+#### Returns
+
+`Element`
+
+***
+
+### buildSquadDiagram()
+
+```ts
+function buildSquadDiagram(manifest): BpmnDiagram;
+```
+
+Projects a manifest to a BPMN diagram. Pure and deterministic.
+
+#### Parameters
+
+##### manifest
+
+`SquadManifest`
+
+#### Returns
+
+`BpmnDiagram`
+
+***
+
+### createSquadPlugin()
+
+```ts
+function createSquadPlugin(options): BpmnPlugin;
+```
+
+Builds the squad plugin. `governanceLabel` is the (already localized) tab
+title, resolved by the host/SquadStudio since the plugin is created outside
+the i18n provider.
+
+#### Parameters
+
+##### options
+
+###### manifest
+
+`SquadManifest`
+
+###### contextContract?
+
+`ContextContract`
+
+###### governanceLabel
+
+`string`
+
+#### Returns
+
+[`BpmnPlugin`](#bpmnplugin)
+
+***
+
 ### autosaveKey()
 
 ```ts
@@ -13387,3 +13694,27 @@ Re-exports [AgentSimulationRecord](src/agent.md#agentsimulationrecord)
 ### proposeErrorBoundaryCommand
 
 Re-exports [proposeErrorBoundaryCommand](src/agent.md#proposeerrorboundarycommand)
+
+***
+
+### createToolProvider
+
+Re-exports [createToolProvider](src/agent.md#createtoolprovider)
+
+***
+
+### ToolProvider
+
+Re-exports [ToolProvider](src/agent.md#toolprovider-1)
+
+***
+
+### createPromptProvider
+
+Re-exports [createPromptProvider](src/agent.md#createpromptprovider)
+
+***
+
+### PromptProvider
+
+Re-exports [PromptProvider](src/agent.md#promptprovider-1)

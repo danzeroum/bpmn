@@ -320,3 +320,55 @@ Abertos durante a SL-1 (revisão de arquitetura), **não bloqueiam** a entrega:
   um nó merece código próprio (ex.: **`TOOL_FORBIDDEN`**), não cair em `TOOL_EFFECT_UNGATED` nem passar
   em silêncio quando o efeito é `read`. Refinamento a implementar (candidato à SL-6, junto do Painel de
   Problemas), com vetor positivo/negativo/remediação.
+- **Drag-into-node do catálogo (SL-2, cortado do MVP).** O binding de ferramenta na SL-2 é por
+  **seletor/autocomplete** no inspector (impossível digitar string solta — cerca §2.2). Arrastar um card
+  do catálogo da Biblioteca para DENTRO de um nó `tool` é um **gesto novo** (spec visual no protótipo 01)
+  e fica como polimento registrado, não escopo do MVP. O `ToolProvider` já nasce injetável (SL-2), então
+  o drag só precisa escrever o mesmo `usesTool` que o seletor já escreve.
+- **`CTX_PURPOSE_VIOLATION` — regra de FLUXO (SL-8 estrutural → SL-10 ✔ aterrissou; cobertura fina → SL-12).**
+  A SL-8 entregou a linha ESTRUTURAL do `ctx-contract` (`immutableAfterGate` só em `operational-action`;
+  `merge` coerente com o `purpose`). A regra de FLUXO que o parecer E5 motivou — um contexto
+  `purpose: grounding` não pode alcançar uma tool de efeito `external-commitment` sem revisão — **aterrissou
+  na SL-10** como `validateSquadFlow(manifest, contract, { resolveWorkflow, resolveTool })`: um papel LEITOR
+  de chave grounding cujo workflow resolvido alcança uma tool com efeito que exige gate, e o squad **não tem
+  gate nenhum**, dispara `CTX_PURPOSE_VIOLATION` (degradável — ambos resolvers exigidos; reusa
+  `effectRequiresGate` da SL-1). O que **fica para a SL-12**: um squad QUE JÁ TEM gate defere a pergunta fina
+  "existe um gate que cobre ESTA ação no caminho" ao `GATE_NOT_COVERING` sobre `reachableGateFrom` — a SL-10
+  hoje só sabe dizer "há review no squad ou não". Documentado no JSDoc de `validateSquadFlow`, nunca silencioso.
+- **Masking através da fronteira do worker (SL-10 — limitação honesta).** O `simulateSquad` aceita uma
+  `MaskingPolicy` INJETADA (função `mask(campo, valor)`), mas uma função não cruza `postMessage`. No caminho
+  do worker (`squad-sim` job) a política não viaja, então o job cai no **redação conservadora** (chaves
+  `sensitivity`/`forbidden` → `MASKED_VALUE`) — nunca vaza PII, apenas mascara mais grosseiramente do que uma
+  política custom faria. O caminho SÍNCRONO (in-thread) usa a política injetada normalmente. Se um host
+  precisar de masking custom OFF-thread, a política teria de virar um descritor serializável (ex.: lista de
+  campos + estratégia nomeada), resolvido dentro do worker — registrado, fora do escopo da SL-10.
+- **Abas de Onda no nó `agentTask` do canvas principal (SL-5 → SL-12).** A Onda 1 (Identidade/Inteligência)
+  vive no inspector do **AgentStudio**, onde `workflow` + `toolProvider` já são props (SL-2) — degradabilidade
+  herdada, zero encanamento novo. O `agentTask` no canvas principal só carrega `agentWorkflowRef` +
+  `autonomyLevel` (o `AgentWorkflow` não é embutido no nó, snapshot é leitura degradada), então dar-lhe as
+  abas exigiria um **resolver de agent-workflow injetado no EditorConfig**. Isso fica para a **ponte (SL-12)**,
+  quando o deep-link `?load=<versionId>` e o resolver já existirem. A infra reutilizável já está pronta:
+  `InspectorSection.tab` (opcional) + tab-registration genérica no `PropertiesPanel` (SL-5).
+- **Round-trip manifesto↔diagrama do Squad Studio (SL-9 → onda futura).** Na SL-9 o diagrama do Squad
+  Studio é a **projeção determinística** do `SquadManifest` (fonte da verdade, D5) e é **read-only por
+  doutrina**: aceitar um gesto de mutação (arrastar/conectar/apagar) num diagrama sem write-back perderia
+  a edição na próxima projeção — perda silenciosa. Trava-se em read-only agora (mutações bloqueadas na
+  origem por `useInteractions`), preservando toda a **inspeção** (toggle Estrutura↔Colaboração, legenda
+  navegável, foco de teclado rovingo sobre nós/arestas que alimenta o `aria-live`, aba de Governança). A
+  **edição do squad acontece via UI de manifesto**; o round-trip completo — arrastar/conectar mapeados de
+  volta para **comandos que atualizam o manifesto** (`CommandStack`, undo/redo, `toAuditEvent`) — é uma
+  onda própria (mais pesada), registrada aqui e fora do escopo da SL-9. Enquanto não existir, o read-only
+  é o contrato honesto (nada se perde em silêncio).
+- **Announce da aresta acompanha o schema da aresta (SL-9 — nota, sem ação).** O anúncio de foco lê o
+  conteúdo REAL que `SquadEdge{from,to,kind}` carrega — `tipo + origem → destino` — e **não inventa**
+  condição/contrato/criticidade que o schema não tem (honestidade E9). Se, numa onda futura, a aresta do
+  squad passar a carregar contrato/condição/criticidade, o `aria-live` deve **incluí-los** no anúncio (e a
+  legenda/painel, exibi-los). Fica registrado para não se perder; nenhuma ação agora — só quando o schema
+  da aresta crescer.
+- **`SQUAD_EDGE_ROLE_UNKNOWN` fecha o drop silencioso da projeção (SL-9).** A projeção
+  `buildSquadDiagram` **descarta** uma aresta cujo `from`/`to` não é um papel conhecido (`orch`, um papel
+  de membro declarado, `humano`, ou `*` como origem de broadcast) — em vez de inventar uma raia. Para que
+  esse descarte **nunca** seja uma omissão visual muda, o `validateSquad` (headless, SL-8+) passa a emitir
+  **`SQUAD_EDGE_ROLE_UNKNOWN`** (error) exatamente para o mesmo conjunto: o usuário vê no Painel de
+  Problemas **por que** a aresta sumiu. Projeção e validação compartilham a MESMA regra de papel conhecido
+  (documentado em ambos os arquivos); vetores positivo/negativo/remediação em `squad.test.ts`.

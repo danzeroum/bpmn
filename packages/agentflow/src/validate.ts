@@ -12,6 +12,7 @@ import { END_ROUTE, type AgentWorkflow } from './types.js';
 import { autonomyCoherence } from './autonomy.js';
 import { canReach, decisionRoutes, loopComponents, nodeIndex } from './graph.js';
 import { formatRef, parseRef, type AgentRef } from './ref.js';
+import { normalizeSchema, requiredKeys, unsupportedKeywords } from './schema.js';
 import { effectRequiresGate, matchToolParams, type ResolveTool } from './toolContract.js';
 
 /** A single validation finding. */
@@ -31,10 +32,12 @@ export interface ValidationIssue {
 export interface ValidateOptions {
   /**
    * Resolves a delegate reference to another AgentWorkflow. Injected by the
-   * host (registry). Absent or returning false → the delegate is a warning,
-   * not an error (§3.4).
+   * host (registry). Absent, or returning `false`/`undefined` → the delegate is
+   * a warning, not an error (§3.4). Squad Lane SL-4 widens the return ADDITIVELY:
+   * a resolver may return the delegate's `AgentWorkflow` (a boolean still works)
+   * — only then can the cross-workflow contract/cycle/chain checks run.
    */
-  resolveDelegate?: (ref: AgentRef) => boolean;
+  resolveDelegate?: (ref: AgentRef) => AgentWorkflow | boolean | undefined;
   /**
    * Resolves a `tool:*@semver` ref to its {@link ToolContract} — the injected
    * `ToolProvider` (Squad Lane SL-2). Absent → tool-contract checks degrade to
@@ -287,6 +290,142 @@ function checkToolContracts(
   }
 }
 
+/**
+ * Squad Lane SL-4 (§5): a SchemaNode keyword outside the honest subset
+ * (type/required/enum/items/properties) is DECLARED as a warning — never
+ * silently honored (we do not claim JSON Schema we cannot evaluate).
+ */
+function checkSchemaSubset(wf: AgentWorkflow, issues: ValidationIssue[]): void {
+  const scan = (shape: AgentWorkflow['inputSchema'], where: string): void => {
+    for (const [key, node] of Object.entries(normalizeSchema(shape))) {
+      const extra = unsupportedKeywords(node);
+      if (extra.length > 0) {
+        issues.push({
+          code: 'SCHEMA_UNSUPPORTED_KEYWORD',
+          severity: 'warning',
+          message: `${where} field "${key}" uses unsupported schema keyword(s): ${extra.join(', ')}.`,
+          remediation:
+            'The honest subset supports only type, required, enum, items, properties — drop the rest or model it as one of these.',
+        });
+      }
+    }
+  };
+  scan(wf.inputSchema, 'inputSchema');
+  scan(wf.outputSchema, 'outputSchema');
+}
+
+/**
+ * Follows the delegate chain (Squad Lane SL-4), resolving each `delegate` ref to
+ * a workflow through the injected resolver. Returns the max delegate autonomy
+ * and whether the chain cycles (A → … → A). A resolver that returns a boolean
+ * (legacy) contributes nothing — the checks degrade honestly.
+ */
+function walkDelegateChain(
+  root: AgentWorkflow,
+  resolve: NonNullable<ValidateOptions['resolveDelegate']>,
+): { maxAutonomy: number; cycle: boolean; cyclePath: string[] } {
+  let maxAutonomy = 0;
+  let cycle = false;
+  let cyclePath: string[] = [];
+  const dfs = (wf: AgentWorkflow, path: string[]): void => {
+    for (const edge of wf.edges) {
+      if (edge.edgeType !== 'delegate') continue;
+      let ref: AgentRef;
+      try {
+        ref = parseRef(edge.to).ref;
+      } catch {
+        continue; // malformed ref reported by checkRefs
+      }
+      const resolved = resolve(ref);
+      if (typeof resolved !== 'object' || resolved === null) continue; // degraded
+      maxAutonomy = Math.max(maxAutonomy, resolved.autonomyLevel);
+      if (path.includes(resolved.id)) {
+        if (!cycle) {
+          cycle = true;
+          cyclePath = [...path, resolved.id];
+        }
+        continue; // never recurse into the cycle
+      }
+      dfs(resolved, [...path, resolved.id]);
+    }
+  };
+  dfs(root, [root.id]);
+  return { maxAutonomy, cycle, cyclePath };
+}
+
+/**
+ * Squad Lane SL-4 (§6) — cross-workflow delegate rules, active only when the
+ * injected resolver returns the delegate's workflow (types flow through the
+ * resolver, never a registry import). `DELEGATE_CONTRACT_MISMATCH` per edge,
+ * `DELEGATE_CYCLE` and `AUTONOMY_CHAIN` over the chain.
+ */
+function checkDelegateContracts(
+  wf: AgentWorkflow,
+  options: ValidateOptions,
+  issues: ValidationIssue[],
+): void {
+  const resolve = options.resolveDelegate;
+  if (!resolve) return; // degradable — absence is a DELEGATE_UNRESOLVED warning
+
+  for (const edge of wf.edges) {
+    if (edge.edgeType !== 'delegate') continue;
+    let ref: AgentRef;
+    try {
+      ref = parseRef(edge.to).ref;
+    } catch {
+      continue;
+    }
+    const resolved = resolve(ref);
+    if (typeof resolved !== 'object' || resolved === null) continue; // boolean → degraded
+    const provided = new Set(Object.keys(wf.outputSchema));
+    const missing = requiredKeys(resolved.inputSchema).filter((k) => !provided.has(k));
+    if (missing.length > 0) {
+      issues.push({
+        code: 'DELEGATE_CONTRACT_MISMATCH',
+        severity: 'error',
+        nodeId: edge.from,
+        message: `Delegate "${edge.from}" → ${formatRef(ref)}: the delegator outputSchema does not cover the delegate's required input(s): ${missing.join(', ')}.`,
+        remediation: `Provide ${missing.join(', ')} in this workflow's outputSchema (or relax them on the delegate) so the delegation contract holds.`,
+      });
+    }
+  }
+
+  const chain = walkDelegateChain(wf, resolve);
+  if (chain.cycle) {
+    issues.push({
+      code: 'DELEGATE_CYCLE',
+      severity: 'error',
+      message: `Delegate chain cycles with no progress: ${chain.cyclePath.join(' → ')}.`,
+      remediation: 'Break the delegate cycle — a delegate chain must make progress and terminate.',
+    });
+  }
+  if (chain.maxAutonomy > wf.autonomyLevel) {
+    issues.push({
+      code: 'AUTONOMY_CHAIN',
+      severity: 'error',
+      message: `Declared autonomy ${wf.autonomyLevel} is below the delegate chain's effective autonomy ${chain.maxAutonomy}.`,
+      remediation: `Raise autonomyLevel to at least ${chain.maxAutonomy} (the maximum across the delegate chain).`,
+    });
+  }
+}
+
+/**
+ * Squad Lane SL-3 (§6): an autonomy ≥ 2 workflow (bounded loop or higher) must
+ * declare a governed budget. Missing it is a WARNING (never blocks) — the run
+ * still simulates, just without a projected ceiling.
+ */
+function checkBudget(wf: AgentWorkflow, issues: ValidationIssue[]): void {
+  if (wf.autonomyLevel >= 2 && wf.budget === undefined) {
+    issues.push({
+      code: 'BUDGET_MISSING',
+      severity: 'warning',
+      message: `Workflow "${wf.id}" is autonomy ${wf.autonomyLevel} but declares no budget.`,
+      remediation:
+        'Declare a budget { maxTokens, maxCostBRL, maxWallTimeMs, maxSteps } so the run has a governed ceiling (autonomy ≥ 2).',
+    });
+  }
+}
+
 /** Rule 5 (§3.5): non-empty input/output schemas + structural integrity. */
 function checkSchemasAndStructure(wf: AgentWorkflow, issues: ValidationIssue[]): void {
   if (Object.keys(wf.inputSchema).length === 0) {
@@ -348,6 +487,9 @@ export function validateGraph(wf: AgentWorkflow, options: ValidateOptions = {}):
   checkStructuredLlm(wf, issues);
   checkRefs(wf, options, issues);
   checkToolContracts(wf, options, issues);
+  checkSchemaSubset(wf, issues);
+  checkDelegateContracts(wf, options, issues);
+  checkBudget(wf, issues);
   issues.push(...autonomyCoherence(wf));
   return issues;
 }

@@ -30,6 +30,13 @@ export interface InspectorSection {
   id: string;
   appliesTo: (node: BpmnNode) => boolean;
   component: ComponentType<{ node: BpmnNode }>;
+  /**
+   * Squad Lane SL-5 — when present, the section renders as its OWN REGISTERED
+   * TAB (a tab button + panel) instead of inline in the General tab. `label` is
+   * display text the plugin localizes. Sections without `tab` keep rendering
+   * inline exactly as before (additive, MINOR).
+   */
+  tab?: { id: string; label: string };
 }
 
 /**
@@ -273,6 +280,13 @@ export interface EdgeStyle {
   routing?: 'straight';
   /** Optional decoration drawn at the edge midpoint. */
   midDecoration?: 'purpose-chip' | 'check-disc';
+  /**
+   * Squad Lane SL-9 — style overrides merged only in the `colaboracao`
+   * `viewMode` (the Estrutura↔Colaboração toggle swaps just the renderer, same
+   * state). A style without this renders identically in both views, so no other
+   * domain (DMN, escalation, …) is affected. Additive/MINOR.
+   */
+  collaboration?: Partial<Omit<EdgeStyle, 'collaboration'>>;
 }
 
 /**

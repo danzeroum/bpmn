@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   APPROVAL_GATE_AGENT,
+  DEFAULT_COST_MODEL,
   DOCUMENT_REVIEW_AGENT,
   RESEARCH_AGENT,
   type Fixtures,
@@ -145,6 +146,58 @@ describe('simulate — decorators: errorBoundary (§4)', () => {
       fixtures: { 'llm-extract': { fails: 1, outputs: [{ is_valid: true }] } },
     });
     expect(state.blockedDecision).toMatchObject({ nodeId: 'llm-extract', cell: 'execution' });
+  });
+});
+
+describe('simulate — Squad Lane SL-3 honest budget stop (§6)', () => {
+  it('BUDGET_EXCEEDED (steps): stops honestly naming node + reason + count', () => {
+    const state = simulate(RESEARCH_AGENT, { fixtures: RESEARCH_FIXTURES, budget: { maxSteps: 1 } });
+    expect(state.complete).toBe(false);
+    expect(state.blockedDecision?.cell).toBe('budget');
+    expect(state.blockedDecision?.nodeId).toBe('tool-2'); // the step that pushes past 1
+    expect(state.blockedDecision?.reason).toBe('projected steps 2 exceed budget maxSteps 1');
+    // never a silent continuation — the stop is the last trail entry
+    expect(state.trail.at(-1)?.type).toBe('decision-blocked');
+  });
+
+  it('BUDGET_EXCEEDED (tokens): projected tokens come from the node maxOutputTokens (no costModel needed)', () => {
+    // llm-1 declares maxOutputTokens 4096 → the token projection is a declared field.
+    const state = simulate(RESEARCH_AGENT, { fixtures: RESEARCH_FIXTURES, budget: { maxTokens: 4000 } });
+    expect(state.blockedDecision?.nodeId).toBe('llm-1');
+    expect(state.blockedDecision?.reason).toBe('projected tokens 4096 exceed budget maxTokens 4000');
+  });
+
+  it('cost/time are NOT enforced without an injected costModel (no invented rate, §2.7)', () => {
+    // an absurdly tight cost/time budget must NOT stop the run when no rate is injected
+    const state = simulate(RESEARCH_AGENT, {
+      fixtures: RESEARCH_FIXTURES,
+      budget: { maxCostBRL: 0.0001, maxWallTimeMs: 1 },
+    });
+    expect(state.complete).toBe(true);
+    expect(state.blockedDecision).toBeNull();
+  });
+
+  it('cost IS enforced once the host injects a costModel (opt-in)', () => {
+    const state = simulate(RESEARCH_AGENT, {
+      fixtures: RESEARCH_FIXTURES,
+      budget: { maxCostBRL: 0.01 },
+      costModel: DEFAULT_COST_MODEL, // 4096 tok × 0.05/1k ≈ 0.20 BRL > 0.01
+    });
+    expect(state.blockedDecision?.cell).toBe('budget');
+    expect(state.blockedDecision?.reason).toMatch(/projected cost BRL .* exceeds budget maxCostBRL 0\.01/);
+  });
+
+  it('reads wf.budget when no option budget is given (generous template budget → no stop)', () => {
+    const state = simulate(RESEARCH_AGENT, { fixtures: RESEARCH_FIXTURES });
+    expect(state.complete).toBe(true);
+    expect(state.blockedDecision).toBeNull();
+  });
+
+  it('the projection is deterministic — a budget-limited run is byte-identical 10×', () => {
+    const runs = Array.from({ length: 10 }, () =>
+      JSON.stringify(simulate(RESEARCH_AGENT, { fixtures: RESEARCH_FIXTURES, budget: { maxSteps: 1 } })),
+    );
+    expect(new Set(runs).size).toBe(1);
   });
 });
 

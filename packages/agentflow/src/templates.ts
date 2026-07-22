@@ -54,13 +54,14 @@ export const RESEARCH_AGENT: AgentWorkflow = {
   version: '2.1.0',
   name: 'Research Agent',
   autonomyLevel: 2,
+  budget: { maxTokens: 120000, maxCostBRL: 4.0, maxWallTimeMs: 300000, maxSteps: 12 },
   inputSchema: { query: 'string' },
   outputSchema: { answer: 'string', sources: 'string[]', is_complete: 'boolean' },
   nodes: [
     {
       id: 'llm-1',
       type: 'llm',
-      config: { model: 'gpt-4o', promptRef: 'prm:research@2.0.0', structuredOutput: true },
+      config: { model: 'gpt-4o', promptRef: 'prm:research@2.0.0', structuredOutput: true, maxOutputTokens: 4096 },
       decorators: [
         { type: 'memory', scope: 'short', expiry: '6h' },
         { type: 'errorBoundary', maxRetries: 3, backoff: 'exponential' },
@@ -99,6 +100,7 @@ export const DOCUMENT_REVIEW_AGENT: AgentWorkflow = {
   version: '1.0.0',
   name: 'Document Review Agent',
   autonomyLevel: 3,
+  budget: { maxTokens: 80000, maxCostBRL: 3.0, maxWallTimeMs: 240000, maxSteps: 10 },
   inputSchema: { document: 'string' },
   outputSchema: { category: 'string', extracted: 'string', is_valid: 'boolean' },
   nodes: [

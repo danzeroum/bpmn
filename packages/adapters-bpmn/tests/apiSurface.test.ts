@@ -45,6 +45,12 @@ const EXPECTED_EXPORTS = [
   // Handoff 14 §1d — lint profiles as promotable Biblioteca artifacts.
   'activeLintProfileVersion',
   'lintProfileAdapter',
+  // Handoff 22 SL-2 — TOOL contracts as Biblioteca artifacts + shared resolver.
+  'resolveToolContract',
+  'toolAdapter',
+  // Handoff 22 SL-7 — EvalSet as a Biblioteca artifact + promotion gate.
+  'evalSetAdapter',
+  'evalPromotionGate',
   // Handoff 15 §2c/§2d/§2e — review threads + request-changes → ledger glue.
   'reviewChangesRequestedEntry',
   'reviewCommentEntry',
@@ -63,6 +69,14 @@ const EXPECTED_EXPORTS = [
   'ESCALATION_RAISED_TYPE',
   'compensationTriggeredEntry',
   'COMPENSATION_TRIGGERED_TYPE',
+  // Handoff 22 SL-11 — EvidenceBundle as a canonical audit entry + ExecutionStore.
+  'EVIDENCE_BUNDLE_TYPE',
+  'buildEvidenceBundle',
+  'canonicalEvidenceBundle',
+  'hashEvidenceBundle',
+  'evidenceBundleEntry',
+  'evidenceBundleOf',
+  'createInMemoryExecutionStore',
 ].sort();
 
 describe('@buildtovalue/adapters-bpmn public API surface', () => {

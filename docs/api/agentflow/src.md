@@ -96,6 +96,61 @@ readonly input: RefInput;
 
 ## Interfaces
 
+### AgentRunner
+
+How one agent workflow is executed for a squad run.
+
+#### Methods
+
+##### simulate()
+
+```ts
+simulate(wf, options?): SimulationState;
+```
+
+Deterministic mock simulation — the always-present path.
+
+###### Parameters
+
+###### wf
+
+[`AgentWorkflow`](#agentworkflow)
+
+###### options?
+
+[`SimulateOptions`](#simulateoptions)
+
+###### Returns
+
+[`SimulationState`](#simulationstate)
+
+##### run()?
+
+```ts
+optional run(wf, options?): Promise<SimulationState>;
+```
+
+Real execution against a host backend — OPTIONAL. Absent in this delivery;
+a host that injects it makes the squad run's facts real declared evidence
+rather than fixtures. Never called by `simulateSquad` (which is, by name,
+simulation); it exists so the seam is honest about what a backend would add.
+
+###### Parameters
+
+###### wf
+
+[`AgentWorkflow`](#agentworkflow)
+
+###### options?
+
+[`SimulateOptions`](#simulateoptions)
+
+###### Returns
+
+`Promise`\<[`SimulationState`](#simulationstate)\>
+
+***
+
 ### AutonomyDefinition
 
 One row of the normative scale (§4).
@@ -131,6 +186,239 @@ gate: GateRequirement;
 ```
 
 Downstream-gate obligation.
+
+***
+
+### Assertion
+
+One assertion over the agent's final output.
+
+#### Properties
+
+##### kind
+
+```ts
+kind: AssertionKind;
+```
+
+##### path?
+
+```ts
+optional path?: string;
+```
+
+Dotted path into the output (`answer`, `sources.0.url`); omitted → whole output.
+
+##### value?
+
+```ts
+optional value?: string;
+```
+
+For `contains`: the substring the value must include.
+
+##### pattern?
+
+```ts
+optional pattern?: string;
+```
+
+For `regex`: the pattern the value (stringified) must match.
+
+***
+
+### EvalCase
+
+One eval case: a scenario input, its per-node fixtures, and its assertions.
+
+#### Properties
+
+##### name
+
+```ts
+name: string;
+```
+
+##### input?
+
+```ts
+optional input?: Record<string, unknown>;
+```
+
+The scenario input this case represents (contextual; the run is fixture-driven).
+
+##### fixtures?
+
+```ts
+optional fixtures?: Fixtures;
+```
+
+Per-node mock outputs that make the run deterministic.
+
+##### assertions
+
+```ts
+assertions: Assertion[];
+```
+
+***
+
+### EvalSet
+
+The EVAL artifact (`eval:rsch-base@1.0.0`). `promotionThreshold` is the
+assertion pass-rate required to promote the target to active.
+
+#### Properties
+
+##### kind
+
+```ts
+kind: "EvalSet";
+```
+
+##### id
+
+```ts
+id: string;
+```
+
+##### version
+
+```ts
+version: string;
+```
+
+##### targetRef
+
+```ts
+targetRef: string;
+```
+
+The agent this eval targets, e.g. `agnt-rsch@2.1.0`.
+
+##### promotionThreshold
+
+```ts
+promotionThreshold: number;
+```
+
+##### cases
+
+```ts
+cases: EvalCase[];
+```
+
+***
+
+### AssertionResult
+
+The verdict for a single assertion.
+
+#### Properties
+
+##### kind
+
+```ts
+kind: AssertionKind;
+```
+
+##### path?
+
+```ts
+optional path?: string;
+```
+
+##### passed
+
+```ts
+passed: boolean;
+```
+
+***
+
+### EvalCaseResult
+
+The verdict for a single case.
+
+#### Properties
+
+##### name
+
+```ts
+name: string;
+```
+
+##### completed
+
+```ts
+completed: boolean;
+```
+
+True when the run reached an end (a blocked run cannot satisfy assertions).
+
+##### assertions
+
+```ts
+assertions: AssertionResult[];
+```
+
+##### passed
+
+```ts
+passed: boolean;
+```
+
+***
+
+### EvalReport
+
+The whole eval report — the promotion scoreboard.
+
+#### Properties
+
+##### targetRef
+
+```ts
+targetRef: string;
+```
+
+##### passed
+
+```ts
+passed: number;
+```
+
+Assertions that passed / total assertions across all cases.
+
+##### total
+
+```ts
+total: number;
+```
+
+##### passRate
+
+```ts
+passRate: number;
+```
+
+##### threshold
+
+```ts
+threshold: number;
+```
+
+##### meetsThreshold
+
+```ts
+meetsThreshold: boolean;
+```
+
+##### cases
+
+```ts
+cases: EvalCaseResult[];
+```
 
 ***
 
@@ -302,6 +590,72 @@ warnings: string[];
 ```
 
 Declared notes for every agentflow construct with no LangGraph form.
+
+***
+
+### ReadinessContext
+
+Everything readinessState needs, computed by the caller with its own
+injected resolvers (one source of validation, one source of state).
+
+#### Properties
+
+##### validation
+
+```ts
+validation: ValidationIssue[];
+```
+
+The result of `validateGraph`/`validateSquad` (with the host's resolvers).
+
+##### hasEvidence
+
+```ts
+hasEvidence: boolean;
+```
+
+A deterministic simulation with declared evidence exists.
+
+##### evalPassRate?
+
+```ts
+optional evalPassRate?: number;
+```
+
+Eval assertion pass-rate, when an eval set ran.
+
+##### threshold?
+
+```ts
+optional threshold?: number;
+```
+
+The eval promotion threshold.
+
+##### gateCovered?
+
+```ts
+optional gateCovered?: boolean;
+```
+
+A gate covers the external effect (core `reachableGateFrom`).
+
+##### signedActive?
+
+```ts
+optional signedActive?: boolean;
+```
+
+An active, signed version exists (identity).
+
+##### providerAvailable?
+
+```ts
+optional providerAvailable?: boolean;
+```
+
+A real execution provider is injected (host). Informational only —
+readiness never crosses into `executando` on its own.
 
 ***
 
@@ -682,9 +1036,41 @@ optional fails?: number;
 
 ***
 
+### CostModel
+
+Squad Lane SL-3 — the host-injected projection that UNLOCKS the monetary and
+temporal budget dimensions. `brlPerKToken` and `msPerStep` are RATES the
+frontend does not honestly have, so cost/wall-time are projected only when the
+host supplies them (never from a silent default — anti "invented pricing",
+§2.7). `tokensPerLlmCall` is a fallback for llm nodes that declare no
+`maxOutputTokens` (token count, not a rate). Everything here is deterministic
+(no clock, no random).
+
+#### Properties
+
+##### tokensPerLlmCall
+
+```ts
+tokensPerLlmCall: number;
+```
+
+##### brlPerKToken
+
+```ts
+brlPerKToken: number;
+```
+
+##### msPerStep
+
+```ts
+msPerStep: number;
+```
+
+***
+
 ### SimulateOptions
 
-Options for [simulate](#simulate).
+Options for [simulate](#simulate-1).
 
 #### Properties
 
@@ -704,6 +1090,623 @@ optional maxSteps?: number;
 
 Safety cap on micro-steps (default 10_000) — a malformed graph blocks
 honestly rather than looping forever.
+
+##### budget?
+
+```ts
+optional budget?: AgentBudget;
+```
+
+Squad Lane SL-3 — the governed budget to enforce (falls back to
+`wf.budget`). A projected overflow of tokens/cost/time/steps is an honest
+stop (`BlockedDecision`, `cell: 'budget'`) naming node + reason + count.
+
+##### costModel?
+
+```ts
+optional costModel?: CostModel;
+```
+
+The modeling projection to use (default [DEFAULT\_COST\_MODEL](#default_cost_model)).
+
+***
+
+### SquadMember
+
+One squad member: a versioned agent, its persona, and its role.
+
+#### Properties
+
+##### agentRef
+
+```ts
+agentRef: string;
+```
+
+##### personaRef
+
+```ts
+personaRef: string;
+```
+
+##### role
+
+```ts
+role: string;
+```
+
+***
+
+### SquadEdge
+
+One collaboration relation between roles (`orch`, a member role, `humano`, `*`).
+
+#### Properties
+
+##### from
+
+```ts
+from: string;
+```
+
+##### to
+
+```ts
+to: string;
+```
+
+##### kind
+
+```ts
+kind: SquadEdgeKind;
+```
+
+***
+
+### SquadGate
+
+A gate the squad passes through, and the scope of its approval.
+
+#### Properties
+
+##### gateId
+
+```ts
+gateId: string;
+```
+
+##### scope
+
+```ts
+scope: string;
+```
+
+***
+
+### SquadManifest
+
+The SQUAD artifact (`sqd-doc-review@1.0.0`).
+
+#### Properties
+
+##### kind
+
+```ts
+kind: "SquadManifest";
+```
+
+##### id
+
+```ts
+id: string;
+```
+
+##### version
+
+```ts
+version: string;
+```
+
+##### dynamic
+
+```ts
+dynamic: SquadDynamic;
+```
+
+##### orchestratorRef
+
+```ts
+orchestratorRef: string;
+```
+
+##### members
+
+```ts
+members: SquadMember[];
+```
+
+##### edges
+
+```ts
+edges: SquadEdge[];
+```
+
+##### contextContractRef
+
+```ts
+contextContractRef: string;
+```
+
+##### gates
+
+```ts
+gates: SquadGate[];
+```
+
+***
+
+### ContextKey
+
+One governed context key. A `forbidden` key grants no access.
+
+#### Properties
+
+##### key
+
+```ts
+key: string;
+```
+
+##### owner?
+
+```ts
+optional owner?: string;
+```
+
+##### readers?
+
+```ts
+optional readers?: string[];
+```
+
+##### writers?
+
+```ts
+optional writers?: string[];
+```
+
+##### purpose?
+
+```ts
+optional purpose?: ContextPurpose;
+```
+
+##### merge?
+
+```ts
+optional merge?: ContextMerge;
+```
+
+##### ttl?
+
+```ts
+optional ttl?: string;
+```
+
+##### sensitivity?
+
+```ts
+optional sensitivity?: string;
+```
+
+##### immutableAfterGate?
+
+```ts
+optional immutableAfterGate?: boolean;
+```
+
+##### forbidden?
+
+```ts
+optional forbidden?: boolean;
+```
+
+***
+
+### ContextContract
+
+The reusable context contract artifact (`ctx-contract:doc-review@1.0.0`).
+
+#### Properties
+
+##### kind
+
+```ts
+kind: "ContextContract";
+```
+
+##### id
+
+```ts
+id: string;
+```
+
+##### version
+
+```ts
+version: string;
+```
+
+##### keys
+
+```ts
+keys: ContextKey[];
+```
+
+***
+
+### ValidateSquadOptions
+
+Injected, degradable integrations for [validateSquad](#validatesquad).
+
+#### Properties
+
+##### resolveContextContract?
+
+```ts
+optional resolveContextContract?: (ref) => ContextContract | undefined;
+```
+
+Resolves `contextContractRef` to the contract so its keys can be checked.
+
+###### Parameters
+
+###### ref
+
+[`AgentRef`](#agentref)
+
+###### Returns
+
+[`ContextContract`](#contextcontract) \| `undefined`
+
+##### resolveMemberStatus?
+
+```ts
+optional resolveMemberStatus?: (ref) => boolean;
+```
+
+True when a member's agent version is candidate/obsolete (a registry
+concept, injected). Absent → no `SQUAD_MEMBER_STALE` warning (degradable,
+the `resolveDelegate`/`resolveTool` mold — agentflow never imports registry).
+
+###### Parameters
+
+###### ref
+
+[`AgentRef`](#agentref)
+
+###### Returns
+
+`boolean`
+
+***
+
+### SquadFlowOptions
+
+Injected, degradable integrations for [validateSquadFlow](#validatesquadflow).
+
+#### Properties
+
+##### resolveWorkflow
+
+```ts
+resolveWorkflow: (ref) => AgentWorkflow | undefined;
+```
+
+Resolves a member `agentRef` to its workflow — needed to see the tools it
+reaches (injected; agentflow never imports a registry).
+
+###### Parameters
+
+###### ref
+
+[`AgentRef`](#agentref)
+
+###### Returns
+
+[`AgentWorkflow`](#agentworkflow) \| `undefined`
+
+##### resolveTool
+
+```ts
+resolveTool: ResolveTool;
+```
+
+Resolves a `tool:*@semver` ref to its contract — needed for the effect.
+
+***
+
+### MaskingPolicy
+
+A host-injected masking policy (resolved from a `maskingPolicyRef`). Given a
+field name + value, it returns the masked replacement. Absent → a conservative
+default redacts every sensitive key (never leaks).
+
+#### Methods
+
+##### mask()
+
+```ts
+mask(fieldName, value): unknown;
+```
+
+###### Parameters
+
+###### fieldName
+
+`string`
+
+###### value
+
+`unknown`
+
+###### Returns
+
+`unknown`
+
+***
+
+### SquadFact
+
+One fact in the squad trail. Flat by design so a UI filters by
+`agent` / `kind` / `error` without walking a tree.
+
+#### Properties
+
+##### step
+
+```ts
+step: number;
+```
+
+Monotonic step across the WHOLE squad run.
+
+##### agent
+
+```ts
+agent: string;
+```
+
+The member role this fact belongs to (`orch` for the orchestrator).
+
+##### agentRef
+
+```ts
+agentRef: string;
+```
+
+The member's versioned agent ref.
+
+##### kind
+
+```ts
+kind: FactKind;
+```
+
+##### source
+
+```ts
+source: FactSource;
+```
+
+##### message
+
+```ts
+message: string;
+```
+
+English headless description (the react layer localizes its own chrome).
+
+##### nodeId?
+
+```ts
+optional nodeId?: string;
+```
+
+##### io?
+
+```ts
+optional io?: object;
+```
+
+Masked call input/output (sensitive keys redacted).
+
+###### input?
+
+```ts
+optional input?: Record<string, unknown>;
+```
+
+###### output?
+
+```ts
+optional output?: Record<string, unknown>;
+```
+
+##### error?
+
+```ts
+optional error?: boolean;
+```
+
+True for a blocked/failed fact — lets the UI filter to errors.
+
+##### contextAfter?
+
+```ts
+optional contextAfter?: Record<string, unknown>;
+```
+
+Masked shared-context snapshot AFTER this fact (step mode, D8).
+
+***
+
+### SquadBlock
+
+A single honest cross-agent stop.
+
+#### Properties
+
+##### agent
+
+```ts
+agent: string;
+```
+
+##### agentRef
+
+```ts
+agentRef: string;
+```
+
+##### nodeId
+
+```ts
+nodeId: string;
+```
+
+##### reason
+
+```ts
+reason: string;
+```
+
+***
+
+### SquadSimOptions
+
+Injected, degradable integrations for [simulateSquad](#simulatesquad).
+
+#### Properties
+
+##### resolveWorkflow
+
+```ts
+resolveWorkflow: (ref) => AgentWorkflow | undefined;
+```
+
+Resolves a member's `agentRef` to its workflow (injected — agentflow never
+imports a registry). A member that does not resolve is a declared stop, not
+a silent skip.
+
+###### Parameters
+
+###### ref
+
+[`AgentRef`](#agentref)
+
+###### Returns
+
+[`AgentWorkflow`](#agentworkflow) \| `undefined`
+
+##### fixturesByRole?
+
+```ts
+optional fixturesByRole?: Record<string, Fixtures>;
+```
+
+Per-member mock fixtures keyed by ROLE.
+
+##### runner?
+
+```ts
+optional runner?: AgentRunner;
+```
+
+The runner (default [defaultAgentRunner](#defaultagentrunner) — deterministic mock).
+
+##### contract?
+
+```ts
+optional contract?: ContextContract;
+```
+
+The resolved context contract — drives masking (sensitive/forbidden keys)
+and the shared-context key ownership.
+
+##### maskingPolicy?
+
+```ts
+optional maskingPolicy?: MaskingPolicy;
+```
+
+The masking policy (from `maskingPolicyRef`); absent → conservative redaction.
+
+##### declaredEvidenceRoles?
+
+```ts
+optional declaredEvidenceRoles?: readonly string[];
+```
+
+Roles whose fixtures the host DECLARES as captured real evidence (E6). Their
+facts are labeled `evidencia-declarada`; every other role is `fixture`.
+
+##### maxHops?
+
+```ts
+optional maxHops?: number;
+```
+
+Safety cap on delegation hops (default 64) — a malformed graph stops
+honestly rather than looping.
+
+***
+
+### SquadSimResult
+
+The whole squad run — the shared render contract for the react trail.
+
+#### Properties
+
+##### facts
+
+```ts
+facts: SquadFact[];
+```
+
+The ordered fact trail (D1).
+
+##### perAgent
+
+```ts
+perAgent: Record<string, SimulationState>;
+```
+
+Each member's own [SimulationState](#simulationstate), keyed by role.
+
+##### order
+
+```ts
+order: string[];
+```
+
+The roles in execution order.
+
+##### complete
+
+```ts
+complete: boolean;
+```
+
+True when the whole squad reached its end with no honest stop.
+
+##### blocked
+
+```ts
+blocked: SquadBlock | null;
+```
+
+The first honest cross-agent stop, or null.
 
 ***
 
@@ -913,6 +1916,74 @@ optional structuredOutput?: boolean;
 
 True → the model must emit structured JSON. Required when a structured
 decision consumes this node (validation rule 3, §1.4).
+
+##### provider?
+
+```ts
+optional provider?: string;
+```
+
+Squad Lane SL-3 (additive) — the provider is ALWAYS host-injected; this is a
+label ("host-injetado"), never an endpoint or key (cerca §2.7).
+
+##### fallbackModel?
+
+```ts
+optional fallbackModel?: string;
+```
+
+Cheaper/secondary model tried on failure (a label, not a runtime).
+
+##### temperature?
+
+```ts
+optional temperature?: number;
+```
+
+Sampling temperature (modeling value).
+
+##### maxOutputTokens?
+
+```ts
+optional maxOutputTokens?: number;
+```
+
+Projected output-token ceiling per call — feeds the budget projection.
+
+***
+
+### AgentBudget
+
+Governed budget for an AgentWorkflow (Squad Lane SL-3). Autonomy ≥ 2 without a
+budget is a `BUDGET_MISSING` warning; the simulation stops honestly
+(`BUDGET_EXCEEDED`) when a projected dimension overflows. All optional so the
+field is purely additive (no existing artifact breaks — MINOR).
+
+#### Properties
+
+##### maxTokens?
+
+```ts
+optional maxTokens?: number;
+```
+
+##### maxCostBRL?
+
+```ts
+optional maxCostBRL?: number;
+```
+
+##### maxWallTimeMs?
+
+```ts
+optional maxWallTimeMs?: number;
+```
+
+##### maxSteps?
+
+```ts
+optional maxSteps?: number;
+```
 
 ***
 
@@ -1257,6 +2328,47 @@ optional when?: string;
 
 ***
 
+### SchemaNode
+
+An honest subset of JSON Schema (Squad Lane SL-4) — a field descriptor with
+only `type`, `required`, `enum`, `items`, `properties`. ANYTHING outside this
+set is declared in a warning (`SCHEMA_UNSUPPORTED_KEYWORD`), never silently
+honored — we do not claim to support JSON Schema we cannot evaluate.
+
+#### Properties
+
+##### type
+
+```ts
+type: string;
+```
+
+##### required?
+
+```ts
+optional required?: boolean;
+```
+
+##### enum?
+
+```ts
+optional enum?: unknown[];
+```
+
+##### items?
+
+```ts
+optional items?: SchemaNode;
+```
+
+##### properties?
+
+```ts
+optional properties?: Record<string, SchemaNode>;
+```
+
+***
+
 ### AgentWorkflow
 
 The AgentWorkflow — the versioned artifact whose source of truth is the
@@ -1324,6 +2436,15 @@ nodes: AgentNode[];
 edges: AgentEdge[];
 ```
 
+##### budget?
+
+```ts
+optional budget?: AgentBudget;
+```
+
+Governed budget (Squad Lane SL-3). Autonomy ≥ 2 without one warns
+(`BUDGET_MISSING`); the simulation stops honestly on projected overflow.
+
 ***
 
 ### ValidationIssue
@@ -1381,12 +2502,14 @@ Injected, degradable integrations (cerca §1.7).
 ##### resolveDelegate?
 
 ```ts
-optional resolveDelegate?: (ref) => boolean;
+optional resolveDelegate?: (ref) => boolean | AgentWorkflow | undefined;
 ```
 
 Resolves a delegate reference to another AgentWorkflow. Injected by the
-host (registry). Absent or returning false → the delegate is a warning,
-not an error (§3.4).
+host (registry). Absent, or returning `false`/`undefined` → the delegate is
+a warning, not an error (§3.4). Squad Lane SL-4 widens the return ADDITIVELY:
+a resolver may return the delegate's `AgentWorkflow` (a boolean still works)
+— only then can the cross-workflow contract/cycle/chain checks run.
 
 ###### Parameters
 
@@ -1396,7 +2519,7 @@ not an error (§3.4).
 
 ###### Returns
 
-`boolean`
+`boolean` \| [`AgentWorkflow`](#agentworkflow) \| `undefined`
 
 ##### resolveTool?
 
@@ -1418,6 +2541,30 @@ type GateRequirement = "required" | "optional" | "none";
 ```
 
 Whether a downstream btv:gate is required at this level.
+
+***
+
+### AssertionKind
+
+```ts
+type AssertionKind = "contains" | "regex" | "schema";
+```
+
+The three honest assertion kinds (cerca §5) — never code.
+
+***
+
+### ReadinessState
+
+```ts
+type ReadinessState = 
+  | "rascunho"
+  | "validado"
+  | "simulado-com-evidencia"
+  | "apto-para-integracao";
+```
+
+The four derived readiness states — the frontend ceiling.
 
 ***
 
@@ -1453,6 +2600,72 @@ type Fixtures = Record<string, NodeFixture>;
 ```
 
 Fixtures keyed by node id.
+
+***
+
+### SquadDynamic
+
+```ts
+type SquadDynamic = "hierarquico" | "sequencial" | "paralelo" | "blackboard";
+```
+
+How a squad coordinates (cerca §5).
+
+***
+
+### SquadEdgeKind
+
+```ts
+type SquadEdgeKind = 
+  | "delegar"
+  | "enviar-contexto"
+  | "solicitar-revisao"
+  | "escalar"
+  | "consolidar"
+  | "fallback";
+```
+
+The six squad edge kinds (E9) — the only collaboration relations.
+
+***
+
+### ContextPurpose
+
+```ts
+type ContextPurpose = "grounding" | "decision" | "operational-action";
+```
+
+Why a context key exists (governs its merge/immutability semantics).
+
+***
+
+### ContextMerge
+
+```ts
+type ContextMerge = "acrescentar" | "substituir" | "exigir-decisao";
+```
+
+How writes to a context key combine.
+
+***
+
+### FactSource
+
+```ts
+type FactSource = "fixture" | "evidencia-declarada";
+```
+
+Provenance of a fact (E6): a mock fixture, or host-declared real evidence.
+
+***
+
+### FactKind
+
+```ts
+type FactKind = "intencao" | "acao" | "io" | "decisao" | "evidencia" | "parada";
+```
+
+The kind of a fact — the filterable "type" (D1 fact chain).
 
 ***
 
@@ -1574,15 +2787,28 @@ type AgentNode =
 
 ***
 
+### SchemaField
+
+```ts
+type SchemaField = string | SchemaNode;
+```
+
+One field of a [SchemaShape](#schemashape): the legacy plain type token (`"string"`,
+`"string[]"`, `"boolean"`) OR a [SchemaNode](#schemanode). The union is purely
+ADDITIVE (SL-4, MINOR) — every existing string-token schema stays valid and
+byte-stable; readers normalize a string to `{ type }` via `normalizeSchema`.
+
+***
+
 ### SchemaShape
 
 ```ts
-type SchemaShape = Record<string, string>;
+type SchemaShape = Record<string, SchemaField>;
 ```
 
-A minimal input/output shape: property name → type token
-(`"string"`, `"string[]"`, `"boolean"`). Deliberately plain — no JSON
-Schema, no `@type` (§1.6). Must be non-empty (validation rule 5).
+A minimal input/output shape: property name → [SchemaField](#schemafield). Must be
+non-empty (validation rule 5). The plain-string form is the Handoff 12
+baseline; the [SchemaNode](#schemanode) form is the SL-4 honest JSON-Schema subset.
 
 ***
 
@@ -1596,6 +2822,17 @@ The normative autonomy scale (§4); see autonomy.ts for the definitions.
 
 ## Variables
 
+### defaultAgentRunner
+
+```ts
+const defaultAgentRunner: AgentRunner;
+```
+
+The default runner: the deterministic mock and nothing else. `run` is
+deliberately absent — there is no backend in this frontend-only delivery.
+
+***
+
 ### AUTONOMY\_SCALE
 
 ```ts
@@ -1603,6 +2840,59 @@ const AUTONOMY_SCALE: readonly AutonomyDefinition[];
 ```
 
 The full scale, index === level.
+
+***
+
+### SUPPORTED\_SCHEMA\_KEYWORDS
+
+```ts
+const SUPPORTED_SCHEMA_KEYWORDS: readonly ["type", "required", "enum", "items", "properties"];
+```
+
+The only keywords the honest subset supports (cerca §5 / SL-4).
+
+***
+
+### DEFAULT\_COST\_MODEL
+
+```ts
+const DEFAULT_COST_MODEL: CostModel;
+```
+
+An OPT-IN convenience cost model (Squad Lane SL-3) — modeling values a host may
+pass EXPLICITLY (`simulate(wf, { costModel: DEFAULT_COST_MODEL })`) to enable
+the cost/time budget dimensions. It is deliberately NOT the silent default: a
+run with no injected costModel projects/enforces only steps + tokens.
+
+***
+
+### SQUAD\_DYNAMICS
+
+```ts
+const SQUAD_DYNAMICS: readonly SquadDynamic[];
+```
+
+The valid squad dynamics.
+
+***
+
+### SQUAD\_EDGE\_KINDS
+
+```ts
+const SQUAD_EDGE_KINDS: readonly SquadEdgeKind[];
+```
+
+The six valid squad edge kinds.
+
+***
+
+### MASKED\_VALUE
+
+```ts
+const MASKED_VALUE: "···" = '···';
+```
+
+The redaction token a conservative mask writes when no policy is injected.
 
 ***
 
@@ -1750,6 +3040,34 @@ Declaring a higher level is allowed — it is a more conservative claim.
 #### Returns
 
 [`ValidationIssue`](#validationissue)[]
+
+***
+
+### runEvalSet()
+
+```ts
+function runEvalSet(evalSet, wf): EvalReport;
+```
+
+Runs every case of an [EvalSet](#evalset) against `wf` via the deterministic
+simulate engine and returns the [EvalReport](#evalreport). A blocked run (no `end`)
+fails every assertion of that case. Assertion pass-rate ≥ `promotionThreshold`
+→ `meetsThreshold`. No fixtures/assertions → `total === 0`, `passRate === 1`
+(honest: nothing to fail).
+
+#### Parameters
+
+##### evalSet
+
+[`EvalSet`](#evalset)
+
+##### wf
+
+[`AgentWorkflow`](#agentworkflow)
+
+#### Returns
+
+[`EvalReport`](#evalreport)
 
 ***
 
@@ -1998,6 +3316,80 @@ LangGraph representation are omitted and DECLARED in `warnings`:
 
 ***
 
+### promptVariables()
+
+```ts
+function promptVariables(promptText): string[];
+```
+
+The distinct bare `{{name}}` variables referenced in a prompt, in first-seen order.
+
+#### Parameters
+
+##### promptText
+
+`string`
+
+#### Returns
+
+`string`[]
+
+***
+
+### promptCoverage()
+
+```ts
+function promptCoverage(inputVars, promptText): ValidationIssue[];
+```
+
+One `PROMPT_VAR_UNUSED` warning (never an error) per declared input variable
+that the prompt never references as `{{name}}`. `inputVars` is the caller's
+`Object.keys(wf.inputSchema)`. Deterministic: issue order follows `inputVars`.
+
+#### Parameters
+
+##### inputVars
+
+`string`[]
+
+##### promptText
+
+`string`
+
+#### Returns
+
+[`ValidationIssue`](#validationissue)[]
+
+***
+
+### readinessState()
+
+```ts
+function readinessState(wf, ctx): ReadinessState;
+```
+
+Derives the readiness state. Order: an empty or error-carrying workflow is a
+`rascunho`; a clean one with no evidence is `validado`; with evidence but not
+all promotion conditions met it is `simulado-com-evidencia`; only when eval ≥
+threshold AND a gate covers the effect AND a signed-active version exists does
+it reach `apto-para-integracao`. It never returns a host state.
+
+#### Parameters
+
+##### wf
+
+[`AgentWorkflow`](#agentworkflow)
+
+##### ctx
+
+[`ReadinessContext`](#readinesscontext)
+
+#### Returns
+
+[`ReadinessState`](#readinessstate)
+
+***
+
 ### parseRef()
 
 ```ts
@@ -2080,6 +3472,109 @@ True when `input` parses as a valid reference (no throw).
 
 ***
 
+### isSchemaNode()
+
+```ts
+function isSchemaNode(field): field is SchemaNode;
+```
+
+True when a field is already the [SchemaNode](#schemanode) object form.
+
+#### Parameters
+
+##### field
+
+[`SchemaField`](#schemafield)
+
+#### Returns
+
+`field is SchemaNode`
+
+***
+
+### normalizeSchemaField()
+
+```ts
+function normalizeSchemaField(field): SchemaNode;
+```
+
+Lifts a field to a [SchemaNode](#schemanode); a legacy string becomes `{ type }`.
+
+#### Parameters
+
+##### field
+
+[`SchemaField`](#schemafield)
+
+#### Returns
+
+[`SchemaNode`](#schemanode)
+
+***
+
+### normalizeSchema()
+
+```ts
+function normalizeSchema(shape): Record<string, SchemaNode>;
+```
+
+Normalizes every field of a shape to [SchemaNode](#schemanode) form.
+
+#### Parameters
+
+##### shape
+
+[`SchemaShape`](#schemashape)
+
+#### Returns
+
+`Record`\<`string`, [`SchemaNode`](#schemanode)\>
+
+***
+
+### unsupportedKeywords()
+
+```ts
+function unsupportedKeywords(node): string[];
+```
+
+The keywords present on a [SchemaNode](#schemanode) that fall OUTSIDE the honest
+subset (recursing into `items`/`properties`). A non-empty result is declared
+as a `SCHEMA_UNSUPPORTED_KEYWORD` warning — never silently honored.
+
+#### Parameters
+
+##### node
+
+[`SchemaNode`](#schemanode)
+
+#### Returns
+
+`string`[]
+
+***
+
+### requiredKeys()
+
+```ts
+function requiredKeys(shape): string[];
+```
+
+The required-field keys of a shape (a field is required only in SchemaNode
+form with `required: true`; a legacy string field is never required).
+
+#### Parameters
+
+##### shape
+
+[`SchemaShape`](#schemashape)
+
+#### Returns
+
+`string`[]
+
+***
+
 ### simulate()
 
 ```ts
@@ -2103,6 +3598,176 @@ an honest stop lands in `blockedDecision`, a clean finish sets `complete`.
 #### Returns
 
 [`SimulationState`](#simulationstate)
+
+***
+
+### finalOutput()
+
+```ts
+function finalOutput(state): Record<string, unknown> | undefined;
+```
+
+The agent's final merged output (Squad Lane SL-7), recovered from the last
+`end` trail entry, or `undefined` when the run BLOCKED (no `end` record) —
+an honest signal the run did not complete. Encapsulates the fragile
+trail-message parsing in ONE tested place so `runEvalSet` never re-parses.
+
+#### Parameters
+
+##### state
+
+[`SimulationState`](#simulationstate)
+
+#### Returns
+
+`Record`\<`string`, `unknown`\> \| `undefined`
+
+***
+
+### validateContextContract()
+
+```ts
+function validateContextContract(contract): ValidationIssue[];
+```
+
+Validates a [ContextContract](#contextcontract) on its own (it is reusable, so it is
+validated once): `CTX_WRITE_FORBIDDEN` when a forbidden key still grants
+access, `CTX_PURPOSE_VIOLATION` when a key's merge/immutability contradicts
+its declared purpose.
+
+#### Parameters
+
+##### contract
+
+[`ContextContract`](#contextcontract)
+
+#### Returns
+
+[`ValidationIssue`](#validationissue)[]
+
+***
+
+### validateSquad()
+
+```ts
+function validateSquad(manifest, options?): ValidationIssue[];
+```
+
+Validates a [SquadManifest](#squadmanifest): structural validity (dynamic, the six edge
+kinds, versioned refs), the injected member-currency warning
+`SQUAD_MEMBER_STALE`, and — when the contract resolves — the `CTX_*` checks.
+
+#### Parameters
+
+##### manifest
+
+[`SquadManifest`](#squadmanifest)
+
+##### options?
+
+[`ValidateSquadOptions`](#validatesquadoptions) = `{}`
+
+#### Returns
+
+[`ValidationIssue`](#validationissue)[]
+
+***
+
+### squadAutonomy()
+
+```ts
+function squadAutonomy(manifest, resolveMember): AutonomyLevel | undefined;
+```
+
+The squad's composite autonomy — the MAX over its resolved members (the same
+"max of the chain" rule as SL-4's `AUTONOMY_CHAIN`, not a new one). Members
+are resolved through the injected resolver; `undefined` when none resolve.
+
+#### Parameters
+
+##### manifest
+
+[`SquadManifest`](#squadmanifest)
+
+##### resolveMember
+
+(`ref`) => [`AgentWorkflow`](#agentworkflow) \| `undefined`
+
+#### Returns
+
+[`AutonomyLevel`](#autonomylevel) \| `undefined`
+
+***
+
+### validateSquadFlow()
+
+```ts
+function validateSquadFlow(
+   manifest, 
+   contract, 
+   options): ValidationIssue[];
+```
+
+The FLOW half of `CTX_PURPOSE_VIOLATION` (Squad Lane SL-10, insight E5). The
+STRUCTURAL half ([validateContextContract](#validatecontextcontract)) checks a key against itself;
+this checks the key against the SQUAD GRAPH + the members' resolved tool
+effects — information that only exists once the squad is assembled.
+
+The rule: `grounding` context is knowledge meant to INFORM, not to commit. If a
+role that READS a grounding key reaches, in its workflow, a tool whose effect
+requires a gate (`external-commitment` / `write-irreversible`) and the squad
+declares NO gate at all, then grounding is flowing into an unreviewed
+commitment — a violation. (A squad WITH gates defers the precise per-path
+"does a gate cover THIS action" coverage to SL-12's `GATE_NOT_COVERING` over
+`reachableGateFrom`; documented, not silently skipped.)
+
+Fully degradable: both resolvers must be injected, or the flow rule does not
+run (the structural CTX checks still do). Returns issues to MERGE with
+[validateSquad](#validatesquad)'s — never mutates, never throws on an unresolved ref.
+
+#### Parameters
+
+##### manifest
+
+[`SquadManifest`](#squadmanifest)
+
+##### contract
+
+[`ContextContract`](#contextcontract)
+
+##### options
+
+[`SquadFlowOptions`](#squadflowoptions)
+
+#### Returns
+
+[`ValidationIssue`](#validationissue)[]
+
+***
+
+### simulateSquad()
+
+```ts
+function simulateSquad(manifest, options): SquadSimResult;
+```
+
+Runs a squad deterministically and returns its fact trail. Traverses `delegar`
+edges from the orchestrator in manifest order; each member runs through the
+injected runner's `simulate`. Honest cross-agent stop on the first block.
+
+#### Parameters
+
+##### manifest
+
+[`SquadManifest`](#squadmanifest)
+
+##### options
+
+[`SquadSimOptions`](#squadsimoptions)
+
+#### Returns
+
+[`SquadSimResult`](#squadsimresult)
 
 ***
 

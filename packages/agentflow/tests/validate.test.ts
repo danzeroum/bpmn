@@ -3,6 +3,7 @@ import {
   type AgentRef,
   type AgentWorkflow,
   type ToolContract,
+  APPROVAL_GATE_AGENT,
   isValid,
   RESEARCH_AGENT,
   validateGraph,
@@ -209,6 +210,103 @@ describe('validateGraph — Squad Lane SL-1 tool contracts (§6)', () => {
     expect(errorCodes(RESEARCH_AGENT, { resolveTool: () => gated })).not.toContain(
       'TOOL_EFFECT_UNGATED',
     );
+  });
+});
+
+describe('validateGraph — Squad Lane SL-4 schema + delegate contracts (§5/§6)', () => {
+  // A minimal-but-typed delegate workflow the injected resolver returns.
+  const delegateWf = (over: Partial<AgentWorkflow> & { id: string }): AgentWorkflow => ({
+    kind: 'AgentWorkflow',
+    version: '1.0.0',
+    name: over.id,
+    autonomyLevel: 1,
+    inputSchema: { x: 'string' },
+    outputSchema: { y: 'string' },
+    nodes: [{ id: 'n', type: 'llm', config: { model: 'm', promptRef: 'prm:x@1.0.0' } }],
+    edges: [],
+    ...over,
+  });
+  // A delegator = the Research template raised to level 4 with a delegate edge.
+  const withDelegate = (target: string): AgentWorkflow =>
+    fromResearch((w) => {
+      w.autonomyLevel = 4; // a delegate edge forces level 4 (graph min)
+      w.edges.push({ from: 'llm-1', to: target, edgeType: 'delegate' });
+    });
+
+  it('SCHEMA_UNSUPPORTED_KEYWORD: a keyword outside the honest subset warns (never blocks)', () => {
+    const wf = fromResearch((w) => {
+      w.outputSchema = { ...w.outputSchema, answer: { type: 'string', format: 'email' } as never };
+    });
+    const found = validateGraph(wf).find((i) => i.code === 'SCHEMA_UNSUPPORTED_KEYWORD');
+    expect(found?.severity).toBe('warning');
+    expect(found?.message).toMatch(/format/);
+    expect(errorCodes(wf)).not.toContain('SCHEMA_UNSUPPORTED_KEYWORD');
+  });
+
+  it('DELEGATE_CONTRACT_MISMATCH: delegator outputSchema must cover the delegate required inputs', () => {
+    const sub = delegateWf({ id: 'agnt-sub', inputSchema: { dossier: { type: 'string', required: true } } });
+    const resolveDelegate = (r: AgentRef) => (r.id === 'agnt-sub' ? sub : undefined);
+    const wf = withDelegate('agnt-sub@1.0.0'); // outputSchema lacks "dossier"
+    const found = validateGraph(wf, { resolveDelegate }).find(
+      (i) => i.code === 'DELEGATE_CONTRACT_MISMATCH',
+    );
+    expect(found?.severity).toBe('error');
+    expect(found?.message).toMatch(/dossier/);
+    expect(found?.remediation).toMatch(/dossier/);
+    // covered once the delegator provides the required key
+    const covered = fromResearch((w) => {
+      w.autonomyLevel = 4;
+      w.edges.push({ from: 'llm-1', to: 'agnt-sub@1.0.0', edgeType: 'delegate' });
+      w.outputSchema = { ...w.outputSchema, dossier: 'string' };
+    });
+    expect(errorCodes(covered, { resolveDelegate })).not.toContain('DELEGATE_CONTRACT_MISMATCH');
+  });
+
+  it('AUTONOMY_CHAIN: declared autonomy must be ≥ the delegate chain maximum', () => {
+    const sub = delegateWf({ id: 'agnt-sub', autonomyLevel: 5 });
+    const found = validateGraph(withDelegate('agnt-sub@1.0.0'), {
+      resolveDelegate: (r) => (r.id === 'agnt-sub' ? sub : undefined),
+    }).find((i) => i.code === 'AUTONOMY_CHAIN');
+    expect(found?.severity).toBe('error');
+    expect(found?.remediation).toMatch(/at least 5/);
+  });
+
+  it('DELEGATE_CYCLE: a chain that returns to its start is an error naming the path', () => {
+    const a = delegateWf({ id: 'agnt-a', autonomyLevel: 4, edges: [{ from: 'n', to: 'agnt-b@1.0.0', edgeType: 'delegate' }] });
+    const b = delegateWf({ id: 'agnt-b', autonomyLevel: 4, edges: [{ from: 'n', to: 'agnt-a@1.0.0', edgeType: 'delegate' }] });
+    const resolveDelegate = (r: AgentRef) => (r.id === 'agnt-a' ? a : r.id === 'agnt-b' ? b : undefined);
+    const found = validateGraph(a, { resolveDelegate }).find((i) => i.code === 'DELEGATE_CYCLE');
+    expect(found?.severity).toBe('error');
+    expect(found?.message).toMatch(/agnt-a → agnt-b → agnt-a/);
+  });
+
+  it('degrades: a boolean resolver runs none of the SL-4 cross-workflow checks', () => {
+    const wf = withDelegate('agnt-sub@1.0.0');
+    const issues = validateGraph(wf, { resolveDelegate: (r) => r.id === 'agnt-sub' });
+    expect(issues.filter((i) => i.severity === 'error')).toEqual([]);
+    expect(issues.find((i) => i.code === 'DELEGATE_UNRESOLVED')).toBeUndefined();
+    expect(issues.find((i) => i.code === 'DELEGATE_CONTRACT_MISMATCH')).toBeUndefined();
+  });
+});
+
+describe('validateGraph — Squad Lane SL-3 budget (§6)', () => {
+  it('positive: the Research template (autonomy 2, with a budget) has no BUDGET_MISSING', () => {
+    expect(codes(RESEARCH_AGENT)).not.toContain('BUDGET_MISSING');
+  });
+
+  it('BUDGET_MISSING: autonomy ≥ 2 without a budget is a warning (never blocks)', () => {
+    const wf = fromResearch((w) => {
+      delete w.budget;
+    });
+    const found = validateGraph(wf).find((i) => i.code === 'BUDGET_MISSING');
+    expect(found?.severity).toBe('warning');
+    expect(found?.remediation).toMatch(/maxTokens/);
+    expect(errorCodes(wf)).not.toContain('BUDGET_MISSING'); // warning, not error
+  });
+
+  it('autonomy < 2 without a budget is silent (no BUDGET_MISSING)', () => {
+    // APPROVAL_GATE_AGENT is autonomy 1 and declares no budget — clean.
+    expect(codes(APPROVAL_GATE_AGENT)).not.toContain('BUDGET_MISSING');
   });
 });
 

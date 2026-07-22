@@ -40,6 +40,30 @@ export interface LlmConfig {
   /** True → the model must emit structured JSON. Required when a structured
    * decision consumes this node (validation rule 3, §1.4). */
   structuredOutput?: boolean;
+  /**
+   * Squad Lane SL-3 (additive) — the provider is ALWAYS host-injected; this is a
+   * label ("host-injetado"), never an endpoint or key (cerca §2.7).
+   */
+  provider?: string;
+  /** Cheaper/secondary model tried on failure (a label, not a runtime). */
+  fallbackModel?: string;
+  /** Sampling temperature (modeling value). */
+  temperature?: number;
+  /** Projected output-token ceiling per call — feeds the budget projection. */
+  maxOutputTokens?: number;
+}
+
+/**
+ * Governed budget for an AgentWorkflow (Squad Lane SL-3). Autonomy ≥ 2 without a
+ * budget is a `BUDGET_MISSING` warning; the simulation stops honestly
+ * (`BUDGET_EXCEEDED`) when a projected dimension overflows. All optional so the
+ * field is purely additive (no existing artifact breaks — MINOR).
+ */
+export interface AgentBudget {
+  maxTokens?: number;
+  maxCostBRL?: number;
+  maxWallTimeMs?: number;
+  maxSteps?: number;
 }
 
 /** Tool (MCP) node config. */
@@ -147,11 +171,33 @@ export interface AgentEdge {
 }
 
 /**
- * A minimal input/output shape: property name → type token
- * (`"string"`, `"string[]"`, `"boolean"`). Deliberately plain — no JSON
- * Schema, no `@type` (§1.6). Must be non-empty (validation rule 5).
+ * An honest subset of JSON Schema (Squad Lane SL-4) — a field descriptor with
+ * only `type`, `required`, `enum`, `items`, `properties`. ANYTHING outside this
+ * set is declared in a warning (`SCHEMA_UNSUPPORTED_KEYWORD`), never silently
+ * honored — we do not claim to support JSON Schema we cannot evaluate.
  */
-export type SchemaShape = Record<string, string>;
+export interface SchemaNode {
+  type: string;
+  required?: boolean;
+  enum?: unknown[];
+  items?: SchemaNode;
+  properties?: Record<string, SchemaNode>;
+}
+
+/**
+ * One field of a {@link SchemaShape}: the legacy plain type token (`"string"`,
+ * `"string[]"`, `"boolean"`) OR a {@link SchemaNode}. The union is purely
+ * ADDITIVE (SL-4, MINOR) — every existing string-token schema stays valid and
+ * byte-stable; readers normalize a string to `{ type }` via `normalizeSchema`.
+ */
+export type SchemaField = string | SchemaNode;
+
+/**
+ * A minimal input/output shape: property name → {@link SchemaField}. Must be
+ * non-empty (validation rule 5). The plain-string form is the Handoff 12
+ * baseline; the {@link SchemaNode} form is the SL-4 honest JSON-Schema subset.
+ */
+export type SchemaShape = Record<string, SchemaField>;
 
 /** The normative autonomy scale (§4); see autonomy.ts for the definitions. */
 export type AutonomyLevel = 0 | 1 | 2 | 3 | 4 | 5;
@@ -174,4 +220,7 @@ export interface AgentWorkflow {
   outputSchema: SchemaShape;
   nodes: AgentNode[];
   edges: AgentEdge[];
+  /** Governed budget (Squad Lane SL-3). Autonomy ≥ 2 without one warns
+   * (`BUDGET_MISSING`); the simulation stops honestly on projected overflow. */
+  budget?: AgentBudget;
 }
