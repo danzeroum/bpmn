@@ -55,6 +55,10 @@ const EXPECTED_EXPORTS = [
   'agentAutonomyGateRule',
   'agentAutonomyLevelOf',
   'agentGateViolations',
+  // Squad Lane (Handoff 22) SL-12 — process-level gate-coverage over reachableGateFrom.
+  'agentGateCoverageRule',
+  'agentGateCoverageViolations',
+  'gateBypassRoute',
   'agentTasksOf',
   'attachedBoundaryEventIds',
   'boundaryAttachedTo',

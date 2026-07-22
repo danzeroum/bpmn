@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   agentAutonomyGateRule,
   agentGateViolations,
+  agentGateCoverageViolations,
+  agentGateCoverageRule,
+  gateBypassRoute,
   BpmnXmlConverter,
   BUILT_IN_NODE_TYPES,
   createDiagram,
@@ -195,5 +198,112 @@ describe('autonomy→gate promotion rule (§4)', () => {
     const ruleGate = gates.find((g) => !g.satisfied && /btv:gate/.test(g.detail));
     expect(ruleGate).toBeDefined();
     expect(ruleGate!.detail).toMatch(/downstream/);
+  });
+});
+
+describe('GATE_NOT_COVERING — process-path coverage (Squad Lane SL-12, §6/§9.9)', () => {
+  const isGate = (n: BpmnNode) => n.type === 'btv:gate';
+  const requiresGate = (level: number) => level <= 3;
+  const rawGate = (id = 'gate'): BpmnNode => ({
+    id,
+    type: 'btv:gate',
+    label: 'Approval Gate',
+    x: 320,
+    y: 100,
+    width: 50,
+    height: 50,
+    properties: {},
+    createdInVersion: '0',
+    audit: { createdAt: '2026-07-10T00:00:00.000Z', createdBy: 'test', history: [] },
+  });
+
+  /** A gate on the main path, PLUS a fallback route that reaches a second end
+   * without passing it — the acceptance §10.5 shape. */
+  const bypassable = () =>
+    diagramWith(agentTaskNode({ autonomyLevel: 2 }), (d) => {
+      d.nodes.gate = rawGate();
+      d.nodes.fallback = createNode({ type: 'endEvent', id: 'fallback', label: 'Fallback commit', x: 420, y: 240 });
+      d.edges.e2 = createEdge({ id: 'e2', sourceId: 'Activity_1', targetId: 'gate' }); // main → gate
+      d.edges.e3 = createEdge({ id: 'e3', sourceId: 'gate', targetId: 'done' }); // gate → end
+      d.edges.byp = createEdge({ id: 'byp', sourceId: 'Activity_1', targetId: 'fallback' }); // bypass → end
+    });
+
+  /** Only the covered route: agentTask → gate → end. */
+  const covered = () =>
+    diagramWith(agentTaskNode({ autonomyLevel: 2 }), (d) => {
+      d.nodes.gate = rawGate();
+      d.edges.e2 = createEdge({ id: 'e2', sourceId: 'Activity_1', targetId: 'gate' });
+      d.edges.e3 = createEdge({ id: 'e3', sourceId: 'gate', targetId: 'done' });
+    });
+
+  it('flags a gate that a fallback route bypasses — names the route + remediation (+)', () => {
+    const violations = agentGateCoverageViolations(bypassable(), { requiresGate, isGate });
+    expect(violations).toHaveLength(1);
+    expect(violations[0].code).toBe('GATE_NOT_COVERING');
+    expect(violations[0].nodeId).toBe('Activity_1');
+    expect(violations[0].bypassNodeId).toBe('fallback');
+    // the message NAMES the bypass route (acceptance §10.5)
+    expect(violations[0].remediation).toMatch(/Fallback commit/);
+    expect(violations[0].remediation).toMatch(/without passing it|before every commit/);
+  });
+
+  it('no coverage violation when every route to a commit passes the gate (−)', () => {
+    expect(agentGateCoverageViolations(covered(), { requiresGate, isGate })).toEqual([]);
+  });
+
+  it('does NOT double-report the no-gate case (that is agentGateViolations, EFFECT_NEEDS_GATE)', () => {
+    // default diagram: Activity_1 → done, no gate at all → reachableGateFrom false
+    const noGate = diagramWith(agentTaskNode({ autonomyLevel: 2 }));
+    expect(agentGateCoverageViolations(noGate, { requiresGate, isGate })).toEqual([]);
+    // …while the no-gate rule DOES flag it (the two are distinct, no overlap)
+    expect(agentGateViolations(noGate, { requiresGate, isGate })).toHaveLength(1);
+  });
+
+  it('a sink reached without a gate is an ungated commit point too', () => {
+    const diagram = diagramWith(agentTaskNode({ autonomyLevel: 2 }), (d) => {
+      d.nodes.gate = rawGate();
+      d.nodes.orphan = createNode({ type: 'task', id: 'orphan', label: 'Ungated task', x: 420, y: 240 });
+      d.edges.e2 = createEdge({ id: 'e2', sourceId: 'Activity_1', targetId: 'gate' });
+      d.edges.e3 = createEdge({ id: 'e3', sourceId: 'gate', targetId: 'done' });
+      d.edges.byp = createEdge({ id: 'byp', sourceId: 'Activity_1', targetId: 'orphan' }); // sink, no outgoing
+    });
+    expect(agentGateCoverageViolations(diagram, { requiresGate, isGate })[0]?.bypassNodeId).toBe('orphan');
+  });
+
+  it('terminates on a cyclic bypass graph', () => {
+    const diagram = bypassable();
+    diagram.edges.loop = createEdge({ id: 'loop', sourceId: 'fallback', targetId: 'Activity_1' });
+    expect(agentGateCoverageViolations(diagram, { requiresGate, isGate })).toHaveLength(1);
+  });
+
+  it('level 4 needs no gate — no coverage violation', () => {
+    const d = bypassable();
+    d.nodes.Activity_1.properties.autonomyLevel = 4;
+    expect(agentGateCoverageViolations(d, { requiresGate, isGate })).toEqual([]);
+  });
+
+  it('blocks promotion to active with a GATE_NOT_COVERING reason', async () => {
+    const engine = new LifecycleEngine({ promotionRules: [agentGateCoverageRule({ requiresGate, isGate, locale: 'pt' })] });
+    const diagram = bypassable();
+    diagram.version.status = 'candidate';
+    const gates = await engine.evaluateGates({ diagram, target: 'active', actor: owner, reason: 'go live' });
+    const ruleGate = gates.find((g) => !g.satisfied && /GATE_NOT_COVERING/.test(g.detail));
+    expect(ruleGate).toBeDefined();
+    expect(ruleGate!.detail).toMatch(/contornável|Fallback commit/);
+  });
+
+  it('gateBypassRoute honours a custom isTerminal predicate', () => {
+    // treat a "commit" task as the terminal instead of endEvents
+    const diagram = diagramWith(agentTaskNode({ autonomyLevel: 2 }), (d) => {
+      d.nodes.gate = rawGate();
+      d.nodes.commit = createNode({ type: 'task', id: 'commit', label: 'Commit', x: 420, y: 240, properties: { commit: true } });
+      d.nodes.after = createNode({ type: 'endEvent', id: 'after', x: 520, y: 240 });
+      d.edges.e2 = createEdge({ id: 'e2', sourceId: 'Activity_1', targetId: 'gate' });
+      d.edges.e3 = createEdge({ id: 'e3', sourceId: 'gate', targetId: 'done' });
+      d.edges.byp = createEdge({ id: 'byp', sourceId: 'Activity_1', targetId: 'commit' });
+      d.edges.byp2 = createEdge({ id: 'byp2', sourceId: 'commit', targetId: 'after' });
+    });
+    const isCommit = (n: BpmnNode) => n.properties.commit === true;
+    expect(gateBypassRoute(diagram, 'Activity_1', isGate, isCommit)).toBe('commit');
   });
 });
