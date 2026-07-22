@@ -1,0 +1,22 @@
+[
+  {
+    "event": {
+      "type": "StartInstance",
+      "instanceId": "i1",
+      "variables": {},
+      "now": "2026-07-22T12:00:00.000Z"
+    },
+    "state": "{\"definitionRef\":{\"bpmnVersion\":\"1.0.0\",\"registryRef\":\"reg:test@1\"},\"engineVersion\":\"1.1.0-next.0\",\"joinArrivals\":{},\"sequence\":1,\"stateSchemaVersion\":1,\"status\":\"active\",\"tokens\":[{\"elementId\":\"u\",\"id\":\"i1\",\"scopeId\":\"root\"}],\"waits\":[{\"elementId\":\"u\",\"kind\":\"userTask\",\"tokenId\":\"i1\",\"waitKey\":\"u:i1\"},{\"elementId\":\"bt\",\"kind\":\"timer\",\"tokenId\":\"i1\",\"waitKey\":\"bt:i1\"}]}",
+    "effects": "[{\"kind\":\"instanceStarted\",\"payload\":{\"instanceId\":\"i1\"},\"type\":\"EmitHistory\"},{\"candidates\":[],\"elementId\":\"u\",\"formRef\":\"\",\"type\":\"OpenUserTask\",\"waitKey\":\"u:i1\"},{\"elementId\":\"bt\",\"fireAt\":\"2026-07-22T13:00:00.000Z\",\"type\":\"ScheduleTimer\",\"waitKey\":\"bt:i1\"}]"
+  },
+  {
+    "event": {
+      "type": "TimerFired",
+      "waitKey": "bt:i1",
+      "variables": {},
+      "now": "2026-07-22T12:00:00.000Z"
+    },
+    "state": "{\"definitionRef\":{\"bpmnVersion\":\"1.0.0\",\"registryRef\":\"reg:test@1\"},\"engineVersion\":\"1.1.0-next.0\",\"joinArrivals\":{},\"sequence\":5,\"stateSchemaVersion\":1,\"status\":\"completed\",\"tokens\":[],\"waits\":[]}",
+    "effects": "[{\"type\":\"CloseUserTask\",\"waitKey\":\"u:i1\"},{\"kind\":\"boundaryFired\",\"payload\":{\"elementId\":\"bt\",\"interrupting\":true},\"type\":\"EmitHistory\"},{\"type\":\"CompleteInstance\"},{\"kind\":\"instanceCompleted\",\"payload\":{},\"type\":\"EmitHistory\"}]"
+  }
+]

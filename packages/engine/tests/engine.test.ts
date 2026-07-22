@@ -202,6 +202,76 @@ describe('timers', () => {
     expect(fired.state.status).toBe('completed'); // esc → e2
   });
 
+  it('user task completa ANTES do boundary → CancelTimer emitido e espera do timer morre', () => {
+    const engine = createEngine(
+      flow(
+        ['s:startEvent', 'u:userTask', 'bt:boundaryEvent', 'esc:task', 'e1:endEvent', 'e2:endEvent'],
+        ['s->u', 'u->e1', 'bt->esc', 'esc->e2'],
+        (d) => {
+          d.nodes.bt.properties.attachedToRef = 'u';
+          d.nodes.bt.properties.eventDefinition = 'timer';
+          d.nodes.bt.properties.timer = { kind: 'duration', expression: 'PT1H' };
+        },
+      ),
+    );
+    const { state } = start(engine);
+    const done = engine.advance(state, {
+      type: 'UserTaskCompleted', now: NOW, waitKey: 'u:i1', variables: vars, submission: vars,
+    });
+    if (!done.ok) throw new Error('conclusão rejeitada');
+    expect(done.effects).toContainEqual({ type: 'CancelTimer', waitKey: 'bt:i1' });
+    expect(done.state.waits).toEqual([]);
+    expect(done.state.status).toBe('completed');
+    // o timer cancelado disparar depois é staleWait, nunca efeito duplo
+    const late = engine.advance(done.state, { type: 'TimerFired', now: NOW, waitKey: 'bt:i1', variables: vars });
+    expect(late.ok).toBe(false);
+  });
+
+  it('job completa ANTES do boundary → CancelTimer emitido (simétrico)', () => {
+    const engine = createEngine(
+      flow(
+        ['s:startEvent', 'j:serviceTask', 'bt:boundaryEvent', 'esc:task', 'e1:endEvent', 'e2:endEvent'],
+        ['s->j', 'j->e1', 'bt->esc', 'esc->e2'],
+        (d) => {
+          d.nodes.j.properties.jobType = 'http-call';
+          d.nodes.bt.properties.attachedToRef = 'j';
+          d.nodes.bt.properties.eventDefinition = 'timer';
+          d.nodes.bt.properties.timer = { kind: 'duration', expression: 'PT1H' };
+        },
+      ),
+    );
+    const { state } = start(engine);
+    const done = engine.advance(state, {
+      type: 'JobCompleted', now: NOW, waitKey: 'j:i1', variables: vars,
+    });
+    if (!done.ok) throw new Error('conclusão rejeitada');
+    expect(done.effects).toContainEqual({ type: 'CancelTimer', waitKey: 'bt:i1' });
+    expect(done.state.status).toBe('completed');
+  });
+
+  it('boundary interruptivo sobre SERVICE task → CancelJob emitido (simétrico)', () => {
+    const engine = createEngine(
+      flow(
+        ['s:startEvent', 'j:serviceTask', 'bt:boundaryEvent', 'esc:task', 'e1:endEvent', 'e2:endEvent'],
+        ['s->j', 'j->e1', 'bt->esc', 'esc->e2'],
+        (d) => {
+          d.nodes.j.properties.jobType = 'http-call';
+          d.nodes.bt.properties.attachedToRef = 'j';
+          d.nodes.bt.properties.eventDefinition = 'timer';
+          d.nodes.bt.properties.timer = { kind: 'duration', expression: 'PT1H' };
+        },
+      ),
+    );
+    const { state } = start(engine);
+    const fired = engine.advance(state, { type: 'TimerFired', now: NOW, waitKey: 'bt:i1', variables: vars });
+    if (!fired.ok) throw new Error('timer rejeitado');
+    expect(fired.effects).toContainEqual({ type: 'CancelJob', waitKey: 'j:i1' });
+    expect(fired.state.status).toBe('completed'); // esc → e2
+    // completar o job cancelado depois é staleWait (fencing semântico)
+    const late = engine.advance(fired.state, { type: 'JobCompleted', now: NOW, waitKey: 'j:i1', variables: vars });
+    expect(late.ok).toBe(false);
+  });
+
   it('boundary NÃO-interruptivo: host continua, token paralelo nasce', () => {
     const engine = createEngine(
       flow(
