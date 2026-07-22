@@ -60,6 +60,8 @@ export { createSquadPlugin, SQUAD_EDGE_STYLES, SQUAD_EDGE_GLYPH } from './squad/
 // Squad Lane (Handoff 22) SL-10 — squad fact trail + off-thread squad run
 export { SquadTrail, type SquadTrailProps } from './squad/SquadTrail.js';
 export { squadSimJob, type SquadSimJobInput } from './squad/squadSimJob.js';
+// Squad Lane (Handoff 22) SL-13 — readiness badge (single source: readinessState()).
+export { ReadinessBadge, type ReadinessBadgeProps, type HostRuntimeStatus } from './agent/ReadinessBadge.js';
 export * from './agent/agentEditor.js';
 
 // Simulation (Handoff 7A)
