@@ -1,0 +1,45 @@
+{
+  "name": "@buildtovalue/forms",
+  "version": "1.0.0-next.0",
+  "description": "Versioned form schema for the BuildToValue platform (D3): definitive format from day one — typed fields, mandatory dataClassification (LGPD), S-FEEL validation/visibleWhen expressions with `value` as a reserved word, submission validation usable on client AND server. Zero runtime dependencies.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.cjs.json && node ../../scripts/write-cjs-package.mjs dist/cjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "forms",
+    "schema",
+    "bpmn",
+    "lgpd",
+    "sfeel"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danzeroum/bpmn.git",
+    "directory": "packages/forms"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "next"
+  }
+}
