@@ -1,5 +1,6 @@
 ---
 '@buildtovalue/core': minor
+'@buildtovalue/copilot': minor
 ---
 
 SL-12 — BPMN bridge (Handoff 22 "Squad Lane"), core half: process-level gate coverage.
@@ -18,3 +19,15 @@ SL-12 — BPMN bridge (Handoff 22 "Squad Lane"), core half: process-level gate c
   check deliberately deferred.
 - Positive + negative + remediation + no-double-report + sink + cyclic + custom-terminal + promotion-block
   vectors. apiSurface updated.
+
+- `scaffoldSquad(template, options?)` (copilot) — the whitelisted squad scaffolder (§8-08), a PROPOSAL
+  GENERATOR built ENTIRELY from the primitive whitelisted commands (`addNode`/`addEdge`), so it is
+  structurally incapable of expressing anything off the whitelist. It flows through the ordinary
+  PROPOSTA → APLICADA pipeline (`validateProposal` → `buildPlan` → CopilotPanel): applying runs through the
+  CommandStack like any edit and NEVER approves/promotes (#150). Four templates (`hierarquico` / `sequencial`
+  / `paralelo` / `revisao`), each scaffolding a gate-covered squad process — a start, agentTasks with an
+  `autonomyLevel`, an approval gate (a core `userTask` marked `properties.gate`, since the domain `btv:gate`
+  is not core-creatable) before the end, and the sequence flows. Deterministic (ids/positions from
+  template + prefix); a `prefix` option namespaces ids so two squads coexist. Vectors: whitelist-only,
+  node-before-edge order, validates against a fresh diagram, gate-covered projection, determinism,
+  prefix-collision. apiSurface updated.

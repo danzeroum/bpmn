@@ -10,6 +10,13 @@ export {
   type SoundnessErrorRef,
 } from './plan.js';
 export { parseLedgerAnswer, type LedgerQueryResult } from './ledgerQuery.js';
+// Squad Lane (Handoff 22) SL-12 — whitelisted squad scaffolder (proposal generator).
+export {
+  scaffoldSquad,
+  SQUAD_TEMPLATE_IDS,
+  type SquadTemplateId,
+  type ScaffoldSquadOptions,
+} from './scaffoldSquad.js';
 export {
   COPILOT_DRAFT_PROMPT,
   COPILOT_ADJUST_PROMPT,
