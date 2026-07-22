@@ -1,0 +1,77 @@
+/*
+ * Estilo base do renderer — consome as custom properties da identidade
+ * BuildToValue quando presentes (fallbacks neutros). Pisos do parecer (D25):
+ * tag de classificação NUNCA abaixo de 11px; status sempre cor + rótulo.
+ */
+.btvf-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-calm-block, 1.25rem);
+  font-family: var(--ui-font-sans, system-ui, sans-serif);
+  color: var(--ui-ink-base, #44403a);
+}
+.btvf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+.btvf-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--ui-font-size-label, 0.8125rem);
+  color: var(--ui-ink-strong, #262220);
+}
+.btvf-required {
+  color: var(--ui-role-danger-solid, #b3372f);
+}
+.btvf-tag {
+  font-size: var(--ui-font-size-meta, 0.6875rem); /* piso 11px (D25.3) */
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+.btvf-tag--personal {
+  background: var(--ui-role-warning-bg, #f6edd4);
+  color: var(--ui-role-warning-fg, #6d5115);
+}
+.btvf-tag--sensitive {
+  background: var(--ui-role-danger-bg, #f7e6e0);
+  color: var(--ui-role-danger-fg, #9c2f28);
+}
+.btvf-input {
+  font: inherit;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--ui-surface-border, #e2ddd3);
+  border-radius: 6px;
+  background: var(--ui-surface-card, #ffffff);
+}
+.btvf-input[aria-invalid='true'] {
+  border-color: var(--ui-role-danger-solid, #b3372f);
+}
+.btvf-fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.btvf-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.btvf-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btvf-help {
+  margin: 0;
+  font-size: var(--ui-font-size-meta, 0.6875rem);
+  color: var(--ui-ink-muted, #6f675a);
+}
+.btvf-errors {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: var(--ui-font-size-label, 0.8125rem);
+  color: var(--ui-role-danger-fg, #9c2f28);
+}
