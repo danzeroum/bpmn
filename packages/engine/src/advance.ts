@@ -1,5 +1,6 @@
 import { parseTimerExpression, type BpmnDiagram } from '@buildtovalue/core';
 import { buildEngineGraph, type EngineGraph, type EngineNode } from './graph.js';
+import { ENGINE_VERSION } from './version.js';
 import {
   EngineInvariantError,
   ROOT_SCOPE,
@@ -12,8 +13,7 @@ import {
   type Wait,
 } from './types.js';
 
-/** Versão semântica do engine gravada em cada estado (D6: replay é contrato). */
-export const ENGINE_VERSION = '1.1.0-next.0';
+export { ENGINE_VERSION };
 
 /** Versão do FORMATO de InstanceState (D14; migrações puras encadeadas). */
 export const STATE_SCHEMA_VERSION = 1;

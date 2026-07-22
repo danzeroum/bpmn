@@ -22,7 +22,7 @@
     "docs:api": "typedoc",
     "fetch:corpus": "node scripts/fetch-corpus.mjs",
     "changeset": "changeset",
-    "version-packages": "changeset version"
+    "version-packages": "changeset version && node packages/engine/scripts/sync-version.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
