@@ -118,6 +118,28 @@ describe('SquadTrail — provenance (E6) + a11y', () => {
     expect(sources).toContain('evidencia-declarada');
   });
 
+  it('marks declared evidence as UNVERIFIED, visually distinct from a verified state', () => {
+    const result: SquadSimResult = {
+      facts: [fact({ step: 0, source: 'fixture' }), fact({ step: 1, source: 'evidencia-declarada' })],
+      perAgent: {},
+      order: [],
+      complete: true,
+      blocked: null,
+    };
+    const { container } = renderTrail(result);
+    const declared = container.querySelector('[data-fact-source="evidencia-declarada"]')!;
+    const fixtureBadge = container.querySelector('[data-fact-source="fixture"]')!;
+    // declared carries an explicit unverified marker + a caution flag glyph…
+    expect(declared.getAttribute('data-unverified')).not.toBeNull();
+    expect(declared.textContent).toContain('⚑');
+    // …and its title says NOT verified (never a check/verified affordance)
+    expect(declared.getAttribute('title')).toMatch(/not verified|não verificada/i);
+    expect(declared.textContent).not.toMatch(/verified|verificad/i);
+    // the fixture badge is neutral — no unverified marker, no flag
+    expect(fixtureBadge.getAttribute('data-unverified')).toBeNull();
+    expect(fixtureBadge.textContent).not.toContain('⚑');
+  });
+
   it('has no serious/critical axe violations', async () => {
     const { container } = renderTrail(bigResult(30));
     const summary = await runAxe(container);

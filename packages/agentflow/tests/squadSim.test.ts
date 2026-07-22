@@ -25,11 +25,11 @@ const REVIEWER: AgentWorkflow = {
   id: 'agnt-qa',
   version: '0.9.0',
   autonomyLevel: 1,
-  entry: 'llm-verdict',
+  name: 'QA Reviewer',
   inputSchema: { doc: 'string' },
   outputSchema: { veredito: 'string' },
   nodes: [{ id: 'llm-verdict', type: 'llm', config: { model: 'gpt-4o', promptRef: 'prm:qa@1.0.0' } }],
-  edges: [{ from: 'llm-verdict', to: 'end', edgeType: 'sequence' }],
+  edges: [{ from: 'llm-verdict', to: 'end', edgeType: 'data' }],
 };
 
 const RSCH_FIXTURES: Fixtures = {

@@ -109,6 +109,31 @@ export interface SquadSimResult {
 
 const DEFAULT_MAX_HOPS = 64;
 
+/**
+ * Strips every bracketed group — `{json}`, `(params)`, `[list]` — from a trail
+ * message. The mock engine embeds raw output JSON inline (`🧠 node → {output}`,
+ * `✓ end · {merged}`), so a message copied verbatim would leak the very PII the
+ * `io` field masks. We keep the STRUCTURE (icon + node id + arrows) and drop all
+ * embedded DATA — the masked `io`/`contextAfter` fields are the only data surface,
+ * and they go through the policy. Iterates so nested objects collapse fully.
+ */
+function scrubMessage(message: string): string {
+  let prev: string;
+  let out = message;
+  do {
+    prev = out;
+    out = out.replace(/[([{][^()[\]{}]*[)\]}]/g, '·');
+  } while (out !== prev);
+  return out;
+}
+
+/** A copy of a member's state with every trail message scrubbed of embedded data
+ * (so `perAgent` never leaks what the fact `io` masks). Other fields carry ids,
+ * not values. */
+function maskState(state: SimulationState): SimulationState {
+  return { ...state, trail: state.trail.map((e) => ({ ...e, message: scrubMessage(e.message) })) };
+}
+
 /** The set of context field names the trail must mask (sensitive or forbidden). */
 function sensitiveKeys(contract: ContextContract | undefined): Set<string> {
   const set = new Set<string>();
@@ -198,15 +223,16 @@ export function simulateSquad(manifest: SquadManifest, options: SquadSimOptions)
     }
 
     const state = runner.simulate(wf, { fixtures: options.fixturesByRole?.[role] });
-    perAgent[role] = state;
+    perAgent[role] = maskState(state); // never expose raw output in the per-agent trail
     order.push(role);
 
-    // Fold the member's own trail into squad facts (acao / decisao).
+    // Fold the member's own trail into squad facts (acao / decisao). Messages are
+    // SCRUBBED of embedded data — the masked `io` field is the only data surface.
     for (const entry of state.trail) {
       if (entry.type === 'move' && entry.nodeId) {
-        emit({ agent: role, agentRef, kind: 'acao', source: sourceFor(role), message: entry.message, nodeId: entry.nodeId });
+        emit({ agent: role, agentRef, kind: 'acao', source: sourceFor(role), message: scrubMessage(entry.message), nodeId: entry.nodeId });
       } else if (entry.type === 'decision') {
-        emit({ agent: role, agentRef, kind: 'decisao', source: sourceFor(role), message: entry.message, nodeId: entry.nodeId });
+        emit({ agent: role, agentRef, kind: 'decisao', source: sourceFor(role), message: scrubMessage(entry.message), nodeId: entry.nodeId });
       }
     }
 
@@ -214,7 +240,7 @@ export function simulateSquad(manifest: SquadManifest, options: SquadSimOptions)
     if (state.blockedDecision) {
       const { nodeId, reason } = state.blockedDecision;
       blocked = { agent: role, agentRef, nodeId, reason };
-      emit({ agent: role, agentRef, kind: 'parada', source: sourceFor(role), message: `⛔ ${role} · ${nodeId}: ${reason}`, nodeId, error: true, contextAfter: maskRecord({ ...context }, sensitive, options.maskingPolicy) });
+      emit({ agent: role, agentRef, kind: 'parada', source: sourceFor(role), message: scrubMessage(`⛔ ${role} · ${nodeId}: ${reason}`), nodeId, error: true, contextAfter: maskRecord({ ...context }, sensitive, options.maskingPolicy) });
       return false;
     }
 

@@ -142,9 +142,26 @@ export function SquadTrail({ result, height = 320 }: SquadTrailProps) {
                   data-fact-kind={f.kind}
                   data-fact-error={f.error || undefined}
                 >
-                  <span style={badge} data-fact-source={f.source}>
-                    {t(`squad.trail.source.${f.source}`)}
-                  </span>
+                  {/* Provenance badge. `evidencia-declarada` is host-ASSERTED,
+                      not verified — it gets a distinct caution treatment (amber
+                      + dashed + a ⚑ flag + a "NOT verified" title) so it can
+                      never be misread as verified evidence (a check/green state
+                      SL-11 introduces). `fixture` stays neutral. */}
+                  {f.source === 'evidencia-declarada' ? (
+                    <span
+                      style={{ ...badge, ...badgeDeclared }}
+                      data-fact-source={f.source}
+                      data-unverified
+                      title={t('squad.trail.source.declaredHint')}
+                    >
+                      <span aria-hidden>⚑ </span>
+                      {t('squad.trail.source.evidencia-declarada')}
+                    </span>
+                  ) : (
+                    <span style={badge} data-fact-source={f.source} title={t('squad.trail.source.fixtureHint')}>
+                      {t('squad.trail.source.fixture')}
+                    </span>
+                  )}
                   <span style={kindBadge}>{t(`squad.trail.kind.${f.kind}`)}</span>
                   <span style={agentCell}>{f.agent}</span>
                   <span style={msgCell} title={f.message}>
@@ -187,6 +204,8 @@ const row: React.CSSProperties = { position: 'absolute', left: 0, right: 0, heig
 const rowActive: React.CSSProperties = { background: 'var(--bpmnr-selection, #fdf6e3)', outline: '2px solid var(--bpmnr-btv-gold, #9a7b1e)', outlineOffset: -2 };
 const rowError: React.CSSProperties = { color: '#7a1e1e' };
 const badge: React.CSSProperties = { fontSize: 8, letterSpacing: 0.6, textTransform: 'uppercase', border: '1px solid var(--bpmnr-border, #e2ddd3)', borderRadius: 4, padding: '1px 4px', color: 'var(--bpmnr-text-muted)', whiteSpace: 'nowrap' };
+// Declared-but-UNVERIFIED: a caution treatment, deliberately never a check/green.
+const badgeDeclared: React.CSSProperties = { border: '1px dashed #c9971e', color: '#7a611e', background: '#fdfaf1' };
 const kindBadge: React.CSSProperties = { fontFamily: 'ui-monospace, monospace', fontSize: 9, width: 56, color: 'var(--bpmnr-text-muted)' };
 const agentCell: React.CSSProperties = { fontFamily: 'ui-monospace, monospace', fontSize: 10, width: 84, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };
 const msgCell: React.CSSProperties = { flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' };

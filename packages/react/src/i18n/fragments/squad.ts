@@ -58,7 +58,9 @@ export const squad: { en: Messages; ptBR: Messages } = {
     'squad.trail.kind.evidencia': 'evidence',
     'squad.trail.kind.parada': 'stop',
     'squad.trail.source.fixture': 'fixture',
-    'squad.trail.source.evidencia-declarada': 'declared evidence',
+    'squad.trail.source.evidencia-declarada': 'declared',
+    'squad.trail.source.declaredHint': 'Declared by the host — NOT verified.',
+    'squad.trail.source.fixtureHint': 'Mock fixture data.',
   },
   ptBR: {
     'squad.panel.aria': 'Painel do squad',
@@ -116,6 +118,8 @@ export const squad: { en: Messages; ptBR: Messages } = {
     'squad.trail.kind.evidencia': 'evidência',
     'squad.trail.kind.parada': 'parada',
     'squad.trail.source.fixture': 'fixture',
-    'squad.trail.source.evidencia-declarada': 'evidência declarada',
+    'squad.trail.source.evidencia-declarada': 'declarada',
+    'squad.trail.source.declaredHint': 'Declarada pelo host — NÃO verificada.',
+    'squad.trail.source.fixtureHint': 'Dado de fixture (mock).',
   },
 };

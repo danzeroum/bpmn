@@ -172,11 +172,11 @@ describe('validateSquadFlow — CTX_PURPOSE_VIOLATION flow rule (Squad Lane SL-1
     id: 'agnt-rsch',
     version: '2.1.0',
     autonomyLevel: 3,
-    entry: 'send',
+    name: 'Committer',
     inputSchema: {},
     outputSchema: {},
     nodes: [{ id: 'send', type: 'tool', config: { usesTool: 'tool:send-email@1.0.0' } }],
-    edges: [{ from: 'send', to: 'end', edgeType: 'sequence' }],
+    edges: [{ from: 'send', to: 'end', edgeType: 'data' }],
   };
   const resolveWorkflow = (ref: AgentRef): AgentWorkflow | undefined =>
     ref.id === 'agnt-rsch' ? committer : undefined;
