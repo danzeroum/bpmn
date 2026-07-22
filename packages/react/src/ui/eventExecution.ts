@@ -45,6 +45,75 @@ export function eventExecutionModeOf(
 export interface PayloadMapping {
   source: string;
   target: string;
+  /**
+   * Squad Lane SL-12 — an OPTIONAL named transformation applied to the value.
+   * Absent → a plain field copy (always legal). When present, it must belong to
+   * the injected transform catalog (`MAPPING_TRANSFORM_ILLEGAL` otherwise).
+   * Additive/MINOR: an absent field keeps the pre-SL-12 bytes.
+   */
+  transform?: string;
+  /**
+   * Squad Lane SL-12 — the versioned adapter that performs a TYPE CONVERSION.
+   * A catalog transform marked as a conversion must name one; a conversion with
+   * no `adapterRef` is `MAPPING_TRANSFORM_ILLEGAL` (§6 — "conversão sem adapterRef").
+   */
+  adapterRef?: string;
+}
+
+/**
+ * Squad Lane SL-12 — the injected transform catalog (§6/§8). The host owns the
+ * set of legal transformations (versioned artifacts, like `resolveTool`), so
+ * mappings can only reference transforms FROM the catalog — never a free-typed
+ * one. Degradable: with no catalog injected, {@link payloadMappingIssues} runs
+ * no transform check (a plain source→target copy is always legal).
+ */
+export interface TransformCatalog {
+  /** True when `transform` is a legal catalog member. */
+  has(transform: string): boolean;
+  /** True when the transform is a TYPE conversion that requires a versioned
+   * `adapterRef` (a value reshape has none; a type change must name its adapter). */
+  requiresAdapter(transform: string): boolean;
+}
+
+/** A mapping row that violates the catalog rule (§6 `MAPPING_TRANSFORM_ILLEGAL`). */
+export interface MappingIssue {
+  code: 'MAPPING_TRANSFORM_ILLEGAL';
+  /** Index into the mappings array. */
+  index: number;
+  message: string;
+  remediation: string;
+}
+
+/**
+ * Validates payload mappings against the injected transform catalog (§6). A row
+ * is illegal when it names a transform OUTSIDE the catalog, or a catalog
+ * conversion with no `adapterRef`. A row with no transform is a plain copy and
+ * always legal. Pure; returns issues to surface, never throws.
+ */
+export function payloadMappingIssues(rows: PayloadMapping[], catalog: TransformCatalog): MappingIssue[] {
+  const issues: MappingIssue[] = [];
+  rows.forEach((row, index) => {
+    const transform = row.transform;
+    if (transform === undefined || transform === '') return; // plain copy — always legal
+    if (!catalog.has(transform)) {
+      issues.push({
+        code: 'MAPPING_TRANSFORM_ILLEGAL',
+        index,
+        message: `Mapping "${row.source} → ${row.target}" uses transform "${transform}", which is not in the catalog.`,
+        remediation: 'Pick a transform from the catalog, or register it — a free-typed transform is never allowed.',
+      });
+      return;
+    }
+    if (catalog.requiresAdapter(transform) && (row.adapterRef === undefined || row.adapterRef === '')) {
+      issues.push({
+        code: 'MAPPING_TRANSFORM_ILLEGAL',
+        index,
+        message: `Mapping "${row.source} → ${row.target}" applies the conversion "${transform}" without a versioned adapterRef.`,
+        remediation: 'A type conversion must name the versioned adapter that performs it (adapterRef "id@semver").',
+      });
+    }
+  });
+  return issues;
 }
 
 /** The payload rows stored under the engine's payload key (absent → []). */

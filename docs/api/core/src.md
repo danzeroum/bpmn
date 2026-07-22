@@ -943,7 +943,7 @@ readonly code: string;
 
 ###### Inherited from
 
-[`BpmnError`](#bpmnerror).[`code`](#code-1)
+[`BpmnError`](#bpmnerror).[`code`](#code-2)
 
 ***
 
@@ -987,7 +987,7 @@ readonly code: string;
 
 ###### Inherited from
 
-[`BpmnError`](#bpmnerror).[`code`](#code-1)
+[`BpmnError`](#bpmnerror).[`code`](#code-2)
 
 ***
 
@@ -1031,7 +1031,7 @@ readonly code: string;
 
 ###### Inherited from
 
-[`BpmnError`](#bpmnerror).[`code`](#code-1)
+[`BpmnError`](#bpmnerror).[`code`](#code-2)
 
 ***
 
@@ -1079,7 +1079,7 @@ readonly code: string;
 
 ###### Inherited from
 
-[`BpmnError`](#bpmnerror).[`code`](#code-1)
+[`BpmnError`](#bpmnerror).[`code`](#code-2)
 
 ##### line?
 
@@ -1131,7 +1131,7 @@ readonly code: string;
 
 ###### Inherited from
 
-[`BpmnError`](#bpmnerror).[`code`](#code-1)
+[`BpmnError`](#bpmnerror).[`code`](#code-2)
 
 ***
 
@@ -2238,6 +2238,10 @@ Named event definitions (§3a) — present only when the diagram has them.
 
 Options for [agentAutonomyGateRule](#agentautonomygaterule).
 
+#### Extended by
+
+- [`AgentGateCoverageOptions`](#agentgatecoverageoptions)
+
 #### Properties
 
 ##### requiresGate
@@ -2312,6 +2316,134 @@ remediation: string;
 ```
 
 Actionable remediation (§4): add a gate, or raise the level.
+
+***
+
+### AgentGateCoverageOptions
+
+Options for [agentGateCoverageViolations](#agentgatecoverageviolations) — a gate-coverage check.
+
+#### Extends
+
+- [`AgentGateRuleOptions`](#agentgateruleoptions)
+
+#### Properties
+
+##### requiresGate
+
+```ts
+requiresGate: (autonomyLevel) => boolean;
+```
+
+True when an autonomyLevel requires a reachable downstream gate. Inject
+`requiresDownstreamGate` from `@buildtovalue/agentflow` (levels 0–3).
+
+###### Parameters
+
+###### autonomyLevel
+
+`number`
+
+###### Returns
+
+`boolean`
+
+###### Inherited from
+
+[`AgentGateRuleOptions`](#agentgateruleoptions).[`requiresGate`](#requiresgate)
+
+##### isGate
+
+```ts
+isGate: (node) => boolean;
+```
+
+True when a node is a governance gate (e.g. a `btv:gate`). Domain-injected.
+
+###### Parameters
+
+###### node
+
+[`BpmnNode`](#bpmnnode)
+
+###### Returns
+
+`boolean`
+
+###### Inherited from
+
+[`AgentGateRuleOptions`](#agentgateruleoptions).[`isGate`](#isgate)
+
+##### locale?
+
+```ts
+optional locale?: "en" | "pt";
+```
+
+Message locale. Default `en`.
+
+###### Inherited from
+
+[`AgentGateRuleOptions`](#agentgateruleoptions).[`locale`](#locale)
+
+##### isTerminal?
+
+```ts
+optional isTerminal?: (node) => boolean;
+```
+
+True when a node is a commit/terminal the gate must cover. Default: an
+`endEvent`. A sink (no outgoing sequence flow) is always treated as one.
+
+###### Parameters
+
+###### node
+
+[`BpmnNode`](#bpmnnode)
+
+###### Returns
+
+`boolean`
+
+***
+
+### AgentGateCoverageViolation
+
+An agentTask whose gate EXISTS but does not COVER every route to a commit.
+
+#### Properties
+
+##### code
+
+```ts
+code: "GATE_NOT_COVERING";
+```
+
+##### nodeId
+
+```ts
+nodeId: string;
+```
+
+##### autonomyLevel
+
+```ts
+autonomyLevel: number;
+```
+
+##### bypassNodeId
+
+```ts
+bypassNodeId: string;
+```
+
+The ungated commit point reached by the bypass route (named in the message).
+
+##### remediation
+
+```ts
+remediation: string;
+```
 
 ***
 
@@ -5784,6 +5916,51 @@ along sequence flows (forward BFS). "A jusante no processo" (§4).
 
 ***
 
+### gateBypassRoute()
+
+```ts
+function gateBypassRoute(
+   diagram, 
+   startId, 
+   isGate, 
+   isTerminal?): string | undefined;
+```
+
+Squad Lane SL-12 — the process-path-coverage companion to
+[reachableGateFrom](#reachablegatefrom). Returns the id of a node reachable from `startId`
+along sequence flows WITHOUT passing a gate that is an ungated COMMIT point —
+a terminal (`isTerminal`, default an `endEvent`) or a sink with no outgoing
+flow. Gate nodes are WALLS: the BFS never expands past one, because a gate
+covers everything downstream of itself. `undefined` means every path to a
+commit passes a gate (the gate covers the effect). This is the "há rota de
+fallback/retry/delegate que alcança o efeito sem passar pelo gate" check —
+built over the same sequence-flow graph as `reachableGateFrom`, never a new
+traversal model.
+
+#### Parameters
+
+##### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+##### startId
+
+`string`
+
+##### isGate
+
+(`node`) => `boolean`
+
+##### isTerminal?
+
+(`node`) => `boolean`
+
+#### Returns
+
+`string` \| `undefined`
+
+***
+
 ### agentGateViolations()
 
 ```ts
@@ -5828,6 +6005,59 @@ always carries an exact remediation.
 ##### options
 
 [`AgentGateRuleOptions`](#agentgateruleoptions)
+
+#### Returns
+
+[`PromotionRule`](#promotionrule)
+
+***
+
+### agentGateCoverageViolations()
+
+```ts
+function agentGateCoverageViolations(diagram, options): AgentGateCoverageViolation[];
+```
+
+Squad Lane SL-12 (§6 `GATE_NOT_COVERING`, §9.9 "gate é controle verificável,
+não selo") — every agentTask whose autonomy requires a gate, where a gate IS
+reachable downstream (so this is NOT the no-gate case that
+[agentGateViolations](#agentgateviolations) reports) but a route (fallback/retry/bypass)
+reaches a commit WITHOUT passing it. Built over [reachableGateFrom](#reachablegatefrom) +
+[gateBypassRoute](#gatebypassroute) — the same sequence-flow graph, never a new model.
+This is the process-path-coverage layer the SL-1 `TOOL_EFFECT_UNGATED`
+(contract-level) and the SL-11 squad grounding check deliberately deferred.
+
+#### Parameters
+
+##### diagram
+
+[`BpmnDiagram`](#bpmndiagram)
+
+##### options
+
+[`AgentGateCoverageOptions`](#agentgatecoverageoptions)
+
+#### Returns
+
+[`AgentGateCoverageViolation`](#agentgatecoverageviolation)[]
+
+***
+
+### agentGateCoverageRule()
+
+```ts
+function agentGateCoverageRule(options): PromotionRule;
+```
+
+Promotion gate for coverage (§6 `GATE_NOT_COVERING`): an agentTask whose gate
+is bypassable blocks promotion to `active`, same mold as
+[agentAutonomyGateRule](#agentautonomygaterule). Drop it into `lifecycleConfig.promotionRules`.
+
+#### Parameters
+
+##### options
+
+[`AgentGateCoverageOptions`](#agentgatecoverageoptions)
 
 #### Returns
 

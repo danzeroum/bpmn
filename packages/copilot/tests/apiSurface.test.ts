@@ -19,6 +19,9 @@ const EXPECTED_EXPORTS = [
   'soundnessErrors',
   // Handoff 9 CP-5 — the canonical template registry (dogfooding §1.5).
   'COPILOT_PROMPTS',
+  // Squad Lane (Handoff 22) SL-12 — whitelisted squad scaffolder.
+  'scaffoldSquad',
+  'SQUAD_TEMPLATE_IDS',
 ].sort();
 
 describe('@buildtovalue/copilot public API surface', () => {

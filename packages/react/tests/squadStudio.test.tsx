@@ -143,4 +143,34 @@ describe('SquadStudio — a standard BPMN diagram over the existing editor (SL-9
     const { container } = renderStudio();
     await expectNoSerious(container, 'SquadStudio');
   });
+
+  it('Wave-3: selecting a member opens its Memória/Governança tab (SL-12 wiring)', () => {
+    // Read-only blocks canvas pointer-selection, so the member list drives
+    // selection for inspection — the governance inspectorSection then renders.
+    const { container, getByLabelText } = renderStudio();
+    const members = getByLabelText('Membros (selecione para inspecionar)');
+    fireEvent.click(within(members).getByRole('button', { name: 'pesquisador' }));
+    // the inspector now shows the selected agentTask with the plugin's tab
+    const inspector = container.querySelector('.bpmnr-inspector')!;
+    expect(inspector).not.toBeNull();
+    fireEvent.click(within(inspector as HTMLElement).getByRole('tab', { name: 'Governança' }));
+    const panel = container.querySelector('[data-agent-tabpanel="governanca"]')!;
+    expect(panel).not.toBeNull();
+    // role + persona + the member's owned context key render
+    expect(panel.textContent).toContain('pesquisador');
+    expect(panel.textContent).toContain('prs:analista@1.0.0'); // persona from the manifest
+    expect(panel.textContent).toContain('doc.fontes'); // a context key owned by this role
+  });
+
+  it('Wave-3: the governance tab degrades without a context contract', () => {
+    const { container, getByLabelText } = render(
+      <SquadStudio manifest={manifest()} messages={PT_BR} />,
+    );
+    fireEvent.click(within(getByLabelText('Membros (selecione para inspecionar)')).getByRole('button', { name: 'revisor' }));
+    const inspector = container.querySelector('.bpmnr-inspector')!;
+    fireEvent.click(within(inspector as HTMLElement).getByRole('tab', { name: 'Governança' }));
+    const panel = container.querySelector('[data-agent-tabpanel="governanca"]')!;
+    // no contract → the memory section says so (never a crash, never silent)
+    expect(panel.textContent).toContain('Nenhum contrato de contexto resolvido.');
+  });
 });
