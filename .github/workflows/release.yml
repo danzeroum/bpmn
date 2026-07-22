@@ -25,7 +25,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Fail-fast: um release REAL sem NPM_TOKEN morreria só no último passo
       # (ENEEDAUTH após ~4min de gate — visto no Release #2). Falha aqui, em
