@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/dmn",
-  "version": "1.0.1",
+  "version": "1.0.2-next.0",
   "description": "DMN family for bpmn-react (Handoff 5, wheel degree 185): DRD node types and shapes (decision, inputData, knowledgeSource, businessKnowledgeModel), requirement edges (straight routing) and a DMN 1.4 XML converter. Zero runtime dependencies beyond @buildtovalue/*.",
   "license": "Apache-2.0",
   "type": "module",

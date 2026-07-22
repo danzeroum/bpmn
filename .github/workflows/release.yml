@@ -44,12 +44,27 @@ jobs:
 
       # Releases consume changesets: fail loudly when pending changesets have
       # not been versioned (`pnpm version-packages`) before dispatching.
+      # PRE-MODE aware: em pre mode os .md ficam no diretório até o
+      # `changeset pre exit` — "pendente" é só o que NÃO consta como aplicado
+      # em .changeset/pre.json. Sem pre.json, todo .md é pendente (fluxo comum).
       - name: Check for unconsumed changesets
         run: |
-          if npx changeset status --output=/dev/null 2>/dev/null && [ -n "$(find .changeset -name '*.md' ! -name 'README.md' -print -quit)" ]; then
-            echo "::error::Pending changesets found — run 'pnpm version-packages' and merge the version PR before releasing."
-            exit 1
-          fi
+          node -e "
+            const fs = require('fs');
+            const pre = fs.existsSync('.changeset/pre.json')
+              ? JSON.parse(fs.readFileSync('.changeset/pre.json', 'utf8'))
+              : null;
+            const mds = fs.readdirSync('.changeset')
+              .filter((f) => f.endsWith('.md') && f !== 'README.md')
+              .map((f) => f.replace(/\.md$/, ''));
+            const applied = new Set(pre ? pre.changesets : []);
+            const pending = mds.filter((id) => !applied.has(id));
+            if (pending.length > 0) {
+              console.error('::error::Pending changesets (' + pending.length + '): ' + pending.join(', ') + \" — run 'pnpm version-packages' and merge the version PR before releasing.\");
+              process.exit(1);
+            }
+            console.log(pre ? 'pre mode (' + pre.tag + '): ' + applied.size + ' changesets versionados retidos — ok' : 'nenhum changeset pendente — ok');
+          "
 
       # Software Bill of Materials for the release (CycloneDX JSON), attached
       # as a build artifact for supply-chain transparency / SBOM requirements.

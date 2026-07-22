@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/studio",
-  "version": "1.1.0",
+  "version": "1.2.0-next.0",
   "description": "BuildToValue Studio (Handoff 6 S-4): the application layer for the no-screen personas — shell with hash navigation (no external router), the generic Biblioteca screen and the Revisão do Aprovador (engine-derived queue, real verification calls, immutable ledger decisions; approving never activates). Zero runtime dependencies beyond @buildtovalue/*.",
   "license": "Apache-2.0",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/audit",
-  "version": "1.1.0",
+  "version": "1.1.1-next.0",
   "description": "Demonstrable integrity for bpmn-react governance: hash-chain ledger verification (verifyLedger), canonical promotion attestations (attestVersion) and XES export for process mining. Zero runtime dependencies.",
   "license": "Apache-2.0",
   "type": "module",
