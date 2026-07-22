@@ -6,7 +6,7 @@
       "variables": {},
       "now": "2026-07-22T12:00:00.000Z"
     },
-    "state": "{\"definitionRef\":{\"bpmnVersion\":\"1.0.0\",\"registryRef\":\"reg:test@1\"},\"engineVersion\":\"1.1.0-next.0\",\"joinArrivals\":{},\"sequence\":3,\"stateSchemaVersion\":1,\"status\":\"active\",\"tokens\":[{\"elementId\":\"a\",\"id\":\"i1/e1\",\"parentTokenId\":\"i1\",\"scopeId\":\"root\"},{\"elementId\":\"b\",\"id\":\"i1/e2\",\"parentTokenId\":\"i1\",\"scopeId\":\"root\"}],\"waits\":[{\"elementId\":\"a\",\"kind\":\"userTask\",\"tokenId\":\"i1/e1\",\"waitKey\":\"a:i1/e1\"},{\"elementId\":\"b\",\"kind\":\"userTask\",\"tokenId\":\"i1/e2\",\"waitKey\":\"b:i1/e2\"}]}",
+    "state": "{\"definitionRef\":{\"bpmnVersion\":\"1.0.0\",\"registryRef\":\"reg:test@1\"},\"engineVersion\":\"1.1.0-next.1\",\"joinArrivals\":{},\"sequence\":3,\"stateSchemaVersion\":1,\"status\":\"active\",\"tokens\":[{\"elementId\":\"a\",\"id\":\"i1/e1\",\"parentTokenId\":\"i1\",\"scopeId\":\"root\"},{\"elementId\":\"b\",\"id\":\"i1/e2\",\"parentTokenId\":\"i1\",\"scopeId\":\"root\"}],\"waits\":[{\"elementId\":\"a\",\"kind\":\"userTask\",\"tokenId\":\"i1/e1\",\"waitKey\":\"a:i1/e1\"},{\"elementId\":\"b\",\"kind\":\"userTask\",\"tokenId\":\"i1/e2\",\"waitKey\":\"b:i1/e2\"}]}",
     "effects": "[{\"kind\":\"instanceStarted\",\"payload\":{\"instanceId\":\"i1\"},\"type\":\"EmitHistory\"},{\"candidates\":[],\"elementId\":\"a\",\"formRef\":\"\",\"type\":\"OpenUserTask\",\"waitKey\":\"a:i1/e1\"},{\"candidates\":[],\"elementId\":\"b\",\"formRef\":\"\",\"type\":\"OpenUserTask\",\"waitKey\":\"b:i1/e2\"}]"
   },
   {
@@ -17,7 +17,7 @@
       "submission": {},
       "now": "2026-07-22T12:00:00.000Z"
     },
-    "state": "{\"definitionRef\":{\"bpmnVersion\":\"1.0.0\",\"registryRef\":\"reg:test@1\"},\"engineVersion\":\"1.1.0-next.0\",\"joinArrivals\":{\"j@root\":[\"e3\"]},\"sequence\":4,\"stateSchemaVersion\":1,\"status\":\"active\",\"tokens\":[{\"elementId\":\"b\",\"id\":\"i1/e2\",\"parentTokenId\":\"i1\",\"scopeId\":\"root\"}],\"waits\":[{\"elementId\":\"b\",\"kind\":\"userTask\",\"tokenId\":\"i1/e2\",\"waitKey\":\"b:i1/e2\"}]}",
+    "state": "{\"definitionRef\":{\"bpmnVersion\":\"1.0.0\",\"registryRef\":\"reg:test@1\"},\"engineVersion\":\"1.1.0-next.1\",\"joinArrivals\":{\"j@root\":[\"e3\"]},\"sequence\":4,\"stateSchemaVersion\":1,\"status\":\"active\",\"tokens\":[{\"elementId\":\"b\",\"id\":\"i1/e2\",\"parentTokenId\":\"i1\",\"scopeId\":\"root\"}],\"waits\":[{\"elementId\":\"b\",\"kind\":\"userTask\",\"tokenId\":\"i1/e2\",\"waitKey\":\"b:i1/e2\"}]}",
     "effects": "[]"
   },
   {
@@ -27,7 +27,7 @@
       "reason": "replay-fixture",
       "now": "2026-07-22T12:00:00.000Z"
     },
-    "state": "{\"definitionRef\":{\"bpmnVersion\":\"1.0.0\",\"registryRef\":\"reg:test@1\"},\"engineVersion\":\"1.1.0-next.0\",\"joinArrivals\":{},\"sequence\":4,\"stateSchemaVersion\":1,\"status\":\"cancelled\",\"tokens\":[],\"waits\":[]}",
+    "state": "{\"definitionRef\":{\"bpmnVersion\":\"1.0.0\",\"registryRef\":\"reg:test@1\"},\"engineVersion\":\"1.1.0-next.1\",\"joinArrivals\":{},\"sequence\":4,\"stateSchemaVersion\":1,\"status\":\"cancelled\",\"tokens\":[],\"waits\":[]}",
     "effects": "[{\"type\":\"CloseUserTask\",\"waitKey\":\"b:i1/e2\"},{\"kind\":\"instanceCancelled\",\"payload\":{\"reason\":\"replay-fixture\"},\"type\":\"EmitHistory\"}]"
   }
 ]
