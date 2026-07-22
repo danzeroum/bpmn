@@ -132,6 +132,23 @@ version: string;
 
 ***
 
+### ScaffoldSquadOptions
+
+Options for [scaffoldSquad](#scaffoldsquad).
+
+#### Properties
+
+##### prefix?
+
+```ts
+optional prefix?: string;
+```
+
+Namespaces the generated ids (default `sq`). Change it to scaffold a second
+squad on the same canvas without id collisions.
+
+***
+
 ### Msg
 
 One chat message exchanged with the provider.
@@ -350,6 +367,16 @@ append to (or even see) a ledger object.
 
 ***
 
+### SquadTemplateId
+
+```ts
+type SquadTemplateId = "hierarquico" | "sequencial" | "paralelo" | "revisao";
+```
+
+The four squad scaffold templates (aligned with the squad dynamics).
+
+***
+
 ### ProposalValidation
 
 ```ts
@@ -446,6 +473,14 @@ dogfooding): one entry per capability, in the C1..C6 order of §4. This is
 the single source the panel, the tests and the Biblioteca adapter (CP-5)
 share — a new capability template MUST be added here, and the shipped
 version of each entry is, by definition, the ACTIVE one.
+
+***
+
+### SQUAD\_TEMPLATE\_IDS
+
+```ts
+const SQUAD_TEMPLATE_IDS: readonly SquadTemplateId[];
+```
 
 ***
 
@@ -610,3 +645,29 @@ claim that it fixed something.
 #### Returns
 
 [`SoundnessErrorRef`](#soundnesserrorref)[]
+
+***
+
+### scaffoldSquad()
+
+```ts
+function scaffoldSquad(template, options?): CopilotProposal;
+```
+
+Generates a whitelisted [CopilotProposal](#copilotproposal) scaffolding a squad process for
+the given template. Nodes are proposed before the edges that reference them, so
+`validateProposal` accepts the proposal in order.
+
+#### Parameters
+
+##### template
+
+[`SquadTemplateId`](#squadtemplateid)
+
+##### options?
+
+[`ScaffoldSquadOptions`](#scaffoldsquadoptions) = `{}`
+
+#### Returns
+
+[`CopilotProposal`](#copilotproposal)

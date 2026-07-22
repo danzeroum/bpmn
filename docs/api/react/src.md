@@ -258,6 +258,17 @@ Injected UI dictionary (Handoff 11 N-6). Omitted → English. The host owns
 locale choice: pass `PT_BR` (or a custom dictionary) to switch languages;
 missing keys fall back to English. There is no automatic locale detection.
 
+##### initialCanvasState?
+
+```ts
+optional initialCanvasState?: Partial<CanvasState>;
+```
+
+Squad Lane SL-12 — seeds the canvas store (viewport, selectedIds). The BPMN
+bridge deep-link (`?load=<versionId>`) uses it to RESTORE the saved
+viewport/selection when the host navigates back (§8-08). `readOnly` (the
+explicit prop) always wins over any `readOnly` here.
+
 ***
 
 ### BpmnEditorProps
@@ -372,6 +383,21 @@ missing keys fall back to English. There is no automatic locale detection.
 
 [`BpmnDesignerProps`](#bpmndesignerprops).[`messages`](#messages)
 
+##### initialCanvasState?
+
+```ts
+optional initialCanvasState?: Partial<CanvasState>;
+```
+
+Squad Lane SL-12 — seeds the canvas store (viewport, selectedIds). The BPMN
+bridge deep-link (`?load=<versionId>`) uses it to RESTORE the saved
+viewport/selection when the host navigates back (§8-08). `readOnly` (the
+explicit prop) always wins over any `readOnly` here.
+
+###### Inherited from
+
+[`BpmnDesignerProps`](#bpmndesignerprops).[`initialCanvasState`](#initialcanvasstate)
+
 ##### toolbarExtra?
 
 ```ts
@@ -398,6 +424,26 @@ optional hideInspector?: boolean;
 
 ```ts
 optional hideMiniMap?: boolean;
+```
+
+***
+
+### DeepLinkTarget
+
+A resolved deep-link: the requested version and its diagram.
+
+#### Properties
+
+##### versionId
+
+```ts
+versionId: string;
+```
+
+##### diagram
+
+```ts
+diagram: BpmnDiagram;
 ```
 
 ***
@@ -7111,7 +7157,7 @@ diagram: BpmnDiagram;
 
 ###### Inherited from
 
-[`ApprovalPayloadInput`](#approvalpayloadinput).[`diagram`](#diagram-11)
+[`ApprovalPayloadInput`](#approvalpayloadinput).[`diagram`](#diagram-12)
 
 ##### ledger?
 
@@ -7194,6 +7240,110 @@ source: string;
 
 ```ts
 target: string;
+```
+
+##### transform?
+
+```ts
+optional transform?: string;
+```
+
+Squad Lane SL-12 — an OPTIONAL named transformation applied to the value.
+Absent → a plain field copy (always legal). When present, it must belong to
+the injected transform catalog (`MAPPING_TRANSFORM_ILLEGAL` otherwise).
+Additive/MINOR: an absent field keeps the pre-SL-12 bytes.
+
+##### adapterRef?
+
+```ts
+optional adapterRef?: string;
+```
+
+Squad Lane SL-12 — the versioned adapter that performs a TYPE CONVERSION.
+A catalog transform marked as a conversion must name one; a conversion with
+no `adapterRef` is `MAPPING_TRANSFORM_ILLEGAL` (§6 — "conversão sem adapterRef").
+
+***
+
+### TransformCatalog
+
+Squad Lane SL-12 — the injected transform catalog (§6/§8). The host owns the
+set of legal transformations (versioned artifacts, like `resolveTool`), so
+mappings can only reference transforms FROM the catalog — never a free-typed
+one. Degradable: with no catalog injected, [payloadMappingIssues](#payloadmappingissues) runs
+no transform check (a plain source→target copy is always legal).
+
+#### Methods
+
+##### has()
+
+```ts
+has(transform): boolean;
+```
+
+True when `transform` is a legal catalog member.
+
+###### Parameters
+
+###### transform
+
+`string`
+
+###### Returns
+
+`boolean`
+
+##### requiresAdapter()
+
+```ts
+requiresAdapter(transform): boolean;
+```
+
+True when the transform is a TYPE conversion that requires a versioned
+`adapterRef` (a value reshape has none; a type change must name its adapter).
+
+###### Parameters
+
+###### transform
+
+`string`
+
+###### Returns
+
+`boolean`
+
+***
+
+### MappingIssue
+
+A mapping row that violates the catalog rule (§6 `MAPPING_TRANSFORM_ILLEGAL`).
+
+#### Properties
+
+##### code
+
+```ts
+code: "MAPPING_TRANSFORM_ILLEGAL";
+```
+
+##### index
+
+```ts
+index: number;
+```
+
+Index into the mappings array.
+
+##### message
+
+```ts
+message: string;
+```
+
+##### remediation
+
+```ts
+remediation: string;
 ```
 
 ***
@@ -7581,6 +7731,27 @@ Named router: 'astar' | 'orthogonal' | 'bezier' | 'straight'. Default 'astar'.
 
 ## Type Aliases
 
+### VersionResolver
+
+```ts
+type VersionResolver = (versionId) => BpmnDiagram | undefined;
+```
+
+Resolves a versionId to its diagram (injected; the host's registry lookup).
+`undefined` → unresolved, so the caller falls back to the default diagram.
+
+#### Parameters
+
+##### versionId
+
+`string`
+
+#### Returns
+
+`BpmnDiagram` \| `undefined`
+
+***
+
 ### BindingState
 
 ```ts
@@ -7843,6 +8014,16 @@ type JobRegistry = Record<string, ComputeJob>;
 ```
 
 ## Variables
+
+### LOAD\_PARAM
+
+```ts
+const LOAD_PARAM: "load" = 'load';
+```
+
+The query-string key for the deep-link.
+
+***
 
 ### ARROW\_MARKER\_ID
 
@@ -8418,6 +8599,81 @@ Import `@buildtovalue/react/styles.css` for the default styling.
 #### Returns
 
 `Element`
+
+***
+
+### readLoadVersionId()
+
+```ts
+function readLoadVersionId(search): string | undefined;
+```
+
+Reads `?load=<versionId>` out of a query string (`location.search`, with or
+without the leading `?`). Returns the versionId, or `undefined` when the param
+is absent or empty. Pure.
+
+#### Parameters
+
+##### search
+
+`string`
+
+#### Returns
+
+`string` \| `undefined`
+
+***
+
+### resolveDeepLink()
+
+```ts
+function resolveDeepLink(search, resolve): DeepLinkTarget | undefined;
+```
+
+Resolves a deep-link end to end: parse `?load=`, then call the injected
+resolver. Returns the target, or `undefined` when there is no param OR the
+version does not resolve (degradable — the host opens its default diagram, and
+the miss is the host's to surface; this never throws or guesses).
+
+#### Parameters
+
+##### search
+
+`string`
+
+##### resolve
+
+[`VersionResolver`](#versionresolver)
+
+#### Returns
+
+[`DeepLinkTarget`](#deeplinktarget) \| `undefined`
+
+***
+
+### buildLoadSearch()
+
+```ts
+function buildLoadSearch(versionId, extra?): string;
+```
+
+Builds a `?load=<versionId>` query string the host can push to history so a
+double-click on an agentTask deep-links to the exact version. Extra params are
+preserved/added (e.g. the Library filters the §10.7 back-restore reads).
+
+#### Parameters
+
+##### versionId
+
+`string`
+
+##### extra?
+
+`Record`\<`string`, `string`\> = `{}`
+
+#### Returns
+
+`string`
 
 ***
 
@@ -13075,6 +13331,33 @@ function eventExecutionModeOf(diagram, node): EventExecutionMode | null;
 #### Returns
 
 [`EventExecutionMode`](#eventexecutionmode) \| `null`
+
+***
+
+### payloadMappingIssues()
+
+```ts
+function payloadMappingIssues(rows, catalog): MappingIssue[];
+```
+
+Validates payload mappings against the injected transform catalog (§6). A row
+is illegal when it names a transform OUTSIDE the catalog, or a catalog
+conversion with no `adapterRef`. A row with no transform is a plain copy and
+always legal. Pure; returns issues to surface, never throws.
+
+#### Parameters
+
+##### rows
+
+[`PayloadMapping`](#payloadmapping)[]
+
+##### catalog
+
+[`TransformCatalog`](#transformcatalog)
+
+#### Returns
+
+[`MappingIssue`](#mappingissue)[]
 
 ***
 

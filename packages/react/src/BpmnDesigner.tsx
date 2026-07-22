@@ -3,6 +3,7 @@ import type { BpmnDiagram } from '@buildtovalue/core';
 import { EditorConfigProvider, resolveEditorConfig, useEditorConfig } from './contexts/EditorConfigContext.js';
 import { DiagramProvider } from './contexts/DiagramContext.js';
 import { CanvasProvider } from './contexts/CanvasContext.js';
+import type { CanvasState } from './state/canvasStore.js';
 import { BpmnCanvas } from './canvas/Canvas.js';
 import { ResilienceLayer } from './canvas/ResilienceLayer.js';
 import { VersionBanner } from './ui/VersionBanner.js';
@@ -38,6 +39,13 @@ export interface BpmnDesignerProps {
    * missing keys fall back to English. There is no automatic locale detection.
    */
   messages?: Messages;
+  /**
+   * Squad Lane SL-12 — seeds the canvas store (viewport, selectedIds). The BPMN
+   * bridge deep-link (`?load=<versionId>`) uses it to RESTORE the saved
+   * viewport/selection when the host navigates back (§8-08). `readOnly` (the
+   * explicit prop) always wins over any `readOnly` here.
+   */
+  initialCanvasState?: Partial<CanvasState>;
 }
 
 function DesignerBody({
@@ -47,6 +55,7 @@ function DesignerBody({
   children,
   overlay,
   showClosed,
+  initialCanvasState,
 }: Omit<BpmnDesignerProps, 'plugins' | 'messages'>) {
   const config = useEditorConfig();
   return (
@@ -57,7 +66,7 @@ function DesignerBody({
       onChange={onChange}
       emitEditorEvent={config.emitEditorEvent}
     >
-      <CanvasProvider initial={{ readOnly: readOnly ?? false }}>
+      <CanvasProvider initial={{ ...initialCanvasState, readOnly: readOnly ?? false }}>
         <div className="bpmnr-designer" style={{ position: 'relative', width: '100%', height: '100%' }}>
           <BpmnCanvas overlay={overlay} showClosed={showClosed} />
           <ContextMenu />

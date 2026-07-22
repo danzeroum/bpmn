@@ -6,6 +6,7 @@ import {
   type SquadManifest,
 } from '@buildtovalue/agentflow';
 import { BpmnDesigner } from '../BpmnDesigner.js';
+import { PropertiesPanel } from '../ui/PropertiesPanel.js';
 import { useDiagram } from '../contexts/DiagramContext.js';
 import { useCanvasState, useCanvasStore } from '../contexts/CanvasContext.js';
 import { useT } from '../i18n/I18nContext.js';
@@ -51,6 +52,13 @@ export function SquadStudio({ manifest, contextContract, messages, staleMembers 
   return (
     <BpmnDesigner diagram={diagram} plugins={plugins} messages={messages} readOnly>
       <SquadChrome manifest={manifest} contextContract={contextContract} staleMembers={staleMembers} />
+      {/* The inspector renders the Wave-3 Memória/Governança tab (registered by
+          the squad plugin). Read-only blocks canvas pointer-selection, so the
+          member list in SquadChrome drives selection for inspection — the panel
+          only VIEWS (edits are inert under read-only). */}
+      <div style={inspectorSlot}>
+        <PropertiesPanel />
+      </div>
     </BpmnDesigner>
   );
 }
@@ -114,6 +122,24 @@ function SquadChrome({
         ))}
       </div>
 
+      {/* Members — selecting one opens its Memória/Governança tab in the
+          inspector. This is the read-only-safe selection path (canvas pointer
+          selection is inert under read-only); it only sets `selectedIds`. */}
+      <div style={eyebrow}>{t('squad.members.select')}</div>
+      <div role="group" aria-label={t('squad.members.select')} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {[{ role: 'orch' }, ...manifest.members].map((m) => (
+          <button
+            key={m.role}
+            type="button"
+            style={legendItem}
+            data-select-member={m.role}
+            onClick={() => store.setState({ selectedIds: [m.role] })}
+          >
+            {m.role}
+          </button>
+        ))}
+      </div>
+
       {/* Manifest + context contract (the right panel, §8-06). */}
       <div style={eyebrow}>{t('squad.manifest.title')}</div>
       <Row label={t('squad.manifest.dynamic')} value={manifest.dynamic} />
@@ -145,6 +171,7 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 const panel: React.CSSProperties = { position: 'absolute', top: 12, right: 12, width: 236, background: 'var(--bpmnr-fill, #fff)', border: '1px solid var(--bpmnr-border, #e2ddd3)', borderRadius: 10, padding: 12, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 6, boxShadow: '0 8px 24px rgba(0,0,0,0.12)' };
+const inspectorSlot: React.CSSProperties = { position: 'absolute', top: 12, left: 12, width: 300, maxHeight: 'calc(100% - 24px)', overflowY: 'auto', zIndex: 6 };
 const toggleBtn = (active: boolean): React.CSSProperties => ({ flex: 1, minHeight: 30, border: '1px solid var(--bpmnr-border, #e2ddd3)', background: active ? 'var(--bpmnr-btv-gold, #9a7b1e)' : 'transparent', color: active ? '#fff' : 'var(--bpmnr-text, #2e2a26)', borderRadius: 7, cursor: 'pointer', fontSize: 11, fontWeight: active ? 600 : 400 });
 const legendItem: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 8, minHeight: 28, border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', fontSize: 11, padding: '2px 4px' };
 const eyebrow: React.CSSProperties = { fontFamily: 'ui-monospace, monospace', fontSize: 9, letterSpacing: 1.6, color: 'var(--bpmnr-btv-gold, #9a7b1e)', marginTop: 4 };

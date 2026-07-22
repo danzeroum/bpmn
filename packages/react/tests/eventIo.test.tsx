@@ -11,8 +11,11 @@ import {
   BpmnEditor,
   eventExecutionModeOf,
   prunePayloadMappings,
+  payloadMappingIssues,
   PT_BR,
   type BpmnPlugin,
+  type PayloadMapping,
+  type TransformCatalog,
 } from '../src/index.js';
 import { evtEscalationStartToplevelRule } from '@buildtovalue/lint';
 
@@ -313,5 +316,50 @@ describe('event I/O on the Execução tab (E-4)', () => {
     ]);
     expect(reimported.nodes.b1.properties['zeebe:errorCodeVariable']).toBe('motivo');
     expect(reimported.nodes.throw1.foreignExtensions?.[0]?.tag).toBe('zeebe:ioMapping');
+  });
+});
+
+describe('MAPPING_TRANSFORM_ILLEGAL — catalog-governed transforms (Squad Lane SL-12)', () => {
+  // A catalog with two transforms; only `toCents` is a type conversion.
+  const catalog: TransformCatalog = {
+    has: (t) => t === 'trim' || t === 'toCents',
+    requiresAdapter: (t) => t === 'toCents',
+  };
+
+  it('a plain source→target copy (no transform) is always legal', () => {
+    const rows: PayloadMapping[] = [{ source: '=total', target: 'amount' }];
+    expect(payloadMappingIssues(rows, catalog)).toEqual([]);
+  });
+
+  it('a transform from the catalog is legal; a value reshape needs no adapter', () => {
+    const rows: PayloadMapping[] = [{ source: '=name', target: 'label', transform: 'trim' }];
+    expect(payloadMappingIssues(rows, catalog)).toEqual([]);
+  });
+
+  it('a transform OUTSIDE the catalog is MAPPING_TRANSFORM_ILLEGAL (+/remediation)', () => {
+    const rows: PayloadMapping[] = [{ source: '=x', target: 'y', transform: 'evalJs' }];
+    const issues = payloadMappingIssues(rows, catalog);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ code: 'MAPPING_TRANSFORM_ILLEGAL', index: 0 });
+    expect(issues[0].message).toMatch(/evalJs/);
+    expect(issues[0].remediation).toMatch(/catalog|free-typed/);
+  });
+
+  it('a catalog CONVERSION without an adapterRef is illegal; with one it is legal', () => {
+    const missing: PayloadMapping[] = [{ source: '=price', target: 'amount', transform: 'toCents' }];
+    const withAdapter: PayloadMapping[] = [{ ...missing[0], adapterRef: 'money:brl@1.0.0' }];
+    expect(payloadMappingIssues(missing, catalog)[0]).toMatchObject({ code: 'MAPPING_TRANSFORM_ILLEGAL' });
+    expect(payloadMappingIssues(missing, catalog)[0].remediation).toMatch(/adapterRef/);
+    expect(payloadMappingIssues(withAdapter, catalog)).toEqual([]);
+  });
+
+  it('reports the offending row index across a multi-row mapping', () => {
+    const rows: PayloadMapping[] = [
+      { source: '=a', target: 'a' },
+      { source: '=b', target: 'b', transform: 'trim' },
+      { source: '=c', target: 'c', transform: 'nope' },
+    ];
+    const issues = payloadMappingIssues(rows, catalog);
+    expect(issues.map((i) => i.index)).toEqual([2]);
   });
 });

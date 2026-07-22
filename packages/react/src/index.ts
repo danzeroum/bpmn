@@ -1,6 +1,15 @@
 // Entry components
 export * from './BpmnDesigner.js';
 export * from './BpmnEditor.js';
+// Squad Lane (Handoff 22) SL-12 — BPMN bridge deep-link (?load=<versionId>).
+export {
+  LOAD_PARAM,
+  readLoadVersionId,
+  resolveDeepLink,
+  buildLoadSearch,
+  type VersionResolver,
+  type DeepLinkTarget,
+} from './bridge/deepLink.js';
 // Lightweight read-only viewer (N-7) — re-exported here for drop-in
 // compatibility; import from '@buildtovalue/react/viewer' to tree-shake the
 // editor graph.
@@ -140,8 +149,12 @@ export {
   eventExecutionModeOf,
   payloadMappingsOf,
   prunePayloadMappings,
+  // Squad Lane (Handoff 22) SL-12 — catalog-governed mapping transforms.
+  payloadMappingIssues,
   type EventExecutionMode,
   type PayloadMapping,
+  type TransformCatalog,
+  type MappingIssue,
 } from './ui/eventExecution.js';
 export * from './commands/menuRegistry.js';
 export * from './commands/globalCommands.js';

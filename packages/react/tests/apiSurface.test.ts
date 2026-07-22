@@ -77,6 +77,12 @@ const EXPECTED_EXPORTS = [
   'eventExecutionModeOf',
   'payloadMappingsOf',
   'prunePayloadMappings',
+  'payloadMappingIssues',
+  // Squad Lane (Handoff 22) SL-12 — BPMN bridge deep-link.
+  'LOAD_PARAM',
+  'readLoadVersionId',
+  'resolveDeepLink',
+  'buildLoadSearch',
   // Handoff 16 E-5 (§3d) — timer editor with human preview.
   'TimerSection',
   'isTimerEvent',
