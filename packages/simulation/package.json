@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/simulation",
-  "version": "1.0.1",
+  "version": "1.1.0-next.0",
   "description": "Headless BPMN token-simulation engine for bpmn-react: XOR/AND/event-based semantics, boundary events, approximate OR, structural path coverage and replayable scenarios. Consumes only @buildtovalue/core. Zero runtime dependencies.",
   "license": "Apache-2.0",
   "type": "module",

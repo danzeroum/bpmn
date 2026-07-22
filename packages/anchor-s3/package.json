@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/anchor-s3",
-  "version": "1.0.1",
+  "version": "1.0.2-next.0",
   "description": "S3 (object-lock) anchor adapter (Handoff 8): anchors the ledger chain head to a write-once object via a HOST-injected client (the library never does network). Implements the AnchorAdapter contract from @buildtovalue/identity. Zero runtime dependencies.",
   "license": "Apache-2.0",
   "type": "module",
