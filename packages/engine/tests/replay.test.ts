@@ -20,6 +20,12 @@ import { DEF_REF, flow, NOW } from './fixtures.js';
  * Regenerar (após decisão consciente de major):
  *   UPDATE_REPLAY_FIXTURES=1 npx vitest run --project engine replay
  */
+type EventInput = EngineEvent extends infer E
+  ? E extends EngineEvent
+    ? Omit<E, 'now'>
+    : never
+  : never;
+
 const FIXTURES_DIR = join(dirname(fileURLToPath(import.meta.url)), 'replay-fixtures');
 const UPDATE = process.env.UPDATE_REPLAY_FIXTURES === '1';
 
@@ -28,7 +34,7 @@ const vars = Object.freeze({});
 interface ReplayScenario {
   name: string;
   diagram: () => BpmnDiagram;
-  events: Array<Omit<EngineEvent, 'now'>>;
+  events: EventInput[];
   conditions?: ConditionEvaluator;
 }
 

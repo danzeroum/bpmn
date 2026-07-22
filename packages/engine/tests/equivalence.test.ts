@@ -28,6 +28,12 @@ import { DEF_REF, flow, NOW } from './fixtures.js';
  * na F5) — a lista está no fim do arquivo.
  */
 
+type EventInput = EngineEvent extends infer E
+  ? E extends EngineEvent
+    ? Omit<E, 'now'>
+    : never
+  : never;
+
 function runSim(diagram: BpmnDiagram, decisions: Decision[]): SimulationState {
   const sim = new SimulationEngine(diagram);
   const queue = [...decisions];
@@ -65,7 +71,7 @@ interface EngineRun {
 
 function runEngine(
   diagram: BpmnDiagram,
-  events: Array<Omit<EngineEvent, 'now'>>,
+  events: EventInput[],
   conditions?: ConditionEvaluator,
 ): EngineRun {
   const engine = createEngine(diagram, conditions ? { conditions } : {});
