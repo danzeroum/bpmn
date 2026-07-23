@@ -32,6 +32,7 @@
     "@buildtovalue/studio": "1.1.0"
   },
   "changesets": [
+    "ag2-agenttask-emission",
     "command-palette-cheatsheet",
     "compensation-core",
     "compensation-ledger",

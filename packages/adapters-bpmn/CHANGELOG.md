@@ -1,5 +1,12 @@
 # @buildtovalue/adapters-bpmn
 
+## 1.2.0-next.1
+
+### Patch Changes
+
+- Updated dependencies [2c9e2b4]
+  - @buildtovalue/agentflow@1.1.0-next.1
+
 ## 1.2.0-next.0
 
 ### Minor Changes
