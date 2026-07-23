@@ -131,10 +131,14 @@ describe('validateSubmission — mesma função no cliente e no servidor (F3.4)'
     if (!result.ok) expect(result.errors.valor[0]).toContain('parse error');
   });
 
-  it('expressões sem avaliador injetado = erro de configuração do host', () => {
-    const result = validateSubmission(schema(), { tipo: 'pf', valor: 1 });
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.errors._form[0]).toContain('avaliador');
+  it('sem avaliador injetado usa o CANÔNICO por padrão (cliente≡servidor)', () => {
+    // 'tipo = "pj"' (visibleWhen do cnpj) e 'value > 0' (validation do valor)
+    // resolvem pelo formExpressionEvaluator embutido — sem injeção do host.
+    const ok = validateSubmission(schema(), { tipo: 'pf', valor: 1 });
+    expect(ok.ok).toBe(true); // cnpj oculto (tipo!=pj), valor>0 passa
+    const bad = validateSubmission(schema(), { tipo: 'pf', valor: -5 });
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) expect(bad.errors.valor[0]).toContain('positivo');
   });
 
   it('option inválida em radio/select é recusada', () => {

@@ -1,3 +1,4 @@
+import { formExpressionEvaluator } from './evaluator.js';
 import type { ExpressionEvaluator, FormField, FormSchema } from './types.js';
 
 /** Erro de SUBMISSÃO, por campo (chave `_form` para problemas gerais). */
@@ -38,13 +39,13 @@ export function applyDefaults(
  * - tipo por campo (number finito, checkbox boolean, date ISO, option válida);
  * - `validation` avaliada com contexto `{ ...todosOsCampos, value: esteCampo }`
  *   (convenção ADENDO-01 §4); expressão inválida é erro DECLARADO, nunca pass.
- * - expressões presentes exigem `evaluator` — ausência é erro de configuração
- *   do host, não aprovação silenciosa.
+ * - o avaliador é o `formExpressionEvaluator` CANÔNICO por padrão (cliente e
+ *   servidor idênticos); `evaluator` só é injetado em testes/casos especiais.
  */
 export function validateSubmission(
   schema: FormSchema,
   values: Readonly<Record<string, unknown>>,
-  evaluator?: ExpressionEvaluator,
+  evaluator: ExpressionEvaluator = formExpressionEvaluator,
 ): SubmissionResult {
   const errors: SubmissionErrors = {};
   const known = new Map(schema.fields.map((f) => [f.key, f]));
@@ -52,17 +53,11 @@ export function validateSubmission(
     if (!known.has(key)) addError(errors, '_form', `campo desconhecido: ${key}`);
   }
 
-  const needsEvaluator = schema.fields.some((f) => f.validation || f.visibleWhen);
-  if (needsEvaluator && !evaluator) {
-    addError(errors, '_form', 'schema tem expressões S-FEEL mas o host não injetou avaliador');
-    return { ok: false, errors };
-  }
-
   const accepted: Record<string, unknown> = {};
   for (const field of schema.fields) {
     const raw = values[field.key];
     if (field.visibleWhen) {
-      const visible = evaluator!.evaluate(field.visibleWhen, { ...values, value: raw });
+      const visible = evaluator.evaluate(field.visibleWhen, { ...values, value: raw });
       if ('error' in visible) {
         addError(errors, field.key, `visibleWhen inválida: ${visible.error}`);
         continue;
@@ -75,7 +70,7 @@ export function validateSubmission(
     }
     if (!checkType(field, raw, errors)) continue;
     if (field.validation) {
-      const outcome = evaluator!.evaluate(field.validation, { ...values, value: raw });
+      const outcome = evaluator.evaluate(field.validation, { ...values, value: raw });
       if ('error' in outcome) {
         addError(errors, field.key, `validation inválida: ${outcome.error}`);
         continue;

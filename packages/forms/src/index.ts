@@ -17,6 +17,11 @@ export {
   type TextareaField,
 } from './types.js';
 export { validateFormSchema, type SchemaIssue } from './validateSchema.js';
+export { formExpressionEvaluator } from './evaluator.js';
+// O CORPUS de conformidade é fixture de teste, não superfície de runtime — vive
+// no subpath dedicado `@buildtovalue/forms/corpus` (não polui o bundle de quem
+// só usa o avaliador). É a FONTE ÚNICA que o teste de equivalência da plataforma
+// importa no colapso da coexistência transitória (buildtovalue-platform §2.7).
 export {
   applyDefaults,
   validateSubmission,
