@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/adapters-bpmn",
-  "version": "1.2.0-next.0",
+  "version": "1.2.0-next.1",
   "description": "ArtifactAdapter implementations for the BuildToValue Studio library (Handoff 6 S-2): BPMN flow, persona, prompt, connector and policy adapters over the version registry, a DMN decision adapter, headless SVG thumbnails, plus the in-memory \"recipe\" fixture adapter that proves the library's genericity (acid test §10.1). Zero runtime dependencies beyond @buildtovalue/*.",
   "license": "Apache-2.0",
   "type": "module",

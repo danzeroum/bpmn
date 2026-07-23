@@ -1,5 +1,11 @@
 # @buildtovalue/domain-example
 
+## 1.1.0-next.1
+
+### Patch Changes
+
+- @buildtovalue/react@1.2.0-next.1
+
 ## 1.1.0-next.0
 
 ### Minor Changes
