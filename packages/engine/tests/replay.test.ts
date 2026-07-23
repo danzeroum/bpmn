@@ -6,10 +6,24 @@ import { describe, expect, it } from 'vitest';
 import {
   canonicalJsonExact,
   createEngine,
+  ENGINE_VERSION,
   type ConditionEvaluator,
   type EngineEvent,
 } from '../src/index.js';
 import { DEF_REF, flow, NOW } from './fixtures.js';
+
+/**
+ * D6 refinado: `engineVersion` é METADADO DE PROVENIÊNCIA, não semântica de
+ * replay. Na comparação do corpus ele é NORMALIZADO (a projeção semântica do
+ * estado é que precisa bater byte a byte) e a versão gravada é VERIFICADA por
+ * asserção própria (bate com ENGINE_VERSION → package.json, via version.test).
+ * Sem isso, todo bump de versão do engine quebraria as fixtures e empurraria
+ * para regeneração de rotina — e uma regressão semântica real passaria batida
+ * no meio das trocas de string. `stateSchemaVersion` NÃO é normalizado: é
+ * semântico (bump exige migrateState, D14) e segue comparado com rigor.
+ */
+const normalizeEngineVersion = (state: string): string =>
+  state.replace(/"engineVersion":"[^"]*"/g, '"engineVersion":"<normalized>"');
 
 /**
  * CORPUS DE REPLAY (D6: replay é contrato). Cada cenário grava, em JSON
@@ -163,9 +177,14 @@ describe('corpus de replay (D6 — identidade byte a byte)', () => {
       const stored = JSON.parse(readFileSync(file, 'utf8')) as ReplayStep[];
       expect(live.length).toBe(stored.length);
       for (let i = 0; i < live.length; i++) {
-        expect(live[i].state, `${scenario.name} passo ${i}: estado divergiu do replay gravado`).toBe(
-          stored[i].state,
-        );
+        // asserção dedicada: a versão GRAVADA no estado é a publicada (não stale)
+        const recorded = /"engineVersion":"([^"]*)"/.exec(live[i].state)?.[1];
+        expect(recorded, `${scenario.name} passo ${i}: engineVersion gravada`).toBe(ENGINE_VERSION);
+        // projeção semântica (engineVersion normalizada; stateSchemaVersion NÃO)
+        expect(
+          normalizeEngineVersion(live[i].state),
+          `${scenario.name} passo ${i}: projeção semântica do estado divergiu do replay gravado`,
+        ).toBe(normalizeEngineVersion(stored[i].state));
         expect(
           live[i].effects,
           `${scenario.name} passo ${i}: efeitos divergiram do replay gravado`,
