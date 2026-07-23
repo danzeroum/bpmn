@@ -1,0 +1,25 @@
+[
+  {
+    "event": {
+      "type": "StartInstance",
+      "instanceId": "i1",
+      "variables": {},
+      "now": "2026-07-22T12:00:00.000Z"
+    },
+    "state": "{\"definitionRef\":{\"bpmnVersion\":\"1.0.0\",\"registryRef\":\"reg:test@1\"},\"engineVersion\":\"1.1.0-next.2\",\"joinArrivals\":{},\"sequence\":1,\"stateSchemaVersion\":1,\"status\":\"active\",\"tokens\":[{\"elementId\":\"a\",\"id\":\"i1\",\"scopeId\":\"root\"}],\"waits\":[{\"elementId\":\"a\",\"kind\":\"job\",\"tokenId\":\"i1\",\"waitKey\":\"a:i1\"}]}",
+    "effects": "[{\"kind\":\"instanceStarted\",\"payload\":{\"instanceId\":\"i1\"},\"type\":\"EmitHistory\"},{\"elementId\":\"a\",\"jobType\":\"agent\",\"payload\":{\"agentRef\":\"agnt-aprova\",\"elementId\":\"a\"},\"type\":\"CreateJob\",\"waitKey\":\"a:i1\"}]"
+  },
+  {
+    "event": {
+      "type": "JobCompleted",
+      "waitKey": "a:i1",
+      "variables": {},
+      "result": {
+        "aprovado": true
+      },
+      "now": "2026-07-22T12:00:00.000Z"
+    },
+    "state": "{\"definitionRef\":{\"bpmnVersion\":\"1.0.0\",\"registryRef\":\"reg:test@1\"},\"engineVersion\":\"1.1.0-next.2\",\"joinArrivals\":{},\"sequence\":3,\"stateSchemaVersion\":1,\"status\":\"completed\",\"tokens\":[],\"waits\":[]}",
+    "effects": "[{\"type\":\"CompleteInstance\"},{\"kind\":\"instanceCompleted\",\"payload\":{},\"type\":\"EmitHistory\"}]"
+  }
+]

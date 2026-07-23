@@ -146,6 +146,19 @@ describe('simulateSquad — provenance + masking (E6/D1)', () => {
     expect(pesqFacts.every((f) => f.source === 'fixture')).toBe(true);
   });
 
+  it('NUNCA emite evidencia-verificada — o simulate é mock, só o run real verifica (D30)', () => {
+    // A rung de máxima confiança do FactSource existe no tipo (a trilha do host a
+    // grava), mas um simulador determinístico não pode VERIFICAR realidade. Mesmo
+    // com TODOS os papéis declarados como evidência, o simulate nunca emite o
+    // rótulo verificado — ele é exclusivo do runtime real (ADENDO-03 D30).
+    const res = simulateSquad(manifest(), {
+      resolveWorkflow,
+      fixturesByRole,
+      declaredEvidenceRoles: ['revisor', 'pesquisador'],
+    });
+    expect(res.facts.some((f) => f.source === 'evidencia-verificada')).toBe(false);
+  });
+
   it('masks a sensitive context key conservatively when no policy is injected', () => {
     const res = simulateSquad(manifest(), { resolveWorkflow, fixturesByRole, contract });
     const evidence = res.facts.find((f) => f.agent === 'pesquisador' && f.kind === 'evidencia');

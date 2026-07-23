@@ -2652,10 +2652,17 @@ How writes to a context key combine.
 ### FactSource
 
 ```ts
-type FactSource = "fixture" | "evidencia-declarada";
+type FactSource = "fixture" | "evidencia-declarada" | "evidencia-verificada";
 ```
 
-Provenance of a fact (E6): a mock fixture, or host-declared real evidence.
+Provenance of a fact (E6 / ADENDO-03 D30). Three rungs, in ascending trust:
+  - `fixture` — a mock output from a declared fixture (the CI/simulate path);
+  - `evidencia-declarada` — the host DECLARES this fixture as captured real
+    evidence (still not verified by the runtime);
+  - `evidencia-verificada` — emitted ONLY by the real runtime `run` (D30): the
+    fact was produced and verified by an actual model/tool call. `simulate`
+    NEVER emits it — a determinist mock cannot verify reality. The union
+    carries the label so the host trail can record it; the simulator does not.
 
 ***
 

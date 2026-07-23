@@ -130,6 +130,21 @@ const SCENARIOS: ReplayScenario[] = [
       { type: 'CancelInstance', variables: vars, reason: 'replay-fixture' },
     ],
   },
+  {
+    // AG-2.2 etapa 4 (D27): o avanço AO REDOR do agentTask é determinístico e
+    // entra no corpus — `start → CreateJob(agent) → JobCompleted → segue`. O
+    // INTERIOR do agente (walk LLM/tool) NUNCA aparece aqui: o engine só vê a
+    // espera e o RESULTADO. O lint do aceite 7 (abaixo) prova o outro lado.
+    name: 'agenttask-avanco-ao-redor',
+    diagram: () =>
+      flow(['s:startEvent', 'a:agentTask', 'e:endEvent'], ['s->a', 'a->e'], (d) => {
+        d.nodes.a.properties.agentWorkflowRef = 'agnt-aprova';
+      }),
+    events: [
+      { type: 'StartInstance', instanceId: 'i1', variables: vars },
+      { type: 'JobCompleted', waitKey: 'a:i1', variables: vars, result: { aprovado: true } },
+    ],
+  },
 ];
 
 interface ReplayStep {
@@ -189,6 +204,44 @@ describe('corpus de replay (D6 — identidade byte a byte)', () => {
           live[i].effects,
           `${scenario.name} passo ${i}: efeitos divergiram do replay gravado`,
         ).toBe(stored[i].effects);
+      }
+    });
+  }
+});
+
+/**
+ * Aceite 7 (AG-2.2 etapa 4, invariante D27 pelos DOIS lados): o corpus de replay
+ * exercita o avanço AO REDOR do agentTask (cenário acima) e este lint prova o
+ * OUTRO lado — NENHUMA fixture contém o INTERIOR do agente. O interior (walk
+ * LLM/tool/decision, I/O do agente, cadeia de fatos) é não-determinístico (D27)
+ * e jamais pode entrar num corpus que se exige byte-idêntico: seria replay de
+ * algo irreproduzível. Proibição VERIFICADA, não só declarada.
+ */
+const AGENT_INTERIOR_MARKERS: readonly string[] = [
+  '"type":"llm"', // nós internos do agentflow (llm/tool/decision)
+  '"type":"tool"',
+  'promptRef', // config de nó llm
+  'usesTool', // config de nó tool
+  'agent_io', // coluna de I/O mascarado da trilha (host)
+  '"agent:intencao"', // kinds da cadeia de fatos do agente
+  '"agent:acao"',
+  '"agent:io"',
+  '"agent:evidencia"',
+  'MASKED', // token de máscara da trilha
+];
+
+describe('aceite 7 (D27) — nenhuma fixture de replay contém interior de agentTask', () => {
+  const fixtures = SCENARIOS.map((s) => `${s.name}.json`);
+  for (const fixtureName of fixtures) {
+    it(`${fixtureName} não vaza interior de agente`, () => {
+      const file = join(FIXTURES_DIR, fixtureName);
+      if (!existsSync(file)) return; // gerada no describe acima; nada a varrer ainda
+      const raw = readFileSync(file, 'utf8');
+      for (const marker of AGENT_INTERIOR_MARKERS) {
+        expect(
+          raw.includes(marker),
+          `fixture ${fixtureName} contém marcador de INTERIOR de agente '${marker}' — o replay do engine nunca pode conter o não-determinístico (D27)`,
+        ).toBe(false);
       }
     });
   }
