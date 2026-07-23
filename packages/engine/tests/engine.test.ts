@@ -88,6 +88,52 @@ describe('fluxo sequencial e término', () => {
     expect(replayed.ok).toBe(false);
     if (!replayed.ok) expect(replayed.rejection.kind).toBe('alreadyClosed');
   });
+
+  it('agent task emite CreateJob(agent) com agentRef+elementId; JobCompleted avança (fronteira D27)', () => {
+    // ADENDO-02 D27: o agentTask é ESPERA determinística — emite job `agent`, pausa,
+    // e o RESULTADO (JobCompleted) retoma o avanço. O interior do agente NÃO entra
+    // no engine (roda no worker) — aqui só o contorno determinístico é exercido.
+    const engine = createEngine(
+      flow(['s:startEvent', 'a:agentTask', 'e:endEvent'], ['s->a', 'a->e'], (d) => {
+        d.nodes.a.properties.agentWorkflowRef = 'agnt-aprova'; // declarada (flutuante); host pina
+      }),
+    );
+    const { state, effects } = start(engine);
+    expect(state.status).toBe('active'); // pausou na espera do agente
+    expect(effectsOf(effects, 'CreateJob')[0]).toMatchObject({
+      waitKey: 'a:i1',
+      jobType: 'agent',
+      // payload carrega elementId + a ref DECLARADA (o host substitui pelo pin efetivo)
+      payload: { elementId: 'a', agentRef: 'agnt-aprova' },
+    });
+    // o RESULTADO do agente (variáveis) volta pelo host via JobCompleted → avança.
+    const done = engine.advance(state, {
+      type: 'JobCompleted',
+      now: NOW,
+      waitKey: 'a:i1',
+      variables: vars,
+    });
+    expect(done.ok && done.state.status).toBe('completed');
+
+    // replay do MESMO JobCompleted → rejeição tipada (a espera já fechou).
+    const replayed = engine.advance((done as { state: InstanceState }).state ?? state, {
+      type: 'JobCompleted',
+      now: NOW,
+      waitKey: 'a:i1',
+      variables: vars,
+    });
+    expect(replayed.ok).toBe(false);
+    if (!replayed.ok) expect(replayed.rejection.kind).toBe('alreadyClosed');
+  });
+
+  it('agentTask sem agentWorkflowRef → incidente estrutural (deploy lint deveria barrar)', () => {
+    const engine = createEngine(
+      flow(['s:startEvent', 'a:agentTask', 'e:endEvent'], ['s->a', 'a->e']),
+    );
+    const { effects } = start(engine);
+    expect(effectsOf(effects, 'RaiseIncident')[0]).toMatchObject({ kind: 'invalidDefinition' });
+    expect(effectsOf(effects, 'CreateJob')).toHaveLength(0);
+  });
 });
 
 describe('XOR com condições (avaliador injetado)', () => {

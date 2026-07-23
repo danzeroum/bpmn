@@ -404,6 +404,33 @@ function settle(ctx: Ctx, token: Token): void {
       armBoundaryTimers(ctx, node, token);
       return;
     }
+    case 'agentTask': {
+      // ADENDO-02 D27: o agentTask é uma ESPERA determinística como o serviceTask —
+      // emite um job `type:"agent"`, o token pausa, e `JobCompleted` retoma o avanço.
+      // O INTERIOR do agente (o walk LLM/tool) roda no worker, FORA do caminho
+      // determinístico do engine — nunca entra aqui, nunca no replay. Só o RESULTADO
+      // (JobCompleted.result → variáveis, escritas pelo host, D13) volta ao engine.
+      const agentRef = readString(node, 'agentWorkflowRef');
+      if (agentRef === undefined) {
+        structuralIncident(ctx, 'invalidDefinition', `agentTask ${node.id} sem properties.agentWorkflowRef (deploy lint deveria ter rejeitado)`);
+        return;
+      }
+      const waitKey = waitKeyOf(node.id, token.id);
+      ctx.state.waits.push({ kind: 'job', elementId: node.id, tokenId: token.id, waitKey });
+      // `agentRef` no payload = a ref DECLARADA no BPMN (pode ser flutuante). O HOST
+      // substitui pelo PIN EFETIVO resolvido no start (nunca por execução de job) ao
+      // materializar o job — o engine permanece puro (sem registry). `elementId` no
+      // payload para o worker correlacionar o pin e a trilha.
+      ctx.effects.push({
+        type: 'CreateJob',
+        waitKey,
+        elementId: node.id,
+        jobType: 'agent',
+        payload: { elementId: node.id, agentRef, ...readObject(node, 'jobPayload') },
+      });
+      armBoundaryTimers(ctx, node, token);
+      return;
+    }
     case 'exclusiveGateway': {
       routeExclusive(ctx, node, token);
       return;
