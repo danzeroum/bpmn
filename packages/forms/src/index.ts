@@ -17,6 +17,7 @@ export {
   type TextareaField,
 } from './types.js';
 export { validateFormSchema, type SchemaIssue } from './validateSchema.js';
+export { formExpressionEvaluator } from './evaluator.js';
 export {
   applyDefaults,
   validateSubmission,
