@@ -1,6 +1,6 @@
 {
   "name": "@buildtovalue/forms-react",
-  "version": "1.0.0-next.0",
+  "version": "1.0.0-next.1",
   "description": "Pure React renderer for @buildtovalue/forms schemas: controlled, headless-friendly, a11y-first. The SAME schema drives client rendering and server-side submission validation. Storybook stories ship with every component.",
   "license": "Apache-2.0",
   "type": "module",
