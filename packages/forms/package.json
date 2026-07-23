@@ -16,6 +16,11 @@
       "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
       "require": "./dist/cjs/index.js"
+    },
+    "./corpus": {
+      "types": "./dist/esm/conformance.d.ts",
+      "import": "./dist/esm/conformance.js",
+      "require": "./dist/cjs/conformance.js"
     }
   },
   "files": [
